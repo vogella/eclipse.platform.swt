@@ -3,6 +3,10 @@
 ## About SWT
 SWT is the layer between PlatformUI and the underlying GTK3 or GTK4(experimental) of the system. It can be launched to use GTK3 or GTK4, but cannot use them both at the same time. Communication from Java (SWT layer) to C (native GTK layer) occurs through calls defined in OS.java. The text below describes this hierarchy better:
 
+> **Note on GTK4**: GTK4 support is currently experimental. For a comprehensive overview of GTK4 migration status and areas requiring updates, see:
+> - [GTK4 Migration Status](gtk4-migration-status.md) - Detailed tracking of all GTK4 migration work
+> - [GTK4 Quick Reference](gtk4-quick-reference.md) - Quick answers and common patterns for GTK4 development
+
 ```mermaid
   graph TD
       A[PlatformUI] --> B[SWT]
@@ -540,6 +544,12 @@ It's not just the difference between GTK3 & GTK4, but keep an eye on the differe
 You can also see the changes here: https://docs.gtk.org/gtk3/changes.html
 
 You can see the changes between GTK3 and GTK4 here: https://docs.gtk.org/gtk4/migrating-3to4.html
+
+**GTK4 Migration Status**
+
+For detailed information about GTK4 support status and areas that still need work, see:
+- [GTK4 Migration Status](gtk4-migration-status.md) - Comprehensive tracking document with 61 identified TODOs across 30 files
+- [GTK4 Quick Reference](gtk4-quick-reference.md) - Quick answers and migration patterns for common GTK4 issues
 
 Because of the faster pace at which the GTK development cycle works, it is imperative to be able to test on different versions of GTK (within reason). Usually testing 2-3 versions behind is useful for Fedora. Try to test on GTK3.22 as RHEL customers use this and require an especially stable platform. GTK4 support is experimental and being worked on, so testing is based on individual components that are ported.
 
