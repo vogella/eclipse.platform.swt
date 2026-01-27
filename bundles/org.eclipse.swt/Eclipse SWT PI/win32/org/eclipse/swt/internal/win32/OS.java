@@ -2532,6 +2532,8 @@ public static final native long CreateWindowEx (int dwExStyle, char [] lpClassNa
  * @param hWndInsertAfter cast=(HWND)
  */
 public static final native long DeferWindowPos (long hWinPosInfo, long hWnd, long hWndInsertAfter, int X, int Y, int cx, int cy, int uFlags);
+/** @method flags=no_gen */
+public static final native long DeferWindowPos (long hWinPosInfo, long[] hWnd, int[] X, int[] Y, int[] cx, int[] cy, int[] uFlags);
 /**
  * @param hWnd cast=(HWND)
  * @param wParam cast=(WPARAM)
