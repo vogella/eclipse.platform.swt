@@ -36,8 +36,6 @@ public class CTabFolderRenderer {
 
 	private Font chevronFont = null;
 
-	private static final int[] EMPTY_CORNER = new int[] {0,0};
-
 	static final RGB CLOSE_FILL = new RGB(240, 64, 64);
 
 	static final int BUTTON_SIZE = 16;
@@ -475,10 +473,10 @@ public class CTabFolderRenderer {
 		int[] percents = selected ? parent.selectionGradientPercents : parent.gradientPercents;
 		boolean vertical = selected ? parent.selectionGradientVertical : parent.gradientVertical;
 
-		drawBackground(gc, null, bounds.x, bounds.y, bounds.width, bounds.height, defaultBackground, image, colors, percents, vertical);
+		drawBackground(gc, bounds.x, bounds.y, bounds.width, bounds.height, defaultBackground, image, colors, percents, vertical);
 	}
 
-	void drawBackground(GC gc, int[] shape, boolean selected) {
+	void drawBackground(GC gc, boolean selected) {
 		Color defaultBackground = selected && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground();
 		Image image = selected ? parent.selectionBgImage : null;
 		Color[] colors = selected && parent.shouldHighlight() ? parent.selectionGradientColors : parent.gradientColors;
@@ -497,19 +495,10 @@ public class CTabFolderRenderer {
 			x += 1; width -= 2;
 		}
 		int y = parent.onBottom ? size.y - borderBottom - height : borderTop;
-		drawBackground(gc, shape, x, y, width, height, defaultBackground, image, colors, percents, vertical);
+		drawBackground(gc, x, y, width, height, defaultBackground, image, colors, percents, vertical);
 	}
 
-	void drawBackground(GC gc, int[] shape, int x, int y, int width, int height, Color defaultBackground, Image image, Color[] colors, int[] percents, boolean vertical) {
-		Region clipping = null, region = null;
-		if (shape != null) {
-			clipping = new Region();
-			gc.getClipping(clipping);
-			region = new Region();
-			region.add(shape);
-			region.intersect(clipping);
-			gc.setClipping(region);
-		}
+	void drawBackground(GC gc, int x, int y, int width, int height, Color defaultBackground, Image image, Color[] colors, int[] percents, boolean vertical) {
 		if (image != null) {
 			// draw the background image in shape
 			gc.setBackground(defaultBackground);
@@ -583,26 +572,12 @@ public class CTabFolderRenderer {
 				}
 			}
 		} else {
-			// draw a solid background using default background in shape
+			// draw a solid background
 			if ((parent.getStyle() & SWT.NO_BACKGROUND) != 0 || !defaultBackground.equals(parent.getBackground())) {
 				gc.setBackground(defaultBackground);
 				gc.fillRectangle(x, y, width, height);
 			}
 		}
-		if (shape != null) {
-			gc.setClipping(clipping);
-			clipping.dispose();
-			region.dispose();
-		}
-	}
-
-	/*
-	 * Draw the border of the tab
-	 */
-	void drawBorder(GC gc, int[] shape) {
-
-		gc.setForeground(parent.getDisplay().getSystemColor(BORDER1_COLOR));
-		gc.drawPolyline(shape);
 	}
 
 	void drawBody(GC gc, Rectangle bounds, int state) {
@@ -643,15 +618,8 @@ public class CTabFolderRenderer {
 									   x2-highlight_margin,y2-highlight_margin, x2-highlight_margin,y1,
 									   x2,y1, x2,y2, x1,y2};
 				}
-				// If horizontal gradient, show gradient across the whole area
-				if (selectedIndex != -1 && parent.selectionGradientColors != null && parent.selectionGradientColors.length > 1 && !parent.selectionGradientVertical) {
-					drawBackground(gc, shape, true);
-				} else if (selectedIndex == -1 && parent.gradientColors != null && parent.gradientColors.length > 1 && !parent.gradientVertical) {
-					drawBackground(gc, shape, false);
-				} else {
-					gc.setBackground(selectedIndex != -1 && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
-					gc.fillPolygon(shape);
-				}
+				gc.setBackground(selectedIndex != -1 && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
+				gc.fillPolygon(shape);
 			}
 			//Draw client area
 			if ((parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
@@ -717,8 +685,7 @@ public class CTabFolderRenderer {
 				break;
 			}
 			case SWT.BACKGROUND: {
-				int[] shape = new int[] {x,y, x+10,y, x+10,y+10, x,y+10};
-				drawBackground(gc, shape, false);
+				drawBackground(gc, x, y, 10, 10, parent.getBackground(), null, null, null, false);
 				break;
 			}
 		}
@@ -795,37 +762,15 @@ public class CTabFolderRenderer {
 	 * Draw the unselected border for the receiver on the left.
 	 */
 	void drawLeftUnselectedBorder(GC gc, Rectangle bounds, int state) {
+		gc.setForeground(parent.getDisplay().getSystemColor(BORDER1_COLOR));
 		int x = bounds.x;
 		int y = bounds.y;
 		int height = bounds.height;
-
-		int[] shape = null;
 		if (parent.onBottom) {
-			int[] left = EMPTY_CORNER;
-
-			shape = new int[left.length + 2];
-			int index = 0;
-			shape[index++] = x;
-			shape[index++] = y - 1;
-			for (int i = 0; i < left.length / 2; i++) {
-				shape[index++] = x + left[2 * i];
-				shape[index++] = y + height + left[2 * i + 1] - 1;
-			}
+			gc.drawLine(x, y - 1, x, y + height - 1);
 		} else {
-			int[] left = EMPTY_CORNER;
-
-			shape = new int[left.length + 2];
-			int index = 0;
-			shape[index++] = x;
-			shape[index++] = y + height;
-			for (int i = 0; i < left.length / 2; i++) {
-				shape[index++] = x + left[2 * i];
-				shape[index++] = y + left[2 * i + 1];
-			}
-
+			gc.drawLine(x, y + height, x, y);
 		}
-
-		drawBorder(gc, shape);
 	}
 
 	void drawMaximize(GC gc, Rectangle maxRect, int maxImageState) {
@@ -931,44 +876,17 @@ public class CTabFolderRenderer {
 	 * Draw the unselected border for the receiver on the right.
 	 */
 	void drawRightUnselectedBorder(GC gc, Rectangle bounds, int state) {
+		gc.setForeground(parent.getDisplay().getSystemColor(BORDER1_COLOR));
 		int x = bounds.x;
 		int y = bounds.y;
 		int width = bounds.width;
 		int height = bounds.height;
-
-		int[] shape = null;
 		int startX = x + width - 1;
-
 		if (parent.onBottom) {
-			int[] right = EMPTY_CORNER;
-
-			shape = new int[right.length + 2];
-			int index = 0;
-
-			for (int i = 0; i < right.length / 2; i++) {
-				shape[index++] = startX + right[2 * i];
-				shape[index++] = y + height + right[2 * i + 1] - 1;
-			}
-			shape[index++] = startX;
-			shape[index++] = y - 1;
+			gc.drawLine(startX, y + height - 1, startX, y - 1);
 		} else {
-			int[] right = EMPTY_CORNER;
-
-			shape = new int[right.length + 2];
-			int index = 0;
-
-			for (int i = 0; i < right.length / 2; i++) {
-				shape[index++] = startX + right[2 * i];
-				shape[index++] = y + right[2 * i + 1];
-			}
-
-			shape[index++] = startX;
-			shape[index++] = y + height;
-
+			gc.drawLine(startX, y, startX, y + height);
 		}
-
-		drawBorder(gc, shape);
-
 	}
 
 	void drawSelected(int itemIndex, GC gc, Rectangle bounds, int state ) {
@@ -993,9 +911,8 @@ public class CTabFolderRenderer {
 			int yy = parent.onBottom ? size.y - borderBottom - parent.tabHeight - highlight_header : borderTop + parent.tabHeight + 1;
 			int ww = size.x - borderLeft - borderRight;
 			int hh = highlight_header - 1;
-			int[] shape = new int[] {xx,yy, xx+ww,yy, xx+ww,yy+hh, xx,yy+hh};
 			if (parent.selectionGradientColors != null && !parent.selectionGradientVertical) {
-				drawBackground(gc, shape, parent.shouldHighlight());
+				drawBackground(gc, parent.shouldHighlight());
 			} else {
 				gc.setBackground(parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
 				gc.fillRectangle(xx, yy, ww, hh);
@@ -1016,55 +933,19 @@ public class CTabFolderRenderer {
 				}
 
 				// draw selected tab background and outline
-				shape = null;
+				int[] shape = null;
 				if (parent.onBottom) {
-					int[] left = EMPTY_CORNER;
-					int[] right = EMPTY_CORNER;
 					if (borderLeft == 0 && itemIndex == parent.firstIndex) {
-						left = new int[]{x, y+height};
+						shape = new int[] {x, y-1, x, y+height, x, y+height, rightEdge-1, y+height-1, rightEdge-1, y-1, rightEdge-1, y-1};
+					} else {
+						shape = new int[] {x, y-1, x, y-1, x, y+height-1, rightEdge-1, y+height-1, rightEdge-1, y-1, rightEdge-1, y-1};
 					}
-					shape = new int[left.length+right.length+8];
-					int index = 0;
-					shape[index++] = x; // first point repeated here because below we reuse shape to draw outline
-					shape[index++] = y - 1;
-					shape[index++] = x;
-					shape[index++] = y - 1;
-					for (int i = 0; i < left.length/2; i++) {
-						shape[index++] = x + left[2*i];
-						shape[index++] = y + height + left[2*i+1] - 1;
-					}
-					for (int i = 0; i < right.length/2; i++) {
-						shape[index++] = rightEdge - 1 + right[2*i];
-						shape[index++] = y + height + right[2*i+1] - 1;
-					}
-					shape[index++] = rightEdge - 1;
-					shape[index++] = y - 1;
-					shape[index++] = rightEdge - 1;
-					shape[index++] = y - 1;
 				} else {
-					int[] left = EMPTY_CORNER;
-					int[] right = EMPTY_CORNER;
 					if (borderLeft == 0 && itemIndex == parent.firstIndex) {
-						left = new int[]{x, y};
+						shape = new int[] {x, y+height+1, x, y, x, y, rightEdge-1, y, rightEdge-1, y+height+1, rightEdge-1, y+height+1};
+					} else {
+						shape = new int[] {x, y+height+1, x, y+height+1, x, y, rightEdge-1, y, rightEdge-1, y+height+1, rightEdge-1, y+height+1};
 					}
-					shape = new int[left.length+right.length+8];
-					int index = 0;
-					shape[index++] = x; // first point repeated here because below we reuse shape to draw outline
-					shape[index++] = y + height + 1;
-					shape[index++] = x;
-					shape[index++] = y + height + 1;
-					for (int i = 0; i < left.length/2; i++) {
-						shape[index++] = x + left[2*i];
-						shape[index++] = y + left[2*i+1];
-					}
-					for (int i = 0; i < right.length/2; i++) {
-						shape[index++] = rightEdge - 1 + right[2*i];
-						shape[index++] = y + right[2*i+1];
-					}
-					shape[index++] = rightEdge - 1;
-					shape[index++] = y + height + 1;
-					shape[index++] = rightEdge - 1;
-					shape[index++] = y + height + 1;
 				}
 
 				Rectangle clipping = gc.getClipping();
@@ -1076,7 +957,7 @@ public class CTabFolderRenderer {
 				if (tabInPaint) {
 					// fill in tab background
 					if (parent.selectionGradientColors != null && !parent.selectionGradientVertical) {
-						drawBackground(gc, shape, true);
+						drawBackground(gc, true);
 					} else {
 						Color defaultBackground = parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground();
 						Image image = parent.selectionBgImage;
@@ -1084,10 +965,10 @@ public class CTabFolderRenderer {
 						int[] percents = parent.selectionGradientPercents;
 						boolean vertical = parent.selectionGradientVertical;
 						xx = x;
-						yy = parent.onBottom ? y -1 : y + 1;
+						yy = parent.onBottom ? y - 1 : y + 1;
 						ww = width;
 						hh = height;
-						drawBackground(gc, shape, xx, yy, ww, hh, defaultBackground, image, colors, percents, vertical);
+						drawBackground(gc, xx, yy, ww, hh, defaultBackground, image, colors, percents, vertical);
 					}
 				}
 
@@ -1222,9 +1103,9 @@ public class CTabFolderRenderer {
 
 			// If horizontal gradient, show gradient across the whole area
 			if (selectedIndex != -1 && parent.selectionGradientColors != null && parent.selectionGradientColors.length > 1 && !parent.selectionGradientVertical) {
-				drawBackground(gc, shape, true);
+				drawBackground(gc, true);
 			} else if (selectedIndex == -1 && parent.gradientColors != null && parent.gradientColors.length > 1 && !parent.gradientVertical) {
-				drawBackground(gc, shape, false);
+				drawBackground(gc, false);
 			} else {
 				gc.setBackground(selectedIndex != -1 && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
 				gc.fillPolygon(shape);
@@ -1244,65 +1125,15 @@ public class CTabFolderRenderer {
 		int height = tabHeight - 1;
 		// Draw Tab Header
 		if (parent.onBottom) {
-			int[] left, right;
-			if ((style & SWT.BORDER) != 0) {
-				left = EMPTY_CORNER;
-				right = EMPTY_CORNER;
-			} else {
-				left = EMPTY_CORNER;
-				right = EMPTY_CORNER;
-			}
-			shape = new int[left.length + right.length + 4];
-			int index = 0;
-			shape[index++] = x;
-			shape[index++] = y-highlight_header;
-			for (int i = 0; i < left.length/2; i++) {
-				shape[index++] = x+left[2*i];
-				shape[index++] = y+height+left[2*i+1];
-				if (borderLeft == 0) shape[index-1] += 1;
-			}
-			for (int i = 0; i < right.length/2; i++) {
-				shape[index++] = x+width+right[2*i];
-				shape[index++] = y+height+right[2*i+1];
-				if (borderLeft == 0) shape[index-1] += 1;
-			}
-			shape[index++] = x+width;
-			shape[index++] = y-highlight_header;
+			int bottomY = y + height + (borderLeft == 0 ? 1 : 0);
+			shape = new int[] {x, y-highlight_header, x, bottomY, x+width, bottomY, x+width, y-highlight_header};
 		} else {
-			int[] left, right;
-			if ((style & SWT.BORDER) != 0) {
-				left = EMPTY_CORNER;
-				right = EMPTY_CORNER;
-			} else {
-				left = EMPTY_CORNER;
-				right = EMPTY_CORNER;
-			}
-			shape = new int[left.length + right.length + 4];
-			int index = 0;
-			shape[index++] = x;
-			shape[index++] = y+height+highlight_header + 1;
-			for (int i = 0; i < left.length/2; i++) {
-				shape[index++] = x+left[2*i];
-				shape[index++] = y+left[2*i+1];
-			}
-			for (int i = 0; i < right.length/2; i++) {
-				shape[index++] = x+width+right[2*i];
-				shape[index++] = y+right[2*i+1];
-			}
-			shape[index++] = x+width;
-			shape[index++] = y+height+highlight_header + 1;
+			shape = new int[] {x, y+height+highlight_header+1, x, y, x+width, y, x+width, y+height+highlight_header+1};
 		}
 		// Fill in background
 		boolean single = parent.single;
 		boolean bkSelected = single && selectedIndex != -1;
-		drawBackground(gc, shape, bkSelected);
-		// Fill in parent background for non-rectangular shape
-		Region r = new Region();
-		r.add(new Rectangle(x, y, width + 1, height + 1));
-		r.subtract(shape);
-		gc.setBackground(parent.getParent().getBackground());
-		fillRegion(gc, r);
-		r.dispose();
+		drawBackground(gc, bkSelected);
 
 		// Draw selected tab
 		if (selectedIndex == -1) {
@@ -1389,16 +1220,6 @@ public class CTabFolderRenderer {
 		}
 	}
 
-	void fillRegion(GC gc, Region region) {
-		// NOTE: region passed in to this function will be modified
-		Region clipping = new Region();
-		gc.getClipping(clipping);
-		region.intersect(clipping);
-		gc.setClipping(region);
-		gc.fillRectangle(region.getBounds());
-		gc.setClipping(clipping);
-		clipping.dispose();
-	}
 
 	Color getFillColor() {
 		if (fillColor == null) {
