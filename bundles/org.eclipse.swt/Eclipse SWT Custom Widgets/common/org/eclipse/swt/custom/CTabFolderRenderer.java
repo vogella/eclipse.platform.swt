@@ -473,10 +473,10 @@ public class CTabFolderRenderer {
 		int[] percents = selected ? parent.selectionGradientPercents : parent.gradientPercents;
 		boolean vertical = selected ? parent.selectionGradientVertical : parent.gradientVertical;
 
-		drawBackground(gc, null, bounds.x, bounds.y, bounds.width, bounds.height, defaultBackground, image, colors, percents, vertical);
+		drawBackground(gc, bounds.x, bounds.y, bounds.width, bounds.height, defaultBackground, image, colors, percents, vertical);
 	}
 
-	void drawBackground(GC gc, int[] shape, boolean selected) {
+	void drawBackground(GC gc, boolean selected) {
 		Color defaultBackground = selected && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground();
 		Image image = selected ? parent.selectionBgImage : null;
 		Color[] colors = selected && parent.shouldHighlight() ? parent.selectionGradientColors : parent.gradientColors;
@@ -495,19 +495,10 @@ public class CTabFolderRenderer {
 			x += 1; width -= 2;
 		}
 		int y = parent.onBottom ? size.y - borderBottom - height : borderTop;
-		drawBackground(gc, shape, x, y, width, height, defaultBackground, image, colors, percents, vertical);
+		drawBackground(gc, x, y, width, height, defaultBackground, image, colors, percents, vertical);
 	}
 
-	void drawBackground(GC gc, int[] shape, int x, int y, int width, int height, Color defaultBackground, Image image, Color[] colors, int[] percents, boolean vertical) {
-		Region clipping = null, region = null;
-		if (shape != null) {
-			clipping = new Region();
-			gc.getClipping(clipping);
-			region = new Region();
-			region.add(shape);
-			region.intersect(clipping);
-			gc.setClipping(region);
-		}
+	void drawBackground(GC gc, int x, int y, int width, int height, Color defaultBackground, Image image, Color[] colors, int[] percents, boolean vertical) {
 		if (image != null) {
 			// draw the background image in shape
 			gc.setBackground(defaultBackground);
@@ -581,16 +572,11 @@ public class CTabFolderRenderer {
 				}
 			}
 		} else {
-			// draw a solid background using default background in shape
+			// draw a solid background
 			if ((parent.getStyle() & SWT.NO_BACKGROUND) != 0 || !defaultBackground.equals(parent.getBackground())) {
 				gc.setBackground(defaultBackground);
 				gc.fillRectangle(x, y, width, height);
 			}
-		}
-		if (shape != null) {
-			gc.setClipping(clipping);
-			clipping.dispose();
-			region.dispose();
 		}
 	}
 
@@ -632,15 +618,8 @@ public class CTabFolderRenderer {
 									   x2-highlight_margin,y2-highlight_margin, x2-highlight_margin,y1,
 									   x2,y1, x2,y2, x1,y2};
 				}
-				// If horizontal gradient, show gradient across the whole area
-				if (selectedIndex != -1 && parent.selectionGradientColors != null && parent.selectionGradientColors.length > 1 && !parent.selectionGradientVertical) {
-					drawBackground(gc, shape, true);
-				} else if (selectedIndex == -1 && parent.gradientColors != null && parent.gradientColors.length > 1 && !parent.gradientVertical) {
-					drawBackground(gc, shape, false);
-				} else {
-					gc.setBackground(selectedIndex != -1 && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
-					gc.fillPolygon(shape);
-				}
+				gc.setBackground(selectedIndex != -1 && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
+				gc.fillPolygon(shape);
 			}
 			//Draw client area
 			if ((parent.getStyle() & SWT.NO_BACKGROUND) != 0) {
@@ -706,8 +685,7 @@ public class CTabFolderRenderer {
 				break;
 			}
 			case SWT.BACKGROUND: {
-				int[] shape = new int[] {x,y, x+10,y, x+10,y+10, x,y+10};
-				drawBackground(gc, shape, false);
+				drawBackground(gc, x, y, 10, 10, parent.getBackground(), null, null, null, false);
 				break;
 			}
 		}
@@ -933,9 +911,8 @@ public class CTabFolderRenderer {
 			int yy = parent.onBottom ? size.y - borderBottom - parent.tabHeight - highlight_header : borderTop + parent.tabHeight + 1;
 			int ww = size.x - borderLeft - borderRight;
 			int hh = highlight_header - 1;
-			int[] shape = new int[] {xx,yy, xx+ww,yy, xx+ww,yy+hh, xx,yy+hh};
 			if (parent.selectionGradientColors != null && !parent.selectionGradientVertical) {
-				drawBackground(gc, shape, parent.shouldHighlight());
+				drawBackground(gc, parent.shouldHighlight());
 			} else {
 				gc.setBackground(parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
 				gc.fillRectangle(xx, yy, ww, hh);
@@ -1004,7 +981,7 @@ public class CTabFolderRenderer {
 				if (tabInPaint) {
 					// fill in tab background
 					if (parent.selectionGradientColors != null && !parent.selectionGradientVertical) {
-						drawBackground(gc, shape, true);
+						drawBackground(gc, true);
 					} else {
 						Color defaultBackground = parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground();
 						Image image = parent.selectionBgImage;
@@ -1012,10 +989,10 @@ public class CTabFolderRenderer {
 						int[] percents = parent.selectionGradientPercents;
 						boolean vertical = parent.selectionGradientVertical;
 						xx = x;
-						yy = parent.onBottom ? y -1 : y + 1;
+						yy = parent.onBottom ? y - 1 : y + 1;
 						ww = width;
 						hh = height;
-						drawBackground(gc, shape, xx, yy, ww, hh, defaultBackground, image, colors, percents, vertical);
+						drawBackground(gc, xx, yy, ww, hh, defaultBackground, image, colors, percents, vertical);
 					}
 				}
 
@@ -1149,9 +1126,9 @@ public class CTabFolderRenderer {
 
 			// If horizontal gradient, show gradient across the whole area
 			if (selectedIndex != -1 && parent.selectionGradientColors != null && parent.selectionGradientColors.length > 1 && !parent.selectionGradientVertical) {
-				drawBackground(gc, shape, true);
+				drawBackground(gc, true);
 			} else if (selectedIndex == -1 && parent.gradientColors != null && parent.gradientColors.length > 1 && !parent.gradientVertical) {
-				drawBackground(gc, shape, false);
+				drawBackground(gc, false);
 			} else {
 				gc.setBackground(selectedIndex != -1 && parent.shouldHighlight() ? parent.selectionBackground : parent.getBackground());
 				gc.fillPolygon(shape);
@@ -1199,7 +1176,7 @@ public class CTabFolderRenderer {
 		// Fill in background
 		boolean single = parent.single;
 		boolean bkSelected = single && selectedIndex != -1;
-		drawBackground(gc, shape, bkSelected);
+		drawBackground(gc, bkSelected);
 
 		// Draw selected tab
 		if (selectedIndex == -1) {
