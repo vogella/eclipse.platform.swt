@@ -174,6 +174,11 @@ public void setWraps(boolean wraps) {
 	OS.objc_msgSend(this.id, OS.sel_setWraps_, wraps);
 }
 
+public NSString stringValue() {
+	long result = OS.objc_msgSend(this.id, OS.sel_stringValue);
+	return result != 0 ? new NSString(result) : null;
+}
+
 public NSString title() {
 	long result = OS.objc_msgSend(this.id, OS.sel_title);
 	return result != 0 ? new NSString(result) : null;

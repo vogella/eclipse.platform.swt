@@ -13,12 +13,14 @@
  *******************************************************************************/
 package org.eclipse.swt.tests.junit;
 
+import static java.lang.System.currentTimeMillis;
 import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_ENV_VAR;
 import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_REGEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyListener;
@@ -1374,6 +1376,31 @@ public void test_showSelection() {
 
 	text.clearSelection();
 	text.showSelection();
+}
+
+// Originally reported as https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
+@Test
+public void test_finiteRedraw() {
+	if ( text != null ) text.dispose();
+	// Style constants are causing
+	// org.eclipse.swt.widgets.Text.drawInteriorWithFrame_inView_searchfield(long, long, NSRect, long)
+	// to call
+	// org.eclipse.swt.internal.cocoa.NSControl.stringValue()
+	// which schedules redraw
+	text = new Text(shell, SWT.SEARCH | SWT.ICON_CANCEL);
+	// Background prevents early exit from drawInteriorWithFrame_inView_searchfield(long, long, NSRect, long)
+	text.setBackground(shell.getDisplay().getSystemColor(SWT.COLOR_RED));
+	setWidget(text);
+	Display display = shell.getDisplay();
+	text.forceFocus();
+	long stop = currentTimeMillis() + 1000;
+	// If redraws are constantly scheduled, readAndDispatch() will never return false.
+	// Side effects - high CPU usage, asyncExec() stops working in modal contexts
+	while (display.readAndDispatch()) {
+		if (currentTimeMillis() > stop) {
+			fail("UI should eventually stop refreshing");
+		}
+	}
 }
 
 /* custom */
