@@ -683,8 +683,21 @@ void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 	fillBackground (view, context, rect, -1);
 }
 
+// DEBUG instrumentation for https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
+// Track current paint step so Widget.setNeedsDisplay can log which native call triggered re-entry.
+static volatile String DEBUG_PAINT_STEP = null;
+static final java.util.concurrent.atomic.AtomicInteger DEBUG_PAINT_COUNTER = new java.util.concurrent.atomic.AtomicInteger();
+
+private void debugStep(int paintId, String step) {
+	DEBUG_PAINT_STEP = step;
+	System.err.println("[SWT-DEBUG-PAINT " + paintId + "] step=" + step);
+}
+
 @Override
 void drawInteriorWithFrame_inView (long id, long sel, NSRect cellFrame, long viewid) {
+	int paintId = ((style & SWT.SEARCH) != 0 && background != null) ? DEBUG_PAINT_COUNTER.incrementAndGet() : 0;
+	if (paintId != 0) debugStep(paintId, "ENTER drawInteriorWithFrame_inView");
+
 	Control control = findBackgroundControl();
 	if (control == null) control = this;
 	Image image = control.backgroundImage;
@@ -697,7 +710,12 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect cellFrame, long vie
 		drawInteriorWithFrame_inView_searchfield(id, sel, cellFrame, viewid);
 	}
 
+	if (paintId != 0) debugStep(paintId, "before super.drawInteriorWithFrame_inView");
 	super.drawInteriorWithFrame_inView(id, sel, cellFrame, viewid);
+	if (paintId != 0) {
+		debugStep(paintId, "after super.drawInteriorWithFrame_inView");
+		DEBUG_PAINT_STEP = null;
+	}
 }
 
 
@@ -709,6 +727,9 @@ void drawInteriorWithFrame_inView_searchfield (long id, long sel, NSRect cellFra
 	if (background == null) {
 		return;
 	}
+
+	int paintId = DEBUG_PAINT_COUNTER.get();
+	debugStep(paintId, "ENTER drawInteriorWithFrame_inView_searchfield");
 
 	double searchFieldHeight = 22.0; // Default height of search field on Cocoa
 	double borderWidth = 1.0;
@@ -731,26 +752,48 @@ void drawInteriorWithFrame_inView_searchfield (long id, long sel, NSRect cellFra
 		frameRect.y = cellFrame.y + (cellFrame.height - frameRect.height) / 2.0;
 	}
 
+	debugStep(paintId, "before bezierPathWithRoundedRect");
 	// Create a path of the cellFrame with rounded corners
 	NSBezierPath path = NSBezierPath.bezierPathWithRoundedRect(frameRect, 2.0d, 2.0d);
 
+	debugStep(paintId, "before NSColor.colorWithDeviceRed");
 	// Create the native color and fill the background with it
 	NSColor bgColor = NSColor.colorWithDeviceRed (background [0], background [1], background [2], background [3]);
+	debugStep(paintId, "before bgColor.setFill");
 	bgColor.setFill();
+	debugStep(paintId, "before path.fill");
 	path.fill();
 
+	debugStep(paintId, "before NSSearchField cast + cell()");
 	// Finally, paint the search and cancel icons (if present) on top of the filled background
 	NSSearchField searchField = ((NSSearchField)view);
 	NSCell _cell = (NSCell) searchField.cell();
 	SWTSearchFieldCell cell = new SWTSearchFieldCell(_cell.id);
 
+	debugStep(paintId, "before cell.searchButtonCell()");
 	if (cell.searchButtonCell() != null) {
-		cell.searchButtonCell().drawInteriorWithFrame(cell.searchButtonRectForBounds(cellFrame), view);
+		debugStep(paintId, "before searchButtonRectForBounds");
+		NSRect searchRect = cell.searchButtonRectForBounds(cellFrame);
+		debugStep(paintId, "before searchButtonCell.drawInteriorWithFrame");
+		cell.searchButtonCell().drawInteriorWithFrame(searchRect, view);
+		debugStep(paintId, "after searchButtonCell.drawInteriorWithFrame");
 	}
 
-	if (cell.cancelButtonCell() != null && ((NSSearchField) view).stringValue().length() > 0) {
-		cell.cancelButtonCell().drawInteriorWithFrame(cell.cancelButtonRectForBounds(cellFrame), view);
+	debugStep(paintId, "before cell.cancelButtonCell() and stringValue()");
+	NSCell cancelCell = cell.cancelButtonCell();
+	if (cancelCell != null) {
+		debugStep(paintId, "before NSControl.stringValue()");
+		NSString strValue = ((NSSearchField) view).stringValue();
+		debugStep(paintId, "after NSControl.stringValue()");
+		if (strValue.length() > 0) {
+			debugStep(paintId, "before cancelButtonRectForBounds");
+			NSRect cancelRect = cell.cancelButtonRectForBounds(cellFrame);
+			debugStep(paintId, "before cancelButtonCell.drawInteriorWithFrame");
+			cancelCell.drawInteriorWithFrame(cancelRect, view);
+			debugStep(paintId, "after cancelButtonCell.drawInteriorWithFrame");
+		}
 	}
+	debugStep(paintId, "EXIT drawInteriorWithFrame_inView_searchfield");
 }
 
 @Override
