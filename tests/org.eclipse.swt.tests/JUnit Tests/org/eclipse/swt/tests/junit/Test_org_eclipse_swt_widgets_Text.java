@@ -32,6 +32,7 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Group;
@@ -1391,6 +1392,9 @@ public void test_finiteRedraw() {
 	// Background prevents early exit from drawInteriorWithFrame_inView_searchfield(long, long, NSRect, long)
 	text.setBackground(shell.getDisplay().getSystemColor(SWT.COLOR_RED));
 	setWidget(text);
+	shell.setLayout(new FillLayout());
+	text.requestLayout();
+	shell.open();
 	Display display = shell.getDisplay();
 	text.forceFocus();
 	long stop = currentTimeMillis() + 1000;
