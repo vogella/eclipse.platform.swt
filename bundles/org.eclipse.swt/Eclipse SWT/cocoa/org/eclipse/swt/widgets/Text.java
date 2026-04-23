@@ -782,10 +782,16 @@ void drawInteriorWithFrame_inView_searchfield (long id, long sel, NSRect cellFra
 	debugStep(paintId, "before cell.cancelButtonCell() and stringValue()");
 	NSCell cancelCell = cell.cancelButtonCell();
 	if (cancelCell != null) {
-		debugStep(paintId, "before NSControl.stringValue()");
-		NSString strValue = ((NSSearchField) view).stringValue();
-		debugStep(paintId, "after NSControl.stringValue()");
-		if (strValue.length() > 0) {
+		/*
+		 * FIX: Read the text through NSCell.stringValue rather than NSControl.stringValue.
+		 * NSControl.stringValue triggers setNeedsDisplay: on the view from inside the
+		 * draw pass, which Widget.setNeedsDisplay enqueues for another redraw after
+		 * paint, looping indefinitely (eclipse.platform.ui#3920).
+		 */
+		debugStep(paintId, "before NSCell.stringValue()");
+		NSString strValue = _cell.stringValue();
+		debugStep(paintId, "after NSCell.stringValue()");
+		if (strValue != null && strValue.length() > 0) {
 			debugStep(paintId, "before cancelButtonRectForBounds");
 			NSRect cancelRect = cell.cancelButtonRectForBounds(cellFrame);
 			debugStep(paintId, "before cancelButtonCell.drawInteriorWithFrame");
