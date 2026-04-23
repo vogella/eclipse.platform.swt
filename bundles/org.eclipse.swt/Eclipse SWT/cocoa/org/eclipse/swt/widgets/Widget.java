@@ -2142,6 +2142,16 @@ void setNeedsDisplay (long id, long sel, boolean flag) {
 	*/
 	OS.objc_msgSend(id, OS.sel_setClipsToBounds_, true);
 	if (flag && display.isPainting.containsObject(view)) {
+		// DEBUG instrumentation for https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
+		String step = Text.DEBUG_PAINT_STEP;
+		if (step != null) {
+			int n = DEBUG_SND_COUNT.incrementAndGet();
+			System.err.println("[SWT-DEBUG-SND " + n + "] re-entrant setNeedsDisplay during step=" + step
+					+ " view=" + id + " widget=" + this.getClass().getSimpleName());
+			if (n <= 3) {
+				new Throwable("[SWT-DEBUG-SND " + n + "] stack").printStackTrace(System.err);
+			}
+		}
 		NSMutableArray needsDisplay = display.needsDisplay;
 		if (needsDisplay == null) {
 			needsDisplay = (NSMutableArray)new NSMutableArray().alloc();
@@ -2156,6 +2166,9 @@ void setNeedsDisplay (long id, long sel, boolean flag) {
 	OS.objc_msgSendSuper(super_struct, sel, flag);
 }
 
+// DEBUG counter for https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
+static final java.util.concurrent.atomic.AtomicInteger DEBUG_SND_COUNT = new java.util.concurrent.atomic.AtomicInteger();
+
 void setNeedsDisplayInRect (long id, long sel, long arg0) {
 	if (!isDrawing()) return;
 	NSRect rect = new NSRect();
@@ -2167,6 +2180,16 @@ void setNeedsDisplayInRect (long id, long sel, long arg0) {
 	*/
 	OS.objc_msgSend(id, OS.sel_setClipsToBounds_, true);
 	if (display.isPainting.containsObject(view)) {
+		// DEBUG instrumentation for https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
+		String step = Text.DEBUG_PAINT_STEP;
+		if (step != null) {
+			int n = DEBUG_SND_COUNT.incrementAndGet();
+			System.err.println("[SWT-DEBUG-SNDR " + n + "] re-entrant setNeedsDisplayInRect during step=" + step
+					+ " view=" + id + " widget=" + this.getClass().getSimpleName());
+			if (n <= 3) {
+				new Throwable("[SWT-DEBUG-SNDR " + n + "] stack").printStackTrace(System.err);
+			}
+		}
 		NSMutableArray needsDisplayInRect = display.needsDisplayInRect;
 		if (needsDisplayInRect == null) {
 			needsDisplayInRect = (NSMutableArray)new NSMutableArray().alloc();

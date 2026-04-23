@@ -70,6 +70,18 @@ public class Text extends Scrollable {
 	long actionSearch, actionCancel;
 	APPEARANCE lastAppAppearance;
 
+	/*
+	 * Cached emptiness of the text for the SWT.SEARCH | SWT.ICON_CANCEL paint
+	 * path only. AppKit's NSSearchFieldCell stringValue selector posts
+	 * setNeedsDisplay: synchronously when invoked during a draw pass, turning
+	 * drawInteriorWithFrame_inView_searchfield's cancel-icon visibility check
+	 * into an infinite redraw loop. This flag is updated at the text-mutation
+	 * entry points (outside any paint), so the paint method never has to query
+	 * native state.
+	 * See https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
+	 */
+	boolean searchFieldHasText;
+
 	/**
 	* The maximum number of characters that can be entered
 	* into a text widget.
@@ -331,6 +343,7 @@ public void append (String string) {
 		widget.scrollRangeToVisible (range);
 		widget.setSelectedRange(range);
 	}
+	updateSearchFieldHasText();
 	if (string.length () != 0) sendEvent (SWT.Modify);
 }
 
@@ -639,6 +652,7 @@ public void cut () {
 		}
 	}
 	Point newSelection = getSelection ();
+	updateSearchFieldHasText();
 	if (!cut || !oldSelection.equals (newSelection)) sendEvent (SWT.Modify);
 }
 
@@ -683,8 +697,21 @@ void drawBackground (long id, NSGraphicsContext context, NSRect rect) {
 	fillBackground (view, context, rect, -1);
 }
 
+// DEBUG instrumentation for https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
+// Track current paint step so Widget.setNeedsDisplay can log which native call triggered re-entry.
+static volatile String DEBUG_PAINT_STEP = null;
+static final java.util.concurrent.atomic.AtomicInteger DEBUG_PAINT_COUNTER = new java.util.concurrent.atomic.AtomicInteger();
+
+private void debugStep(int paintId, String step) {
+	DEBUG_PAINT_STEP = step;
+	System.err.println("[SWT-DEBUG-PAINT " + paintId + "] step=" + step);
+}
+
 @Override
 void drawInteriorWithFrame_inView (long id, long sel, NSRect cellFrame, long viewid) {
+	int paintId = ((style & SWT.SEARCH) != 0 && background != null) ? DEBUG_PAINT_COUNTER.incrementAndGet() : 0;
+	if (paintId != 0) debugStep(paintId, "ENTER drawInteriorWithFrame_inView");
+
 	Control control = findBackgroundControl();
 	if (control == null) control = this;
 	Image image = control.backgroundImage;
@@ -697,7 +724,12 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect cellFrame, long vie
 		drawInteriorWithFrame_inView_searchfield(id, sel, cellFrame, viewid);
 	}
 
+	if (paintId != 0) debugStep(paintId, "before super.drawInteriorWithFrame_inView");
 	super.drawInteriorWithFrame_inView(id, sel, cellFrame, viewid);
+	if (paintId != 0) {
+		debugStep(paintId, "after super.drawInteriorWithFrame_inView");
+		DEBUG_PAINT_STEP = null;
+	}
 }
 
 
@@ -709,6 +741,9 @@ void drawInteriorWithFrame_inView_searchfield (long id, long sel, NSRect cellFra
 	if (background == null) {
 		return;
 	}
+
+	int paintId = DEBUG_PAINT_COUNTER.get();
+	debugStep(paintId, "ENTER drawInteriorWithFrame_inView_searchfield");
 
 	double searchFieldHeight = 22.0; // Default height of search field on Cocoa
 	double borderWidth = 1.0;
@@ -731,26 +766,51 @@ void drawInteriorWithFrame_inView_searchfield (long id, long sel, NSRect cellFra
 		frameRect.y = cellFrame.y + (cellFrame.height - frameRect.height) / 2.0;
 	}
 
+	debugStep(paintId, "before bezierPathWithRoundedRect");
 	// Create a path of the cellFrame with rounded corners
 	NSBezierPath path = NSBezierPath.bezierPathWithRoundedRect(frameRect, 2.0d, 2.0d);
 
+	debugStep(paintId, "before NSColor.colorWithDeviceRed");
 	// Create the native color and fill the background with it
 	NSColor bgColor = NSColor.colorWithDeviceRed (background [0], background [1], background [2], background [3]);
+	debugStep(paintId, "before bgColor.setFill");
 	bgColor.setFill();
+	debugStep(paintId, "before path.fill");
 	path.fill();
 
+	debugStep(paintId, "before NSSearchField cast + cell()");
 	// Finally, paint the search and cancel icons (if present) on top of the filled background
 	NSSearchField searchField = ((NSSearchField)view);
 	NSCell _cell = (NSCell) searchField.cell();
 	SWTSearchFieldCell cell = new SWTSearchFieldCell(_cell.id);
 
+	debugStep(paintId, "before cell.searchButtonCell()");
 	if (cell.searchButtonCell() != null) {
-		cell.searchButtonCell().drawInteriorWithFrame(cell.searchButtonRectForBounds(cellFrame), view);
+		debugStep(paintId, "before searchButtonRectForBounds");
+		NSRect searchRect = cell.searchButtonRectForBounds(cellFrame);
+		debugStep(paintId, "before searchButtonCell.drawInteriorWithFrame");
+		cell.searchButtonCell().drawInteriorWithFrame(searchRect, view);
+		debugStep(paintId, "after searchButtonCell.drawInteriorWithFrame");
 	}
 
-	if (cell.cancelButtonCell() != null && ((NSSearchField) view).stringValue().length() > 0) {
-		cell.cancelButtonCell().drawInteriorWithFrame(cell.cancelButtonRectForBounds(cellFrame), view);
+	debugStep(paintId, "before cell.cancelButtonCell() (cached hasText=" + searchFieldHasText + ")");
+	NSCell cancelCell = cell.cancelButtonCell();
+	/*
+	 * FIX: Use the Java-side searchFieldHasText cache rather than calling
+	 * stringValue on the search field during paint. Both NSControl.stringValue
+	 * and NSCell.stringValue dispatch to the same AppKit selector, which
+	 * posts setNeedsDisplay: as a side effect and re-arms the paint loop we
+	 * are trying to complete. See eclipse.platform.ui#3920 and the
+	 * updateSearchFieldHasText() call sites for how the cache is kept current.
+	 */
+	if (cancelCell != null && searchFieldHasText) {
+		debugStep(paintId, "before cancelButtonRectForBounds");
+		NSRect cancelRect = cell.cancelButtonRectForBounds(cellFrame);
+		debugStep(paintId, "before cancelButtonCell.drawInteriorWithFrame");
+		cancelCell.drawInteriorWithFrame(cancelRect, view);
+		debugStep(paintId, "after cancelButtonCell.drawInteriorWithFrame");
 	}
+	debugStep(paintId, "EXIT drawInteriorWithFrame_inView_searchfield");
 }
 
 @Override
@@ -1433,6 +1493,7 @@ public void insert (String string) {
 		}
 		widget.textStorage ().replaceCharactersInRange (range, str);
 	}
+	updateSearchFieldHasText();
 	if (string.length () != 0) sendEvent (SWT.Modify);
 }
 
@@ -1571,6 +1632,7 @@ void _paste (boolean enableUndo) {
 			}
 		}
 	}
+	updateSearchFieldHasText();
 	sendEvent (SWT.Modify);
 }
 
@@ -2247,6 +2309,7 @@ public void setText (String string) {
 		widget.setString (str);
 		widget.setSelectedRange(new NSRange());
 	}
+	updateSearchFieldHasText();
 	sendEvent (SWT.Modify);
 }
 
@@ -2300,6 +2363,7 @@ public void setTextChars (char[] text) {
 		widget.setString (str);
 		widget.setSelectedRange(new NSRange());
 	}
+	updateSearchFieldHasText();
 	sendEvent (SWT.Modify);
 }
 
@@ -2397,7 +2461,10 @@ boolean shouldChangeTextInRange_replacementString(long id, long sel, long affect
 			result = false;
 		}
 	}
-	if (!result) sendEvent (SWT.Modify);
+	if (!result) {
+		updateSearchFieldHasText();
+		sendEvent (SWT.Modify);
+	}
 	return result;
 }
 
@@ -2434,7 +2501,21 @@ void textViewDidChangeSelection(long id, long sel, long aNotification) {
 @Override
 void textDidChange (long id, long sel, long aNotification) {
 	if ((style & SWT.SINGLE) != 0) super.textDidChange (id, sel, aNotification);
+	updateSearchFieldHasText();
 	postEvent (SWT.Modify);
+}
+
+/*
+ * Refresh searchFieldHasText from the native control. Only safe to call
+ * outside a paint pass; querying stringValue during paint re-arms the
+ * very loop this cache exists to break (see eclipse.platform.ui#3920).
+ */
+void updateSearchFieldHasText() {
+	if ((style & SWT.SEARCH) == 0) return;
+	if (display == null) return;
+	if (display.isPainting != null && display.isPainting.count() > 0) return;
+	NSString value = ((NSControl) view).stringValue();
+	searchFieldHasText = value != null && (int) value.length() > 0;
 }
 
 @Override
