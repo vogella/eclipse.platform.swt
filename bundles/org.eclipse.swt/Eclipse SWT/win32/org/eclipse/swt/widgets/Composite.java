@@ -977,13 +977,35 @@ boolean resizeChildren (boolean defer, WINDOWPOS [] pwp) {
 	if (defer) {
 		hdwp = OS.BeginDeferWindowPos (pwp.length);
 		if (hdwp == 0) return false;
-	}
-	for (WINDOWPOS wp : pwp) {
-		if (wp != null) {
-			if (defer) {
-				hdwp = OS.DeferWindowPos (hdwp, wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
-				if (hdwp == 0) return false;
-			} else {
+		int count = 0;
+		for (WINDOWPOS wp : pwp) {
+			if (wp != null) count++;
+		}
+		if (count > 0) {
+			long [] hwnds = new long [count];
+			int [] xs = new int [count];
+			int [] ys = new int [count];
+			int [] cxs = new int [count];
+			int [] cys = new int [count];
+			int [] flags = new int [count];
+			int index = 0;
+			for (WINDOWPOS wp : pwp) {
+				if (wp != null) {
+					hwnds [index] = wp.hwnd;
+					xs [index] = wp.x;
+					ys [index] = wp.y;
+					cxs [index] = wp.cx;
+					cys [index] = wp.cy;
+					flags [index] = wp.flags;
+					index++;
+				}
+			}
+			hdwp = OS.DeferWindowPos (hdwp, hwnds, xs, ys, cxs, cys, flags);
+			if (hdwp == 0) return false;
+		}
+	} else {
+		for (WINDOWPOS wp : pwp) {
+			if (wp != null) {
 				OS.SetWindowPos (wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
 			}
 		}

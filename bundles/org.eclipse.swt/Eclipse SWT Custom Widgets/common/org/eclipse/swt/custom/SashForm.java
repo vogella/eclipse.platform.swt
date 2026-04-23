@@ -287,9 +287,12 @@ void onDragSash(Event event) {
 		((SashFormData)data2).weight = (((long)b2.height << 16) + area.height - 1) / area.height;
 	}
 	if (correction || (event.doit && event.detail != SWT.DRAG)) {
+		boolean isWin32 = "win32".equals(SWT.getPlatform());
+		if (isWin32) setLayoutDeferred(true);
 		c1.setBounds(b1);
 		sash.setBounds(event.x, event.y, event.width, event.height);
 		c2.setBounds(b2);
+		if (isWin32) setLayoutDeferred(false);
 	}
 }
 /**
