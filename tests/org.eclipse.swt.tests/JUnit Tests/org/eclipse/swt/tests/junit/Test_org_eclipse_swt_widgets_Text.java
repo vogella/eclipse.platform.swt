@@ -14,6 +14,7 @@
 package org.eclipse.swt.tests.junit;
 
 import static java.lang.System.currentTimeMillis;
+import static java.lang.System.nanoTime;
 import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_ENV_VAR;
 import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_REGEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -1381,7 +1382,7 @@ public void test_showSelection() {
 
 // Originally reported as https://github.com/eclipse-platform/eclipse.platform.ui/issues/3920
 @Test
-public void test_finiteRedraw() {
+public void test_finiteRedrawCancelButtonWithBackground() {
 	if ( text != null ) text.dispose();
 	// Style constants are causing
 	// org.eclipse.swt.widgets.Text.drawInteriorWithFrame_inView_searchfield(long, long, NSRect, long)
@@ -1395,16 +1396,40 @@ public void test_finiteRedraw() {
 	shell.setLayout(new FillLayout());
 	text.requestLayout();
 	shell.open();
-	Display display = shell.getDisplay();
 	text.forceFocus();
-	long stop = currentTimeMillis() + 1000;
-	// If redraws are constantly scheduled, readAndDispatch() will never return false.
-	// Side effects - high CPU usage, asyncExec() stops working in modal contexts
-	while (display.readAndDispatch()) {
-		if (currentTimeMillis() > stop) {
-			fail("UI should eventually stop refreshing");
-		}
-	}
+	waitUntilIdle();
+	assertIdle();
+}
+
+@Test
+public void test_finiteRedrawCancelButton() {
+	if ( text != null ) text.dispose();
+	// Style constants are causing
+	// org.eclipse.swt.widgets.Text.drawInteriorWithFrame_inView_searchfield(long, long, NSRect, long)
+	// to call
+	// org.eclipse.swt.internal.cocoa.NSControl.stringValue()
+	// which schedules redraw
+	text = new Text(shell, SWT.SEARCH | SWT.ICON_CANCEL);
+	setWidget(text);
+	shell.setLayout(new FillLayout());
+	text.requestLayout();
+	shell.open();
+	text.forceFocus();
+	waitUntilIdle();
+	assertIdle();
+}
+
+@Test
+public void test_finiteRedraw() {
+	if ( text != null ) text.dispose();
+	text = new Text(shell, SWT.NONE);
+	setWidget(text);
+	shell.setLayout(new FillLayout());
+	text.requestLayout();
+	shell.open();
+	text.forceFocus();
+	waitUntilIdle();
+	assertIdle();
 }
 
 /* custom */
@@ -1668,6 +1693,64 @@ private void pasteFromClipboard(Text text) throws InterruptedException {
 	String oldText = text.getText();
 	text.paste();
 	SwtTestUtil.processEvents(1000, () -> !oldText.equals(text.getText()));
+}
+
+
+private void drainEventsWithTimeout() {
+	long hangTimeout = currentTimeMillis() + 1000;
+	while (currentTimeMillis() < hangTimeout) {
+		if (!shell.getDisplay().readAndDispatch()) {
+			return;
+		}
+	}
+	fail("UI scheduler should settle");
+}
+
+private void waitUntilIdle() {
+	long hangTimeout = currentTimeMillis() + 1000;
+	long lastActive = nanoTime();
+	while (currentTimeMillis() < hangTimeout) {
+		if (shell.getDisplay().readAndDispatch()) {
+			lastActive = nanoTime();
+		} else {
+			if (lastActive < nanoTime() - 1_000_000) {
+				return;
+			}
+			Thread.yield();
+		}
+	}
+	fail("Unexpected system events keep coming");
+}
+
+private void assertIdle() {
+	long start = currentTimeMillis();
+	long stop = start + 1000;
+	int eventStreakCount = 0;
+	int idleIterations = 0;
+	while (currentTimeMillis() < stop) {
+		idleIterations++;
+		// If redraws are constantly scheduled, readAndDispatch() rarely return false.
+		// Side effects - high CPU usage, asyncExec() stops working in modal contexts
+		if (shell.getDisplay().readAndDispatch()) {
+			eventStreakCount++;
+			// Skip other events of the streak
+			// No need to count events individually, as many events immediately following each other are common and normal
+			// Currently, streaks are short, but we do not want any noise to cause test failures as UI evolves
+			drainEventsWithTimeout();
+		} else {
+			Thread.yield();
+		}
+	}
+	assertTrue(idleIterations > 1000, "Some idle event loop iterations are expected when UI is doing nothing");
+	double intensity = ((double)eventStreakCount/idleIterations);
+	String message = "Detected %d/%d UI event streaks/idle event loop iterations per second, intensity  %.2g. Expected: 2/100_000.";
+
+	message = message.formatted(eventStreakCount, idleIterations, intensity);
+	assertTrue(eventStreakCount < 50, message);
+	assertTrue(intensity < 1e-4, message);
+	if (SwtTestUtil.verbose) {
+		System.out.println(message);
+	}
 }
 
 }
