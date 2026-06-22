@@ -328,6 +328,7 @@ typedef enum {
 	gtk_1combo_1box_1popdown_FUNC,
 	gtk_1combo_1box_1popup_FUNC,
 	gtk_1combo_1box_1set_1active_FUNC,
+	gtk_1combo_1box_1set_1model_FUNC,
 	gtk_1combo_1box_1text_1insert_FUNC,
 	gtk_1combo_1box_1text_1new_FUNC,
 	gtk_1combo_1box_1text_1new_1with_1entry_FUNC,
