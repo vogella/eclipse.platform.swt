@@ -1343,45 +1343,55 @@ TextLayout getTextLayout(int lineIndex, int orientation, int width, int lineSpac
 	}
 
 	if (styledText != null && styledText.isFixedLineHeight()) {
-		int index = -1;
-		int lineCount = layout.getLineCount();
 		int height = getLineHeight();
-		for (int i = 0; i < lineCount; i++) {
-			int lineHeight = layout.getLineBounds(i).height;
-			if (lineHeight > height) {
-				height = lineHeight;
-				index = i;
+		// Performance: only scan the individual visual lines of the layout when
+		// the layout as a whole is taller than the fixed line height. The overall
+		// bounds are always at least as tall as any single visual line they
+		// contain, so when the whole layout fits within the fixed height no line
+		// can exceed it and the per-line scan (getLineCount() + getLineBounds())
+		// can be skipped. This avoids the repeated, redundant line measurement
+		// observed for every painted line during scrolling.
+		// See https://github.com/eclipse-platform/eclipse.platform.swt/issues/414
+		if (layout.getBounds().height > height) {
+			int index = -1;
+			int lineCount = layout.getLineCount();
+			for (int i = 0; i < lineCount; i++) {
+				int lineHeight = layout.getLineBounds(i).height;
+				if (lineHeight > height) {
+					height = lineHeight;
+					index = i;
+				}
 			}
-		}
-		if (index != -1) {
-			FontMetrics metrics = layout.getLineMetrics(index);
-			ascent = metrics.getAscent() + metrics.getLeading();
-			descent = metrics.getDescent();
-			if (layouts != null) {
-				for (TextLayout l : layouts) {
-					if (l != null && l != layout) {
-						l.setAscent(ascent);
-						l.setDescent(descent);
+			if (index != -1) {
+				FontMetrics metrics = layout.getLineMetrics(index);
+				ascent = metrics.getAscent() + metrics.getLeading();
+				descent = metrics.getDescent();
+				if (layouts != null) {
+					for (TextLayout l : layouts) {
+						if (l != null && l != layout) {
+							l.setAscent(ascent);
+							l.setDescent(descent);
+						}
 					}
 				}
-			}
-			styledText.calculateScrollBars();
-			if (styledText.verticalScrollOffset != 0) {
-				int topIndex = styledText.topIndex;
-				int topIndexY = styledText.topIndexY;
-				int lineHeight = getLineHeight();
-				int newVerticalScrollOffset;
-				if (topIndexY >= 0) {
-					newVerticalScrollOffset = (topIndex - 1) * lineHeight + lineHeight - topIndexY;
-				} else {
-					newVerticalScrollOffset = topIndex * lineHeight - topIndexY;
+				styledText.calculateScrollBars();
+				if (styledText.verticalScrollOffset != 0) {
+					int topIndex = styledText.topIndex;
+					int topIndexY = styledText.topIndexY;
+					int lineHeight = getLineHeight();
+					int newVerticalScrollOffset;
+					if (topIndexY >= 0) {
+						newVerticalScrollOffset = (topIndex - 1) * lineHeight + lineHeight - topIndexY;
+					} else {
+						newVerticalScrollOffset = topIndex * lineHeight - topIndexY;
+					}
+					styledText.scrollVertical(newVerticalScrollOffset - styledText.verticalScrollOffset, true);
 				}
-				styledText.scrollVertical(newVerticalScrollOffset - styledText.verticalScrollOffset, true);
+				if (styledText.isBidiCaret()) styledText.createCaretBitmaps();
+				styledText.caretDirection = SWT.NULL;
+				styledText.setCaretLocations();
+				styledText.redraw();
 			}
-			if (styledText.isBidiCaret()) styledText.createCaretBitmaps();
-			styledText.caretDirection = SWT.NULL;
-			styledText.setCaretLocations();
-			styledText.redraw();
 		}
 	}
 	return layout;
