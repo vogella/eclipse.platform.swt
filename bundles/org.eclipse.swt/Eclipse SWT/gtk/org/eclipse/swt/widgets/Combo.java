@@ -2068,11 +2068,29 @@ public void remove (int start, int end) {
 	int index = GTK.gtk_combo_box_get_active (handle);
 	if (start <= index && index <= end) clearText();
 
-	gtk_combo_box_toggle_wrap(false);
-	for (int i = end; i >= start; i--) {
-		if (handle != 0) GTK.gtk_combo_box_text_remove(handle, i);
+	long model = handle != 0 ? GTK.gtk_combo_box_get_model (handle) : 0;
+	if (model != 0) {
+		/*
+		 * Bug 506: Removing a range of items one-by-one is slow because the
+		 * GtkComboBox reacts to every single row deletion. Detach the model,
+		 * remove the rows directly from the GtkListStore (from the end of the
+		 * range downwards so indices stay stable), and re-attach it so the
+		 * widget only updates once.
+		 */
+		OS.g_object_ref (model);
+		gtk_combo_box_toggle_wrap (false);
+		GTK.gtk_combo_box_set_model (handle, 0);
+		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+		for (int i = end; i >= start; i--) {
+			if (GTK.gtk_tree_model_iter_nth_child (model, iter, 0, i)) {
+				GTK.gtk_list_store_remove (model, iter);
+			}
+		}
+		OS.g_free (iter);
+		GTK.gtk_combo_box_set_model (handle, model);
+		OS.g_object_unref (model);
+		gtk_combo_box_toggle_wrap (true);
 	}
-	gtk_combo_box_toggle_wrap(true);
 }
 
 /**
