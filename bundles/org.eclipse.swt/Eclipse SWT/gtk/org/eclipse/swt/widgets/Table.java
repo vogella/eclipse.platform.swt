@@ -3614,7 +3614,21 @@ public void setItemCount (int count) {
 	 * used in recreateRenderers().
 	 */
 	boolean detachModel = isVirtual;
-	if (detachModel) GTK.gtk_tree_view_set_model (handle, 0);
+	/*
+	 * Detaching the model resets the selection, the focus/cursor row and the
+	 * scroll position, none of which GTK restores on reattach. Capture them
+	 * first and restore them afterwards so callers don't see those regressions.
+	 */
+	int [] selection = null;
+	int focusIndex = -1;
+	int topIndex = -1;
+	if (detachModel) {
+		selection = getSelectionIndices ();
+		TableItem focusItem = getFocusItem ();
+		if (focusItem != null) focusIndex = indexOf (focusItem);
+		topIndex = getTopIndex ();
+		GTK.gtk_tree_view_set_model (handle, 0);
+	}
 	try {
 		remove (count, itemCount - 1);
 		int length = Math.max (4, (count + 3) / 4 * 4);
@@ -3635,7 +3649,30 @@ public void setItemCount (int count) {
 			}
 		}
 	} finally {
-		if (detachModel) GTK.gtk_tree_view_set_model (handle, modelHandle);
+		if (detachModel) {
+			GTK.gtk_tree_view_set_model (handle, modelHandle);
+			if (topIndex != -1 && topIndex < itemCount) {
+				setTopIndex (topIndex);
+			}
+			if (focusIndex != -1 && focusIndex < itemCount) {
+				// selectFocusIndex() both focuses and selects the row, so undo
+				// the selection unless the focused row was actually selected.
+				selectFocusIndex (focusIndex);
+				boolean focusSelected = false;
+				if (selection != null) {
+					for (int sel : selection) {
+						if (sel == focusIndex) {
+							focusSelected = true;
+							break;
+						}
+					}
+				}
+				if (!focusSelected) deselect (focusIndex);
+			}
+			if (selection != null && selection.length > 0) {
+				select (selection);
+			}
+		}
 	}
 	if (!isVirtual) setRedraw (true);
 }
