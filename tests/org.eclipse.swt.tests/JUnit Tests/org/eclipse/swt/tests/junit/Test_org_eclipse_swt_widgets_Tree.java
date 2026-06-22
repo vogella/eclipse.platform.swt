@@ -490,6 +490,24 @@ public void test_treeItem_getItemCount_cacheInvalidation() {
 }
 
 @Test
+public void test_treeItem_getItemCount_virtualRemoveAll_cacheInvalidation() {
+	// #882: TreeItem.removeAll() removes unmaterialized VIRTUAL children directly
+	// via gtk_tree_store_remove without going through destroyItem(), so it must
+	// still invalidate the cached child count.
+	Tree virtualTree = new Tree(shell, SWT.VIRTUAL);
+	try {
+		TreeItem root = new TreeItem(virtualTree, SWT.NULL);
+		root.setItemCount(5);
+		// Prime the cache without materializing the children.
+		assertEquals(5, root.getItemCount());
+		root.removeAll();
+		assertEquals(0, root.getItemCount());
+	} finally {
+		virtualTree.dispose();
+	}
+}
+
+@Test
 public void test_setLinesVisibleZ() {
 	assertFalse(tree.getLinesVisible());
 	tree.setLinesVisible(true);

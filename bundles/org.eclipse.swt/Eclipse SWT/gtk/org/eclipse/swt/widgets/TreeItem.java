@@ -1108,6 +1108,9 @@ public void removeAll () {
 		}
 	}
 	OS.g_free (iter);
+	// Unmaterialized (VIRTUAL) children are removed above without going through
+	// destroyItem(), so invalidate the cached child counts here. See #882.
+	parent.structureChanged ();
 }
 
 /**
