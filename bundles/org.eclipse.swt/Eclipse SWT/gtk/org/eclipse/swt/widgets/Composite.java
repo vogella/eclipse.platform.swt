@@ -29,7 +29,7 @@ import org.eclipse.swt.internal.gtk4.*;
  * of containing other controls.
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE, NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED</dd>
+ * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE, NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED, VIRTUAL</dd>
  * <dt><b>Events:</b></dt>
  * <dd>(none)</dd>
  * </dl>
@@ -39,6 +39,17 @@ import org.eclipse.swt.internal.gtk4.*;
  * They can be used with <code>Composite</code> if you are drawing your own, but their
  * behavior is undefined if they are used with subclasses of <code>Composite</code> other
  * than <code>Canvas</code>.
+ * </p><p>
+ * Note: The <code>VIRTUAL</code> style creates a lightweight, layout-only composite that
+ * does <em>not</em> create an operating-system control of its own. Its children are
+ * parented to the nearest non-virtual ancestor composite, while the virtual composite
+ * continues to act as a layout container. This reduces the number of native controls and
+ * the nesting depth of the native widget hierarchy, which can improve performance and
+ * avoid platform limits on deeply nested controls. Because a virtual composite has no
+ * native control, it cannot scroll, draw a border or background, paint, take focus, or
+ * receive mouse and keyboard events of its own, and it does not clip its children. It is
+ * intended purely as a grouping/layout node. This is an experimental capability; see
+ * <a href="https://github.com/eclipse-platform/eclipse.platform.swt/issues/624">issue 624</a>.
  * </p><p>
  * Note: The <code>CENTER</code> style, although undefined for composites, has the
  * same value as <code>EMBEDDED</code> which is used to embed widgets from other
@@ -108,6 +119,23 @@ public class Composite extends Scrollable {
 	 */
 	HashMap<Widget, Boolean> childrenLowered = new HashMap<>();
 
+	/**
+	 * Geometry of a virtual (SWT.VIRTUAL) composite, in pixels, relative to the
+	 * parent's client area. A virtual composite has no native widget
+	 * (<code>handle == 0</code>), so its bounds are tracked here instead of in a
+	 * <code>GtkAllocation</code>. Only used when <code>(style &amp; SWT.VIRTUAL) != 0</code>.
+	 * See issue 624.
+	 */
+	int virtualX, virtualY, virtualWidth, virtualHeight;
+
+	/**
+	 * Direct virtual (handle-less) child composites of this composite. Because such
+	 * children do not appear in the native widget hierarchy, they cannot be discovered
+	 * by {@link #_getChildren()} via native enumeration and must be tracked in Java so
+	 * that layout, disposal and reskinning still reach them. See issue 624.
+	 */
+	List<Composite> virtualChildren;
+
 Composite () {
 	/* Do nothing */
 }
@@ -158,47 +186,81 @@ public Composite (Composite parent, int style) {
 static int checkStyle (int style) {
 	style &= ~SWT.NO_BACKGROUND;
 	style &= ~SWT.TRANSPARENT;
+	if ((style & SWT.VIRTUAL) != 0) {
+		/*
+		 * A virtual composite is a lightweight, handle-less layout container. Without
+		 * a native widget it cannot scroll, draw a border or paint, so those styles
+		 * are not supported and are cleared here. See issue 624.
+		 */
+		style &= ~(SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+	}
 	return style;
+}
+
+/**
+ * Returns <code>true</code> if the receiver is a virtual (SWT.VIRTUAL),
+ * handle-less layout container. See issue 624.
+ */
+boolean isVirtual () {
+	return (style & SWT.VIRTUAL) != 0;
 }
 
 Control[] _getChildren () {
 	long parentHandle = parentingHandle();
 
+	/*
+	 * Native enumeration of parentHandle returns every control whose native widget is
+	 * parented there. When virtual composites are involved several logical composites
+	 * can share the same parentHandle (children of a virtual composite are flattened
+	 * onto the nearest non-virtual ancestor), so the result is filtered by logical
+	 * parent to return only this composite's own children. See issue 624.
+	 */
+	ArrayList<Control> childrenList = new ArrayList<>();
 	if (GTK.GTK4) {
-		ArrayList<Control> childrenList = new ArrayList<>();
 		for (long child = GTK4.gtk_widget_get_first_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
 			Widget childWidget = display.getWidget(child);
-			if (childWidget != null && childWidget instanceof Control && childWidget != this) {
-				childrenList.add((Control)childWidget);
+			if (childWidget instanceof Control control && control != this && control.parent == this) {
+				childrenList.add(control);
 			}
 		}
-
-		return childrenList.toArray(new Control[childrenList.size()]);
 	} else {
 		long list = GTK3.gtk_container_get_children (parentHandle);
-		if (list == 0) return new Control [0];
-		int count = OS.g_list_length (list);
-		Control [] children = new Control [count];
-		int i = 0;
-		long temp = list;
-		while (temp != 0) {
-			long handle = OS.g_list_data (temp);
-			if (handle != 0) {
-				Widget widget = display.getWidget (handle);
-				if (widget != null && widget != this) {
-					if (widget instanceof Control) {
-						children [i++] = (Control) widget;
+		if (list != 0) {
+			long temp = list;
+			while (temp != 0) {
+				long handle = OS.g_list_data (temp);
+				if (handle != 0) {
+					Widget widget = display.getWidget (handle);
+					if (widget instanceof Control control && control != this && control.parent == this) {
+						childrenList.add (control);
 					}
 				}
+				temp = OS.g_list_next (temp);
 			}
-			temp = OS.g_list_next (temp);
+			OS.g_list_free (list);
 		}
-		OS.g_list_free (list);
-		if (i == count) return children;
-		Control [] newChildren = new Control [i];
-		System.arraycopy (children, 0, newChildren, 0, i);
-		return newChildren;
 	}
+
+	/*
+	 * Virtual children have no native widget and therefore never appear in the native
+	 * enumeration above, so they are tracked separately and appended here.
+	 *
+	 * NOTE: appending means that, when virtual and non-virtual children are mixed under
+	 * the same parent, getChildren() does not preserve strict creation order. Nesting a
+	 * virtual composite as a grouping node (the intended use) is unaffected.
+	 */
+	if (virtualChildren != null) {
+		for (Composite virtualChild : virtualChildren) {
+			if (!virtualChild.isDisposed ()) childrenList.add (virtualChild);
+		}
+	}
+
+	return childrenList.toArray(new Control[childrenList.size()]);
+}
+
+void addVirtualChild (Composite child) {
+	if (virtualChildren == null) virtualChildren = new ArrayList<> ();
+	virtualChildren.add (child);
 }
 
 Control [] _getTabList () {
@@ -262,6 +324,27 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	display.runSkin();
 	if (wHint != SWT.DEFAULT && wHint < 0) wHint = 0;
 	if (hHint != SWT.DEFAULT && hHint < 0) hHint = 0;
+	if (isVirtual ()) {
+		/*
+		 * A virtual composite has no native widget and no trim, so its preferred size is
+		 * driven purely by its layout (or by the extent of its children). See issue 624.
+		 */
+		Point size;
+		if (layout != null) {
+			if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
+				changed |= (state & LAYOUT_CHANGED) != 0;
+				size = layout.computeSize (this, wHint, hHint, changed);
+				state &= ~LAYOUT_CHANGED;
+			} else {
+				size = new Point (wHint, hHint);
+			}
+		} else {
+			size = minimumSize (wHint, hHint, changed);
+		}
+		if (wHint != SWT.DEFAULT) size.x = wHint;
+		if (hHint != SWT.DEFAULT) size.y = hHint;
+		return size;
+	}
 	Point size;
 	if (layout != null) {
 		if (wHint == SWT.DEFAULT || hHint == SWT.DEFAULT) {
@@ -302,6 +385,16 @@ Widget [] computeTabList () {
 
 @Override
 void createHandle (int index) {
+	if (isVirtual ()) {
+		/*
+		 * A virtual composite has no OS resource. Children are parented to the nearest
+		 * non-virtual ancestor (see parentingHandle()). The CANVAS flag is set so that
+		 * client-area and layout logic behaves as for a plain Composite, but HANDLE is
+		 * intentionally not set so the framework treats this as handle-less. See issue 624.
+		 */
+		state |= CANVAS;
+		return;
+	}
 	state |= HANDLE | CANVAS | CHECK_SUBWINDOW;
 	boolean scrolled = (style & (SWT.H_SCROLL | SWT.V_SCROLL)) != 0;
 	if (!scrolled) state |= THEME_BACKGROUND;
@@ -756,6 +849,8 @@ long focusHandle () {
 
 @Override
 boolean forceFocus (long focusHandle) {
+	// A virtual composite has no native widget and cannot take focus. See issue 624.
+	if (isVirtual ()) return false;
 	if (socketHandle != 0) GTK.gtk_widget_set_can_focus (focusHandle, true);
 	boolean result = super.forceFocus (focusHandle);
 	if (socketHandle != 0) GTK.gtk_widget_set_can_focus (focusHandle, false);
@@ -836,6 +931,9 @@ int getChildrenCount () {
 @Override
 Rectangle getClientAreaInPixels () {
 	checkWidget();
+	if (isVirtual ()) {
+		return new Rectangle (0, 0, virtualWidth, virtualHeight);
+	}
 	if ((state & CANVAS) != 0) {
 		if ((state & ZERO_WIDTH) != 0 && (state & ZERO_HEIGHT) != 0) {
 			return new Rectangle (0, 0, 0, 0);
@@ -1471,6 +1569,13 @@ Point minimumSize (int wHint, int hHint, boolean changed) {
 }
 
 long parentingHandle () {
+	if (isVirtual ()) {
+		/*
+		 * Route children of a virtual composite to the nearest non-virtual ancestor's
+		 * parenting handle. Nested virtual composites recurse naturally. See issue 624.
+		 */
+		return parent.parentingHandle ();
+	}
 	if ((state & CANVAS) != 0) return handle;
 	return fixedHandle != 0 ? fixedHandle : handle;
 }
@@ -1592,6 +1697,7 @@ void redrawChildren () {
 
 @Override
 void register () {
+	if (isVirtual ()) return;
 	super.register ();
 	if (socketHandle != 0) display.addWidget (socketHandle, this);
 }
@@ -1629,6 +1735,7 @@ void releaseWidget () {
 }
 
 void removeControl (Control control) {
+	if (virtualChildren != null) virtualChildren.remove (control);
 	fixTabList (control);
 }
 
@@ -1675,6 +1782,10 @@ public void setBackgroundMode (int mode) {
 
 @Override
 int setBounds (int x, int y, int width, int height, boolean move, boolean resize) {
+
+	if (isVirtual ()) {
+		return setVirtualBounds (x, y, width, height, move, resize);
+	}
 
 	/* Bug 487757
 	 * Deal with bug where for Gtk3.8+, ScrolledComposites appear empty or internal widgets don't
@@ -1852,6 +1963,7 @@ public void setTabList (Control [] tabList) {
 
 @Override
 void showWidget () {
+	if (isVirtual ()) return;
 	super.showWidget ();
 	if (socketHandle != 0) {
 		gtk_widget_show (socketHandle);
@@ -1918,6 +2030,136 @@ void updateLayout (boolean all) {
 			child.updateLayout (all);
 		}
 	}
+}
+
+/*
+ * ===== Virtual (SWT.VIRTUAL) composite support =====
+ *
+ * A virtual composite has no native widget. The methods below provide its geometry,
+ * lifecycle and focus behaviour for the handle-less case; the non-virtual path is left
+ * unchanged. Children are parented to the nearest non-virtual ancestor (see
+ * parentingHandle()) and positioned by translating their layout coordinates by the
+ * virtual composite's offset (see Control.parentingOffset()). See issue 624.
+ */
+
+@Override
+void createWidget (int index) {
+	if (isVirtual ()) {
+		state |= DRAG_DETECT;
+		checkOrientation (parent);
+		createHandle (index);
+		/*
+		 * There is no native widget, so skip all native setup (event hooks, handle
+		 * registration, showing, initial bounds, z-order and sibling relations). The
+		 * composite is tracked on its parent in Java so that layout, disposal and
+		 * reskinning still reach it.
+		 */
+		parent.addVirtualChild (this);
+		return;
+	}
+	super.createWidget (index);
+}
+
+@Override
+void setInitialBounds () {
+	if (isVirtual ()) {
+		virtualX = virtualY = virtualWidth = virtualHeight = 0;
+		return;
+	}
+	super.setInitialBounds ();
+}
+
+/**
+ * Sets the bounds of a virtual (handle-less) composite. The geometry is tracked in Java
+ * since there is no native allocation, and descendants are repositioned/relaid-out
+ * manually because there is no native size-allocate signal. See issue 624.
+ */
+int setVirtualBounds (int x, int y, int width, int height, boolean move, boolean resize) {
+	width = Math.min (width, (2 << 14) - 1);
+	height = Math.min (height, (2 << 14) - 1);
+	int result = 0;
+	if (move) {
+		int dx = x - virtualX;
+		int dy = y - virtualY;
+		if (dx != 0 || dy != 0) {
+			virtualX = x;
+			virtualY = y;
+			// No native widget to move; shift all descendant native controls instead.
+			shiftVirtualChildren (dx, dy);
+			sendEvent (SWT.Move);
+			result |= MOVED;
+		}
+	}
+	if (resize) {
+		if (width != virtualWidth || height != virtualHeight) {
+			virtualWidth = width;
+			virtualHeight = height;
+			sendEvent (SWT.Resize);
+			result |= RESIZED;
+			/*
+			 * The client area changed, so the children must be laid out again. There is no
+			 * native size-allocate signal to trigger this for a handle-less composite.
+			 */
+			markLayout (false, false);
+			updateLayout (false);
+		}
+	}
+	return result;
+}
+
+@Override
+Rectangle getBoundsInPixels () {
+	checkWidget ();
+	if (isVirtual ()) {
+		return new Rectangle (virtualX, virtualY, virtualWidth, virtualHeight);
+	}
+	return super.getBoundsInPixels ();
+}
+
+@Override
+public Point getLocation () {
+	checkWidget ();
+	if (isVirtual ()) {
+		return new Point (virtualX, virtualY);
+	}
+	return super.getLocation ();
+}
+
+/**
+ * Moves every native descendant of this virtual composite by the given delta. Direct
+ * non-virtual children are parented to the nearest non-virtual ancestor, so moving their
+ * top handles also moves their own descendants. Nested virtual children have no native
+ * widget, so the shift is applied recursively to their descendants. See issue 624.
+ */
+void shiftVirtualChildren (int dx, int dy) {
+	if (dx == 0 && dy == 0) return;
+	for (Control child : _getChildren ()) {
+		if (child instanceof Composite c && c.isVirtual ()) {
+			c.shiftVirtualChildren (dx, dy);
+		} else {
+			child.moveHandleBy (dx, dy);
+		}
+	}
+}
+
+@Override
+void forceResize () {
+	if (isVirtual ()) return;
+	super.forceResize ();
+}
+
+@Override
+public boolean isReparentable () {
+	// Reparenting a handle-less composite is not supported by this prototype.
+	if (isVirtual ()) return false;
+	return super.isReparentable ();
+}
+
+@Override
+void setZOrder (Control sibling, boolean above, boolean fixRelations, boolean fixChildren) {
+	// A virtual composite has no native widget, so there is no native z-order to change.
+	if (isVirtual ()) return;
+	super.setZOrder (sibling, above, fixRelations, fixChildren);
 }
 
 @Override

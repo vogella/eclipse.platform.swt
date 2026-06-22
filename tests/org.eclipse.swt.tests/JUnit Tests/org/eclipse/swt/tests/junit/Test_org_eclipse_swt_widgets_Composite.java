@@ -213,6 +213,66 @@ public void test_bug2162_transparentStyle() {
 	shell.open();
 }
 
+/*
+ * Virtual (handle-less) composite support, see
+ * https://github.com/eclipse-platform/eclipse.platform.swt/issues/624
+ *
+ * On platforms that implement SWT.VIRTUAL for Composite the container has no native
+ * control and its children are parented to the nearest non-virtual ancestor; on other
+ * platforms the style is ignored and the composite behaves like a normal Composite. The
+ * assertions below describe behaviour that must hold either way.
+ */
+@Test
+public void test_VIRTUAL_actsAsLayoutContainer() {
+	Composite virtual = new Composite(shell, SWT.VIRTUAL);
+	virtual.setLayout(new FillLayout());
+	Button button = new Button(virtual, SWT.PUSH);
+
+	// The virtual composite is a usable layout container: the child is its logical child.
+	assertArrayEquals(new Control[] { button }, virtual.getChildren());
+	assertTrue(button.getParent() == virtual);
+
+	shell.setLayout(new FillLayout());
+	shell.setSize(200, 100);
+	shell.layout(true, true);
+
+	// FillLayout makes the child fill the virtual composite's client area.
+	Point size = button.getSize();
+	assertTrue(size.x > 0);
+	assertTrue(size.y > 0);
+
+	// Disposing the virtual composite disposes its children.
+	virtual.dispose();
+	assertTrue(virtual.isDisposed());
+	assertTrue(button.isDisposed());
+}
+
+@Test
+public void test_VIRTUAL_nested() {
+	Composite outer = new Composite(shell, SWT.VIRTUAL);
+	outer.setLayout(new FillLayout());
+	Composite inner = new Composite(outer, SWT.VIRTUAL);
+	inner.setLayout(new FillLayout());
+	Button button = new Button(inner, SWT.PUSH);
+
+	assertArrayEquals(new Control[] { inner }, outer.getChildren());
+	assertArrayEquals(new Control[] { button }, inner.getChildren());
+	assertTrue(inner.getParent() == outer);
+	assertTrue(button.getParent() == inner);
+
+	shell.setLayout(new FillLayout());
+	shell.setSize(200, 100);
+	shell.layout(true, true);
+
+	Point size = button.getSize();
+	assertTrue(size.x > 0);
+	assertTrue(size.y > 0);
+
+	outer.dispose();
+	assertTrue(inner.isDisposed());
+	assertTrue(button.isDisposed());
+}
+
 protected Composite getElementExpectedToHaveFocusAfterSetFocusOnParent(Composite visibleChild) {
 	return visibleChild;
 }
