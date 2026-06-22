@@ -98,6 +98,18 @@ public class Tree extends Composite {
 	boolean firstCompute = true;
 	boolean modelChanged;
 	boolean expandAll;
+	/**
+	 * Bumped on every structural change to the underlying GtkTreeStore (any
+	 * insertion or removal of rows). Cached child counts on this Tree and on its
+	 * TreeItems carry the value this counter had when they were computed; a
+	 * mismatch means the cache is stale and must be refreshed. This makes
+	 * {@link #getItemCount()} and {@link TreeItem#getItemCount()} O(1) during
+	 * read-heavy phases (e.g. JFace reveal/expand) while invalidating every
+	 * cached count in O(1) on any change. See GitHub issue #882.
+	 */
+	int structureModCount;
+	private int cachedRootCount = -1;
+	private int cachedRootCountStamp = -1;
 	int drawState, drawFlags;
 	GdkRGBA background, foreground, drawForegroundRGBA;
 	/** The owner of the widget is responsible for drawing */
@@ -739,6 +751,7 @@ void copyModel (long oldModel, int oldStart, long newModel, int newStart, long o
 
 	OS.g_free (value);
 	OS.g_free (iter);
+	structureChanged ();
 }
 
 void createColumn (TreeColumn column, int index) {
@@ -983,6 +996,15 @@ void createItem (TreeColumn column, int index) {
 }
 
 /**
+ * Records that the structure of the underlying model changed (a row was inserted
+ * or removed), invalidating all cached child counts in O(1). Must be called by
+ * every code path that adds or removes rows from the GtkTreeStore. See #882.
+ */
+void structureChanged () {
+	structureModCount++;
+}
+
+/**
  * The fastest way to insert many items is documented in {@link TreeItem#TreeItem(org.eclipse.swt.widgets.Tree,int,int)}
  * and {@link TreeItem#setItemCount}
  */
@@ -1021,6 +1043,7 @@ void createItem (TreeItem item, long parentIter, int index) {
 	int id = getId (item.handle, false);
 	items [id] = item;
 	modelChanged = true;
+	structureChanged ();
 
 	if (parentIter == 0 ) {
 		/*
@@ -1286,6 +1309,7 @@ void destroyItem (TreeItem item) {
 	GTK.gtk_tree_store_remove (modelHandle, item.handle);
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	modelChanged = true;
+	structureChanged ();
 
 	/*
 	 If this was the last root item fire an EmptinessChanged event.
@@ -1818,7 +1842,10 @@ public TreeItem getItem (Point point) {
  */
 public int getItemCount () {
 	checkWidget ();
-	return GTK.gtk_tree_model_iter_n_children (modelHandle, 0);
+	if (cachedRootCountStamp == structureModCount) return cachedRootCount;
+	cachedRootCount = GTK.gtk_tree_model_iter_n_children (modelHandle, 0);
+	cachedRootCountStamp = structureModCount;
+	return cachedRootCount;
 }
 
 /**
@@ -2935,6 +2962,7 @@ void remove (long parentIter, int start, int end) {
 				OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 				GTK.gtk_tree_store_remove (modelHandle, iter);
 				OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+				structureChanged ();
 			}
 		}
 	} finally {
@@ -2958,6 +2986,7 @@ public void removeAll () {
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 
 	GTK.gtk_tree_store_clear (modelHandle);
+	structureChanged ();
 
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 
@@ -3477,6 +3506,7 @@ void setItemCount (long parentIter, int count) {
 	}
 	if (!isVirtual) setRedraw (true);
 	modelChanged = true;
+	structureChanged ();
 }
 
 /**

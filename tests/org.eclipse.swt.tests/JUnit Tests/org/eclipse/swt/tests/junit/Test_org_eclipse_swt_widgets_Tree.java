@@ -446,6 +446,50 @@ public void test_setItemCountI() {
 }
 
 @Test
+public void test_treeItem_getItemCount_cacheInvalidation() {
+	// Guards the cached child-count introduced for issue #882: every structural
+	// change must invalidate the cache so getItemCount() stays correct.
+	tree.removeAll();
+	TreeItem root = new TreeItem(tree, SWT.NULL);
+	assertEquals(0, root.getItemCount());
+
+	// Insert children, count must track each insertion.
+	for (int i = 0; i < 5; i++) {
+		new TreeItem(root, SWT.NULL);
+		assertEquals(i + 1, root.getItemCount());
+	}
+	assertEquals(5, root.getItemCount());
+
+	// Insert at an index.
+	new TreeItem(root, SWT.NULL, 0);
+	assertEquals(6, root.getItemCount());
+
+	// Dispose a child.
+	root.getItem(2).dispose();
+	assertEquals(5, root.getItemCount());
+
+	// setItemCount on the subtree grows and shrinks the child list.
+	root.setItemCount(20);
+	assertEquals(20, root.getItemCount());
+	root.setItemCount(3);
+	assertEquals(3, root.getItemCount());
+	root.setItemCount(0);
+	assertEquals(0, root.getItemCount());
+
+	// Adding to a sibling subtree must not corrupt this subtree's cached count.
+	TreeItem second = new TreeItem(tree, SWT.NULL);
+	new TreeItem(root, SWT.NULL);
+	new TreeItem(second, SWT.NULL);
+	new TreeItem(second, SWT.NULL);
+	assertEquals(1, root.getItemCount());
+	assertEquals(2, second.getItemCount());
+
+	// removeAll() must reset cached counts for all items.
+	tree.removeAll();
+	assertEquals(0, tree.getItemCount());
+}
+
+@Test
 public void test_setLinesVisibleZ() {
 	assertFalse(tree.getLinesVisible());
 	tree.setLinesVisible(true);
