@@ -3604,23 +3604,38 @@ public void setItemCount (int count) {
 	if (count == itemCount) return;
 	boolean isVirtual = (style & SWT.VIRTUAL) != 0;
 	if (!isVirtual) setRedraw (false);
-	remove (count, itemCount - 1);
-	int length = Math.max (4, (count + 3) / 4 * 4);
-	TableItem [] newItems = new TableItem [length];
-	System.arraycopy (items, 0, newItems, 0, itemCount);
-	items = newItems;
-	if (isVirtual) {
-		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
-		if (iter == 0) error (SWT.ERROR_NO_HANDLES);
-		for (int i=itemCount; i<count; i++) {
-			GTK.gtk_list_store_append (modelHandle, iter);
+	/*
+	 * Modifying the GtkListStore while it is attached to the GtkTreeView makes
+	 * GTK emit per-row signals and update the view on every single append/remove.
+	 * For large item counts this turns setItemCount() into an O(n^2) operation
+	 * that can freeze the UI for over a second (see issue #208). Detaching the
+	 * model for the duration of the bulk update lets GTK process all the changes
+	 * in a single pass; the model is reattached afterwards. The same technique is
+	 * used in recreateRenderers().
+	 */
+	boolean detachModel = isVirtual;
+	if (detachModel) GTK.gtk_tree_view_set_model (handle, 0);
+	try {
+		remove (count, itemCount - 1);
+		int length = Math.max (4, (count + 3) / 4 * 4);
+		TableItem [] newItems = new TableItem [length];
+		System.arraycopy (items, 0, newItems, 0, itemCount);
+		items = newItems;
+		if (isVirtual) {
+			long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+			if (iter == 0) error (SWT.ERROR_NO_HANDLES);
+			for (int i=itemCount; i<count; i++) {
+				GTK.gtk_list_store_append (modelHandle, iter);
+			}
+			OS.g_free (iter);
+			itemCount = count;
+		} else {
+			for (int i=itemCount; i<count; i++) {
+				new TableItem (this, SWT.NONE, i, true);
+			}
 		}
-		OS.g_free (iter);
-		itemCount = count;
-	} else {
-		for (int i=itemCount; i<count; i++) {
-			new TableItem (this, SWT.NONE, i, true);
-		}
+	} finally {
+		if (detachModel) GTK.gtk_tree_view_set_model (handle, modelHandle);
 	}
 	if (!isVirtual) setRedraw (true);
 }
