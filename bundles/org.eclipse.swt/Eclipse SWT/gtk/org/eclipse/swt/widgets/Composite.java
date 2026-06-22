@@ -133,8 +133,11 @@ public class Composite extends Scrollable {
 	 * children do not appear in the native widget hierarchy, they cannot be discovered
 	 * by {@link #_getChildren()} via native enumeration and must be tracked in Java so
 	 * that layout, disposal and reskinning still reach them. See issue 624.
+	 *
+	 * Note: fully-qualified because {@code org.eclipse.swt.widgets.List} shadows
+	 * {@code java.util.List} in this package.
 	 */
-	List<Composite> virtualChildren;
+	java.util.List<Composite> virtualChildren;
 
 Composite () {
 	/* Do nothing */

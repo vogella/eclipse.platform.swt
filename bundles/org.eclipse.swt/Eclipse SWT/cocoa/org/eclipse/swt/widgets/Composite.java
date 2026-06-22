@@ -25,7 +25,7 @@ import org.eclipse.swt.internal.cocoa.*;
  * of containing other controls.
  * <dl>
  * <dt><b>Styles:</b></dt>
- * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE, NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED</dd>
+ * <dd>NO_BACKGROUND, NO_FOCUS, NO_MERGE_PAINTS, NO_REDRAW_RESIZE, NO_RADIO_GROUP, EMBEDDED, DOUBLE_BUFFERED, VIRTUAL</dd>
  * <dt><b>Events:</b></dt>
  * <dd>(none)</dd>
  * </dl>
@@ -35,6 +35,17 @@ import org.eclipse.swt.internal.cocoa.*;
  * They can be used with <code>Composite</code> if you are drawing your own, but their
  * behavior is undefined if they are used with subclasses of <code>Composite</code> other
  * than <code>Canvas</code>.
+ * </p><p>
+ * Note: The <code>VIRTUAL</code> style creates a lightweight, layout-only composite that
+ * does <em>not</em> create an operating-system control of its own. Its children are
+ * parented to the nearest non-virtual ancestor composite, while the virtual composite
+ * continues to act as a layout container. This reduces the number of native controls and
+ * the nesting depth of the native widget hierarchy, which can improve performance and
+ * avoid platform limits on deeply nested controls. Because a virtual composite has no
+ * native control, it cannot scroll, draw a border or background, paint, take focus, or
+ * receive mouse and keyboard events of its own, and it does not clip its children. It is
+ * intended purely as a grouping/layout node. This is an experimental capability; see
+ * <a href="https://github.com/eclipse-platform/eclipse.platform.swt/issues/624">issue 624</a>.
  * </p><p>
  * Note: The <code>CENTER</code> style, although undefined for composites, has the
  * same value as <code>EMBEDDED</code> which is used to embed widgets from other
