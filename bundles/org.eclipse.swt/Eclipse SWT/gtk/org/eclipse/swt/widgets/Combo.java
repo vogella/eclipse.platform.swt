@@ -2112,7 +2112,23 @@ public void removeAll () {
 
 	items = new String[0];
 	clearText();
-	gtk_combo_box_text_remove_all();
+
+	long model = handle != 0 ? GTK.gtk_combo_box_get_model (handle) : 0;
+	if (model != 0) {
+		/*
+		 * Bug 506: Removing a large number of combo items is slow because the
+		 * GtkComboBox reacts to every single row deletion. Detach the model
+		 * from the combo box, clear the GtkListStore in one step, and re-attach
+		 * it so the widget only updates once.
+		 */
+		OS.g_object_ref (model);
+		gtk_combo_box_toggle_wrap (false);
+		GTK.gtk_combo_box_set_model (handle, 0);
+		GTK.gtk_list_store_clear (model);
+		GTK.gtk_combo_box_set_model (handle, model);
+		OS.g_object_unref (model);
+		gtk_combo_box_toggle_wrap (true);
+	}
 }
 
 /**
@@ -2401,20 +2417,49 @@ public void setItems (String... items) {
 	System.arraycopy (items, 0, this.items, 0, items.length);
 	clearText ();
 
-	gtk_combo_box_text_remove_all();
-	for (int i = 0; i < items.length; i++) {
-		String string = items [i];
-		gtk_combo_box_insert(string, i);
-		if ((style & SWT.RIGHT_TO_LEFT) != 0 && popupHandle != 0) {
-			GTK3.gtk_container_forall (popupHandle, display.setDirectionProc, GTK.GTK_TEXT_DIR_RTL);
+	long model = handle != 0 ? GTK.gtk_combo_box_get_model (handle) : 0;
+	if (model != 0) {
+		/*
+		 * Bug 506: Setting a large number of combo items is slow because the
+		 * GtkComboBox recomputes its popup/cell-view layout on every single
+		 * model change, resulting in O(n^2) behavior. The fix is to temporarily
+		 * detach the model from the combo box, populate the GtkListStore
+		 * directly, and then re-attach the model. This way the widget reacts
+		 * only once instead of once per inserted item.
+		 */
+		OS.g_object_ref (model);
+		gtk_combo_box_toggle_wrap (false);
+		GTK.gtk_combo_box_set_model (handle, 0);
+		GTK.gtk_list_store_clear (model);
+		for (int i = 0; i < items.length; i++) {
+			gtk_list_store_insert (model, items [i], i);
 		}
+		GTK.gtk_combo_box_set_model (handle, model);
+		OS.g_object_unref (model);
+		gtk_combo_box_toggle_wrap (true);
+	}
+
+	if ((style & SWT.RIGHT_TO_LEFT) != 0 && popupHandle != 0) {
+		GTK3.gtk_container_forall (popupHandle, display.setDirectionProc, GTK.GTK_TEXT_DIR_RTL);
 	}
 }
 
-private void gtk_combo_box_text_remove_all() {
-	gtk_combo_box_toggle_wrap(false);
-	if (handle != 0) GTK.gtk_combo_box_text_remove_all(handle);
-	gtk_combo_box_toggle_wrap(true);
+/**
+ * Inserts an item directly into the combo's underlying GtkListStore, bypassing
+ * the GtkComboBoxText convenience functions (which require the model to be
+ * attached to the combo box). This is used during bulk operations while the
+ * model is temporarily detached, see {@link #setItems}.
+ * <p>
+ * The text of a GtkComboBoxText is stored in column 0 of its model, matching
+ * the cell renderer attribute configured in {@code createHandle}.
+ * </p>
+ */
+private void gtk_list_store_insert (long model, String string, int index) {
+	byte[] buffer = Converter.wcsToMbcs (string, true);
+	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+	GTK.gtk_list_store_insert (model, iter, index);
+	GTK.gtk_list_store_set (model, iter, 0, buffer, -1);
+	OS.g_free (iter);
 }
 
 /**
