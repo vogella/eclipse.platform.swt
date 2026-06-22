@@ -1585,6 +1585,18 @@ long parentingHandle () {
 
 @Override
 void printWidget (GC gc, long drawable, int depth, int x, int y) {
+	if (isVirtual ()) {
+		// No native widget to print; recurse into children at translated coordinates.
+		Control [] virtualChildrenToPrint = _getChildren ();
+		for (int i=virtualChildrenToPrint.length-1; i>=0; --i) {
+			Control child = virtualChildrenToPrint [i];
+			if (child.getVisible ()) {
+				Point location = child.getLocation ();
+				child.printWidget (gc, drawable, depth, x + location.x, y + location.y);
+			}
+		}
+		return;
+	}
 	Region oldClip = new Region (gc.getDevice ());
 	Region newClip = new Region (gc.getDevice ());
 	Point loc = new Point (x, y);
@@ -2163,6 +2175,133 @@ void setZOrder (Control sibling, boolean above, boolean fixRelations, boolean fi
 	// A virtual composite has no native widget, so there is no native z-order to change.
 	if (isVirtual ()) return;
 	super.setZOrder (sibling, above, fixRelations, fixChildren);
+}
+
+/*
+ * The following overrides keep the handle-less case from calling native GTK/GDK
+ * functions on a null handle (which would emit GTK criticals or crash the JVM), and
+ * translate operations that have a coordinate or hierarchy meaning into the parent's
+ * space. See issue 624.
+ */
+
+@Override
+int getClientWidth () {
+	if (isVirtual ()) return virtualWidth;
+	return super.getClientWidth ();
+}
+
+@Override
+void setBackgroundGdkRGBA (GdkRGBA rgba) {
+	if (isVirtual ()) return;
+	super.setBackgroundGdkRGBA (rgba);
+}
+
+@Override
+void setForegroundGdkRGBA (GdkRGBA rgba) {
+	if (isVirtual ()) return;
+	super.setForegroundGdkRGBA (rgba);
+}
+
+@Override
+void setFontDescription (long font) {
+	if (isVirtual ()) return;
+	super.setFontDescription (font);
+}
+
+@Override
+public void redraw (int x, int y, int width, int height, boolean all) {
+	checkWidget ();
+	if (isVirtual ()) {
+		parent.redraw (x + virtualX, y + virtualY, width, height, all);
+		return;
+	}
+	super.redraw (x, y, width, height, all);
+}
+
+@Override
+void redraw (boolean all) {
+	if (isVirtual ()) {
+		parent.redraw (virtualX, virtualY, virtualWidth, virtualHeight, all);
+		return;
+	}
+	super.redraw (all);
+}
+
+@Override
+void update (boolean all, boolean flush) {
+	if (isVirtual ()) {
+		parent.update (all, flush);
+		return;
+	}
+	super.update (all, flush);
+}
+
+@Override
+public Point toControl (int x, int y) {
+	checkWidget ();
+	if (isVirtual ()) {
+		Point parentPoint = parent.toControl (x, y);
+		return new Point (parentPoint.x - virtualX, parentPoint.y - virtualY);
+	}
+	return super.toControl (x, y);
+}
+
+@Override
+public Point toDisplay (int x, int y) {
+	checkWidget ();
+	if (isVirtual ()) {
+		return parent.toDisplay (x + virtualX, y + virtualY);
+	}
+	return super.toDisplay (x, y);
+}
+
+@Override
+public void setVisible (boolean visible) {
+	checkWidget ();
+	if (isVirtual ()) {
+		/*
+		 * Update the logical visibility state and notify listeners. NOTE: this prototype
+		 * does not yet cascade native show/hide to the descendant controls, so children
+		 * remain natively visible; isVisible() does reflect the virtual composite's state.
+		 */
+		if (((state & HIDDEN) == 0) == visible) return;
+		if (visible) {
+			sendEvent (SWT.Show);
+			if (isDisposed ()) return;
+			state &= ~HIDDEN;
+		} else {
+			state |= HIDDEN;
+			sendEvent (SWT.Hide);
+		}
+		return;
+	}
+	super.setVisible (visible);
+}
+
+@Override
+public void setEnabled (boolean enabled) {
+	checkWidget ();
+	if (isVirtual ()) {
+		// Update logical enablement state only; see setVisible note about cascading.
+		if (((state & DISABLED) == 0) == enabled) return;
+		if (enabled) {
+			state &= ~DISABLED;
+		} else {
+			state |= DISABLED;
+		}
+		return;
+	}
+	super.setEnabled (enabled);
+}
+
+@Override
+public boolean print (GC gc) {
+	checkWidget ();
+	if (gc == null) error (SWT.ERROR_NULL_ARGUMENT);
+	if (gc.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
+	// A virtual composite has no native surface to snapshot.
+	if (isVirtual ()) return false;
+	return super.print (gc);
 }
 
 @Override
