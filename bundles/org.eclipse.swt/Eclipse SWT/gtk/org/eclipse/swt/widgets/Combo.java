@@ -2067,6 +2067,15 @@ public void remove (int start, int end) {
 	items = newItems;
 	int index = GTK.gtk_combo_box_get_active (handle);
 	if (start <= index && index <= end) clearText();
+	/*
+	 * Detaching the model below resets the active item to -1. If the previously
+	 * selected item is outside the removed range it must be restored afterwards,
+	 * adjusted for the rows removed before it.
+	 */
+	int newIndex = -1;
+	if (index != -1 && !(start <= index && index <= end)) {
+		newIndex = index > end ? index - (end - start + 1) : index;
+	}
 
 	long model = handle != 0 ? GTK.gtk_combo_box_get_model (handle) : 0;
 	if (model != 0) {
@@ -2088,6 +2097,12 @@ public void remove (int start, int end) {
 		}
 		OS.g_free (iter);
 		GTK.gtk_combo_box_set_model (handle, model);
+		if (newIndex != -1) {
+			// Restore the selection lost by detaching the model, without firing a spurious Modify event.
+			OS.g_signal_handlers_block_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+			GTK.gtk_combo_box_set_active (handle, newIndex);
+			OS.g_signal_handlers_unblock_matched (handle, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+		}
 		OS.g_object_unref (model);
 		gtk_combo_box_toggle_wrap (true);
 	}
@@ -2449,9 +2464,11 @@ public void setItems (String... items) {
 		gtk_combo_box_toggle_wrap (false);
 		GTK.gtk_combo_box_set_model (handle, 0);
 		GTK.gtk_list_store_clear (model);
+		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 		for (int i = 0; i < items.length; i++) {
-			gtk_list_store_insert (model, items [i], i);
+			gtk_list_store_insert (model, iter, items [i], i);
 		}
+		OS.g_free (iter);
 		GTK.gtk_combo_box_set_model (handle, model);
 		OS.g_object_unref (model);
 		gtk_combo_box_toggle_wrap (true);
@@ -2469,15 +2486,14 @@ public void setItems (String... items) {
  * model is temporarily detached, see {@link #setItems}.
  * <p>
  * The text of a GtkComboBoxText is stored in column 0 of its model, matching
- * the cell renderer attribute configured in {@code createHandle}.
+ * the cell renderer attribute configured in {@code createHandle}. The caller
+ * passes a single reusable {@code iter} to avoid per-item allocation overhead.
  * </p>
  */
-private void gtk_list_store_insert (long model, String string, int index) {
+private void gtk_list_store_insert (long model, long iter, String string, int index) {
 	byte[] buffer = Converter.wcsToMbcs (string, true);
-	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 	GTK.gtk_list_store_insert (model, iter, index);
 	GTK.gtk_list_store_set (model, iter, 0, buffer, -1);
-	OS.g_free (iter);
 }
 
 /**
