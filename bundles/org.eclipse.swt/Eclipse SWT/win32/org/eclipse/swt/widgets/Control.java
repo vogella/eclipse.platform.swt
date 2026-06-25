@@ -113,12 +113,15 @@ public abstract class Control extends Widget implements Drawable {
 	public static volatile long deferEntryCount;
 	/** Number of child moves applied via an immediate SetWindowPos (not batched). */
 	public static volatile long immediateMoveCount;
+	/** Number of native WM_PAINT messages handled (captures native widget repaints, the flicker proxy). */
+	public static volatile long wmPaintCount;
 
 	/** Resets the DeferWindowPos instrumentation counters (see {@link #DEBUG_DEFER}). */
 	public static void resetDeferStats () {
 		deferBatchCount = 0;
 		deferEntryCount = 0;
 		immediateMoveCount = 0;
+		wmPaintCount = 0;
 	}
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -5610,6 +5613,7 @@ LRESULT WM_NOTIFY (long wParam, long lParam) {
 
 LRESULT WM_PAINT (long wParam, long lParam) {
 	if ((state & DISPOSE_SENT) != 0) return LRESULT.ZERO;
+	if (DEBUG_DEFER) wmPaintCount++;
 	return wmPaint (handle, wParam, lParam);
 }
 

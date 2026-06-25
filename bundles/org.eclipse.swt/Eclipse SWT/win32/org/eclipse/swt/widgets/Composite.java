@@ -56,6 +56,8 @@ public class Composite extends Scrollable {
 	int layoutCount, backgroundMode;
 
 	static final int TOOLTIP_LIMIT = 4096;
+	/* Phase 2 prototype for issue #1726 (Option B): see WM_SIZE. Measurement-only, not for merge. */
+	static final boolean SUPPRESS_RESIZE_REDRAW = Boolean.getBoolean("swt.resize.suppressredraw");
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -1718,49 +1720,71 @@ LRESULT WM_SETFONT (long wParam, long lParam) {
 
 @Override
 LRESULT WM_SIZE (long wParam, long lParam) {
-	LRESULT result = null;
-	if ((state & RESIZE_DEFERRED) != 0) {
-		result = super.WM_SIZE (wParam, lParam);
-	} else {
-		/* Begin deferred window positioning */
-		setResizeChildren (false);
+	/*
+	 * Phase 2 prototype for issue #1726 (Option B): suppress intermediate repaints across
+	 * the whole resize cascade and issue a single subtree repaint when redraw is restored
+	 * (setRedraw(true) ends with RedrawWindow(RDW_ALLCHILDREN)). Only the outermost resize
+	 * wraps; nested WM_SIZE handlers (fired synchronously via EndDeferWindowPos) are guarded
+	 * by display.resizeRedrawActive. Enabled with -Dswt.resize.suppressredraw=true.
+	 */
+	boolean suppressRedraw = SUPPRESS_RESIZE_REDRAW
+			&& !display.resizeRedrawActive
+			&& getDrawing ()
+			&& OS.IsWindowVisible (handle);
+	if (suppressRedraw) {
+		display.resizeRedrawActive = true;
+		setRedraw (false);
+	}
+	try {
+		LRESULT result = null;
+		if ((state & RESIZE_DEFERRED) != 0) {
+			result = super.WM_SIZE (wParam, lParam);
+		} else {
+			/* Begin deferred window positioning */
+			setResizeChildren (false);
 
-		/* Resize and Layout */
-		result = super.WM_SIZE (wParam, lParam);
-		/*
-		* It is possible (but unlikely), that application
-		* code could have disposed the widget in the resize
-		* event.  If this happens, end the processing of the
-		* Windows message by returning the result of the
-		* WM_SIZE message.
-		*/
-		if (isDisposed ()) return result;
-		if (layout != null) {
-			markLayout (false, false);
-			updateLayout (false, false);
+			/* Resize and Layout */
+			result = super.WM_SIZE (wParam, lParam);
+			/*
+			* It is possible (but unlikely), that application
+			* code could have disposed the widget in the resize
+			* event.  If this happens, end the processing of the
+			* Windows message by returning the result of the
+			* WM_SIZE message.
+			*/
+			if (isDisposed ()) return result;
+			if (layout != null) {
+				markLayout (false, false);
+				updateLayout (false, false);
+			}
+
+			/* End deferred window positioning */
+			setResizeChildren (true);
 		}
 
-		/* End deferred window positioning */
-		setResizeChildren (true);
-	}
-
-	/* Damage the widget to cause a repaint */
-	if (OS.IsWindowVisible (handle)) {
-		if ((state & CANVAS) != 0) {
-			if ((style & SWT.NO_REDRAW_RESIZE) == 0) {
-				if (hooks (SWT.Paint)) {
-					OS.InvalidateRect (handle, null, true);
+		/* Damage the widget to cause a repaint */
+		if (OS.IsWindowVisible (handle)) {
+			if ((state & CANVAS) != 0) {
+				if ((style & SWT.NO_REDRAW_RESIZE) == 0) {
+					if (hooks (SWT.Paint)) {
+						OS.InvalidateRect (handle, null, true);
+					}
 				}
 			}
+			if (findThemeControl () != null) redrawChildren ();
 		}
-		if (findThemeControl () != null) redrawChildren ();
-	}
 
-	/* Resize the embedded window */
-	if ((state & CANVAS) != 0 && (style & SWT.EMBEDDED) != 0) {
-		resizeEmbeddedHandle (OS.GetWindow (handle, OS.GW_CHILD), OS.LOWORD (lParam), OS.HIWORD (lParam));
+		/* Resize the embedded window */
+		if ((state & CANVAS) != 0 && (style & SWT.EMBEDDED) != 0) {
+			resizeEmbeddedHandle (OS.GetWindow (handle, OS.GW_CHILD), OS.LOWORD (lParam), OS.HIWORD (lParam));
+		}
+		return result;
+	} finally {
+		if (suppressRedraw) {
+			display.resizeRedrawActive = false;
+			if (!isDisposed ()) setRedraw (true);
+		}
 	}
-	return result;
 }
 
 @Override

@@ -97,6 +97,7 @@ public class Bug558392ResizeBenchmark {
 		long batches0 = readStat ("deferBatchCount");
 		long entries0 = readStat ("deferEntryCount");
 		long immediate0 = readStat ("immediateMoveCount");
+		long wmpaint0 = readStat ("wmPaintCount");
 
 		long t0 = System.nanoTime ();
 		sweep (display, shell, frames);
@@ -105,12 +106,15 @@ public class Bug558392ResizeBenchmark {
 		long batches = readStat ("deferBatchCount") - batches0;
 		long entries = readStat ("deferEntryCount") - entries0;
 		long immediate = readStat ("immediateMoveCount") - immediate0;
+		long wmpaint = readStat ("wmPaintCount") - wmpaint0;
 
 		System.out.println ("=== Scripted sweep: " + frames + " resize frames ===");
 		System.out.printf ("  time            : %d ms  (%.2f ms/frame)%n", elapsedMs, elapsedMs / (double) frames);
-		System.out.printf ("  paint events    : %d  (%.1f /frame)%n", paintCount, paintCount / (double) frames);
+		System.out.printf ("  SWT.Paint events: %d  (%.1f /frame)%n", paintCount, paintCount / (double) frames);
 		System.out.printf ("  resize events   : %d  (%.1f /frame)%n", resizeCount, resizeCount / (double) frames);
 		if (deferStatsAvailable ()) {
+			System.out.printf ("  native WM_PAINT : %d  (%.1f /frame)   <-- flicker proxy (incl. native widgets)%n",
+					wmpaint, wmpaint / (double) frames);
 			System.out.printf ("  DeferWindowPos batches : %d  (%.1f /frame)   <-- comment 16 focuses on this%n",
 					batches, batches / (double) frames);
 			System.out.printf ("  batched child moves    : %d  (%.1f /frame)%n", entries, entries / (double) frames);

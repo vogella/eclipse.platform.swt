@@ -413,7 +413,16 @@ public class Display extends Device implements Executor {
 
 	/* Resize and move recursion */
 	int resizeCount;
-	static final int RESIZE_LIMIT = 4;
+	/*
+	 * Phase 2 prototype for issue #1726 (Option A): the deferral-disabling nesting
+	 * threshold. Default 4 (historical). Override with -Dswt.resize.limit=N to test
+	 * whether re-enabling DeferWindowPos batching for deep trees reduces immediate
+	 * SetWindowPos moves and repaints. Measurement-only knob, not for merge.
+	 */
+	static final int RESIZE_LIMIT = Integer.getInteger("swt.resize.limit", 4).intValue();
+	/* Phase 2 prototype for issue #1726 (Option B): true while the outermost resize cascade
+	 * runs with redraw suppressed, so nested WM_SIZE handlers do not re-wrap setRedraw. */
+	boolean resizeRedrawActive;
 
 	/* Display Data */
 	Object data;
