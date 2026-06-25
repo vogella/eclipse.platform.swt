@@ -52,6 +52,7 @@ public class Bug558392ResizeBenchmark {
 	static int fanout = 3;    // children per SashForm
 	static int frames = 200;  // scripted resize steps
 	static boolean interactive = false;
+	static boolean withTable = false; // leaves get a Table with a visible header (WS_EX_COMPOSITED bug probe)
 
 	// Live event counters (reset around each measurement window).
 	static long paintCount;
@@ -127,6 +128,25 @@ public class Bug558392ResizeBenchmark {
 						entries / (double) batches);
 			}
 		}
+
+		// Endless-WM_PAINT probe: with NO resizing, pump events for a fixed window and count paints.
+		// A settled window yields ~0; the WS_EX_COMPOSITED + Table-header bug yields a non-stop storm.
+		long idle = idlePaintProbe (display, 1000);
+		System.out.printf ("  idle WM_PAINT    : %d  (over 1000 ms, no resize)   <-- >>0 means endless-paint storm%n", idle);
+	}
+
+	/** Dispatch events for {@code ms} with no resize; return the native WM_PAINT delta. */
+	static long idlePaintProbe (Display display, long ms) {
+		flush (display);
+		long base = readStat ("wmPaintCount");
+		long end = System.nanoTime () + ms * 1_000_000L;
+		while (System.nanoTime () < end) {
+			if (!display.readAndDispatch ()) {
+				try { Thread.sleep (2); } catch (InterruptedException e) { Thread.currentThread ().interrupt (); break; }
+			}
+		}
+		long delta = readStat ("wmPaintCount") - base;
+		return delta < 0 ? -1 : delta;
 	}
 
 	static void sweep (Display display, Shell shell, int count) {
@@ -190,6 +210,21 @@ public class Bug558392ResizeBenchmark {
 			it.setText ("item " + i);
 			new TreeItem (it, SWT.NONE).setText ("child");
 		}
+		if (withTable) {
+			// A Table with a VISIBLE HEADER is the documented WS_EX_COMPOSITED endless-WM_PAINT trigger.
+			Table table = new Table (leaf, SWT.BORDER | SWT.V_SCROLL | SWT.FULL_SELECTION);
+			table.setHeaderVisible (true);
+			table.setLayoutData (new GridData (SWT.FILL, SWT.FILL, true, true, 2, 1));
+			for (int c = 0; c < 2; c++) {
+				TableColumn col = new TableColumn (table, SWT.NONE);
+				col.setText ("Col " + c);
+				col.setWidth (80);
+			}
+			for (int r = 0; r < 8; r++) {
+				TableItem it = new TableItem (table, SWT.NONE);
+				it.setText (new String[] { "r" + r + "c0", "r" + r + "c1" });
+			}
+		}
 		for (int i = 0; i < 3; i++) {
 			new Label (leaf, SWT.NONE).setText ("Field " + i + ":");
 			Text t = new Text (leaf, SWT.BORDER);
@@ -245,6 +280,7 @@ public class Bug558392ResizeBenchmark {
 				case "--fanout" -> fanout = Integer.parseInt (args[++i]);
 				case "--frames" -> frames = Integer.parseInt (args[++i]);
 				case "--interactive" -> interactive = true;
+				case "--table" -> withTable = true;
 				default -> System.out.println ("Ignoring unknown arg: " + args[i]);
 			}
 		}
