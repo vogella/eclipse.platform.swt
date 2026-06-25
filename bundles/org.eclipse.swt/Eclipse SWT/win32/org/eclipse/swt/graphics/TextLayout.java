@@ -93,6 +93,11 @@ public final class TextLayout extends Resource {
 	 * will search for a break before forcing a break at {@link #MAX_RUN_LENGTH}.
 	 */
 	static final int MAX_SEARCH_RUN_BREAK = 1000;
+	/**
+	 * Placeholder substituted for unrenderable C0 control characters before shaping,
+	 * to avoid Uniscribe's expensive missing-glyph font fallback (issue #414).
+	 */
+	static final char UNRENDERABLE_CONTROL_REPLACEMENT = ' ';
 	{
 		// While developing the splitting long runs it can be useful to
 		// make these constants smaller, but these invariants must
@@ -3735,6 +3740,19 @@ long createMetafileWithChars(long hdc, long hFont, char[] chars, int charCount) 
 }
 
 /*
+ * Replaces unrenderable C0 control chars in place before shaping (issue #414).
+ * Tab/CR/LF are excluded; they form their own runs and keep their code points.
+ */
+static void replaceUnrenderableControlChars (char[] chars) {
+	for (int i = 0; i < chars.length; i++) {
+		char ch = chars[i];
+		if (ch < 0x20 && ch != '\t' && ch != '\n' && ch != '\r') {
+			chars[i] = UNRENDERABLE_CONTROL_REPLACEMENT;
+		}
+	}
+}
+
+/*
  * Generate glyphs for one Run.
  */
 void shape (GC  gc, final long hdc, final StyleItem run) {
@@ -3743,6 +3761,7 @@ void shape (GC  gc, final long hdc, final StyleItem run) {
 	final int[] buffer = new int[1];
 	final char[] chars = new char[run.length];
 	segmentsText.getChars(run.start, run.start + run.length, chars, 0);
+	replaceUnrenderableControlChars(chars);
 
 	final int maxGlyphs = (chars.length * 3 / 2) + 16;
 	long hHeap = OS.GetProcessHeap();
