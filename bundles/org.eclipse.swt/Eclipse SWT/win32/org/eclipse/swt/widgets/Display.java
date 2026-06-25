@@ -427,6 +427,9 @@ public class Display extends Device implements Executor {
 	 * tags every child move with SWP_NOREDRAW; the outermost WM_SIZE issues one final
 	 * RedrawWindow over the subtree. Suppresses per-child native repaints during the cascade. */
 	boolean resizeNoRedraw;
+	/* Phase 4 prototype for issue #1726 (Option D): true while inside the outermost resize that
+	 * enabled WS_EX_COMPOSITED on its composite, so nested composites do not also set it. */
+	boolean resizeComposited;
 
 	/* Display Data */
 	Object data;

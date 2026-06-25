@@ -60,6 +60,8 @@ public class Composite extends Scrollable {
 	static final boolean SUPPRESS_RESIZE_REDRAW = Boolean.getBoolean("swt.resize.suppressredraw");
 	/* Phase 3 prototype for issue #1726 (Option C): see WM_SIZE. Measurement-only, not for merge. */
 	static final boolean SUPPRESS_RESIZE_PAINT = Boolean.getBoolean("swt.resize.noredraw");
+	/* Phase 4 prototype for issue #1726 (Option D): see WM_SIZE. Measurement-only, not for merge. */
+	static final boolean COMPOSITE_RESIZE = Boolean.getBoolean("swt.resize.composited");
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -1748,6 +1750,21 @@ LRESULT WM_SIZE (long wParam, long lParam) {
 			&& !display.resizeNoRedraw
 			&& OS.IsWindowVisible (handle);
 	if (suppressPaint) display.resizeNoRedraw = true;
+	/*
+	 * Option D: enable WS_EX_COMPOSITED on the outermost resizing composite (set once) so the
+	 * OS double-buffers the whole subtree, hiding per-child erase flash. Persistent because
+	 * toggling the ex-style per frame is itself expensive; the guard only stops nested
+	 * composites from each setting it. NOTE: WS_EX_COMPOSITED hides the flash but does not
+	 * suppress WM_ERASEBKGND messages, so wmEraseCount will not drop -- judge by wall-clock.
+	 */
+	boolean composite = COMPOSITE_RESIZE && !display.resizeComposited && OS.IsWindowVisible (handle);
+	if (composite) {
+		display.resizeComposited = true;
+		int exBits = OS.GetWindowLong (handle, OS.GWL_EXSTYLE);
+		if ((exBits & OS.WS_EX_COMPOSITED) == 0) {
+			OS.SetWindowLong (handle, OS.GWL_EXSTYLE, exBits | OS.WS_EX_COMPOSITED);
+		}
+	}
 	try {
 		LRESULT result = null;
 		if ((state & RESIZE_DEFERRED) != 0) {
@@ -1793,6 +1810,7 @@ LRESULT WM_SIZE (long wParam, long lParam) {
 		}
 		return result;
 	} finally {
+		if (composite) display.resizeComposited = false;
 		if (suppressPaint) {
 			display.resizeNoRedraw = false;
 			if (!isDisposed () && OS.IsWindowVisible (handle)) {
