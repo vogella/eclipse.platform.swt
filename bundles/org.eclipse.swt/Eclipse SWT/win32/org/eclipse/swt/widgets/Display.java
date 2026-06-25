@@ -423,6 +423,10 @@ public class Display extends Device implements Executor {
 	/* Phase 2 prototype for issue #1726 (Option B): true while the outermost resize cascade
 	 * runs with redraw suppressed, so nested WM_SIZE handlers do not re-wrap setRedraw. */
 	boolean resizeRedrawActive;
+	/* Phase 3 prototype for issue #1726 (Option C): true while the outermost resize cascade
+	 * tags every child move with SWP_NOREDRAW; the outermost WM_SIZE issues one final
+	 * RedrawWindow over the subtree. Suppresses per-child native repaints during the cascade. */
+	boolean resizeNoRedraw;
 
 	/* Display Data */
 	Object data;

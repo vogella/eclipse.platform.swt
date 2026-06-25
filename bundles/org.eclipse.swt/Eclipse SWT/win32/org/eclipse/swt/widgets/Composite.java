@@ -58,6 +58,8 @@ public class Composite extends Scrollable {
 	static final int TOOLTIP_LIMIT = 4096;
 	/* Phase 2 prototype for issue #1726 (Option B): see WM_SIZE. Measurement-only, not for merge. */
 	static final boolean SUPPRESS_RESIZE_REDRAW = Boolean.getBoolean("swt.resize.suppressredraw");
+	/* Phase 3 prototype for issue #1726 (Option C): see WM_SIZE. Measurement-only, not for merge. */
+	static final boolean SUPPRESS_RESIZE_PAINT = Boolean.getBoolean("swt.resize.noredraw");
 
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -981,15 +983,17 @@ boolean resizeChildren (boolean defer, WINDOWPOS [] pwp) {
 		if (hdwp == 0) return false;
 		if (DEBUG_DEFER) deferBatchCount++;
 	}
+	/* Option C: tag every move with SWP_NOREDRAW so it does not repaint during the cascade. */
+	int extra = (SUPPRESS_RESIZE_PAINT && display.resizeNoRedraw) ? OS.SWP_NOREDRAW : 0;
 	for (WINDOWPOS wp : pwp) {
 		if (wp != null) {
 			if (defer) {
-				hdwp = OS.DeferWindowPos (hdwp, wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
+				hdwp = OS.DeferWindowPos (hdwp, wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags | extra);
 				if (hdwp == 0) return false;
 				if (DEBUG_DEFER) deferEntryCount++;
 			} else {
 				if (DEBUG_DEFER) immediateMoveCount++;
-				OS.SetWindowPos (wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
+				OS.SetWindowPos (wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags | extra);
 			}
 		}
 	}
@@ -1735,6 +1739,15 @@ LRESULT WM_SIZE (long wParam, long lParam) {
 		display.resizeRedrawActive = true;
 		setRedraw (false);
 	}
+	/*
+	 * Option C: suppress per-child native repaints across the whole cascade by tagging every
+	 * child move with SWP_NOREDRAW (see resizeChildren and Control.setBoundsInPixels), then
+	 * issue a single RedrawWindow over the subtree here, at the outermost resize only.
+	 */
+	boolean suppressPaint = SUPPRESS_RESIZE_PAINT
+			&& !display.resizeNoRedraw
+			&& OS.IsWindowVisible (handle);
+	if (suppressPaint) display.resizeNoRedraw = true;
 	try {
 		LRESULT result = null;
 		if ((state & RESIZE_DEFERRED) != 0) {
@@ -1780,6 +1793,13 @@ LRESULT WM_SIZE (long wParam, long lParam) {
 		}
 		return result;
 	} finally {
+		if (suppressPaint) {
+			display.resizeNoRedraw = false;
+			if (!isDisposed () && OS.IsWindowVisible (handle)) {
+				int flags = OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE | OS.RDW_ALLCHILDREN;
+				OS.RedrawWindow (handle, null, 0, flags);
+			}
+		}
 		if (suppressRedraw) {
 			display.resizeRedrawActive = false;
 			if (!isDisposed ()) setRedraw (true);

@@ -113,8 +113,10 @@ public abstract class Control extends Widget implements Drawable {
 	public static volatile long deferEntryCount;
 	/** Number of child moves applied via an immediate SetWindowPos (not batched). */
 	public static volatile long immediateMoveCount;
-	/** Number of native WM_PAINT messages handled (captures native widget repaints, the flicker proxy). */
+	/** Number of native WM_PAINT messages handled (captures native widget repaints). */
 	public static volatile long wmPaintCount;
+	/** Number of native WM_ERASEBKGND messages handled (background erase = the visible flash/flicker proxy). */
+	public static volatile long wmEraseCount;
 
 	/** Resets the DeferWindowPos instrumentation counters (see {@link #DEBUG_DEFER}). */
 	public static void resetDeferStats () {
@@ -122,6 +124,7 @@ public abstract class Control extends Widget implements Drawable {
 		deferEntryCount = 0;
 		immediateMoveCount = 0;
 		wmPaintCount = 0;
+		wmEraseCount = 0;
 	}
 /**
  * Prevents uninitialized instances from being created outside the package.
@@ -3322,6 +3325,8 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
 		}
 	}
 	if (DEBUG_DEFER) immediateMoveCount++;
+	/* Option C: suppress this move's repaint during a no-redraw resize cascade (see Composite.WM_SIZE). */
+	if (Composite.SUPPRESS_RESIZE_PAINT && display.resizeNoRedraw) flags |= OS.SWP_NOREDRAW;
 	OS.SetWindowPos (topHandle, 0, x, y, width, height, flags);
 }
 
@@ -5214,6 +5219,7 @@ LRESULT WM_ENTERSIZEMOVE (long wParam, long lParam) {
 }
 
 LRESULT WM_ERASEBKGND (long wParam, long lParam) {
+	if (DEBUG_DEFER) wmEraseCount++;
 	if ((state & DRAW_BACKGROUND) != 0) {
 		if (findImageControl () != null) return LRESULT.ONE;
 	}
