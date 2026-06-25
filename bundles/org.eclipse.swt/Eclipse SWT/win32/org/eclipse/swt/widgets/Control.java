@@ -97,6 +97,29 @@ public abstract class Control extends Widget implements Drawable {
 	 */
 	@Deprecated(since = "2026-03", forRemoval = true)
 	private static final String PROPOGATE_AUTOSCALE_DISABLED = "PROPOGATE_AUTOSCALE_DISABLED";
+
+	/*
+	 * Phase 0 instrumentation for https://github.com/eclipse-platform/eclipse.platform.swt/issues/1726
+	 * (evaluating bug 558392 comment 16: "every Composite.resizeChildren() calls its own
+	 * DeferWindowPos()"). Enable with -Dswt.debug.deferwindowpos=true. Counters let a benchmark
+	 * compare how many separate Begin/EndDeferWindowPos batches a single resize produces versus how
+	 * many child moves they cover, and how many moves bypass batching entirely (immediate SetWindowPos).
+	 * This is measurement-only scaffolding and is not intended to be merged.
+	 */
+	public static final boolean DEBUG_DEFER = Boolean.getBoolean("swt.debug.deferwindowpos");
+	/** Number of Begin/EndDeferWindowPos batches issued (one per resizeChildren flush). */
+	public static volatile long deferBatchCount;
+	/** Number of child moves routed through DeferWindowPos (batched). */
+	public static volatile long deferEntryCount;
+	/** Number of child moves applied via an immediate SetWindowPos (not batched). */
+	public static volatile long immediateMoveCount;
+
+	/** Resets the DeferWindowPos instrumentation counters (see {@link #DEBUG_DEFER}). */
+	public static void resetDeferStats () {
+		deferBatchCount = 0;
+		deferEntryCount = 0;
+		immediateMoveCount = 0;
+	}
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
@@ -3295,6 +3318,7 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean 
 			return;
 		}
 	}
+	if (DEBUG_DEFER) immediateMoveCount++;
 	OS.SetWindowPos (topHandle, 0, x, y, width, height, flags);
 }
 

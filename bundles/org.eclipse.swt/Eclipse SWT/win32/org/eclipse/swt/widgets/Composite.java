@@ -977,13 +977,16 @@ boolean resizeChildren (boolean defer, WINDOWPOS [] pwp) {
 	if (defer) {
 		hdwp = OS.BeginDeferWindowPos (pwp.length);
 		if (hdwp == 0) return false;
+		if (DEBUG_DEFER) deferBatchCount++;
 	}
 	for (WINDOWPOS wp : pwp) {
 		if (wp != null) {
 			if (defer) {
 				hdwp = OS.DeferWindowPos (hdwp, wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
 				if (hdwp == 0) return false;
+				if (DEBUG_DEFER) deferEntryCount++;
 			} else {
+				if (DEBUG_DEFER) immediateMoveCount++;
 				OS.SetWindowPos (wp.hwnd, 0, wp.x, wp.y, wp.cx, wp.cy, wp.flags);
 			}
 		}
