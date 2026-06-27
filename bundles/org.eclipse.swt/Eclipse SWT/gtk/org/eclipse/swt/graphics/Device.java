@@ -1121,17 +1121,41 @@ protected int getDeviceZoom() {
 }
 
 /**
- * Returns the GDK primary monitor handle, falling back to the monitor at
- * virtual coordinate (0,0) when no primary monitor is reported (e.g. on Wayland).
+ * Returns a monitor handle to use as the basis for the initial device zoom:
+ * the GDK primary monitor when one is configured, otherwise the largest
+ * monitor (Wayland has no primary), with {@code monitor_at_point(0,0)} as a
+ * final fallback.
  *
  * @noreference This method is not intended to be referenced by clients.
  */
 protected long getPrimaryMonitor(long display) {
 	long monitor = GDK.gdk_display_get_primary_monitor(display);
-	if (monitor == 0) {
-		monitor = GDK.gdk_display_get_monitor_at_point(display, 0, 0);
+	if (monitor != 0) {
+		return monitor;
 	}
-	return monitor;
+	monitor = pickLargestMonitor(display);
+	if (monitor != 0) {
+		return monitor;
+	}
+	return GDK.gdk_display_get_monitor_at_point(display, 0, 0);
+}
+
+private static long pickLargestMonitor(long display) {
+	int n = GDK.gdk_display_get_n_monitors(display);
+	long best = 0;
+	long bestArea = -1;
+	for (int i = 0; i < n; i++) {
+		long m = GDK.gdk_display_get_monitor(display, i);
+		if (m == 0) continue;
+		GdkRectangle r = new GdkRectangle();
+		GDK.gdk_monitor_get_geometry(m, r);
+		long area = (long) r.width * r.height;
+		if (area > bestArea) {
+			bestArea = area;
+			best = m;
+		}
+	}
+	return best;
 }
 
 }
