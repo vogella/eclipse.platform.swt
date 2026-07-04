@@ -661,6 +661,13 @@ long callWindowProc (long hwnd, int msg, long wParam, long lParam, boolean force
 	return code;
 }
 
+@Override
+boolean isVirtual () {
+	// SWT.VIRTUAL on Table enables lazy (virtual) items; it does not make the control a
+	// handle-less layout container. See issue 624.
+	return false;
+}
+
 static int checkStyle (int style) {
 	/*
 	* Feature in Windows.  Even when WS_HSCROLL or

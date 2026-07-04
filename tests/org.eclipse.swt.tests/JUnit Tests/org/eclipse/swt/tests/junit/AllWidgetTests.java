@@ -46,6 +46,7 @@ import org.junit.platform.suite.api.Suite;
 		Test_org_eclipse_swt_widgets_ColorDialog.class, //
 		Test_org_eclipse_swt_widgets_Combo.class, //
 		Test_org_eclipse_swt_widgets_Composite.class, //
+		Test_org_eclipse_swt_widgets_Composite_Virtual.class, //
 		Test_org_eclipse_swt_widgets_CoolBar.class, //
 		// Failing test: Test_org_eclipse_swt_widgets_CoolItem.class, //
 		Test_org_eclipse_swt_widgets_DateTime_Style_CALENDAR.class, //

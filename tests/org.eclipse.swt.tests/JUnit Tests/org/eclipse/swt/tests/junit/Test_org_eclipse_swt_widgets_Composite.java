@@ -213,6 +213,13 @@ public void test_bug2162_transparentStyle() {
 	shell.open();
 }
 
+/*
+ * Virtual (handle-less) composite support (SWT.VIRTUAL) is covered by
+ * Test_org_eclipse_swt_widgets_Composite_Virtual. It lives in a standalone class so the
+ * tests run once instead of being inherited and re-run by every Composite-subclass test.
+ * See https://github.com/eclipse-platform/eclipse.platform.swt/issues/624
+ */
+
 protected Composite getElementExpectedToHaveFocusAfterSetFocusOnParent(Composite visibleChild) {
 	return visibleChild;
 }

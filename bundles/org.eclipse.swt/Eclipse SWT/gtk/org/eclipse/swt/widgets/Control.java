@@ -971,6 +971,10 @@ Rectangle getBoundsInPixels () {
 	int width = (state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
 	int height = (state & ZERO_HEIGHT) != 0 ? 0 :allocation.height;
 	if ((parent.style & SWT.MIRRORED) != 0) x = parent.getClientWidth () - width - x;
+	// Report coordinates relative to the (possibly virtual) logical parent. See issue 624.
+	Point parentingOffset = parentingOffset ();
+	x -= parentingOffset.x;
+	y -= parentingOffset.y;
 	return new Rectangle (x, y, width, height);
 }
 
@@ -1058,6 +1062,51 @@ void moveHandle (int x, int y) {
 	OS.swt_fixed_move (parentHandle, topHandle, x, y);
 }
 
+/**
+ * Returns the cumulative offset, in pixels, contributed by any virtual (handle-less)
+ * composites between this control and the nearest non-virtual ancestor to whose native
+ * widget this control is actually parented. This control's layout coordinates are
+ * relative to its immediate (possibly virtual) parent's client area, but its native
+ * widget is positioned relative to that non-virtual ancestor, so the difference is this
+ * offset. Returns (0, 0) when no virtual ancestor is involved. See issue 624.
+ */
+Point parentingOffset () {
+	int offsetX = 0, offsetY = 0;
+	Composite ancestor = parent;
+	while (ancestor != null && ancestor.isVirtual ()) {
+		offsetX += ancestor.virtualX;
+		offsetY += ancestor.virtualY;
+		ancestor = ancestor.parent;
+	}
+	return new Point (offsetX, offsetY);
+}
+
+/**
+ * Moves this control's native widget by the given delta, in pixels, within its parenting
+ * handle. Used to reposition the descendants of a virtual composite when the virtual
+ * composite itself moves, since there is no native parent widget to move them all at
+ * once. See issue 624.
+ */
+void moveHandleBy (int dx, int dy) {
+	if (dx == 0 && dy == 0) return;
+	long topHandle = topHandle ();
+	GtkAllocation allocation = new GtkAllocation ();
+	GTK.gtk_widget_get_allocation (topHandle, allocation);
+	int nx = allocation.x + dx;
+	int ny = allocation.y + dy;
+	moveHandle (nx, ny);
+	allocation.x = nx;
+	allocation.y = ny;
+	GtkRequisition requisition = new GtkRequisition ();
+	gtk_widget_get_preferred_size (topHandle, requisition);
+	if (GTK.GTK4) {
+		GTK4.gtk_widget_size_allocate (topHandle, allocation, -1);
+	} else {
+		GTK.gtk_widget_get_preferred_size (topHandle, null, null);
+		GTK3.gtk_widget_size_allocate (topHandle, allocation);
+	}
+}
+
 void resizeHandle (int width, int height) {
 	long topHandle = topHandle ();
 	OS.swt_fixed_resize (GTK.gtk_widget_get_parent (topHandle), topHandle, width, height);
@@ -1094,6 +1143,17 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 	// bug in GTK3 the crashes new shell only. See bug 472743
 	width = Math.min(width, (2 << 14) - 1);
 	height = Math.min(height, (2 << 14) - 1);
+
+	/*
+	 * Children of a virtual (handle-less) composite are parented to the nearest
+	 * non-virtual ancestor, so translate the layout coordinates into that ancestor's
+	 * coordinate space before positioning the native widget. See issue 624.
+	 */
+	Point parentingOffset = parentingOffset ();
+	if (move && (parentingOffset.x != 0 || parentingOffset.y != 0)) {
+		x += parentingOffset.x;
+		y += parentingOffset.y;
+	}
 
 	long topHandle = topHandle ();
 	boolean sendMove = move;
@@ -1280,6 +1340,10 @@ public Point getLocation () {
 		int width = (state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
 		x = parent.getClientWidth () - width - x;
 	}
+	// Report coordinates relative to the (possibly virtual) logical parent. See issue 624.
+	Point parentingOffset = parentingOffset ();
+	x -= parentingOffset.x;
+	y -= parentingOffset.y;
 	return new Point (x, y);
 }
 

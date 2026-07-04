@@ -1232,11 +1232,13 @@ Rectangle getBoundsInPixels () {
 	forceResize ();
 	RECT rect = new RECT ();
 	OS.GetWindowRect (topHandle (), rect);
-	long hwndParent = parent == null ? 0 : parent.handle;
+	long hwndParent = parent == null ? 0 : parent.parentingHandle ();
 	OS.MapWindowPoints (0, hwndParent, rect, 2);
 	int width = rect.right - rect.left;
 	int height =  rect.bottom - rect.top;
-	return new Rectangle (rect.left, rect.top, width, height);
+	// Report coordinates relative to the (possibly virtual) logical parent. See issue 624.
+	Point parentingOffset = parentingOffset ();
+	return new Rectangle (rect.left - parentingOffset.x, rect.top - parentingOffset.y, width, height);
 }
 
 String getClipboardText () {
@@ -1438,9 +1440,11 @@ Point getLocationInPixels () {
 	forceResize ();
 	RECT rect = new RECT ();
 	OS.GetWindowRect (topHandle (), rect);
-	long hwndParent = parent == null ? 0 : parent.handle;
+	long hwndParent = parent == null ? 0 : parent.parentingHandle ();
 	OS.MapWindowPoints (0, hwndParent, rect, 2);
-	return new Point (rect.left, rect.top);
+	// Report coordinates relative to the (possibly virtual) logical parent. See issue 624.
+	Point parentingOffset = parentingOffset ();
+	return new Point (rect.left - parentingOffset.x, rect.top - parentingOffset.y);
 }
 
 /**
@@ -3262,6 +3266,16 @@ void setBoundsInPixels (int x, int y, int width, int height, int flags) {
 }
 
 void setBoundsInPixels (int x, int y, int width, int height, int flags, boolean defer) {
+	/*
+	 * Children of a virtual (handle-less) composite are parented to the nearest
+	 * non-virtual ancestor, so translate the layout coordinates into that ancestor's
+	 * coordinate space before positioning the native window. See issue 624.
+	 */
+	if ((flags & OS.SWP_NOMOVE) == 0) {
+		Point parentingOffset = parentingOffset ();
+		x += parentingOffset.x;
+		y += parentingOffset.y;
+	}
 	if (findImageControl () != null) {
 		if (backgroundImage == null) flags |= OS.SWP_NOCOPYBITS;
 	} else {
@@ -4854,7 +4868,42 @@ int widgetExtStyle () {
 }
 
 long widgetParent () {
-	return parent.handle;
+	// For a virtual (handle-less) parent this resolves to the nearest non-virtual
+	// ancestor's window; for a normal parent it is simply parent.handle. See issue 624.
+	return parent.parentingHandle ();
+}
+
+/**
+ * Returns the cumulative offset, in pixels, contributed by any virtual (handle-less)
+ * composites between this control and the nearest non-virtual ancestor to whose native
+ * window this control is actually parented. Returns (0, 0) when no virtual ancestor is
+ * involved. See issue 624.
+ */
+Point parentingOffset () {
+	int offsetX = 0, offsetY = 0;
+	Composite ancestor = parent;
+	while (ancestor != null && ancestor.isVirtual ()) {
+		offsetX += ancestor.virtualX;
+		offsetY += ancestor.virtualY;
+		ancestor = ancestor.parent;
+	}
+	return new Point (offsetX, offsetY);
+}
+
+/**
+ * Moves this control's native window by the given delta, in pixels. Used to reposition
+ * the descendants of a virtual composite when the virtual composite itself moves, since
+ * there is no native parent window to move them all at once. See issue 624.
+ */
+void moveHandleBy (int dx, int dy) {
+	if (dx == 0 && dy == 0) return;
+	long topHandle = topHandle ();
+	RECT rect = new RECT ();
+	OS.GetWindowRect (topHandle, rect);
+	long hwndParent = parent == null ? 0 : parent.parentingHandle ();
+	OS.MapWindowPoints (0, hwndParent, rect, 2);
+	int flags = OS.SWP_NOSIZE | OS.SWP_NOZORDER | OS.SWP_NOACTIVATE | OS.SWP_DRAWFRAME;
+	OS.SetWindowPos (topHandle, 0, rect.left + dx, rect.top + dy, 0, 0, flags);
 }
 
 int widgetStyle () {
