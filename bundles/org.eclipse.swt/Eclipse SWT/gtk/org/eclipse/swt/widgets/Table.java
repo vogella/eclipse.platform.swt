@@ -3607,22 +3607,74 @@ public void setItemCount (int count) {
 	if (count == itemCount) return;
 	boolean isVirtual = (style & SWT.VIRTUAL) != 0;
 	if (!isVirtual) setRedraw (false);
-	remove (count, itemCount - 1);
-	int length = Math.max (4, (count + 3) / 4 * 4);
-	TableItem [] newItems = new TableItem [length];
-	System.arraycopy (items, 0, newItems, 0, itemCount);
-	items = newItems;
-	if (isVirtual) {
-		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
-		if (iter == 0) error (SWT.ERROR_NO_HANDLES);
-		for (int i=itemCount; i<count; i++) {
-			GTK.gtk_list_store_append (modelHandle, iter);
+	/*
+	 * Modifying the GtkListStore while it is attached to the GtkTreeView makes
+	 * GTK emit per-row signals and update the view on every single append/remove.
+	 * For large item counts this turns setItemCount() into an O(n^2) operation
+	 * that can freeze the UI for over a second (see issue #208). Detaching the
+	 * model for the duration of the bulk update lets GTK process all the changes
+	 * in a single pass; the model is reattached afterwards. The same technique is
+	 * used in recreateRenderers().
+	 */
+	boolean detachModel = isVirtual;
+	/*
+	 * Detaching the model resets the selection, the focus/cursor row and the
+	 * scroll position, none of which GTK restores on reattach. Capture them
+	 * first and restore them afterwards so callers don't see those regressions.
+	 */
+	int [] selection = null;
+	int focusIndex = -1;
+	int topIndex = -1;
+	if (detachModel) {
+		selection = getSelectionIndices ();
+		TableItem focusItem = getFocusItem ();
+		if (focusItem != null) focusIndex = indexOf (focusItem);
+		topIndex = getTopIndex ();
+		GTK.gtk_tree_view_set_model (handle, 0);
+	}
+	try {
+		remove (count, itemCount - 1);
+		int length = Math.max (4, (count + 3) / 4 * 4);
+		TableItem [] newItems = new TableItem [length];
+		System.arraycopy (items, 0, newItems, 0, itemCount);
+		items = newItems;
+		if (isVirtual) {
+			long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+			if (iter == 0) error (SWT.ERROR_NO_HANDLES);
+			for (int i=itemCount; i<count; i++) {
+				GTK.gtk_list_store_append (modelHandle, iter);
+			}
+			OS.g_free (iter);
+			itemCount = count;
+		} else {
+			for (int i=itemCount; i<count; i++) {
+				new TableItem (this, SWT.NONE, i, true);
+			}
 		}
-		OS.g_free (iter);
-		itemCount = count;
-	} else {
-		for (int i=itemCount; i<count; i++) {
-			new TableItem (this, SWT.NONE, i, true);
+	} finally {
+		if (detachModel) {
+			GTK.gtk_tree_view_set_model (handle, modelHandle);
+			if (topIndex != -1 && topIndex < itemCount) {
+				setTopIndex (topIndex);
+			}
+			if (focusIndex != -1 && focusIndex < itemCount) {
+				// selectFocusIndex() both focuses and selects the row, so undo
+				// the selection unless the focused row was actually selected.
+				selectFocusIndex (focusIndex);
+				boolean focusSelected = false;
+				if (selection != null) {
+					for (int sel : selection) {
+						if (sel == focusIndex) {
+							focusSelected = true;
+							break;
+						}
+					}
+				}
+				if (!focusSelected) deselect (focusIndex);
+			}
+			if (selection != null && selection.length > 0) {
+				select (selection);
+			}
 		}
 	}
 	if (!isVirtual) setRedraw (true);
