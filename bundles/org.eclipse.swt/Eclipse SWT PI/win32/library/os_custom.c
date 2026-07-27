@@ -439,7 +439,47 @@ JNIEXPORT jlong JNICALL OS_NATIVE(DPI_1AWARENESS_1CONTEXT_1UNAWARE_1GDISCALED)
 	#else
 		rc = 0;
 	#endif
-	OS_NATIVE_EXIT(env, that, DPI_1AWARENESS_1CONTEXT_1UNAWARE_1GDISCALED_FUNC);
+
+#ifndef NO_DeferWindowPos__J_3J_3I_3I_3I_3I_3I
+JNIEXPORT jlong JNICALL OS_NATIVE(DeferWindowPos__J_3J_3I_3I_3I_3I_3I)
+	(JNIEnv *env, jclass that, jlong arg0, jlongArray arg1, jintArray arg2, jintArray arg3, jintArray arg4, jintArray arg5, jintArray arg6)
+{
+	jlong *lparg1=NULL;
+	jint *lparg2=NULL;
+	jint *lparg3=NULL;
+	jint *lparg4=NULL;
+	jint *lparg5=NULL;
+	jint *lparg6=NULL;
+	jsize len = 0;
+	jlong rc = 0;
+	int i;
+
+	OS_NATIVE_ENTER(env, that, DeferWindowPos__J_3J_3I_3I_3I_3I_3I_FUNC);
+
+	if (arg1) if ((lparg1 = (*env)->GetLongArrayElements(env, arg1, NULL)) == NULL) goto fail;
+	if (arg2) if ((lparg2 = (*env)->GetIntArrayElements(env, arg2, NULL)) == NULL) goto fail;
+	if (arg3) if ((lparg3 = (*env)->GetIntArrayElements(env, arg3, NULL)) == NULL) goto fail;
+	if (arg4) if ((lparg4 = (*env)->GetIntArrayElements(env, arg4, NULL)) == NULL) goto fail;
+	if (arg5) if ((lparg5 = (*env)->GetIntArrayElements(env, arg5, NULL)) == NULL) goto fail;
+	if (arg6) if ((lparg6 = (*env)->GetIntArrayElements(env, arg6, NULL)) == NULL) goto fail;
+
+	len = (*env)->GetArrayLength(env, arg1);
+	rc = arg0;
+
+	for (i = 0; i < len; i++) {
+		if (rc == 0) break;
+		rc = (jlong)DeferWindowPos((HDWP)rc, (HWND)lparg1[i], (HWND)0, lparg2[i], lparg3[i], lparg4[i], lparg5[i], lparg6[i]);
+	}
+
+fail:
+	if (arg6 && lparg6) (*env)->ReleaseIntArrayElements(env, arg6, lparg6, 0);
+	if (arg5 && lparg5) (*env)->ReleaseIntArrayElements(env, arg5, lparg5, 0);
+	if (arg4 && lparg4) (*env)->ReleaseIntArrayElements(env, arg4, lparg4, 0);
+	if (arg3 && lparg3) (*env)->ReleaseIntArrayElements(env, arg3, lparg3, 0);
+	if (arg2 && lparg2) (*env)->ReleaseIntArrayElements(env, arg2, lparg2, 0);
+	if (arg1 && lparg1) (*env)->ReleaseLongArrayElements(env, arg1, lparg1, 0);
+
+	OS_NATIVE_EXIT(env, that, DeferWindowPos__J_3J_3I_3I_3I_3I_3I_FUNC);
 	return rc;
 }
 #endif
