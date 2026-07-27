@@ -45,6 +45,13 @@ public class TreeItem extends Item {
 	Font[] cellFont;
 	String [] strings;
 	boolean cached, grayed, isExpanded, updated, settingData;
+	/**
+	 * Cached number of direct children, valid only while
+	 * {@code cachedChildCountStamp == parent.structureModCount}. Avoids the O(N)
+	 * GTK child-count walk on repeated reads (e.g. JFace reveal). See #882.
+	 */
+	private int cachedChildCount = -1;
+	private int cachedChildCountStamp = -1;
 	static final int EXPANDER_EXTRA_PADDING = 4;
 
 /**
@@ -752,7 +759,10 @@ public Rectangle getImageBounds (int index) {
 public int getItemCount () {
 	checkWidget();
 	if (!parent.checkData (this)) error (SWT.ERROR_WIDGET_DISPOSED);
-	return GTK.gtk_tree_model_iter_n_children (parent.modelHandle, handle);
+	if (cachedChildCountStamp == parent.structureModCount) return cachedChildCount;
+	cachedChildCount = GTK.gtk_tree_model_iter_n_children (parent.modelHandle, handle);
+	cachedChildCountStamp = parent.structureModCount;
+	return cachedChildCount;
 }
 
 /**
@@ -1098,6 +1108,9 @@ public void removeAll () {
 		}
 	}
 	OS.g_free (iter);
+	// Unmaterialized (VIRTUAL) children are removed above without going through
+	// destroyItem(), so invalidate the cached child counts here. See #882.
+	parent.structureChanged ();
 }
 
 /**
