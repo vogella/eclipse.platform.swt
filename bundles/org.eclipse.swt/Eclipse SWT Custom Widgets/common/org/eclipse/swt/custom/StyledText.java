@@ -10960,4 +10960,25 @@ public Object getData(String key) {
 	return super.getData(key);
 }
 
+void sendPaintLineBackground(GC gc, int index, int offset, String text, int x, int y, int width, int height) {
+	if (!isListening(ST.PaintLineBackground)) {
+		return;
+	}
+
+	final Event event = new Event();
+	event.gc = gc;
+	event.index = index;
+	event.start = offset;
+	event.text = text;
+	event.x = x;
+	event.y = y;
+	event.width = width;
+	event.height = height;
+	Color foreground = gc.getForeground();
+	Color background = gc.getBackground();
+	notifyListeners(ST.PaintLineBackground, event);
+	gc.setForeground(foreground);
+	gc.setBackground(background);
+}
+
 }

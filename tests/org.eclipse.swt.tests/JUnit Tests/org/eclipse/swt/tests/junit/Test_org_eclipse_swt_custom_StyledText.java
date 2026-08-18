@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -68,6 +69,7 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.GlyphMetrics;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.BidiUtil;
@@ -5231,6 +5233,61 @@ public void test_tripleClickDoesNotSelectIfDoubleClickIsDisabled() {
 	text.notifyListeners(SWT.MouseDown, event);
 
 	assertEquals("", text.getSelectionText());
+}
+
+@Test
+public void test_paintLineBackgroundEvent() throws InterruptedException {
+	shell.setVisible(true);
+	text.setText("first\nsecond");
+	text.setMargins(0, 0, 0, 0);
+	text.setSize(200, 100);
+	List<Event> events = new ArrayList<>();
+	text.addListener(ST.PaintLineBackground, event -> {
+		assertNotNull(event.gc);
+		events.add(event);
+	});
+	text.redraw();
+	SwtTestUtil.processEvents(1000, () -> events.size() >= 2);
+	Event second = events.stream().filter(event -> event.index == 1).findFirst().orElseThrow();
+	assertEquals(6, second.start);
+	assertEquals("second", second.text);
+	assertEquals(text.getLinePixel(1), second.y);
+	assertEquals(text.getLineHeight(), second.height);
+	assertEquals(text.getClientArea().width, second.width);
+}
+
+@Tag("gtk4-todo")
+@Test
+public void test_paintLineBackgroundIsDrawnUnderText() throws InterruptedException {
+	assumeFalse(SwtTestUtil.isCocoa, "Bug 553090 prevents test to work on Mac");
+	Color red = text.getDisplay().getSystemColor(SWT.COLOR_RED);
+	shell.setVisible(true);
+	text.setForeground(text.getDisplay().getSystemColor(SWT.COLOR_BLACK));
+	text.setText("abc");
+	text.setMargins(0, 0, 0, 0);
+	text.pack();
+	text.addListener(ST.PaintLineBackground, event -> {
+		event.gc.setBackground(red);
+		event.gc.fillRectangle(event.x, event.y, event.width, event.height);
+	});
+	text.redraw();
+	SwtTestUtil.processEvents(1000, () -> hasPixel(text, red) && hasPixelOtherThan(red));
+	assertTrue(hasPixel(text, red));
+	assertTrue(hasPixelOtherThan(red), "The text must be drawn over what the listener painted.");
+}
+
+private boolean hasPixelOtherThan(Color color) {
+	Point size = text.getSize();
+	Rectangle area = text.getClientArea();
+	Image image = new Image(text.getDisplay(), size.x, size.y);
+	GC gc = new GC(text);
+	try {
+		gc.copyArea(image, 0, 0);
+		return SwtTestUtil.hasPixelNotMatching(image, color, area);
+	} finally {
+		gc.dispose();
+		image.dispose();
+	}
 }
 
 @Test

@@ -224,4 +224,16 @@ public class ST {
 	 */
 	public static final int CaretMoved = 3011;
 
+	/**
+	 * The PaintLineBackground event type (value is 3012). It is sent while painting, after the
+	 * background of a line and before its text, so what a listener draws stays under the text.
+	 * The event has the <code>gc</code>, the <code>index</code> of the line, the offset of the line
+	 * in <code>start</code>, its <code>text</code>, and its bounds in <code>x</code>, <code>y</code>,
+	 * <code>width</code> and <code>height</code>. The colors of the GC are restored afterwards, a
+	 * listener must restore any other state of it that it changes, such as clipping or alpha.
+	 *
+	 * @since 3.136
+	 */
+	public static final int PaintLineBackground = 3012;
+
 }

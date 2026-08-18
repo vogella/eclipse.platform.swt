@@ -494,6 +494,7 @@ private void drawLineBackground(LineDrawInfo lineInfo, int paintY, GC gc, Color 
 		gc.setBackground(widgetBackground);
 		styledText.drawBackground(gc, client.x, paintY, client.width, lineInfo.height);
 	}
+	styledText.sendPaintLineBackground(gc, lineInfo.index, lineInfo.offset, lineInfo.text, client.x, paintY, client.width, lineInfo.height);
 }
 
 private void drawLineForeground(LineDrawInfo lineInfo, int paintX, int paintY, GC gc, Color widgetForeground, int[] selectionRanges) {
