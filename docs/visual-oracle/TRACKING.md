@@ -69,10 +69,10 @@ States: `BLOCKED` waiting on a dependency, `READY` dispatchable now, `CLAIMED` a
 
 | ID | Task | Group | State | Agent | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| T01 | Capture strategy spike and ADR | FOUNDATION | CLAIMED | opencode byac24xlr | none | Blocks T04, decide before writing capture code |
+| T01 | Capture strategy spike and ADR | FOUNDATION | MERGED | opencode + coordinator | none | copyarea chosen, print disqualified |
 | T02 | Target selection and build recipe | FOUNDATION | MERGED | opencode bqd2a78sf | none | Verified by coordinator, see integration log |
 | T03 | Harness skeleton and SPI freeze | FOUNDATION | READY | | T02 | Orchestrator reviews line by line |
-| T04 | Capture runtime | CORE | BLOCKED | | T01, T03 | |
+| T04 | Capture runtime | CORE | BLOCKED | | T01, T03 | Implements copyarea primary, xgrab fallback; must fix xgrab crop origin at zoom>100 |
 | T05 | Environment control | CORE | BLOCKED | | T03 | |
 | T06 | Diff engine | CORE | BLOCKED | | T03 | |
 | T07 | Defect classification | CORE | BLOCKED | | T06 | |
@@ -288,3 +288,21 @@ Coordinator verification, run independently of the agent's own claims:
 Board updates: T02 to MERGED, T03 to READY.
 Newly unblocked: T03.
 Not verified, deliberately: the negative case for `verify-backend.sh`, that it fails when a backend silently falls back to native. Worth a follow-up, because a false "active" verdict would make the whole harness compare native against native and report perfect agreement.
+
+### T01 handoff, 2026-08-23
+Branch: oracle/T01
+Scope delivered: capture strategy decided and recorded in ADR-001, with a reproducible spike under `tools/oracle-spike/` producing 15 measurements and 14 evidence PNGs.
+Ownership note: dispatched to an opencode agent, which built the spike harness (`CaptureSpike.java`, `run-spike.sh`) and established the decisive GL finding, then lost its session to repeated provider stream errors before committing. The coordinator took the task over, fixed three defects in the spike script, ran it to green, and wrote the ADR.
+Defects fixed during takeover:
+  - `scenario`/`det_run` passed `--skia` as a JVM option, so the Skia scenario never started
+  - determinism runs passed an absolute path as the filename tag, producing a doubled path
+  - the evidence copy list expected Skia canvas images from the native scenarios, which do not create one
+Out of scope, deliberately: Win32 measurement, no Windows machine available; the `xgrab` crop origin bug at zoom 200 is documented for T04 rather than fixed here.
+Verified with:
+  bash tools/oracle-spike/run-spike.sh
+  SPIKE-OK: 15 RESULT lines, 14 evidence PNGs in docs/visual-oracle/adr/evidence/
+  print glMilli=0, copyarea glMilli=580, xgrab glMilli=580 on the SWT.SKIA canvas
+  copyarea 0.52ms, print 0.97ms, xgrab 154.57ms per capture at zoom 100
+  DET-CROSS print/copyarea/xgrab all IDENTICAL over 5 processes
+Known gaps: `xgrab` crop origin is offset by 24px at zoom 200 and must be fixed before the fallback is used at non-unit zoom.
+Open questions: none.
