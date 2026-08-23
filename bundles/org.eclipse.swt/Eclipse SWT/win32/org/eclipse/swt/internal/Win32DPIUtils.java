@@ -309,12 +309,34 @@ public class Win32DPIUtils {
 		return pointToPixel(point, zoom, RoundingMode.ROUND);
 	}
 
+	public static float[] pointToPixelAsSizeF(Drawable drawable, Point point, int zoom) {
+		if (drawable != null && !drawable.isAutoScalable()) return pointToPixelAsSizeF(point, 100);
+		return pointToPixelAsSizeF(point, zoom);
+	}
+
+	public static float[] pointToPixelAsSizeF(Point point, int zoom) {
+		if (point == null) return null;
+		if (zoom == 100) return new float[] {point.x, point.y};
+		float scaleFactor = DPIUtil.getScalingFactor(zoom);
+		return new float[] {point.x * scaleFactor, point.y * scaleFactor};
+	}
+
 	public static Point pointToPixelAsSufficientlyLargeSize(Point point, int zoom) {
 		return pointToPixel(point, zoom, RoundingMode.UP);
 	}
 
 	public static Point pointToPixelAsLocation(Point point, int zoom) {
 		return pointToPixel(point, zoom, RoundingMode.ROUND);
+	}
+
+	public static float[] pointToPixelAsLocationF(Drawable drawable, Point point, int zoom) {
+		if (drawable != null && !drawable.isAutoScalable()) return pointToPixelAsLocationF(point, 100);
+		return pointToPixelAsLocationF(point, zoom);
+	}
+
+	public static float[] pointToPixelAsLocationF(Point point, int zoom) {
+		// float scaling needs no rounding, so location and size scale identically
+		return pointToPixelAsSizeF(point, zoom);
 	}
 
 	public static Rectangle pointToPixel(Rectangle rect, int zoom) {
@@ -344,6 +366,18 @@ public class Win32DPIUtils {
 	public static Rectangle pointToPixel(Drawable drawable, Rectangle rect, int zoom) {
 		if (drawable != null && !drawable.isAutoScalable()) return rect;
 		return pointToPixel (rect, zoom);
+	}
+
+	public static float[] pointToPixelF(Drawable drawable, Rectangle rect, int zoom) {
+		if (drawable != null && !drawable.isAutoScalable()) return pointToPixelF(rect, 100);
+		return pointToPixelF(rect, zoom);
+	}
+
+	public static float[] pointToPixelF(Rectangle rect, int zoom) {
+		if (rect == null) return null;
+		if (zoom == 100) return new float[] {rect.x, rect.y, rect.width, rect.height};
+		float scaleFactor = DPIUtil.getScalingFactor(zoom);
+		return new float[] {rect.x * scaleFactor, rect.y * scaleFactor, rect.width * scaleFactor, rect.height * scaleFactor};
 	}
 
 	public static int getPrimaryMonitorZoomAtStartup() {

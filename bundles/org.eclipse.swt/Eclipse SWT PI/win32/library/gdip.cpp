@@ -783,6 +783,19 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawArc)
 }
 #endif
 
+#ifndef NO_Graphics_1DrawArcF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawArcF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5, jfloat arg6, jfloat arg7);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawArcF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5, jfloat arg6, jfloat arg7)
+{
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1DrawArcF_FUNC);
+	rc = (jint)((Graphics *)arg0)->DrawArc((Pen *)arg1, (REAL)arg2, (REAL)arg3, (REAL)arg4, (REAL)arg5, (REAL)arg6, (REAL)arg7);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawArcF_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_Graphics_1DrawDriverString__JJIJJLorg_eclipse_swt_internal_gdip_PointF_2IJ
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawDriverString__JJIJJLorg_eclipse_swt_internal_gdip_PointF_2IJ)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jint arg2, jlong arg3, jlong arg4, jobject arg5, jint arg6, jlong arg7);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawDriverString__JJIJJLorg_eclipse_swt_internal_gdip_PointF_2IJ)
@@ -830,6 +843,19 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawEllipse)
 }
 #endif
 
+#ifndef NO_Graphics_1DrawEllipseF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawEllipseF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawEllipseF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5)
+{
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1DrawEllipseF_FUNC);
+	rc = (jint)((Graphics *)arg0)->DrawEllipse((Pen *)arg1, (REAL)arg2, (REAL)arg3, (REAL)arg4, (REAL)arg5);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawEllipseF_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_Graphics_1DrawImage__JJII
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawImage__JJII)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jint arg2, jint arg3);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawImage__JJII)
@@ -873,6 +899,19 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLine)
 }
 #endif
 
+#ifndef NO_Graphics_1DrawLineF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLineF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLineF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5)
+{
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1DrawLineF_FUNC);
+	rc = (jint)((Graphics *)arg0)->DrawLine((Pen *)arg1, (REAL)arg2, (REAL)arg3, (REAL)arg4, (REAL)arg5);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawLineF_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_Graphics_1DrawLines
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLines)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jintArray arg2, jint arg3);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLines)
@@ -886,6 +925,23 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLines)
 fail:
 	if (arg2 && lparg2) env->ReleaseIntArrayElements(arg2, lparg2, JNI_ABORT);
 	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawLines_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_Graphics_1DrawLinesF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLinesF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloatArray arg2, jint arg3);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawLinesF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloatArray arg2, jint arg3)
+{
+	jfloat *lparg2=NULL;
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1DrawLinesF_FUNC);
+	if (arg2) if ((lparg2 = env->GetFloatArrayElements(arg2, NULL)) == NULL) goto fail;
+	rc = (jint)((Graphics *)arg0)->DrawLines((Pen *)arg1, (const PointF *)lparg2, (INT)arg3);
+fail:
+	if (arg2 && lparg2) env->ReleaseFloatArrayElements(arg2, lparg2, JNI_ABORT);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawLinesF_FUNC);
 	return rc;
 }
 #endif
@@ -920,6 +976,23 @@ fail:
 }
 #endif
 
+#ifndef NO_Graphics_1DrawPolygonF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawPolygonF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloatArray arg2, jint arg3);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawPolygonF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloatArray arg2, jint arg3)
+{
+	jfloat *lparg2=NULL;
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1DrawPolygonF_FUNC);
+	if (arg2) if ((lparg2 = env->GetFloatArrayElements(arg2, NULL)) == NULL) goto fail;
+	rc = (jint)((Graphics *)arg0)->DrawPolygon((Pen *)arg1, (const PointF *)lparg2, (INT)arg3);
+fail:
+	if (arg2 && lparg2) env->ReleaseFloatArrayElements(arg2, lparg2, JNI_ABORT);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawPolygonF_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_Graphics_1DrawRectangle
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawRectangle)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jint arg2, jint arg3, jint arg4, jint arg5);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawRectangle)
@@ -929,6 +1002,19 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawRectangle)
 	Gdip_NATIVE_ENTER(env, that, Graphics_1DrawRectangle_FUNC);
 	rc = (jint)((Graphics *)arg0)->DrawRectangle((Pen *)arg1, arg2, arg3, arg4, arg5);
 	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawRectangle_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_Graphics_1DrawRectangleF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawRectangleF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1DrawRectangleF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5)
+{
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1DrawRectangleF_FUNC);
+	rc = (jint)((Graphics *)arg0)->DrawRectangle((Pen *)arg1, (REAL)arg2, (REAL)arg3, (REAL)arg4, (REAL)arg5);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1DrawRectangleF_FUNC);
 	return rc;
 }
 #endif
@@ -986,6 +1072,19 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillEllipse)
 }
 #endif
 
+#ifndef NO_Graphics_1FillEllipseF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillEllipseF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillEllipseF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5)
+{
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1FillEllipseF_FUNC);
+	rc = (jint)((Graphics *)arg0)->FillEllipse((Brush *)arg1, (REAL)arg2, (REAL)arg3, (REAL)arg4, (REAL)arg5);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1FillEllipseF_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_Graphics_1FillPath
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPath)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jlong arg2);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPath)
@@ -1012,6 +1111,19 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPie)
 }
 #endif
 
+#ifndef NO_Graphics_1FillPieF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPieF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5, jfloat arg6, jfloat arg7);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPieF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5, jfloat arg6, jfloat arg7)
+{
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1FillPieF_FUNC);
+	rc = (jint)((Graphics *)arg0)->FillPie((Brush *)arg1, (REAL)arg2, (REAL)arg3, (REAL)arg4, (REAL)arg5, (REAL)arg6, (REAL)arg7);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1FillPieF_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_Graphics_1FillPolygon
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPolygon)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jintArray arg2, jint arg3, jint arg4);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPolygon)
@@ -1029,6 +1141,23 @@ fail:
 }
 #endif
 
+#ifndef NO_Graphics_1FillPolygonF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPolygonF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloatArray arg2, jint arg3, jint arg4);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillPolygonF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloatArray arg2, jint arg3, jint arg4)
+{
+	jfloat *lparg2=NULL;
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1FillPolygonF_FUNC);
+	if (arg2) if ((lparg2 = env->GetFloatArrayElements(arg2, NULL)) == NULL) goto fail;
+	rc = (jint)((Graphics *)arg0)->FillPolygon((Brush *)arg1, (const PointF *)lparg2, (INT)arg3, (FillMode)arg4);
+fail:
+	if (arg2 && lparg2) env->ReleaseFloatArrayElements(arg2, lparg2, JNI_ABORT);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1FillPolygonF_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_Graphics_1FillRectangle
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillRectangle)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jint arg2, jint arg3, jint arg4, jint arg5);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillRectangle)
@@ -1038,6 +1167,19 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillRectangle)
 	Gdip_NATIVE_ENTER(env, that, Graphics_1FillRectangle_FUNC);
 	rc = (jint)((Graphics *)arg0)->FillRectangle((Brush *)arg1, (INT)arg2, (INT)arg3, (INT)arg4, (INT)arg5);
 	Gdip_NATIVE_EXIT(env, that, Graphics_1FillRectangle_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_Graphics_1FillRectangleF
+extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillRectangleF)(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5);
+JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1FillRectangleF)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jfloat arg2, jfloat arg3, jfloat arg4, jfloat arg5)
+{
+	jint rc = 0;
+	Gdip_NATIVE_ENTER(env, that, Graphics_1FillRectangleF_FUNC);
+	rc = (jint)((Graphics *)arg0)->FillRectangle((Brush *)arg1, (REAL)arg2, (REAL)arg3, (REAL)arg4, (REAL)arg5);
+	Gdip_NATIVE_EXIT(env, that, Graphics_1FillRectangleF_FUNC);
 	return rc;
 }
 #endif

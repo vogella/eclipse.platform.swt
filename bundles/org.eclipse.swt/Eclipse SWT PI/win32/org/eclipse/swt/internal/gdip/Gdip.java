@@ -318,6 +318,18 @@ public static final native void Graphics_delete(long graphics);
  */
 public static final native int Graphics_DrawArc(long graphics, long pen, int x, int y, int width, int height, float startAngle, float sweepAngle);
 /**
+ * @method flags=cpp,accessor=DrawArc
+ * @param graphics cast=(Graphics *)
+ * @param pen cast=(Pen *)
+ * @param x cast=(REAL)
+ * @param y cast=(REAL)
+ * @param width cast=(REAL)
+ * @param height cast=(REAL)
+ * @param startAngle cast=(REAL)
+ * @param sweepAngle cast=(REAL)
+ */
+public static final native int Graphics_DrawArcF(long graphics, long pen, float x, float y, float width, float height, float startAngle, float sweepAngle);
+/**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
  * @param text cast=(const UINT16 *)
@@ -343,6 +355,16 @@ public static final native int Graphics_DrawDriverString(long graphics, long tex
  * @param pen cast=(Pen *)
  */
 public static final native int Graphics_DrawEllipse(long graphics, long pen, int x, int y, int width, int height);
+/**
+ * @method flags=cpp,accessor=DrawEllipse
+ * @param graphics cast=(Graphics *)
+ * @param pen cast=(Pen *)
+ * @param x cast=(REAL)
+ * @param y cast=(REAL)
+ * @param width cast=(REAL)
+ * @param height cast=(REAL)
+ */
+public static final native int Graphics_DrawEllipseF(long graphics, long pen, float x, float y, float width, float height);
 /**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
@@ -373,6 +395,16 @@ public static final native int Graphics_DrawImage(long graphics, long image, Rec
  */
 public static final native int Graphics_DrawLine(long graphics, long pen, int x1, int y1, int x2, int y2);
 /**
+ * @method flags=cpp,accessor=DrawLine
+ * @param graphics cast=(Graphics *)
+ * @param pen cast=(Pen *)
+ * @param x1 cast=(REAL)
+ * @param y1 cast=(REAL)
+ * @param x2 cast=(REAL)
+ * @param y2 cast=(REAL)
+ */
+public static final native int Graphics_DrawLineF(long graphics, long pen, float x1, float y1, float x2, float y2);
+/**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
  * @param pen cast=(Pen *)
@@ -380,6 +412,14 @@ public static final native int Graphics_DrawLine(long graphics, long pen, int x1
  * @param count cast=(INT)
  */
 public static final native int Graphics_DrawLines(long graphics, long pen, int[] points, int count);
+/**
+ * @method flags=cpp,accessor=DrawLines
+ * @param graphics cast=(Graphics *)
+ * @param pen cast=(Pen *)
+ * @param points cast=(const PointF *),flags=no_out
+ * @param count cast=(INT)
+ */
+public static final native int Graphics_DrawLinesF(long graphics, long pen, float[] points, int count);
 /**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
@@ -396,11 +436,29 @@ public static final native int Graphics_DrawPath(long graphics, long pen, long p
  */
 public static final native int Graphics_DrawPolygon(long graphics, long pen, int[] points, int count);
 /**
+ * @method flags=cpp,accessor=DrawPolygon
+ * @param graphics cast=(Graphics *)
+ * @param pen cast=(Pen *)
+ * @param points cast=(const PointF *),flags=no_out
+ * @param count cast=(INT)
+ */
+public static final native int Graphics_DrawPolygonF(long graphics, long pen, float[] points, int count);
+/**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
  * @param pen cast=(Pen *)
  */
 public static final native int Graphics_DrawRectangle(long graphics, long pen, int x, int y, int width, int height);
+/**
+ * @method flags=cpp,accessor=DrawRectangle
+ * @param graphics cast=(Graphics *)
+ * @param pen cast=(Pen *)
+ * @param x cast=(REAL)
+ * @param y cast=(REAL)
+ * @param width cast=(REAL)
+ * @param height cast=(REAL)
+ */
+public static final native int Graphics_DrawRectangleF(long graphics, long pen, float x, float y, float width, float height);
 /**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
@@ -433,6 +491,16 @@ public static final native int Graphics_DrawString(long graphics, char[] string,
  */
 public static final native int Graphics_FillEllipse(long graphics, long brush, int x, int y, int width, int height);
 /**
+ * @method flags=cpp,accessor=FillEllipse
+ * @param graphics cast=(Graphics *)
+ * @param brush cast=(Brush *)
+ * @param x cast=(REAL)
+ * @param y cast=(REAL)
+ * @param width cast=(REAL)
+ * @param height cast=(REAL)
+ */
+public static final native int Graphics_FillEllipseF(long graphics, long brush, float x, float y, float width, float height);
+/**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
  * @param brush cast=(Brush *)
@@ -458,6 +526,18 @@ public static final native void Graphics_Flush(long graphics, int intention);
  */
 public static final native int Graphics_FillPie(long graphics, long brush, int x, int y, int width, int height, float startAngle, float sweepAngle);
 /**
+ * @method flags=cpp,accessor=FillPie
+ * @param graphics cast=(Graphics *)
+ * @param brush cast=(Brush *)
+ * @param x cast=(REAL)
+ * @param y cast=(REAL)
+ * @param width cast=(REAL)
+ * @param height cast=(REAL)
+ * @param startAngle cast=(REAL)
+ * @param sweepAngle cast=(REAL)
+ */
+public static final native int Graphics_FillPieF(long graphics, long brush, float x, float y, float width, float height, float startAngle, float sweepAngle);
+/**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
  * @param brush cast=(Brush *)
@@ -466,6 +546,15 @@ public static final native int Graphics_FillPie(long graphics, long brush, int x
  * @param fillMode cast=(FillMode)
  */
 public static final native int Graphics_FillPolygon(long graphics, long brush, int[] points, int count, int fillMode);
+/**
+ * @method flags=cpp,accessor=FillPolygon
+ * @param graphics cast=(Graphics *)
+ * @param brush cast=(Brush *)
+ * @param points cast=(const PointF *),flags=no_out
+ * @param count cast=(INT)
+ * @param fillMode cast=(FillMode)
+ */
+public static final native int Graphics_FillPolygonF(long graphics, long brush, float[] points, int count, int fillMode);
 /**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
@@ -476,6 +565,16 @@ public static final native int Graphics_FillPolygon(long graphics, long brush, i
  * @param height cast=(INT)
  */
 public static final native int Graphics_FillRectangle(long graphics, long brush, int x, int y, int width, int height);
+/**
+ * @method flags=cpp,accessor=FillRectangle
+ * @param graphics cast=(Graphics *)
+ * @param brush cast=(Brush *)
+ * @param x cast=(REAL)
+ * @param y cast=(REAL)
+ * @param width cast=(REAL)
+ * @param height cast=(REAL)
+ */
+public static final native int Graphics_FillRectangleF(long graphics, long brush, float x, float y, float width, float height);
 /**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
