@@ -75,6 +75,16 @@ Made fractional, they antialias into two grey rows and read as "SWT got blurry".
 So snapping is not something to remove, it is something to make explicit.
 Fills, curves, diagonals and text positions become fractional.
 Hairline primitives keep snapping to whole device pixels.
+
+This risk is smaller than it first looks, and the reason matters for scoping.
+SWT leaves GDI+ smoothing at `SmoothingModeDefault`, which is the GDI+ quality default and
+means no antialiasing (`Gdip.java:114`; `SmoothingModeNone` is the separate value 3).
+So with default settings a fractional coordinate improves *where* GDI+ decides the pixel
+boundary falls without softening the edge.
+Blurring only becomes possible once a client has explicitly called `setAntialias(SWT.ON)`,
+and in that mode a fractional coordinate is what the client asked for.
+Snapping therefore protects a narrower case than feared, but it still protects it, so the
+hairline call sites keep it.
 `RoundingMode` in `Eclipse SWT/common/org/eclipse/swt/graphics/RoundingMode.java` already
 exists as an internal enum and is the natural place to express this per call site.
 
