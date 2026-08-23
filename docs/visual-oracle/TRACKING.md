@@ -217,3 +217,48 @@ The temptation to parallelize the SPI freeze in Phase 1 should be resisted; it i
 Project not started.
 T01 and T02 are `READY` and can be dispatched immediately and simultaneously.
 Everything else is blocked pending the SPI freeze in T03.
+
+### T02 handoff, 2026-08-23
+Branch: oracle/T02 at ac7283c8f1 (parent of this commit; this record ships inside the single T02 commit)
+Scope delivered:
+`tools/oracle/build.sh`: builds each backend with plain javac in seconds, idempotent via source fingerprints, classpath only on stdout, all diagnostics on stderr.
+Backends: `native` (this worktree, GTK Linux x86_64 fragment), `skia-canvas` (same host bundle plus the `org.eclipse.swt.skia` fragment from PR 3231, pinned skija-shared/skija-linux-x64 0.143.17 + types 0.2.0 from Maven Central, checksum-pinned, cached outside the worktree), `skija-proto` (clone of swt-initiative31/prototype-skija@master into the cache; the fork declares its Skija dependency as committed jars 0.116.3 in `binaries/.../lib`, referenced by `jars.extra.classpath`, so no download is needed and plain javac works for it unchanged).
+Non-Java resources are copied per source folder into each class output directory; this is what makes both the GTK theming CSS and the ServiceLoader registration (`META-INF/services/org.eclipse.swt.internal.canvasext.IExternalCanvasFactory`) work.
+`tools/oracle/verify-backend.sh <id>` runs a probe program headless under Xvfb and asserts genuine backend activation: paint events plus natives loaded for native; the `External canvas activated.` log line via `-Dorg.eclipse.swt.external.canvas:logActivation=true` for skia-canvas; `Drawing.createGraphicsContext` returning a real `SkijaGC` (raster surface created) for skija-proto. It detects and rejects the silent fallback-to-native case.
+`docs/visual-oracle/adr/ADR-002-build-target.md`: sources, pins, refresh policy, unavailability behavior.
+Out of scope, deliberately: capture strategy (T01), harness/SPI (T03), Windows/macOS builds of any backend, pinning the moving fork `master` to a fixed SHA (refresh is explicit via `ORACLE_REFRESH=1`; resolved SHA printed on every build).
+Verified with:
+
+```
+$ tools/oracle/build.sh native
+/home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/native/classes
+(cold build 16.2 s)
+
+$ time tools/oracle/build.sh native   # second consecutive run
+0.27 s total, stdout as above
+
+$ tools/oracle/build.sh --all         # exit 0, three lines
+native /home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/native/classes
+skia-canvas /home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/skia-canvas/classes-main:...
+skija-proto /home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/skija-proto/classes:...
+
+$ tools/oracle/verify-backend.sh native
+NATIVE-ACTIVE=true
+VERIFY-OK: backend 'native' is genuinely active
+
+$ tools/oracle/verify-backend.sh skia-canvas
+External canvas activated.
+PAINTS=1
+VERIFY-OK: backend 'skia-canvas' is genuinely active
+
+$ tools/oracle/verify-backend.sh skija-proto
+PROBE-GC=org.eclipse.swt.graphics.SkijaGC
+SKIJA-PROTO-ACTIVE=true
+VERIFY-OK: backend 'skija-proto' is genuinely active
+```
+
+All verify runs used `env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1024x768x24"` internally.
+Known gaps: builds and runs must use the same JDK (21+, developed against Temurin 25); `--enable-native-access=ALL-UNNAMED` is passed by probes because SWT loads natives via `System.loadLibrary`. All three backends currently require Linux x86_64 because they run prebuilt GTK binaries; other machines get a clean non-zero exit with a reason. A missing or corrupt cache jar, an unresolved git LFS pointer, or a failed clone/download each fail cleanly with a specific message.
+The verifier caught one real silent-fallback during development (service file copied under `resources/` instead of classpath root) and rejected it, which is exactly its job.
+Open questions: none.
+
