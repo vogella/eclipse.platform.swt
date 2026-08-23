@@ -353,7 +353,7 @@ void checkGC(int mask) {
 			data.gdipFont = gdipFont;
 		}
 		if ((state & DRAW_OFFSET) != 0) {
-			int effectiveLineWidth = data.lineWidth < 1 ? 1 : Math.round(data.lineWidth);
+			int effectiveLineWidth = effectiveLineWidthInPixels();
 			if (effectiveLineWidth % 2 == 1) {
 				PointF offset = new PointF();
 				// In case the effective line width is odd, shift coordinates by (0.5, 0.5).
@@ -880,7 +880,8 @@ public void drawArc (int x, int y, int width, int height, int startAngle, int ar
 }
 
 private class DrawArcOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
+	// A curve has no crisp axis-aligned hairline edge to protect.
+	private final GeometryPrecision precision = GeometryPrecision.FRACTIONAL;
 	private final Rectangle rectangle;
 	private final int startAngle;
 	private final int arcAngle;
@@ -892,12 +893,12 @@ private class DrawArcOperation extends Operation {
 	}
 	@Override
 	void apply() {
-		Rectangle rect = toPixels(rectangle, precision, getZoom());
-		drawArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
+		float[] rect = toPixelsF(rectangle, precision, getZoom());
+		drawArcInPixels(rect[0], rect[1], rect[2], rect[3], startAngle, arcAngle);
 	}
 }
 
-private void drawArcInPixels (int x, int y, int width, int height, int startAngle, int arcAngle) {
+private void drawArcInPixels (float x, float y, float width, float height, int startAngle, int arcAngle) {
 	checkGC(DRAW);
 	if (width < 0) {
 		x = x + width;
@@ -912,7 +913,7 @@ private void drawArcInPixels (int x, int y, int width, int height, int startAngl
 	if (gdipGraphics != 0) {
 		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		if (width == height) {
-			Gdip.Graphics_DrawArc(gdipGraphics, data.gdipPen, x, y, width, height, -startAngle, -arcAngle);
+			Gdip.Graphics_DrawArcF(gdipGraphics, data.gdipPen, x, y, width, height, -startAngle, -arcAngle);
 		} else {
 			long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 			if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -927,14 +928,16 @@ private void drawArcInPixels (int x, int y, int width, int height, int startAngl
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) x--;
 	}
+	int ix = Math.round(x), iy = Math.round(y), iw = Math.round(width), ih = Math.round(height);
 	int x1, y1, x2, y2,tmp;
 	boolean isNegative;
 	if (arcAngle >= 360 || arcAngle <= -360) {
-		x1 = x2 = x + width;
-		y1 = y2 = y + height / 2;
+		x1 = x2 = ix + iw;
+		y1 = y2 = iy + ih / 2;
 	} else {
 		isNegative = arcAngle < 0;
 
@@ -945,13 +948,13 @@ private void drawArcInPixels (int x, int y, int width, int height, int startAngl
 			startAngle = arcAngle;
 			arcAngle = tmp;
 		}
-		x1 = cos(startAngle, width) + x + width/2;
-		y1 = -1 * sin(startAngle, height) + y + height/2;
+		x1 = cos(startAngle, iw) + ix + iw/2;
+		y1 = -1 * sin(startAngle, ih) + iy + ih/2;
 
-		x2 = cos(arcAngle, width) + x + width/2;
-		y2 = -1 * sin(arcAngle, height) + y + height/2;
+		x2 = cos(arcAngle, iw) + ix + iw/2;
+		y2 = -1 * sin(arcAngle, ih) + iy + ih/2;
 	}
-	OS.Arc(handle, x, y, x + width + 1, y + height + 1, x1, y1, x2, y2);
+	OS.Arc(handle, ix, iy, ix + iw + 1, iy + ih + 1, x1, y1, x2, y2);
 }
 
 /**
@@ -2018,7 +2021,6 @@ public void drawLine (int x1, int y1, int x2, int y2) {
 }
 
 private class DrawLineOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Point start;
 	private final Point end;
 
@@ -2030,31 +2032,45 @@ private class DrawLineOperation extends Operation {
 	@Override
 	void apply() {
 		int deviceZoom = getZoom();
-		Point startInPixels = toPixelsAsLocation (start, precision, deviceZoom);
-		Point endInPixels = toPixelsAsLocation (end, precision, deviceZoom);
-		drawLineInPixels(startInPixels.x, startInPixels.y, endInPixels.x, endInPixels.y);
+		GeometryPrecision precision = precision();
+		float[] startInPixels = toPixelsAsLocationF (start, precision, deviceZoom);
+		float[] endInPixels = toPixelsAsLocationF (end, precision, deviceZoom);
+		drawLineInPixels(startInPixels[0], startInPixels[1], endInPixels[0], endInPixels[1]);
+	}
+
+	// The decision must be made per apply(), because a recorded operation is
+	// replayed at other zooms and data.lineWidth can change in between.
+	private GeometryPrecision precision() {
+		// Keyed off the same effectiveLineWidth the DRAW_OFFSET half-pixel shift
+		// uses: an axis-aligned hairline keeps snapping so borders, separators and
+		// gridlines stay crisp; diagonals and thick strokes have no crisp-hairline
+		// property left to protect.
+		boolean axisAligned = start.x == end.x || start.y == end.y;
+		if (!axisAligned || effectiveLineWidthInPixels() > 1) return GeometryPrecision.FRACTIONAL;
+		return GeometryPrecision.SNAPPED;
 	}
 }
 
-private void drawLineInPixels (int x1, int y1, int x2, int y2) {
+private void drawLineInPixels (float x1, float y1, float x2, float y2) {
 	checkGC(DRAW);
 	long gdipGraphics = data.gdipGraphics;
 	if (gdipGraphics != 0) {
 		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_DrawLine(gdipGraphics, data.gdipPen, x1, y1, x2, y2);
+		Gdip.Graphics_DrawLineF(gdipGraphics, data.gdipPen, x1, y1, x2, y2);
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
 			x1--;
 			x2--;
 		}
 	}
-	OS.MoveToEx (handle, x1, y1, 0);
-	OS.LineTo (handle, x2, y2);
+	OS.MoveToEx (handle, Math.round(x1), Math.round(y1), 0);
+	OS.LineTo (handle, Math.round(x2), Math.round(y2));
 	if (data.lineWidth <= 1) {
-		OS.SetPixel (handle, x2, y2, data.foreground);
+		OS.SetPixel (handle, Math.round(x2), Math.round(y2), data.foreground);
 	}
 }
 
@@ -2085,7 +2101,8 @@ public void drawOval (int x, int y, int width, int height) {
 }
 
 private class DrawOvalOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
+	// A curve has no crisp axis-aligned hairline edge to protect.
+	private final GeometryPrecision precision = GeometryPrecision.FRACTIONAL;
 	private final Rectangle bounds;
 
 	DrawOvalOperation(Rectangle bounds) {
@@ -2094,24 +2111,25 @@ private class DrawOvalOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle boundsInPixels = toPixels(bounds, precision, getZoom());
-		drawOvalInPixels(boundsInPixels.x, boundsInPixels.y, boundsInPixels.width, boundsInPixels.height);
+		float[] boundsInPixels = toPixelsF(bounds, precision, getZoom());
+		drawOvalInPixels(boundsInPixels[0], boundsInPixels[1], boundsInPixels[2], boundsInPixels[3]);
 	}
 }
 
-private void drawOvalInPixels (int x, int y, int width, int height) {
+private void drawOvalInPixels (float x, float y, float width, float height) {
 	checkGC(DRAW);
 	long gdipGraphics = data.gdipGraphics;
 	if (gdipGraphics != 0) {
 		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_DrawEllipse(gdipGraphics, data.gdipPen, x, y, width, height);
+		Gdip.Graphics_DrawEllipseF(gdipGraphics, data.gdipPen, x, y, width, height);
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) x--;
 	}
-	OS.Ellipse(handle, x, y, x + width + 1, y + height + 1);
+	OS.Ellipse(handle, Math.round(x), Math.round(y), Math.round(x + width) + 1, Math.round(y + height) + 1);
 }
 
 /**
@@ -2241,7 +2259,6 @@ public void drawPolygon (int[] pointArray) {
 }
 
 private class DrawPolygonOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final int[] pointArray;
 
 	DrawPolygonOperation(int[] pointArray) {
@@ -2250,31 +2267,51 @@ private class DrawPolygonOperation extends Operation {
 
 	@Override
 	void apply() {
-		drawPolygonInPixels(toPixels(pointArray, precision, getZoom()));
+		drawPolygonInPixels(toPixelsF(pointArray, precision(), getZoom()));
+	}
+
+	// The decision must be made per apply(), because a recorded operation is
+	// replayed at other zooms and data.lineWidth can change in between.
+	private GeometryPrecision precision() {
+		// One call cannot mix policies: if any edge, including the closing one,
+		// is axis-aligned, the whole polygon stays snapped so that hairline edge
+		// keeps its crisp pixel.
+		for (int i = 0; i + 3 < pointArray.length; i += 2) {
+			if (pointArray[i] == pointArray[i + 2] || pointArray[i + 1] == pointArray[i + 3]) {
+				return GeometryPrecision.SNAPPED;
+			}
+		}
+		int n = pointArray.length;
+		if (n >= 4 && (pointArray[0] == pointArray[n - 2] || pointArray[1] == pointArray[n - 1])) {
+			return GeometryPrecision.SNAPPED;
+		}
+		return GeometryPrecision.FRACTIONAL;
 	}
 }
 
-private void drawPolygonInPixels(int[] pointArray) {
+private void drawPolygonInPixels(float[] pointArray) {
 	checkGC(DRAW);
 	long gdipGraphics = data.gdipGraphics;
 	if (gdipGraphics != 0) {
 		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_DrawPolygon(gdipGraphics, data.gdipPen, pointArray, pointArray.length / 2);
+		Gdip.Graphics_DrawPolygonF(gdipGraphics, data.gdipPen, pointArray, pointArray.length / 2);
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
+	int[] pixelArray = toIntArray(pointArray);
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
-			for (int i = 0; i < pointArray.length; i+=2) {
-				pointArray[i]--;
+			for (int i = 0; i < pixelArray.length; i+=2) {
+				pixelArray[i]--;
 			}
 		}
 	}
-	OS.Polygon(handle, pointArray, pointArray.length / 2);
+	OS.Polygon(handle, pixelArray, pixelArray.length / 2);
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
-			for (int i = 0; i < pointArray.length; i+=2) {
-				pointArray[i]++;
+			for (int i = 0; i < pixelArray.length; i+=2) {
+				pixelArray[i]++;
 			}
 		}
 	}
@@ -2304,7 +2341,6 @@ public void drawPolyline (int[] pointArray) {
 }
 
 private class DrawPolylineOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final int[] pointArray;
 
 	DrawPolylineOperation(int[] pointArray) {
@@ -2313,37 +2349,52 @@ private class DrawPolylineOperation extends Operation {
 
 	@Override
 	void apply() {
-		drawPolylineInPixels(toPixels(pointArray, precision, getZoom()));
+		drawPolylineInPixels(toPixelsF(pointArray, precision(), getZoom()));
+	}
+
+	// The decision must be made per apply(), because a recorded operation is
+	// replayed at other zooms and data.lineWidth can change in between.
+	private GeometryPrecision precision() {
+		// One call cannot mix policies: if any segment is axis-aligned, the whole
+		// polyline stays snapped so that hairline segment keeps its crisp pixel.
+		for (int i = 0; i + 3 < pointArray.length; i += 2) {
+			if (pointArray[i] == pointArray[i + 2] || pointArray[i + 1] == pointArray[i + 3]) {
+				return GeometryPrecision.SNAPPED;
+			}
+		}
+		return GeometryPrecision.FRACTIONAL;
 	}
 }
 
-private void drawPolylineInPixels(int[] pointArray) {
+private void drawPolylineInPixels(float[] pointArray) {
 	checkGC(DRAW);
 	long gdipGraphics = data.gdipGraphics;
 	if (gdipGraphics != 0) {
 		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_DrawLines(gdipGraphics, data.gdipPen, pointArray, pointArray.length / 2);
+		Gdip.Graphics_DrawLinesF(gdipGraphics, data.gdipPen, pointArray, pointArray.length / 2);
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
+	int[] pixelArray = toIntArray(pointArray);
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
-			for (int i = 0; i < pointArray.length; i+=2) {
-				pointArray[i]--;
+			for (int i = 0; i < pixelArray.length; i+=2) {
+				pixelArray[i]--;
 			}
 		}
 	}
-	OS.Polyline(handle, pointArray, pointArray.length / 2);
-	int length = pointArray.length;
+	OS.Polyline(handle, pixelArray, pixelArray.length / 2);
+	int length = pixelArray.length;
 	if (length >= 2) {
 		if (data.lineWidth <= 1) {
-			OS.SetPixel (handle, pointArray[length - 2], pointArray[length - 1], data.foreground);
+			OS.SetPixel (handle, pixelArray[length - 2], pixelArray[length - 1], data.foreground);
 		}
 	}
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) {
-			for (int i = 0; i < pointArray.length; i+=2) {
-				pointArray[i]++;
+			for (int i = 0; i < pixelArray.length; i+=2) {
+				pixelArray[i]++;
 			}
 		}
 	}
@@ -2370,7 +2421,6 @@ public void drawRectangle (int x, int y, int width, int height) {
 }
 
 private class DrawRectangleOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle rectangle;
 
 	DrawRectangleOperation(Rectangle rectangle) {
@@ -2379,12 +2429,22 @@ private class DrawRectangleOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle rect = toPixels(rectangle, precision, getZoom());
-		drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
+		float[] rect = toPixelsF(rectangle, precision(), getZoom());
+		drawRectangleInPixels(rect[0], rect[1], rect[2], rect[3]);
+	}
+
+	// The decision must be made per apply(), because a recorded operation is
+	// replayed at other zooms and data.lineWidth can change in between.
+	private GeometryPrecision precision() {
+		// Keyed off the same effectiveLineWidth the DRAW_OFFSET half-pixel shift
+		// uses: a thin axis-aligned outline keeps snapping so borders, separators
+		// and gridlines stay crisp; a thicker one has no crisp-hairline property
+		// left to protect.
+		return effectiveLineWidthInPixels() > 1 ? GeometryPrecision.FRACTIONAL : GeometryPrecision.SNAPPED;
 	}
 }
 
-private void drawRectangleInPixels (int x, int y, int width, int height) {
+private void drawRectangleInPixels (float x, float y, float width, float height) {
 	checkGC(DRAW);
 	long gdipGraphics = data.gdipGraphics;
 	if (gdipGraphics != 0) {
@@ -2397,24 +2457,26 @@ private void drawRectangleInPixels (int x, int y, int width, int height) {
 			height = -height;
 		}
 		Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_DrawRectangle(gdipGraphics, data.gdipPen, x, y, width, height);
+		Gdip.Graphics_DrawRectangleF(gdipGraphics, data.gdipPen, x, y, width, height);
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
+	int rx = Math.round(x), ry = Math.round(y), rw = Math.round(width), rh = Math.round(height);
 	if ((data.style & SWT.MIRRORED) != 0) {
 		/*
 		* Note that Rectangle() subtracts one pixel in MIRRORED mode when
 		* the pen was created with CreatePen() and its width is 0 or 1.
 		*/
 		if (data.lineWidth > 1) {
-			if ((data.lineWidth % 2) == 1) x++;
+			if ((data.lineWidth % 2) == 1) rx++;
 		} else {
 			if (data.hPen != 0 && OS.GetObject(data.hPen, 0, 0) != OS.LOGPEN_sizeof()) {
-				x++;
+				rx++;
 			}
 		}
 	}
-	OS.Rectangle (handle, x, y, x + width + 1, y + height + 1);
+	OS.Rectangle (handle, rx, ry, rx + rw + 1, ry + rh + 1);
 }
 
 /**
@@ -2466,7 +2528,8 @@ public void drawRoundRectangle (int x, int y, int width, int height, int arcWidt
 }
 
 private class DrawRoundRectangleOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
+	// A curve has no crisp axis-aligned hairline edge to protect.
+	private final GeometryPrecision precision = GeometryPrecision.FRACTIONAL;
 	private final Rectangle rectangle;
 	private final int arcWidth;
 	private final int arcHeight;
@@ -2480,32 +2543,33 @@ private class DrawRoundRectangleOperation extends Operation {
 	@Override
 	void apply() {
 		int zoom = getZoom();
-		Rectangle rect = toPixels(rectangle, precision, zoom);
-		int scaledArcWidth = toPixels (arcWidth, precision, zoom);
-		int scaledArcHeight = toPixels (arcHeight, precision, zoom);
-		drawRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, scaledArcWidth, scaledArcHeight);
+		float[] rect = toPixelsF(rectangle, precision, zoom);
+		float scaledArcWidth = toPixelsF (arcWidth, precision, zoom);
+		float scaledArcHeight = toPixelsF (arcHeight, precision, zoom);
+		drawRoundRectangleInPixels(rect[0], rect[1], rect[2], rect[3], scaledArcWidth, scaledArcHeight);
 	}
 }
 
-private void drawRoundRectangleInPixels (int x, int y, int width, int height, int arcWidth, int arcHeight) {
+private void drawRoundRectangleInPixels (float x, float y, float width, float height, float arcWidth, float arcHeight) {
 	checkGC(DRAW);
 	if (data.gdipGraphics != 0) {
 		drawRoundRectangleGdip(data.gdipGraphics, data.gdipPen, x, y, width, height, arcWidth, arcHeight);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) x--;
 	}
-	OS.RoundRect(handle, x,y,x+width+1,y+height+1, arcWidth, arcHeight);
+	OS.RoundRect(handle, Math.round(x), Math.round(y), Math.round(x + width) + 1, Math.round(y + height) + 1, Math.round(arcWidth), Math.round(arcHeight));
 }
 
-private void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, int width, int height, int arcWidth, int arcHeight) {
-	int nx = x;
-	int ny = y;
-	int nw = width;
-	int nh = height;
-	int naw = arcWidth;
-	int nah = arcHeight;
+private void drawRoundRectangleGdip (long gdipGraphics, long pen, float x, float y, float width, float height, float arcWidth, float arcHeight) {
+	float nx = x;
+	float ny = y;
+	float nw = width;
+	float nh = height;
+	float naw = arcWidth;
+	float nah = arcHeight;
 
 	if (nw < 0) {
 		nw = 0 - nw;
@@ -2522,7 +2586,7 @@ private void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, 
 
 	Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
 	if (naw == 0 || nah == 0) {
-		Gdip.Graphics_DrawRectangle(gdipGraphics, data.gdipPen, x, y, width, height);
+		Gdip.Graphics_DrawRectangleF(gdipGraphics, pen, x, y, width, height);
 	} else {
 		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -3201,7 +3265,8 @@ public void fillArc (int x, int y, int width, int height, int startAngle, int ar
 }
 
 private class FillArcOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
+	// A curve has no crisp axis-aligned hairline edge to protect.
+	private final GeometryPrecision precision = GeometryPrecision.FRACTIONAL;
 	private final Rectangle bounds;
 	private final int startAngle;
 	private final int arcAngle;
@@ -3214,12 +3279,12 @@ private class FillArcOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle rect = toPixels(bounds, precision, getZoom());
-		fillArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
+		float[] rect = toPixelsF(bounds, precision, getZoom());
+		fillArcInPixels(rect[0], rect[1], rect[2], rect[3], startAngle, arcAngle);
 	}
 }
 
-private void fillArcInPixels (int x, int y, int width, int height, int startAngle, int arcAngle) {
+private void fillArcInPixels (float x, float y, float width, float height, int startAngle, int arcAngle) {
 	checkNonDisposed();
 	checkGC(FILL);
 	if (width < 0) {
@@ -3234,7 +3299,7 @@ private void fillArcInPixels (int x, int y, int width, int height, int startAngl
 	long gdipGraphics = data.gdipGraphics;
 	if (gdipGraphics != 0) {
 		if (width == height) {
-			Gdip.Graphics_FillPie(gdipGraphics, data.gdipBrush, x, y, width, height, -startAngle, -arcAngle);
+			Gdip.Graphics_FillPieF(gdipGraphics, data.gdipBrush, x, y, width, height, -startAngle, -arcAngle);
 		} else {
 			int state = Gdip.Graphics_Save(gdipGraphics);
 			Gdip.Graphics_TranslateTransform(gdipGraphics, x, y, Gdip.MatrixOrderPrepend);
@@ -3245,12 +3310,14 @@ private void fillArcInPixels (int x, int y, int width, int height, int startAngl
 		return;
 	}
 
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
 	if ((data.style & SWT.MIRRORED) != 0) x--;
+	int ix = Math.round(x), iy = Math.round(y), iw = Math.round(width), ih = Math.round(height);
 	int x1, y1, x2, y2,tmp;
 	boolean isNegative;
 	if (arcAngle >= 360 || arcAngle <= -360) {
-		x1 = x2 = x + width;
-		y1 = y2 = y + height / 2;
+		x1 = x2 = ix + iw;
+		y1 = y2 = iy + ih / 2;
 	} else {
 		isNegative = arcAngle < 0;
 
@@ -3261,13 +3328,13 @@ private void fillArcInPixels (int x, int y, int width, int height, int startAngl
 			startAngle = arcAngle;
 			arcAngle = tmp;
 		}
-		x1 = cos(startAngle, width) + x + width/2;
-		y1 = -1 * sin(startAngle, height) + y + height/2;
+		x1 = cos(startAngle, iw) + ix + iw/2;
+		y1 = -1 * sin(startAngle, ih) + iy + ih/2;
 
-		x2 = cos(arcAngle, width) + x + width/2;
-		y2 = -1 * sin(arcAngle, height) + y + height/2;
+		x2 = cos(arcAngle, iw) + ix + iw/2;
+		y2 = -1 * sin(arcAngle, ih) + iy + ih/2;
 	}
-	OS.Pie(handle, x, y, x + width + 1, y + height + 1, x1, y1, x2, y2);
+	OS.Pie(handle, ix, iy, ix + iw + 1, iy + ih + 1, x1, y1, x2, y2);
 }
 
 /**
@@ -3426,7 +3493,8 @@ public void fillOval (int x, int y, int width, int height) {
 }
 
 private class FillOvalOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
+	// A curve has no crisp axis-aligned hairline edge to protect.
+	private final GeometryPrecision precision = GeometryPrecision.FRACTIONAL;
 	private final Rectangle bounds;
 
 	FillOvalOperation(Rectangle bounds) {
@@ -3435,20 +3503,21 @@ private class FillOvalOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle rect = toPixels(bounds, precision, getZoom());
-		fillOvalInPixels(rect.x, rect.y, rect.width, rect.height);
+		float[] rect = toPixelsF(bounds, precision, getZoom());
+		fillOvalInPixels(rect[0], rect[1], rect[2], rect[3]);
 	}
 }
 
-private void fillOvalInPixels (int x, int y, int width, int height) {
+private void fillOvalInPixels (float x, float y, float width, float height) {
 	checkNonDisposed();
 	checkGC(FILL);
 	if (data.gdipGraphics != 0) {
-		Gdip.Graphics_FillEllipse(data.gdipGraphics, data.gdipBrush, x, y, width, height);
+		Gdip.Graphics_FillEllipseF(data.gdipGraphics, data.gdipBrush, x, y, width, height);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
 	if ((data.style & SWT.MIRRORED) != 0) x--;
-	OS.Ellipse(handle, x, y, x + width + 1, y + height + 1);
+	OS.Ellipse(handle, Math.round(x), Math.round(y), Math.round(x + width) + 1, Math.round(y + height) + 1);
 }
 
 /**
@@ -3532,7 +3601,6 @@ public void fillPolygon (int[] pointArray) {
 }
 
 private class FillPolygonOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final int[] pointArray;
 
 	FillPolygonOperation(int[] pointArray) {
@@ -3541,11 +3609,27 @@ private class FillPolygonOperation extends Operation {
 
 	@Override
 	void apply() {
-		fillPolygonInPixels(toPixels(pointArray, precision, getZoom()));
+		fillPolygonInPixels(toPixelsF(pointArray, precision(), getZoom()));
+	}
+
+	private GeometryPrecision precision() {
+		// One call cannot mix policies: if any edge, including the closing one,
+		// is axis-aligned, the whole polygon stays snapped so that hairline edge
+		// keeps its crisp pixel.
+		for (int i = 0; i + 3 < pointArray.length; i += 2) {
+			if (pointArray[i] == pointArray[i + 2] || pointArray[i + 1] == pointArray[i + 3]) {
+				return GeometryPrecision.SNAPPED;
+			}
+		}
+		int n = pointArray.length;
+		if (n >= 4 && (pointArray[0] == pointArray[n - 2] || pointArray[1] == pointArray[n - 1])) {
+			return GeometryPrecision.SNAPPED;
+		}
+		return GeometryPrecision.FRACTIONAL;
 	}
 }
 
-private void fillPolygonInPixels (int[] pointArray) {
+private void fillPolygonInPixels (float[] pointArray) {
 	checkNonDisposed();
 	checkGC(FILL);
 	if (data.gdipGraphics != 0) {
@@ -3557,19 +3641,21 @@ private void fillPolygonInPixels (int[] pointArray) {
 		 */
 		float offsetCorrection = 0.5f;
 		Gdip.Graphics_TranslateTransform(data.gdipGraphics, data.gdipXOffset + offsetCorrection, data.gdipYOffset + offsetCorrection, Gdip.MatrixOrderPrepend);
-		Gdip.Graphics_FillPolygon(data.gdipGraphics, data.gdipBrush, pointArray, pointArray.length / 2, mode);
+		Gdip.Graphics_FillPolygonF(data.gdipGraphics, data.gdipBrush, pointArray, pointArray.length / 2, mode);
 		Gdip.Graphics_TranslateTransform(data.gdipGraphics, -(data.gdipXOffset + offsetCorrection), -(data.gdipYOffset + offsetCorrection), Gdip.MatrixOrderPrepend);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
+	int[] pixelArray = toIntArray(pointArray);
 	if ((data.style & SWT.MIRRORED) != 0) {
-		for (int i = 0; i < pointArray.length; i+=2) {
-			pointArray[i]--;
+		for (int i = 0; i < pixelArray.length; i+=2) {
+			pixelArray[i]--;
 		}
 	}
-	OS.Polygon(handle, pointArray, pointArray.length / 2);
+	OS.Polygon(handle, pixelArray, pixelArray.length / 2);
 	if ((data.style & SWT.MIRRORED) != 0) {
-		for (int i = 0; i < pointArray.length; i+=2) {
-			pointArray[i]++;
+		for (int i = 0; i < pixelArray.length; i+=2) {
+			pixelArray[i]++;
 		}
 	}
 
@@ -3672,7 +3758,8 @@ public void fillRoundRectangle (int x, int y, int width, int height, int arcWidt
 }
 
 private class FillRoundRectangleOperation extends Operation {
-	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
+	// A curve has no crisp axis-aligned hairline edge to protect.
+	private final GeometryPrecision precision = GeometryPrecision.FRACTIONAL;
 	private final Rectangle rectangle;
 	private final int arcWidth;
 	private final int arcHeight;
@@ -3686,31 +3773,32 @@ private class FillRoundRectangleOperation extends Operation {
 	@Override
 	void apply() {
 		int zoom = getZoom();
-		Rectangle rect = toPixels(rectangle, precision, zoom);
-		int scaledArcWidth = toPixels (arcWidth, precision, zoom);
-		int scaledArcHeight = toPixels (arcHeight, precision, zoom);
-		fillRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, scaledArcWidth, scaledArcHeight);
+		float[] rect = toPixelsF(rectangle, precision, zoom);
+		float scaledArcWidth = toPixelsF (arcWidth, precision, zoom);
+		float scaledArcHeight = toPixelsF (arcHeight, precision, zoom);
+		fillRoundRectangleInPixels(rect[0], rect[1], rect[2], rect[3], scaledArcWidth, scaledArcHeight);
 	}
 }
 
-private void fillRoundRectangleInPixels (int x, int y, int width, int height, int arcWidth, int arcHeight) {
+private void fillRoundRectangleInPixels (float x, float y, float width, float height, float arcWidth, float arcHeight) {
 	checkNonDisposed();
 	checkGC(FILL);
 	if (data.gdipGraphics != 0) {
 		fillRoundRectangleGdip(data.gdipGraphics, data.gdipBrush, x, y, width, height, arcWidth, arcHeight);
 		return;
 	}
+	// Plain GDI is integer-only, so a declared fractional policy snaps here regardless.
 	if ((data.style & SWT.MIRRORED) != 0) x--;
-	OS.RoundRect(handle, x,y,x+width+1,y+height+1,arcWidth, arcHeight);
+	OS.RoundRect(handle, Math.round(x), Math.round(y), Math.round(x + width) + 1, Math.round(y + height) + 1, Math.round(arcWidth), Math.round(arcHeight));
 }
 
-private void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y, int width, int height, int arcWidth, int arcHeight) {
-	int nx = x;
-	int ny = y;
-	int nw = width;
-	int nh = height;
-	int naw = arcWidth;
-	int nah = arcHeight;
+private void fillRoundRectangleGdip (long gdipGraphics, long brush, float x, float y, float width, float height, float arcWidth, float arcHeight) {
+	float nx = x;
+	float ny = y;
+	float nw = width;
+	float nh = height;
+	float naw = arcWidth;
+	float nah = arcHeight;
 
 	if (nw < 0) {
 		nw = 0 - nw;
@@ -3726,7 +3814,7 @@ private void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y
 		nah = 0 - nah;
 
 	if (naw == 0 || nah == 0) {
-		Gdip.Graphics_FillRectangle(data.gdipGraphics, data.gdipBrush, x, y, width, height);
+		Gdip.Graphics_FillRectangleF(data.gdipGraphics, data.gdipBrush, x, y, width, height);
 	} else {
 		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -6184,16 +6272,78 @@ private int toPixels(int length, GeometryPrecision precision, int zoom) {
 	};
 }
 
-private int[] toPixels(int[] pointArray, GeometryPrecision precision, int zoom) {
+// Fractional-capable conversions. The SNAPPED branches wrap the integer result,
+// so a runtime decision to snap stays value identical to the helpers above.
+private float[] toPixelsAsLocationF(Point point, GeometryPrecision precision, int zoom) {
 	return switch (precision) {
-		case SNAPPED -> Win32DPIUtils.pointToPixel(drawable, pointArray, zoom);
-		case FRACTIONAL -> throw fractionalPrecisionNotImplemented();
+		case SNAPPED -> {
+			Point pixels = Win32DPIUtils.pointToPixelAsLocation(drawable, point, zoom);
+			yield new float[] {pixels.x, pixels.y};
+		}
+		case FRACTIONAL -> Win32DPIUtils.pointToPixelAsLocationF(drawable, point, zoom);
 	};
 }
 
+private float[] toPixelsF(Rectangle rectangle, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> {
+			Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, zoom);
+			yield new float[] {rect.x, rect.y, rect.width, rect.height};
+		}
+		case FRACTIONAL -> Win32DPIUtils.pointToPixelF(drawable, rectangle, zoom);
+	};
+}
+
+private float toPixelsF(int length, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> Win32DPIUtils.pointToPixel(drawable, length, zoom);
+		case FRACTIONAL -> Win32DPIUtils.pointToPixel(drawable, (float) length, zoom);
+	};
+}
+
+private float[] toPixelsF(int[] pointArray, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> {
+			int[] pixels = Win32DPIUtils.pointToPixel(drawable, pointArray, zoom);
+			float[] result = new float[pixels.length];
+			for (int i = 0; i < pixels.length; i++) {
+				result[i] = pixels[i];
+			}
+			yield result;
+		}
+		case FRACTIONAL -> Win32DPIUtils.pointToPixel(drawable, toFloatArray(pointArray), zoom);
+	};
+}
+
+private static float[] toFloatArray(int[] values) {
+	float[] result = new float[values.length];
+	for (int i = 0; i < values.length; i++) {
+		result[i] = values[i];
+	}
+	return result;
+}
+
+private static int[] toIntArray(float[] values) {
+	int[] result = new int[values.length];
+	for (int i = 0; i < values.length; i++) {
+		result[i] = Math.round(values[i]);
+	}
+	return result;
+}
+
+/**
+ * The width in device pixels a stroke effectively renders with. This is the same
+ * computation the DRAW_OFFSET block uses to centre odd widths on a pixel, and the
+ * precision policies key off it for the same reason: at this width or below an
+ * axis-aligned stroke still has a crisp hairline to protect.
+ */
+private int effectiveLineWidthInPixels() {
+	return data.lineWidth < 1 ? 1 : Math.round(data.lineWidth);
+}
+
 private static UnsupportedOperationException fractionalPrecisionNotImplemented() {
-	// Step 4 of docs/gc-fractional-precision.md fills in the fractional conversions.
-	return new UnsupportedOperationException("FRACTIONAL geometry precision is not implemented yet");
+	// The integer helpers stay snapped-only; converted operations route through the ...F conversions above.
+	return new UnsupportedOperationException("FRACTIONAL geometry precision requires the float conversion path");
 }
 
 int getZoom() {
