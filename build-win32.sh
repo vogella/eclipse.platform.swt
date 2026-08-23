@@ -45,3 +45,37 @@ if [ "${WITH_TESTS:-0}" = "1" ]; then
   echo "$(wc -l < "$TARG") win32 test source files"
   javac -nowarn -proc:none -cp "$CP" -sourcepath "$SP" -d "$OUT/testclasses" "@$TARG"
 fi
+
+# Optional: re-compile with ecj and report problems in the files this branch changed.
+# javac ignores the Eclipse-only problem severities (unused imports and similar) that make
+# the Tycho build fail, and the bundle has pre-existing warnings elsewhere, so the report is
+# scoped to files that differ from the merge base.
+if [ "${WITH_ECJ:-0}" = "1" ]; then
+  ECJ=$(find "$HOME/.m2/repository/p2/osgi/bundle/org.eclipse.jdt.core.compiler.batch" -name '*.jar' 2>/dev/null | sort | tail -1)
+  if [ -z "$ECJ" ]; then
+    echo "ecj jar not found, skipping"
+  else
+    BASE="${ECJ_BASE:-$(git -C "$ROOT" merge-base HEAD master 2>/dev/null)}"
+    CHANGED=$(git -C "$ROOT" diff --name-only "$BASE" 2>/dev/null; git -C "$ROOT" status --porcelain | awk '{print $2}')
+    java -jar "$ECJ" -properties "$ROOT/bundles/org.eclipse.swt/.settings/org.eclipse.jdt.core.prefs" \
+      -source 21 -target 21 -proceedOnError:Fatal -d "$OUT/ecjclasses" "@$ARGFILE" > "$OUT/ecj.txt" 2>&1
+    STATUS=$?
+    # Keep only problems whose file is one this branch touched.
+    python3 - "$OUT/ecj.txt" <<'PY' $CHANGED
+import sys, re, os
+report, changed = sys.argv[1], {os.path.basename(p) for p in sys.argv[2:]}
+blocks, cur = [], []
+for line in open(report, errors="replace"):
+    if re.match(r"^\d+\. (ERROR|WARNING) in ", line):
+        if cur: blocks.append(cur)
+        cur = [line]
+    elif cur:
+        cur.append(line)
+if cur: blocks.append(cur)
+hits = [b for b in blocks if os.path.basename(b[0].split(" in ",1)[1].split(" (")[0]) in changed]
+for b in hits: print("".join(b).rstrip())
+print(f"ecj: {len(hits)} problem(s) in changed files, {len(blocks)} in the bundle overall")
+PY
+    echo "ecj compile status=$STATUS"
+  fi
+fi
