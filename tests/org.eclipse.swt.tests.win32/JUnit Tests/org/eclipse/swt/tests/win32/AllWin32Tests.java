@@ -15,6 +15,7 @@
 package org.eclipse.swt.tests.win32;
 
 import org.eclipse.swt.graphics.ImageWin32Tests;
+import org.eclipse.swt.tests.win32.graphics.GCPrecisionTests;
 import org.eclipse.swt.tests.win32.widgets.TestTreeColumn;
 import org.eclipse.swt.tests.win32.widgets.Test_org_eclipse_swt_widgets_Display;
 import org.junit.platform.suite.api.SelectClasses;
@@ -22,6 +23,7 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({ ImageWin32Tests.class, //
+		GCPrecisionTests.class, //
 		Test_org_eclipse_swt_dnd_DND.class, //
 		Test_org_eclipse_swt_events_KeyEvent.class, //
 		Test_org_eclipse_swt_widgets_Display.class, //
