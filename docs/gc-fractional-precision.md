@@ -92,6 +92,37 @@ The plain-GDI (non-advanced) path is unchanged.
 GDI is integer-only; there is no fix there, only a documented split in behaviour by advanced
 mode.
 
+## What fractional coordinates actually buy
+
+Worth being precise about, because it decides what the harness should assert.
+
+With smoothing off, which is the default, passing an exact fractional coordinate for a
+single axis-aligned edge changes nothing. GDI+ rounds it to the same device pixel that the
+pre-rounded integer already produced. An ink-column measurement of such an edge will show
+no improvement, and a test that demands zero drift there cannot pass.
+
+The defect that fractional coordinates do fix is **size and spacing instability**. Today a
+rectangle's pixel width is derived as `round((x + w) * s) - round(x * s)`, so the same
+point-size shape gets a different pixel size depending on where it sits:
+
+    zoom=125  w=10pt  ideal 12.50px   today 12 or 13, depending on x
+    zoom=175  w=10pt  ideal 17.50px   today 17 or 18, depending on x
+    zoom=175  w=37pt  ideal 64.75px   today 64 or 65, depending on x
+
+That is what a user sees as uneven tick spacing, columns of different widths, and jitter in
+repeated elements. Measured as a pitch, an evenly spaced row at 150% comes out
+11/10/11/10/11/10/11 instead of a constant 10.5.
+
+So the payoff is:
+
+1. Size and spacing invariance, regardless of antialiasing.
+2. Correct curve and diagonal geometry, because the rasteriser derives every interior
+   scanline from exact endpoints rather than from pre-rounded ones.
+3. True sub-pixel placement, but only once a client has enabled antialiasing.
+
+The harness should therefore assert invariance (same point size gives the same pixel size,
+constant pitch gives constant spacing), not zero absolute drift.
+
 ## Local build harness
 
 The win32 Java sources are pure Java, so they compile on Linux.
