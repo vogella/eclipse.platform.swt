@@ -69,16 +69,16 @@ States: `BLOCKED` waiting on a dependency, `READY` dispatchable now, `CLAIMED` a
 
 | ID | Task | Group | State | Agent | Depends on | Notes |
 |---|---|---|---|---|---|---|
-| T01 | Capture strategy spike and ADR | FOUNDATION | READY | | none | Blocks T04, decide before writing capture code |
-| T02 | Target selection and build recipe | FOUNDATION | READY | | none | Blocks everything |
-| T03 | Harness skeleton and SPI freeze | FOUNDATION | BLOCKED | | T02 | Orchestrator reviews line by line |
+| T01 | Capture strategy spike and ADR | FOUNDATION | CLAIMED | opencode byac24xlr | none | Blocks T04, decide before writing capture code |
+| T02 | Target selection and build recipe | FOUNDATION | MERGED | opencode bqd2a78sf | none | Verified by coordinator, see integration log |
+| T03 | Harness skeleton and SPI freeze | FOUNDATION | READY | | T02 | Orchestrator reviews line by line |
 | T04 | Capture runtime | CORE | BLOCKED | | T01, T03 | |
 | T05 | Environment control | CORE | BLOCKED | | T03 | |
 | T06 | Diff engine | CORE | BLOCKED | | T03 | |
 | T07 | Defect classification | CORE | BLOCKED | | T06 | |
 | T08 | Result model and JSON schema | CORE | BLOCKED | | T03 | |
 | T09 | Backend adapter: native | BACKENDS | BLOCKED | | T03 | |
-| T10 | Backend adapter: prototype-skija | BACKENDS | BLOCKED | | T02, T03 | |
+| T10 | Backend adapter: prototype-skija | BACKENDS | BLOCKED | | T02, T03 | T02 proved it builds and activates |
 | T11 | Backend adapter: SWT.SKIA canvas | BACKENDS | BLOCKED | | T02, T03 | |
 | T12 | Determinism lint | QUALITY | BLOCKED | | T04 | |
 | T13 | Catalog: buttons and labels | CATALOG | BLOCKED | | T03 | |
@@ -111,6 +111,11 @@ READ FIRST:
 
 SCOPE:
   <exactly what to build, in two or three sentences>
+
+SCRATCH:
+  write all build output, clones and downloaded jars under /tmp/opencode/<ID>/
+  any other path outside the worktree is auto-rejected by the permission layer,
+  non-interactively and without an obvious error, and your run will stall
 
 DO NOT:
   edit any file under <spi package>
@@ -214,9 +219,16 @@ The temptation to parallelize the SPI freeze in Phase 1 should be resisted; it i
 
 ## Current status
 
-Project not started.
-T01 and T02 are `READY` and can be dispatched immediately and simultaneously.
-Everything else is blocked pending the SPI freeze in T03.
+T02 is merged. T01 is running. T03 is `READY` and is the next dispatch.
+
+Two operational findings from the first dispatches, both now folded into the rules above.
+
+Scratch paths outside the worktree are auto-rejected by opencode's permission layer in non-interactive runs.
+The agent then exits with code zero having done nothing, so a zero exit proves nothing and only the worktree diff does.
+`/tmp/opencode/` is permitted, arbitrary `/tmp/` paths are not.
+
+Concurrent opencode sessions appear to be unreliable: T01 took four provider stream errors at stream start while T02 ran, and was dispatched successfully only once T02 had finished.
+Until this is understood, dispatch one agent at a time, which costs nothing in Phases 0, 1 and 3 and will need revisiting before the wide parallel Phase 2.
 
 ### T02 handoff, 2026-08-23
 Branch: oracle/T02 at ac7283c8f1 (parent of this commit; this record ships inside the single T02 commit)
@@ -262,3 +274,17 @@ Known gaps: builds and runs must use the same JDK (21+, developed against Temuri
 The verifier caught one real silent-fallback during development (service file copied under `resources/` instead of classpath root) and rejected it, which is exactly its job.
 Open questions: none.
 
+
+## Integration log
+
+### 2026-08-23 merged T02
+Conflicts: none, fast-forward.
+Coordinator verification, run independently of the agent's own claims:
+- cold `build.sh native` after deleting the build cache: 35.3s, target was 60s
+- warm rebuild: 0.685s, target was 2s, classpath byte-identical
+- `build.sh --all`: 52.4s, all three backends, stdout carries only classpaths
+- `verify-backend.sh` for `native`, `skia-canvas` and `skija-proto`: all three report genuine activation
+- incremental correctness spot check: appending a comment to `Point.java` triggered a recompile, so the fingerprint is not stale-safe by accident
+Board updates: T02 to MERGED, T03 to READY.
+Newly unblocked: T03.
+Not verified, deliberately: the negative case for `verify-backend.sh`, that it fails when a backend silently falls back to native. Worth a follow-up, because a false "active" verdict would make the whole harness compare native against native and report perfect agreement.
