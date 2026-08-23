@@ -526,6 +526,7 @@ private abstract class ImageOperation extends Operation {
 }
 
 private class CopyAreaToImageOperation extends ImageOperation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final int x;
 	private final int y;
 
@@ -538,8 +539,8 @@ private class CopyAreaToImageOperation extends ImageOperation {
 	@Override
 	void apply() {
 		int zoom = getZoom();
-		int scaledX = Win32DPIUtils.pointToPixel(drawable, this.x, zoom);
-		int scaledY = Win32DPIUtils.pointToPixel(drawable, this.y, zoom);
+		int scaledX = toPixels(this.x, precision, zoom);
+		int scaledY = toPixels(this.y, precision, zoom);
 		copyAreaInPixels(getImage(), scaledX, scaledY);
 	}
 }
@@ -599,6 +600,7 @@ public void copyArea (int srcX, int srcY, int width, int height, int destX, int 
 }
 
 private class CopyAreaOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle source;
 	private final Rectangle destination;
 	private final boolean paint;
@@ -612,8 +614,8 @@ private class CopyAreaOperation extends Operation {
 	@Override
 	void apply() {
 		int zoom = getZoom();
-		Rectangle sourceRect = Win32DPIUtils.pointToPixel(drawable, source, zoom);
-		Rectangle destRect = Win32DPIUtils.pointToPixel(drawable, destination, zoom);
+		Rectangle sourceRect = toPixels(source, precision, zoom);
+		Rectangle destRect = toPixels(destination, precision, zoom);
 		copyAreaInPixels(sourceRect.x, sourceRect.y, sourceRect.width, sourceRect.height, destRect.x, destRect.y, paint);
 	}
 }
@@ -878,6 +880,7 @@ public void drawArc (int x, int y, int width, int height, int startAngle, int ar
 }
 
 private class DrawArcOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle rectangle;
 	private final int startAngle;
 	private final int arcAngle;
@@ -889,7 +892,7 @@ private class DrawArcOperation extends Operation {
 	}
 	@Override
 	void apply() {
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+		Rectangle rect = toPixels(rectangle, precision, getZoom());
 		drawArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
 	}
 }
@@ -974,6 +977,7 @@ public void drawFocus (int x, int y, int width, int height) {
 }
 
 private class DrawFocusOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle rectangle;
 
 	DrawFocusOperation(Rectangle rectangle) {
@@ -982,7 +986,7 @@ private class DrawFocusOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+		Rectangle rect = toPixels(rectangle, precision, getZoom());
 		drawFocusInPixels(rect.x, rect.y, rect.width, rect.height);
 	}
 }
@@ -1089,6 +1093,7 @@ private float calculateTransformationScale() {
 }
 
 private class DrawImageOperation extends ImageOperation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Point location;
 
 	DrawImageOperation(Image image, Point location) {
@@ -1098,7 +1103,7 @@ private class DrawImageOperation extends ImageOperation {
 
 	@Override
 	void apply() {
-		drawImageInPixels(getImage(), Win32DPIUtils.pointToPixelAsLocation(drawable, this.location, getZoom()));
+		drawImageInPixels(getImage(), toPixelsAsLocation(this.location, precision, getZoom()));
 	}
 
 	private void drawImageInPixels(Image image, Point location) {
@@ -1208,6 +1213,7 @@ void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, 
 }
 
 private class DrawScalingImageToImageOperation extends ImageOperation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle source;
 	private final Rectangle destination;
 
@@ -1229,7 +1235,7 @@ private class DrawScalingImageToImageOperation extends ImageOperation {
 		int scaledImageZoomWithTransform = Math.round(transformationScale * requestedImageZoom);
 
 		Rectangle src =  new Rectangle(srcX, srcY, srcWidth, srcHeight);
-		Rectangle destPixels = Win32DPIUtils.pointToPixel(drawable, new Rectangle(destX, destY, destWidth, destHeight), gcZoom);
+		Rectangle destPixels = toPixels(new Rectangle(destX, destY, destWidth, destHeight), precision, gcZoom);
 		Rectangle fullImageBounds = image.getBounds();
 		Rectangle requestedFullImageBoundsPixels = Win32DPIUtils.pointToPixel(drawable, fullImageBounds, scaledImageZoomWithTransform);
 
@@ -1297,6 +1303,7 @@ private class DrawScalingImageToImageOperation extends ImageOperation {
 }
 
 private class DrawScaledImageOperation extends ImageOperation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle destination;
 
 	DrawScaledImageOperation(Image image, Rectangle destination) {
@@ -1313,7 +1320,7 @@ private class DrawScaledImageOperation extends ImageOperation {
 		int gcZoom = getZoom();
 		float transformationScale = calculateTransformationScale();
 		int scaledImageZoomWithTransform = Math.round(transformationScale * gcZoom);
-		Rectangle destPixels = Win32DPIUtils.pointToPixel(drawable, new Rectangle(destX , destY, destWidth , destHeight), gcZoom);
+		Rectangle destPixels = toPixels(new Rectangle(destX , destY, destWidth , destHeight), precision, gcZoom);
 		Rectangle destPixelsScaledWithTransform = Win32DPIUtils.pointToPixel(drawable, new Rectangle(destX , destY, destWidth , destHeight),
 				scaledImageZoomWithTransform);
 
@@ -2011,6 +2018,7 @@ public void drawLine (int x1, int y1, int x2, int y2) {
 }
 
 private class DrawLineOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Point start;
 	private final Point end;
 
@@ -2022,8 +2030,8 @@ private class DrawLineOperation extends Operation {
 	@Override
 	void apply() {
 		int deviceZoom = getZoom();
-		Point startInPixels = Win32DPIUtils.pointToPixelAsLocation (drawable, start, deviceZoom);
-		Point endInPixels = Win32DPIUtils.pointToPixelAsLocation (drawable, end, deviceZoom);
+		Point startInPixels = toPixelsAsLocation (start, precision, deviceZoom);
+		Point endInPixels = toPixelsAsLocation (end, precision, deviceZoom);
 		drawLineInPixels(startInPixels.x, startInPixels.y, endInPixels.x, endInPixels.y);
 	}
 }
@@ -2077,6 +2085,7 @@ public void drawOval (int x, int y, int width, int height) {
 }
 
 private class DrawOvalOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle bounds;
 
 	DrawOvalOperation(Rectangle bounds) {
@@ -2085,7 +2094,7 @@ private class DrawOvalOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(drawable, bounds, getZoom());
+		Rectangle boundsInPixels = toPixels(bounds, precision, getZoom());
 		drawOvalInPixels(boundsInPixels.x, boundsInPixels.y, boundsInPixels.width, boundsInPixels.height);
 	}
 }
@@ -2185,6 +2194,7 @@ public void drawPoint (int x, int y) {
 }
 
 private class DrawPointOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Point location;
 
 	DrawPointOperation(int x, int y) {
@@ -2193,7 +2203,7 @@ private class DrawPointOperation extends Operation {
 
 	@Override
 	void apply() {
-		Point scaleUpLocation = Win32DPIUtils.pointToPixelAsLocation(location, getZoom());
+		Point scaleUpLocation = toPixelsAsLocationWithoutAutoscaleCheck(location, precision, getZoom());
 		drawPointInPixels(scaleUpLocation.x, scaleUpLocation.y);
 	}
 }
@@ -2231,6 +2241,7 @@ public void drawPolygon (int[] pointArray) {
 }
 
 private class DrawPolygonOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final int[] pointArray;
 
 	DrawPolygonOperation(int[] pointArray) {
@@ -2239,7 +2250,7 @@ private class DrawPolygonOperation extends Operation {
 
 	@Override
 	void apply() {
-		drawPolygonInPixels(Win32DPIUtils.pointToPixel(drawable, pointArray, getZoom()));
+		drawPolygonInPixels(toPixels(pointArray, precision, getZoom()));
 	}
 }
 
@@ -2293,6 +2304,7 @@ public void drawPolyline (int[] pointArray) {
 }
 
 private class DrawPolylineOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final int[] pointArray;
 
 	DrawPolylineOperation(int[] pointArray) {
@@ -2301,7 +2313,7 @@ private class DrawPolylineOperation extends Operation {
 
 	@Override
 	void apply() {
-		drawPolylineInPixels(Win32DPIUtils.pointToPixel(drawable, pointArray, getZoom()));
+		drawPolylineInPixels(toPixels(pointArray, precision, getZoom()));
 	}
 }
 
@@ -2358,6 +2370,7 @@ public void drawRectangle (int x, int y, int width, int height) {
 }
 
 private class DrawRectangleOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle rectangle;
 
 	DrawRectangleOperation(Rectangle rectangle) {
@@ -2366,7 +2379,7 @@ private class DrawRectangleOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+		Rectangle rect = toPixels(rectangle, precision, getZoom());
 		drawRectangleInPixels(rect.x, rect.y, rect.width, rect.height);
 	}
 }
@@ -2453,6 +2466,7 @@ public void drawRoundRectangle (int x, int y, int width, int height, int arcWidt
 }
 
 private class DrawRoundRectangleOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle rectangle;
 	private final int arcWidth;
 	private final int arcHeight;
@@ -2466,9 +2480,9 @@ private class DrawRoundRectangleOperation extends Operation {
 	@Override
 	void apply() {
 		int zoom = getZoom();
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, zoom);
-		int scaledArcWidth = Win32DPIUtils.pointToPixel (drawable, arcWidth, zoom);
-		int scaledArcHeight = Win32DPIUtils.pointToPixel (drawable, arcHeight, zoom);
+		Rectangle rect = toPixels(rectangle, precision, zoom);
+		int scaledArcWidth = toPixels (arcWidth, precision, zoom);
+		int scaledArcHeight = toPixels (arcHeight, precision, zoom);
 		drawRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, scaledArcWidth, scaledArcHeight);
 	}
 }
@@ -2599,6 +2613,7 @@ public void drawString (String string, int x, int y, boolean isTransparent) {
 }
 
 private class DrawStringOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final String string;
 	private final Point location;
 	private final boolean isTransparent;
@@ -2611,7 +2626,7 @@ private class DrawStringOperation extends Operation {
 
 	@Override
 	void apply() {
-		Point scaledLocation = Win32DPIUtils.pointToPixelAsLocation(drawable, location, getZoom());
+		Point scaledLocation = toPixelsAsLocation(location, precision, getZoom());
 		drawStringInPixels(string, scaledLocation.x, scaledLocation.y, isTransparent);
 	}
 }
@@ -2785,6 +2800,7 @@ public void drawText (String string, int x, int y, int flags) {
 }
 
 private class DrawTextOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final String string;
 	private final Point location;
 	private final int flags;
@@ -2797,7 +2813,7 @@ private class DrawTextOperation extends Operation {
 
 	@Override
 	void apply() {
-		Point scaledLocation = Win32DPIUtils.pointToPixelAsLocation(drawable, location, getZoom());
+		Point scaledLocation = toPixelsAsLocation(location, precision, getZoom());
 		drawTextInPixels(string, scaledLocation.x, scaledLocation.y, flags);
 	}
 }
@@ -3185,6 +3201,7 @@ public void fillArc (int x, int y, int width, int height, int startAngle, int ar
 }
 
 private class FillArcOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle bounds;
 	private final int startAngle;
 	private final int arcAngle;
@@ -3197,7 +3214,7 @@ private class FillArcOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, bounds, getZoom());
+		Rectangle rect = toPixels(bounds, precision, getZoom());
 		fillArcInPixels(rect.x, rect.y, rect.width, rect.height, startAngle, arcAngle);
 	}
 }
@@ -3279,6 +3296,7 @@ public void fillGradientRectangle (int x, int y, int width, int height, boolean 
 }
 
 private class FillGradientRectangleOperation extends FillRectangleOperation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final boolean vertical;
 
 	FillGradientRectangleOperation(Rectangle rectangle, boolean vertical) {
@@ -3288,7 +3306,7 @@ private class FillGradientRectangleOperation extends FillRectangleOperation {
 
 	@Override
 	void apply() {
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+		Rectangle rect = toPixels(rectangle, precision, getZoom());
 		fillGradientRectangleInPixels(rect.x, rect.y, rect.width, rect.height, vertical, getZoom());
 	}
 }
@@ -3408,6 +3426,7 @@ public void fillOval (int x, int y, int width, int height) {
 }
 
 private class FillOvalOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle bounds;
 
 	FillOvalOperation(Rectangle bounds) {
@@ -3416,7 +3435,7 @@ private class FillOvalOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, bounds, getZoom());
+		Rectangle rect = toPixels(bounds, precision, getZoom());
 		fillOvalInPixels(rect.x, rect.y, rect.width, rect.height);
 	}
 }
@@ -3513,6 +3532,7 @@ public void fillPolygon (int[] pointArray) {
 }
 
 private class FillPolygonOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final int[] pointArray;
 
 	FillPolygonOperation(int[] pointArray) {
@@ -3521,7 +3541,7 @@ private class FillPolygonOperation extends Operation {
 
 	@Override
 	void apply() {
-		fillPolygonInPixels(Win32DPIUtils.pointToPixel(drawable, pointArray, getZoom()));
+		fillPolygonInPixels(toPixels(pointArray, precision, getZoom()));
 	}
 }
 
@@ -3575,6 +3595,7 @@ public void fillRectangle (int x, int y, int width, int height) {
 }
 
 private class FillRectangleOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	protected final Rectangle rectangle;
 
 	FillRectangleOperation(Rectangle rectangle) {
@@ -3583,7 +3604,7 @@ private class FillRectangleOperation extends Operation {
 
 	@Override
 	void apply() {
-		Rectangle scaledBounds = Win32DPIUtils.pointToPixel(drawable, rectangle, getZoom());
+		Rectangle scaledBounds = toPixels(rectangle, precision, getZoom());
 		fillRectangleInPixels(scaledBounds.x, scaledBounds.y, scaledBounds.width, scaledBounds.height);
 	}
 }
@@ -3651,6 +3672,7 @@ public void fillRoundRectangle (int x, int y, int width, int height, int arcWidt
 }
 
 private class FillRoundRectangleOperation extends Operation {
+	private final GeometryPrecision precision = GeometryPrecision.SNAPPED;
 	private final Rectangle rectangle;
 	private final int arcWidth;
 	private final int arcHeight;
@@ -3664,9 +3686,9 @@ private class FillRoundRectangleOperation extends Operation {
 	@Override
 	void apply() {
 		int zoom = getZoom();
-		Rectangle rect = Win32DPIUtils.pointToPixel(drawable, rectangle, zoom);
-		int scaledArcWidth = Win32DPIUtils.pointToPixel (drawable, arcWidth, zoom);
-		int scaledArcHeight = Win32DPIUtils.pointToPixel (drawable, arcHeight, zoom);
+		Rectangle rect = toPixels(rectangle, precision, zoom);
+		int scaledArcWidth = toPixels (arcWidth, precision, zoom);
+		int scaledArcHeight = toPixels (arcHeight, precision, zoom);
 		fillRoundRectangleInPixels(rect.x, rect.y, rect.width, rect.height, scaledArcWidth, scaledArcHeight);
 	}
 }
@@ -6130,6 +6152,48 @@ private static int cos(int angle, int length) {
  */
 private static int sin(int angle, int length) {
 	return (int)(Math.sin(angle * (Math.PI/180)) * length);
+}
+
+private Point toPixelsAsLocation(Point location, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> Win32DPIUtils.pointToPixelAsLocation(drawable, location, zoom);
+		case FRACTIONAL -> throw fractionalPrecisionNotImplemented();
+	};
+}
+
+// DrawPointOperation scales its location without consulting drawable.isAutoScalable(),
+// so it needs its own branch to stay value-identical to the previous inline call.
+private Point toPixelsAsLocationWithoutAutoscaleCheck(Point location, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> Win32DPIUtils.pointToPixelAsLocation(location, zoom);
+		case FRACTIONAL -> throw fractionalPrecisionNotImplemented();
+	};
+}
+
+private Rectangle toPixels(Rectangle rectangle, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> Win32DPIUtils.pointToPixel(drawable, rectangle, zoom);
+		case FRACTIONAL -> throw fractionalPrecisionNotImplemented();
+	};
+}
+
+private int toPixels(int length, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> Win32DPIUtils.pointToPixel(drawable, length, zoom);
+		case FRACTIONAL -> throw fractionalPrecisionNotImplemented();
+	};
+}
+
+private int[] toPixels(int[] pointArray, GeometryPrecision precision, int zoom) {
+	return switch (precision) {
+		case SNAPPED -> Win32DPIUtils.pointToPixel(drawable, pointArray, zoom);
+		case FRACTIONAL -> throw fractionalPrecisionNotImplemented();
+	};
+}
+
+private static UnsupportedOperationException fractionalPrecisionNotImplemented() {
+	// Step 4 of docs/gc-fractional-precision.md fills in the fractional conversions.
+	return new UnsupportedOperationException("FRACTIONAL geometry precision is not implemented yet");
 }
 
 int getZoom() {
