@@ -74,7 +74,10 @@ public final class ResultMerger {
 		captures.sort(CAPTURE_ORDER);
 		comparisons.sort(COMPARISON_ORDER);
 		Map<String, Object> merged = new LinkedHashMap<>();
-		merged.put("schemaVersion", Integer.valueOf(ResultSchemaValidator.SUPPORTED_SCHEMA_VERSION));
+		// Long, not Integer: the strict validator accepts exactly what JsonParser
+		// produces for JSON integers, so an in-memory consumer of this map
+		// (T20 run verb) validates the same document that a file round-trip yields.
+		merged.put("schemaVersion", Long.valueOf(ResultSchemaValidator.SUPPORTED_SCHEMA_VERSION));
 		merged.put("generator", generator);
 		merged.put("environment", environment);
 		merged.put("captures", captures);

@@ -11,6 +11,7 @@
 package org.eclipse.swt.visualoracle.tools;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 
 /**
  * The {@code oracle} command line entry point.
@@ -19,11 +20,11 @@ import java.io.PrintStream;
  *   selftest   run the end-to-end harness selftest (implemented here)
  *   version    print tool and schema versions
  *   help       print usage
- *   run        reserved for T20, attaches here
- *   triage     reserved for T20, attaches here
+ *   run        render specimens, compare backends, report a verdict (T20)
+ *   triage     rank the differences of a previous run (T20)
  *
- * Exit codes: 0 success, 1 selftest failure or runtime error, 2 usage error,
- * 3 verb exists but is not implemented yet.
+ * Exit codes: 0 success, 1 selftest failure or runtime error, 2 usage error.
+ * Per-verb exit codes are documented in docs/visual-oracle/CLI.md.
  */
 public final class OracleCli {
 
@@ -47,6 +48,7 @@ public final class OracleCli {
 			printUsage(stdout);
 			return 2;
 		}
+		String[] rest = Arrays.copyOfRange(args, 1, args.length);
 		switch (args[0]) {
 			case "selftest":
 				return new SelfTest(stdout).run();
@@ -61,9 +63,9 @@ public final class OracleCli {
 				printUsage(stdout);
 				return 0;
 			case "run":
-				return reservedFor("T20", "renders specimens across backends and environments");
+				return new RunVerb(stdout, stderr, rest).dispatch();
 			case "triage":
-				return reservedFor("T20", "ranks the most significant differences of a run");
+				return new TriageVerb(stdout, stderr, rest).dispatch();
 			default:
 				stderr.println("oracle: unknown verb '" + args[0] + "'");
 				printUsage(stderr);
@@ -71,20 +73,14 @@ public final class OracleCli {
 		}
 	}
 
-	private int reservedFor(String task, String what) {
-		stderr.println("oracle: this verb will " + what + "; it is reserved for task " + task
-				+ " and deliberately not implemented in the skeleton");
-		return 3;
-	}
-
 	private void printUsage(PrintStream out) {
 		out.println("usage: oracle <verb> [args]");
 		out.println();
 		out.println("verbs:");
 		out.println("  selftest    prove the pipeline end to end; exits non-zero on any failure");
+		out.println("  run         render specimens through two backends and compare; JSON verdict on stdout");
+		out.println("  triage      rank the differences of a previous run for attention");
 		out.println("  version     print tool and result schema versions");
 		out.println("  help        this text");
-		out.println("  run         (reserved for T20) render specimens and compare backends");
-		out.println("  triage      (reserved for T20) rank differences of a previous run");
 	}
 }

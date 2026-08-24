@@ -218,6 +218,18 @@ public class SelfTest {
 					SkiaCanvasCheck.checkFlatSkiaCollision(display, out));
 			check(index++, "skiacanvas-zoom200-size-discrepancy-measured", () ->
 					SkiaCanvasCheck.checkZoom200DiscrepancyMeasured(out));
+			check(index++, "run-filters-select-what-they-claim", () ->
+					RunCheck.checkFiltersSelectWhatTheyClaim(out));
+			check(index++, "run-clean-exits-zero-and-schema-valid", () -> {
+				cleanRunDocument = RunCheck.checkCleanRunExitsZeroAndValidates(out);
+			});
+			check(index++, "run-broken-candidate-exits-nonzero", () -> {
+				if (cleanRunDocument == null)
+					throw new AssertionError("clean run check did not produce a result document");
+				RunCheck.checkBrokenCandidateExitsNonZero(cleanRunDocument, out);
+			});
+			check(index++, "triage-deterministic-for-identical-input", () ->
+					RunCheck.checkTriageDeterministic(out));
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);
@@ -265,6 +277,8 @@ public class SelfTest {
 	private DiffResult equalResult;
 	private DiffResult alteredResult;
 	private DiffResult tolerantResult;
+	/** Written by the T20 clean-run check, consumed by the broken-candidate check. */
+	private java.nio.file.Path cleanRunDocument;
 
 	// --------------------------------------------------------------- checks
 

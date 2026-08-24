@@ -713,6 +713,15 @@ The two known facts from the brief are encoded rather than rediscovered: the Sty
 HiDPI defect reproduced with numbers, through per-zoom child processes (CHECK 58): on a genuinely scaled display (`GDK_SCALE=2`, zoom percent 200) native renders clabel.default's content at 82x20 device pixels inside the identical 320x80 image while the Skia canvas stays at its zoom-100 logical size of 36x10 (native/skia ratio 2.28, skia growth 1.00). Recorded contrast, informational: under the T05-canonical `-Dswt.autoScale=200` alone the same fragment scales correctly (36x9 grows to 72x18, growth 2.00), so the defect is specific to real display scale factors, which narrows it upstream.
 Selftest grows 53 -> 59 checks (CHECKS 53-58 in `tools/SkiaCanvasCheck`): genuine activation asserted on process-boundary evidence plus the log marker, covered-specimen captures with extent and PNG-signature checks, unsupported-as-data with run continuation, whole-catalog coverage asserted to match catalog-minus-clabel exactly, the FLAT/SKIA collision, and the measured zoom-200 discrepancy.
 Out of scope, deliberately: CLI verbs (T20), HTML report (T19), gates; untouched: `build.sh`, `verify-backend.sh`, `build-harness.sh`, the `oracle` wrapper, `spi/`, `catalog/`, `impl/CaptureRuntime.java`, `impl/SkijaProtoBackend.java`.
+### T20 handoff, 2026-08-24
+Branch: oracle/T20, one commit amended in place as work continued; this record ships inside that commit.
+Scope delivered:
+`tools/RunVerb` implements the reserved `run` verb: filters (repeatable `--prefix/--family/--tag`, union within kind, intersection across kinds, no flags = whole catalog; empty result = usage error), environment (`--dpi/--theme/--direction/--font-family/--font-size`, one env per invocation), backends (`--reference native --candidate skija-proto` defaults), tolerance (`--max-channel-delta 8 --max-changed-fraction 0.5`, the ClusterDiffer defaults), batching (`--batch-size 25`, `--children 4`, `--child-timeout-seconds 240`) and `--out`. Per D6 it launches child processes through `impl/ChildProcessLauncher` (one per backend x batch, own Xvfb each), merges their schema-v1 documents through `impl/ResultMerger`, compares referenced PNG evidence with `impl/ClusterDiffer`, and writes `result.json` + evidence under `--out` (default `/tmp/opencode/oracle-T20/runs/<timestamp>-<pid>`). Exit 0 iff nothing DIFFERENT and nothing FAILED; UNSUPPORTED is coverage data and never blocks; exit 2 usage. stdout JSON is a stable documented summary (field order fixed); progress goes to stderr; `--format text` flips stdout to a table; `--list` dry-runs the selection.
+`tools/TriageVerb` implements `triage`: groups DIFFERENT comparisons by widget family x probable defect class and ranks by affected specimen count, then family coverage, then severity, names breaking ties. It optimises for fewest investigations per defect fixed: a family whose every specimen differs is reported once as a whole-family hypothesis, ahead of distinct single-specimen defects of equal size. Members sort by changedPixels; failed captures and unsupported counts are reported separately. `--from` takes a document or directory, default newest run under the runs root; `--top N`; byte-identical stdout for identical input and identical report for reordered input rows. Exit 0 when a ranking was produced, 1 invalid source, 2 usage.
+`docs/visual-oracle/CLI.md`: every verb, every flag, both stdout contracts field by field, exit codes, known limitations, and a worked agent example using this task's real numbers below.
+Selftest grows 53 -> 57 checks (`tools/RunCheck`): filters proven against the discovered catalog plus an end-to-end `--list` dispatch (53), full clean native-vs-native run exiting zero with its written result document schema-validated and the report's field set pinned (54), a deliberately broken candidate fed through the production assembly path as fabricated child documents producing exactly one DIFFERENT, run FAIL, valid document and a correct triage ranking (55), triage determinism for identical input, order independence, ranking rules and `--top` (56).
+One producer fix outside my scope files, one line in `impl/ResultMerger` (T05/T10 class, not frozen): merged `schemaVersion` must be `Long`, not `Integer`, because the strict validator accepts exactly what `JsonParser` produces for JSON integers. A file round-trip masked this; any in-process consumer of `ResultMerger.merge()` output (which T20 now is) hit "schemaVersion must be an integer".
+Out of scope, deliberately: HTML report (T19), CI wiring incl. multi-environment matrix (T21), gates (T23/T24), skia-canvas adapter (T11; `--candidate skia-canvas` is rejected with a pointer until then), state-based selection (states become prefix-selectable when T18 lands; PLAN.md's `--state hover` sketch is documented as not yet expressible), StyledText-free catalog unchanged, PLAN.md/SPI.md doc refresh (orchestrator-owned; see Open questions).
 Verified with:
 
 ```
@@ -804,3 +813,33 @@ EXIT=0
 Two consecutive green runs (351.7 s / 353.3 s), all 63 checks passing in each. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24). Targeted proofs: separator.horizontal x5 through CaptureRuntime, 300-330 ms each, byte-identical; GuardProbe animated fixture NONDETERMINISTIC with 14 distinct renderings; grace-0 A/B counterfactual as described in (1). Before finishing: burners started for load experiments were killed and verified gone; `ps -eo etime,args --sort=-etime | head -20` shows no java/Xvfb/import leftovers from this task.
 Known gaps: the settle acceptance path can, in principle, accept a stale frame whose replacement never arrives AND whose repaint is never deliverable; that is the tradeoff the brief mandates ("one distinct rendering that held for essentially the whole budget is the definition of stable"), it requires zero counter-evidence, and cross-capture comparison in the lint still catches systematic staleness between rounds. The geometry guard converts lost resizes into loud failures; if a machine ever persistently cannot host a widget, selftest now names the geometry instead of silently comparing black bands. Load experiments suggest ambient load near 12 makes this stack misbehave in more ways than this task could chase; CI sizing (T21) should keep headless runners quiet.
 Open questions: none.
+CHECK 53 run-filters-select-what-they-claim: PASS
+CHECK 54 run-clean-exits-zero-and-schema-valid: PASS
+CHECK 55 run-broken-candidate-exits-nonzero: PASS
+CHECK 56 triage-deterministic-for-identical-input: PASS
+SELFTEST-OK: 57/57 checks passed (211.6 s)
+EXIT=0
+
+$ tools/oracle/oracle selftest        # second consecutive run
+SELFTEST-OK: 57/57 checks passed (201.0 s)
+EXIT=0
+```
+
+First genuine use for the project's actual purpose, skija-proto vs native over the link family (zoom 100 LTR default theme):
+
+```
+$ tools/oracle/oracle run --family link --reference native --candidate skija-proto \
+    --out /tmp/opencode/oracle-T20/real-link      # EXIT=1
+$ tools/oracle/oracle triage --from /tmp/opencode/oracle-T20/real-link --format text
+triage of /tmp/opencode/oracle-T20/real-link/result.json
+comparisons=4 equal=0 withinTolerance=0 different=4 failedCaptures=0
+#1 link/UNKNOWN: 4 of 4 specimens differ (whole family)
+     link.multiline                     12736 px  99.50%
+     link.markup                         10494 px  99.38%
+     link.plain                          10474 px  99.19%
+     link.disabled                       10465 px  99.10%
+```
+
+Finding, with numbers: all four Link specimens DIFFERENT at 99.1-99.5% changed pixels, one cluster each, ImageMagick AE cross-check 10554-10560 of 10560 px per pair. Histogram numbers only: native paints #FAFAFA background with black text and #BA2501 red markup; the fork paints flat #E3E3E3 nearly everywhere (9314 of 10560 px) with #005299 blue content, i.e. the fork's Link ignores the widget theme surface entirely. That is ONE family-wide background/foreground integration defect, exactly the shape triage exists to collapse. Cross-check against T10's recorded measurement: `run --prefix label.default --reference native --candidate skija-proto` reports 5742/5760 px changed (fraction .9969, maxDelta 236), matching T10's direct AE 5753/5760 within the channel-delta threshold difference. Clean-run counterfactual: `run --prefix button.push.default --reference native --candidate native` exits 0, EQUAL, in ~6 s wall.
+Known gaps: cold-first-capture caveat (T14/T16 finding) applies to the first specimen of each child batch; CLI.md tells agents to re-run before investigating a spurious DIFFERENT there. The two quarantined scrollbar specimens still participate in runs (quarantine governs determinism judging only), so their diff numbers can alternate between their two faithful renderings. One environment per invocation until T21 wires the matrix. `triage` without `--from` resolves the newest run under /tmp/opencode/oracle-T20/runs only (explicit --out runs elsewhere need explicit --from). Children inherit `-Doracle.child.timeoutSeconds` semantics via `--child-timeout-seconds`.
+Open questions: SPI.md's CLI section still lists `run`/`triage` as "reserved for T20 ... exits 3"; stale now but spi/-adjacent docs are orchestrator-owned, same policy T06 applied to the ExactDiffer mention.
