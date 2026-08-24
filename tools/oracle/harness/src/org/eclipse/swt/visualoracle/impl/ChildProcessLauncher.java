@@ -59,6 +59,10 @@ public final class ChildProcessLauncher {
 	private static final int KILL_GRACE_SECONDS = 10;
 	private static final int STDERR_TAIL_CHARS = 2000;
 
+	/** Backends a child can be launched for; each needs its own classpath. */
+	private static final java.util.Set<String> SUPPORTED_BACKENDS = java.util.Set.of(
+			NativeBackend.ID, SkijaProtoBackend.ID);
+
 	private final Config config;
 
 	public ChildProcessLauncher(Config config) {
@@ -138,8 +142,16 @@ public final class ChildProcessLauncher {
 	/** Runs every request, at most {@link Config#maxConcurrent} at a time. */
 	public List<ChildOutcome> run(List<ChildRequest> requests) {
 		for (ChildRequest request : requests)
-			if (!NativeBackend.ID.equals(request.backendId()))
+			if (!SUPPORTED_BACKENDS.contains(request.backendId()))
 				throw new IllegalArgumentException("no child adapter for backend '" + request.backendId() + "'");
+		// Resolve backend builds up front: a missing or failing recipe must
+		// fail the batch immediately instead of once per child, and build
+		// time must not eat into any child's timeout.
+		for (ChildRequest request : requests)
+			if (SkijaProtoBackend.ID.equals(request.backendId())) {
+				BackendClasspaths.harnessClasspath();
+				BackendClasspaths.backendClasspath(request.backendId());
+			}
 		long start = System.nanoTime();
 		Path batchDir = config.scratchDir().resolve("batch-" + Long.toString(start, 36));
 		List<Callable<ChildOutcome>> tasks = new ArrayList<>();
@@ -212,6 +224,7 @@ public final class ChildProcessLauncher {
 
 	private List<String> buildCommand(ChildRequest request, Path dir) {
 		LaunchConfig launch = SwtRenderEnvs.launch(request.env());
+		boolean protoBackend = SkijaProtoBackend.ID.equals(request.backendId());
 		List<String> command = new ArrayList<>();
 		command.add("xvfb-run");
 		command.add("-a");
@@ -219,18 +232,30 @@ public final class ChildProcessLauncher {
 		command.add("-screen 0 1600x1200x24");
 		command.add(javaCommand());
 		command.add("--enable-native-access=ALL-UNNAMED");
-		String libPath = System.getProperty("java.library.path", "");
-		if (!libPath.isEmpty())
-			command.add("-Djava.library.path=" + libPath);
+		if (protoBackend)
+			command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(SkijaProtoBackend.ID));
+		else {
+			String libPath = System.getProperty("java.library.path", "");
+			if (!libPath.isEmpty())
+				command.add("-Djava.library.path=" + libPath);
+		}
 		command.add("-Doracle.repoRoot=" + repoRoot());
 		command.addAll(launch.jvmProperties());
 		command.add("-cp");
-		command.add(System.getProperty("java.class.path"));
+		// One backend's SWT classes per process (ADR-002): a skija-proto child
+		// gets the harness classes plus the fork build, never the parent's
+		// native backend classes.
+		command.add(protoBackend
+				? BackendClasspaths.harnessClasspath() + java.io.File.pathSeparator
+						+ BackendClasspaths.backendClasspath(SkijaProtoBackend.ID)
+				: System.getProperty("java.class.path"));
 		command.add(CaptureChild.class.getName());
 		command.add("--out");
 		command.add(dir.toString());
 		command.add("--strategy");
 		command.add(request.strategy().name());
+		command.add("--backend");
+		command.add(request.backendId());
 		if (request.hangForTest())
 			command.add("--hang");
 		command.addAll(request.specimenIds());

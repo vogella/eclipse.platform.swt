@@ -607,3 +607,41 @@ Findings worth keeping:
 - T14 solved the caret problem by clearing GTK can-focus on the control and on an editable combo's inner GtkEntry before realisation, so no caret exists rather than trying to capture between blinks.
 - An agent used `git stash` to test whether a failure was pre-existing. The stash stack is repository-wide, so this could have stranded work where a parallel agent would pop it. No damage occurred; the rule is now in "Work protocol".
 - Parallelism: four agents ran concurrently with zero provider drops on two of them and three on another, while load reached 22 on 8 cores. The machine, not the endpoint, is the binding constraint, because each agent runs a 60 to 160 second selftest repeatedly.
+
+### T10 handoff, 2026-08-24
+Branch: oracle/T10 at 275b562a64 (amended in place as work continued); this record ships inside that commit.
+Scope delivered:
+`impl/SkijaProtoBackend`, the first-class `Backend` adapter for the prototype-skija fork, so the harness can drive the fork's custom-drawn widgets like any other backend. Because the harness compiles against stock SWT, everything fork-specific goes through reflection against whatever classes the running JVM actually loaded; the adapter fails with `BackendUnavailableException`, never silently, when those classes are wrong or absent. `configure(Display)` proves activation exactly the way `tools/oracle/verify-backend.sh` does it: it asks the fork's `Drawing.createGraphicsContext` for a drawing context and requires the wrapped `innerGC` to be an `org.eclipse.swt.graphics.SkijaGC`; the observed class name is exposed via `observedGcClassName()` and printed by CaptureChild as a `BACKEND-GC=` line so a parent process can assert on evidence that crossed the process boundary. `supports(Specimen)` decides coverage by evidence from the loaded fork classes, not by a hardcoded widget list: the specimen is instantiated once in a scratch shell and supported only when its control carries a field typed as a fork renderer (`ControlRenderer` subtype, which is precisely what routes painting through `Drawing.drawWithGC`) AND the GC-wrap evidence holds for that very control; results are cached per specimen id. Consequence worth knowing: `scrollbar.*` specimens count as covered because their host control is a fork-drawn `List`.
+`impl/BackendClasspaths`: per-backend classpaths resolved by invoking `tools/oracle/build.sh` (untouched), the parent classpath split into "harness minus native backend", and per-backend native library directories (worktree binaries for native, fork checkout binaries for skija-proto). This is what keeps the fork's committed Skija 0.116.3 jars and PR 3231's Maven 0.143.17 jars apart at the process level.
+`impl/ChildProcessLauncher` now accepts skija-proto child requests: a skija-proto child gets the harness classes plus the fork build output only (never the parent's native SWT classes, per ADR-002), `-Djava.library.path` points at the fork's binaries, `--backend <id>` is passed through, and build recipes resolve eagerly before any child starts so a failing recipe fails the batch once instead of once per child.
+`tools/CaptureChild` accepts `--backend skija-proto` and prints the `BACKEND-GC=` evidence line after activation.
+`tools/CoverageProbe`: runs inside a fork-classpath JVM, probes every catalog specimen through `supports()` without capturing pixels, and prints `COVERAGE total=… supported=… unsupported=… error=…` plus one `UNSUPPORTED <id>` line each; this makes the migration progress metric a one-command number.
+Selftest grows 33 -> 37 checks (CHECKS 33-36 in `tools/SkijaProtoCheck`, batch state cached across the four): genuine activation asserted on the child's observed `BACKEND-GC=org.eclipse.swt.graphics.SkijaGC` line, successful capture of two covered specimens with extent and PNG-signature checks, `combo.readonly.empty`/`clabel.default` reported UNSUPPORTED while siblings still capture (exit 0), and the whole-catalog coverage count asserted consistent and printed into the check detail.
+Out of scope, deliberately: T11 canvas adapter, run/triage (T20), report (T19), determinism lint (T12), fixing any fork defect listed below (they live in the fork, not here).
+Verified with:
+
+```
+$ tools/oracle/build-harness.sh && tools/oracle/oracle selftest
+CHECK 0..32 (existing): PASS
+CHECK 33 skijaproto-backend-genuinely-activates: PASS
+      fork activation evidence: BACKEND-GC=org.eclipse.swt.graphics.SkijaGC
+CHECK 34 skijaproto-supported-specimen-captures: PASS
+      button.push.default and label.default captured through skija-proto at zoom 100
+CHECK 35 skijaproto-unsupported-specimen-reported-as-data: PASS
+      combo.readonly.empty and clabel.default reported UNSUPPORTED, siblings unaffected
+CHECK 36 skijaproto-catalog-coverage-counted: PASS
+      skija-proto covers 137 of 149 catalog specimens (12 unsupported: clabel, combo)
+SELFTEST-OK: 37/37 checks passed (190.6 s)
+EXIT=0
+```
+
+Five consecutive full selftests: green 190.6 s / FAILED 1-of-37 / green 206.6 s / green 207.7 s / green (grep rerun). The one failure sat among pre-existing CHECKS 0-29 (its name was lost to output truncation; CHECKS 30-36 including all four new ones printed PASS in that same run), matching the documented load/cold-capture sensitivity owned by T12 and the capture runtime, and none of the four new checks failed anywhere.
+Full-catalog sweep through the real pipeline (`CaptureChild --backend skija-proto` over all 149 ids, zoom 100 LTR default theme, two independent processes): 121 CAPTURED / 16 FAILED / 12 UNSUPPORTED both times; cross-process byte comparison of the evidence PNGs: 119 of 121 identical.
+Renderer-difference sanity, ImageMagick AE numbers only: fork button.push.default vs native 776 of 5600 px differ; label.default 5753 of 5760 (the fork's label paints its own background), so captures genuinely come from a different renderer rather than from silent fallback to native.
+Known gaps:
+1. Coverage 137/149; unsupported families are clabel (6) and combo (6): CLabel extends Canvas and draws itself with a plain GC, Combo extends CCombo extends Composite; neither carries a fork renderer. Mixed coverage inside one widget would be muddier than useful, so they report UNSUPPORTED by design.
+2. Thirteen specimens fail capture even in isolation ("no paint event observed within 5000 ms"): button.push.border, all nine progressbar.*, all three sash.*. Characterized with a probe: under the fork these widgets fire ZERO paint events to listeners and their windows hold exactly 2 colors, i.e. the fork does not render them on this stack yet. BORDER variants of custom widgets route through a GtkScrolledWindow wrapper in NativeBasedCustomControl.createHandle, the likeliest culprit for the border button; ProgressBar/Sash presumably never wire their paint path here.
+3. Three tree specimens fail when hosted after another tree in the same process (tree.expanded.default, tree.node.selected, tree.empty.default; isolated capture works, 200x220): during disposal of the previous Tree the fork recomputes item bounds (`destroyItem -> synchronizeArrangements -> computeDefaultSize -> Drawing.measure`) and `NativeGC.setFont` throws ERROR_INVALID_ARGUMENT, i.e. a fork-side teardown bug triggered by the reused-shell capture runtime, measured with full stack trace in /tmp/opencode/oracle-T10/sweep/.
+4. Cross-process determinism of fork captures is 119/121: text.multi.border.content differs AE=260 and text.multi.plain.content AE=117 between two otherwise identical sweeps (single-line text specimens were stable, so NoCaret may not reach multi-line or the V_SCROLL bar fades; owner T12 when linting fork runs).
+5. Every fork capture spams stderr with `WARN: Not implemented yet:` lines (getClipping/setClipping among them); harmless noise today, but CI log hygiene needs a policy before T21.
+Open questions: none beyond whether the orchestrator wants gaps 2 and 3 filed upstream against swt-initiative31/prototype-skija; all evidence needed is reproducible from this branch.

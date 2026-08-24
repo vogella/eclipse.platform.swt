@@ -20,10 +20,12 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.SkijaProtoBackend;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
 import org.eclipse.swt.visualoracle.result.CaptureEntry;
 import org.eclipse.swt.visualoracle.result.CaptureStatus;
 import org.eclipse.swt.visualoracle.result.RunResult;
+import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.CaptureFailedException;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
@@ -49,6 +51,11 @@ import org.eclipse.swt.visualoracle.spi.Theme;
  *
  * Usage: CaptureChild --out DIR [--strategy COPY_AREA|X11_GRAB] [--backend ID]
  *                     [--hang] specimenId...
+ *
+ * After backend activation it prints one evidence line,
+ * BACKEND-GC=<class>, carrying the GC class the backend observed wrapped by
+ * its drawing stack (org.eclipse.swt.graphics.SkijaGC for skija-proto), so a
+ * parent can assert genuine activation like tools/oracle/verify-backend.sh.
  *
  * Exit codes: 0 all captured or unsupported, 2 usage error (unknown specimen,
  * unknown backend, missing --out), 3 environment mismatch (result still
@@ -94,7 +101,7 @@ public final class CaptureChild {
 		}
 		if (out == null)
 			return usage("--out DIR is required");
-		if (!NativeBackend.ID.equals(backendId))
+		if (!NativeBackend.ID.equals(backendId) && !SkijaProtoBackend.ID.equals(backendId))
 			return usage("backend '" + backendId + "' has no child adapter yet");
 		if (specimenIds.isEmpty())
 			return usage("no specimens requested");
@@ -124,13 +131,15 @@ public final class CaptureChild {
 		Display display = new Display();
 		final String backend = backendId;
 		try {
-			NativeBackend nativeBackend = new NativeBackend();
+			Backend backendInstance = createBackend(backendId);
 			try {
-				nativeBackend.configure(display);
+				backendInstance.configure(display);
 			} catch (BackendUnavailableException e) {
 				System.err.println("CHILD-FAILED: backend unavailable: " + e);
 				return EXIT_BACKEND;
 			}
+			if (backendInstance instanceof SkijaProtoBackend skija)
+				System.out.println("BACKEND-GC=" + skija.observedGcClassName());
 
 			RenderEnv actual = SwtRenderEnvs.current(display);
 			if (!SwtRenderEnvs.matches(requested, actual)) {
@@ -152,7 +161,7 @@ public final class CaptureChild {
 			boolean anyFailure = false;
 			try (CaptureRuntime runtime = new CaptureRuntime(strategy)) {
 				for (Specimen specimen : specimens) {
-					CaptureEntry entry = captureOne(runtime, nativeBackend, actual, specimen, out);
+					CaptureEntry entry = captureOne(runtime, backendInstance, actual, specimen, out);
 					if (entry.status() == CaptureStatus.FAILED)
 						anyFailure = true;
 					entries.add(entry);
@@ -166,7 +175,15 @@ public final class CaptureChild {
 		}
 	}
 
-	private static CaptureEntry captureOne(CaptureRuntime runtime, NativeBackend backend, RenderEnv env,
+	private static Backend createBackend(String backendId) {
+		return switch (backendId) {
+			case NativeBackend.ID -> new NativeBackend();
+			case SkijaProtoBackend.ID -> new SkijaProtoBackend();
+			default -> throw new IllegalArgumentException("backend '" + backendId + "' has no child adapter yet");
+		};
+	}
+
+	private static CaptureEntry captureOne(CaptureRuntime runtime, Backend backend, RenderEnv env,
 			Specimen specimen, Path out) {
 		if (!backend.supports(specimen))
 			return CaptureEntry.skipped(specimen.id(), backend.id(), CaptureStatus.UNSUPPORTED,

@@ -155,6 +155,14 @@ public class SelfTest {
 			check(index++, "diff-size-mismatch-whole-area", () ->
 					DiffCheck.checkSizeMismatchWholeArea(firstCapture));
 			check(index++, "diff-throughput-measured", () -> DiffCheck.checkThroughput(out));
+			check(index++, "skijaproto-backend-genuinely-activates", () ->
+					SkijaProtoCheck.checkActivation(out));
+			check(index++, "skijaproto-supported-specimen-captures", () ->
+					SkijaProtoCheck.checkSupportedCapture(out));
+			check(index++, "skijaproto-unsupported-specimen-reported-as-data", () ->
+					SkijaProtoCheck.checkUnsupportedReported(out));
+			check(index++, "skijaproto-catalog-coverage-counted", () ->
+					SkijaProtoCheck.checkCatalogCoverage(out));
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);
