@@ -71,21 +71,21 @@ States: `BLOCKED` waiting on a dependency, `READY` dispatchable now, `CLAIMED` a
 |---|---|---|---|---|---|---|
 | T01 | Capture strategy spike and ADR | FOUNDATION | MERGED | opencode + coordinator | none | copyarea chosen, print disqualified |
 | T02 | Target selection and build recipe | FOUNDATION | MERGED | opencode bqd2a78sf | none | Verified by coordinator, see integration log |
-| T03 | Harness skeleton and SPI freeze | FOUNDATION | READY | | T02 | Orchestrator reviews line by line |
-| T04 | Capture runtime | CORE | BLOCKED | | T01, T03 | Implements copyarea primary, xgrab fallback; must fix xgrab crop origin at zoom>100 |
-| T05 | Environment control | CORE | BLOCKED | | T03 | |
-| T06 | Diff engine | CORE | BLOCKED | | T03 | |
+| T03 | Harness skeleton and SPI freeze | FOUNDATION | MERGED | opencode (7 attempts) | T02 | SPI frozen in SPI.md, selftest 8/8 verified by coordinator |
+| T04 | Capture runtime | CORE | READY | | T01, T03 | Implements copyarea primary, xgrab fallback; must fix xgrab crop origin at zoom>100 |
+| T05 | Environment control | CORE | READY | | T03 | |
+| T06 | Diff engine | CORE | READY | | T03 | |
 | T07 | Defect classification | CORE | BLOCKED | | T06 | |
-| T08 | Result model and JSON schema | CORE | BLOCKED | | T03 | |
-| T09 | Backend adapter: native | BACKENDS | BLOCKED | | T03 | |
-| T10 | Backend adapter: prototype-skija | BACKENDS | BLOCKED | | T02, T03 | T02 proved it builds and activates |
-| T11 | Backend adapter: SWT.SKIA canvas | BACKENDS | BLOCKED | | T02, T03 | |
+| T08 | Result model and JSON schema | CORE | READY | | T03 | |
+| T09 | Backend adapter: native | BACKENDS | READY | | T03 | |
+| T10 | Backend adapter: prototype-skija | BACKENDS | READY | | T02, T03 | T02 proved it builds and activates |
+| T11 | Backend adapter: SWT.SKIA canvas | BACKENDS | READY | | T02, T03 | |
 | T12 | Determinism lint | QUALITY | BLOCKED | | T04 | |
-| T13 | Catalog: buttons and labels | CATALOG | BLOCKED | | T03 | |
-| T14 | Catalog: text entry | CATALOG | BLOCKED | | T03 | |
-| T15 | Catalog: item widgets | CATALOG | BLOCKED | | T03 | XL, split on claim |
-| T16 | Catalog: containers | CATALOG | BLOCKED | | T03 | |
-| T17 | Catalog: range widgets | CATALOG | BLOCKED | | T03 | Freeze animation |
+| T13 | Catalog: buttons and labels | CATALOG | READY | | T03 | |
+| T14 | Catalog: text entry | CATALOG | READY | | T03 | |
+| T15 | Catalog: item widgets | CATALOG | READY | | T03 | XL, split on claim |
+| T16 | Catalog: containers | CATALOG | READY | | T03 | |
+| T17 | Catalog: range widgets | CATALOG | READY | | T03 | Freeze animation |
 | T18 | Catalog: state coverage generator | CATALOG | BLOCKED | | T13 | |
 | T19 | HTML report | OUTPUT | BLOCKED | | T08 | |
 | T20 | Agent CLI | OUTPUT | BLOCKED | | T04, T08 | |
@@ -222,7 +222,13 @@ The temptation to parallelize the SPI freeze in Phase 1 should be resisted; it i
 
 ## Current status
 
-T02 is merged. T01 is running. T03 is `READY` and is the next dispatch.
+Phases 0 and 1 are complete: T01, T02 and T03 are merged, the SPI is frozen in `SPI.md`, and `tools/oracle/oracle selftest` passes 8 of 8 checks from a clean checkout.
+
+Phase 2 is open. CORE (T04, T05, T06, T08), BACKENDS (T09, T10, T11) and CATALOG (T13 to T17) are all `READY` and touch disjoint files.
+
+Third operational finding, from T03. The configured opencode model is a free alpha endpoint that drops streams unpredictably: T03 took 7 attempts and 5 drops to finish, T01 lost 6 sessions to the same cause, T02 was untouched.
+The user chose to keep that endpoint, so every dispatch now runs under a supervising driver that resumes the same session with `--continue` after each drop and stops only when HEAD has moved and the tree is clean.
+Drops occur at stream start and cost little when resumed, so combined with commit-early briefs the throughput cost is tolerable, but it roughly doubles wall-clock per task.
 
 Two operational findings from the first dispatches, both now folded into the rules above.
 
@@ -336,3 +342,13 @@ EXIT=0
 Four consecutive full runs green (7.5-9.6 s each). All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24).
 Known gaps: ExactDiffer writes at most one bounding-box placeholder cluster (flagged as provisional for consumers until T06 in RESULT-SCHEMA.md); CopyAreaCapture is skeleton-grade, it owns shell+settle inline using the T01-proven paint-event wait and is meant to be replaced wholesale by T04 behind the same interface; the two verify-backend checks build skia-canvas, so a cold skija jar cache makes them need network once.
 Open questions: PLAN.md's architecture paragraph still says "renders the widget twice in the same process"; SPI.md documents the multi-process reality that follows from ADR-002, but only the orchestrator can decide whether to update PLAN.md itself.
+
+### 2026-08-24 merged T03
+Conflicts: none, rebased onto the plan update commit first, then fast-forward.
+Coordinator verification, run independently of the agent's claims:
+- `build-harness.sh` then `oracle selftest` in a detached checkout at the commit: 8/8 checks, 12 s
+- re-run after rebase in the task worktree: 8/8 checks, 7 s
+- the negative test the coordinator required is present as CHECK 6, and the agent added CHECK 7 as a positive control on its own initiative, so the negative test cannot pass for the wrong reason
+Design correction accepted: the agent found that the PLAN.md sketch assumed both backends render in one process, which ADR-002 and SWT's Display-time environment binding make impossible. Recorded as D6 in PLAN.md; T05 and T20 change shape as a result.
+Board updates: T03 to MERGED. Phase 2 opened.
+Newly unblocked: T04, T05, T06, T08, T09, T10, T11, T13, T14, T15, T16, T17.

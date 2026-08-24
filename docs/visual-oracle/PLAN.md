@@ -4,7 +4,8 @@ This is a living document.
 The coordinator updates it whenever a task is merged, so that a worker starting later reads decisions rather than open questions.
 Task status lives in `TRACKING.md`, not here; this document holds the design and the decisions behind it.
 
-Merged so far: T02 (build recipe), T01 (capture strategy).
+Merged so far: T02 (build recipe), T01 (capture strategy), T03 (SPI freeze).
+The SPI sketch below is historical; `SPI.md` is authoritative.
 
 ## Goal
 
@@ -39,12 +40,27 @@ Not a general screenshot testing framework for applications built on SWT.
 
 The native rendering is the oracle and it is produced in the same run, on the same machine, with the same theme and fonts as the Skija rendering.
 
+Same run, but **not the same process**, see D6.
+
 This removes the entire golden-image problem.
 There are no baseline PNGs to store, to version, to regenerate per platform, or to review in pull requests.
 A run is self-contained and its verdict does not depend on any previously recorded artifact.
 
 Consequence: the harness cannot detect a defect that both backends share, and it cannot detect a native regression.
 Both are acceptable, because the question it answers is "does Skija match native", not "is native correct".
+
+### D6: One process per backend and environment, merged at the JSON level
+
+Established by T03 and documented in `SPI.md`. This corrects the original sketch, which assumed both backends could render side by side in one process.
+
+Two constraints make that impossible.
+Each backend links its own natives and class output (ADR-002), so at most one backend can be active per process.
+SWT reads zoom, theme and text direction once at `Display` creation, so one process serves exactly one `RenderEnv`.
+
+A full comparison therefore runs several single-purpose processes, one per backend and environment combination, and compares their results as JSON rather than as live objects.
+The result JSON is consequently not a convenience format, it is the comparison substrate, which is why its schema is a frozen contract.
+
+Consequences for tasks not yet started: T05 owns spawning and coordinating the per-environment processes, and T20 owns merging results across them and doing the comparison. Neither may assume a shared `Display`.
 
 ### D2: Capture uses `GC.copyArea`, with an X11 grab as fallback
 
@@ -108,6 +124,8 @@ flowchart TD
 ```
 
 ### Component responsibilities
+
+**The frozen SPI** lives in `org.eclipse.swt.visualoracle.spi` and is documented in `SPI.md`, which states for each interface what implementers may assume and what is guaranteed to stay stable. Reference implementations under `.impl` are deliberately minimal and are replaced by T04, T06 and T09; nothing outside the harness may depend on them.
 
 **Specimen catalog** declares what to render.
 A specimen is a pure factory: given a parent `Composite` and a `SpecimenContext`, it creates exactly one widget in one defined state and returns it.
