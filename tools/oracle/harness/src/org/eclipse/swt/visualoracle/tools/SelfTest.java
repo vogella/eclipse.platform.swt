@@ -178,6 +178,16 @@ public class SelfTest {
 				ResultCheck.checkMergeOrderIndependentBytes(t05Batch.get("ltrA"), t05Batch.get("ltrB"),
 						OracleCli.VERSION, out);
 			});
+			check(index++, "diff-missing-element-classified", () ->
+					DiffCheck.checkMissingElementClassified(firstCapture, out));
+			check(index++, "diff-wrong-color-classified", () ->
+					DiffCheck.checkWrongColorClassified(firstCapture, out));
+			check(index++, "diff-wrong-glyph-classified", () ->
+					DiffCheck.checkWrongGlyphClassified(firstCapture, out));
+			check(index++, "diff-size-mismatch-stays-unclassified", () ->
+					DiffCheck.checkSizeMismatchStaysWholeArea(firstCapture));
+			check(index++, "diff-ambiguous-difference-abstains", () ->
+					DiffCheck.checkAmbiguousDifferenceAbstains(firstCapture, out));
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);

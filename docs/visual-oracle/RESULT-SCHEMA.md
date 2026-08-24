@@ -115,6 +115,26 @@ A size mismatch between the two images yields `DIFFERENT` with
 `changedFraction` 1.0 over the larger area, `changedPixels` equal to the
 larger area, and one cluster spanning the larger bounds.
 
+Defect class semantics (as implemented by the T07 classification layer;
+`NONE` for EQUAL and WITHIN_TOLERANCE, otherwise at most one claim):
+
+* `SHIFTED`: a small translation (up to +-2 px) reproduces nearly every
+  changed pixel with comparable content mass on both sides; a baseline or
+  origin error rather than a drawing error.
+* `MISSING_ELEMENT`: an element is present on one side only. Every cluster's
+  interior colour means differ far apart while the edge maps share almost
+  nothing; the constant is direction-neutral, so it does not distinguish a
+  removal from an addition.
+* `WRONG_COLOR`: geometry intact, colours moved: the edge maps of both
+  images agree, optionally confirmed by signed-gradient correlation.
+* `WRONG_GLYPH`: differences concentrate where both renderings carry dense
+  small-scale structure (where text lives) and change it coherently rather
+  than as scattered halo.
+* `UNKNOWN`: deliberate abstention whenever the evidence does not separate
+  the classes cleanly (mixed defects, scattered anti-aliasing beyond the
+  envelope, size mismatches). A confidently wrong class sends someone to the
+  wrong part of the code; an abstention does not.
+
 ## Cluster objects (`clusters[]`)
 
 Connected regions of change in image pixel space, origin top-left, as found

@@ -52,16 +52,28 @@ import org.eclipse.swt.visualoracle.spi.Verdict;
  * element forms one coherent strongly-changed region. Calibration measurements
  * are recorded in the T06 handoff in TRACKING.md.
  *
- * Classification fills only the obvious cases: SHIFTED when a small
- * translation explains the change, MISSING_ELEMENT when a single cluster
- * replaces flat background with structure or vice versa. Everything else is
- * UNKNOWN; the detailed mapping is T07.
+ * Classification (T07, implemented by {@link DefectClassifier}) names the
+ * probable cause or abstains. Claims in descending specificity: SHIFTED when
+ * a small translation explains the change; MISSING_ELEMENT when every
+ * cluster carries element mass on one side only (interior colour means far
+ * apart while the edge maps share almost nothing, so a solid recolouring
+ * cannot read as a removal); WRONG_COLOR when the edge maps of both images
+ * agree, so the geometry is intact and only the colours moved; WRONG_GLYPH
+ * when the difference concentrates where both renderings carry dense
+ * structure, which is where text lives, coherently rather than as scattered
+ * halo. Everything else stays UNKNOWN: a confidently wrong class sends
+ * someone to the wrong code, an abstention does not. A size mismatch is
+ * DIFFERENT over the larger area with fraction 1.0, never an exception, and
+ * deliberately stays UNKNOWN because the frozen enum has no constant that
+ * says size mismatch.
  *
- * A size mismatch is DIFFERENT over the larger area with fraction 1.0, never
- * an exception. Alpha is ignored because captures are opaque. Instances are
+ * Alpha is ignored because captures are opaque. Instances are
  * not thread-safe; the harness calls a Differ from one thread.
  */
 public class ClusterDiffer implements Differ {
+
+	private final DefectClassifier defectClassifier = new DefectClassifier();
+
 
 	/**
 	 * Tolerance proposed for oracle runs until measured otherwise: channel
@@ -175,7 +187,7 @@ public class ClusterDiffer implements Differ {
 			reported.add(new DiffCluster(c.minX, c.minY, c.maxX - c.minX + 1, c.maxY - c.minY + 1, c.count));
 
 		DefectClass defect = verdict == Verdict.DIFFERENT
-				? classify(clusters, ra, rb, w, h, channelTol)
+				? classify(reported, ra, rb, w, h, channelTol)
 				: DefectClass.NONE;
 		return new DiffResult(verdict, changed, fraction, maxDelta, reported, defect);
 	}
@@ -283,7 +295,7 @@ public class ClusterDiffer implements Differ {
 		target.maxY = Math.max(target.maxY, c.maxY);
 	}
 
-	private static void horizontalDilate(byte[] src, byte[] dst, int w, int h) {
+	static void horizontalDilate(byte[] src, byte[] dst, int w, int h) {
 		for (int y = 0; y < h; y++) {
 			int row = y * w;
 			byte prev = 0;
@@ -295,7 +307,7 @@ public class ClusterDiffer implements Differ {
 		}
 	}
 
-	private static void verticalDilate(byte[] src, byte[] dst, int w, int h) {
+	static void verticalDilate(byte[] src, byte[] dst, int w, int h) {
 		System.arraycopy(src, 0, dst, 0, w);
 		System.arraycopy(src, (h - 1) * w, dst, (h - 1) * w, w);
 		for (int y = 1; y < h - 1; y++) {
@@ -314,31 +326,27 @@ public class ClusterDiffer implements Differ {
 	}
 
 	/**
-	 * Fills only the cases the cluster shape makes obvious: SHIFTED when a
-	 * small translation explains the change across all clusters at once,
-	 * MISSING_ELEMENT when a single cluster replaces flat background with
-	 * structure or vice versa. Otherwise UNKNOWN.
+	 * SHIFTED is claimed here, where the translation search lives; the
+	 * remaining classes are the T07 interpretation layer's decision.
 	 */
-	private DefectClass classify(List<RawCluster> clusters, PixelReader ra, PixelReader rb,
+	private DefectClass classify(List<DiffCluster> clusters, PixelReader ra, PixelReader rb,
 			int w, int h, int channelTol) {
 		if (explainableByShift(clusters, ra, rb, w, h, channelTol))
 			return DefectClass.SHIFTED;
-		if (clusters.size() == 1 && replacedFlatBackground(clusters.get(0), ra, rb))
-			return DefectClass.MISSING_ELEMENT;
-		return DefectClass.UNKNOWN;
+		return defectClassifier.classify(clusters, ra, rb, deltas, w, h, channelTol);
 	}
 
-	private boolean explainableByShift(List<RawCluster> clusters, PixelReader ra, PixelReader rb,
+	private boolean explainableByShift(List<DiffCluster> clusters, PixelReader ra, PixelReader rb,
 			int w, int h, int channelTol) {
 		int minX = Integer.MAX_VALUE;
 		int minY = Integer.MAX_VALUE;
 		int maxX = -1;
 		int maxY = -1;
-		for (RawCluster c : clusters) {
-			minX = Math.min(minX, c.minX);
-			minY = Math.min(minY, c.minY);
-			maxX = Math.max(maxX, c.maxX);
-			maxY = Math.max(maxY, c.maxY);
+		for (DiffCluster c : clusters) {
+			minX = Math.min(minX, c.x());
+			minY = Math.min(minY, c.y());
+			maxX = Math.max(maxX, c.x() + c.width() - 1);
+			maxY = Math.max(maxY, c.y() + c.height() - 1);
 		}
 		int pad = SHIFT_SEARCH_RADIUS;
 		minX = Math.max(minX - pad, 0);
@@ -407,7 +415,7 @@ public class ClusterDiffer implements Differ {
 				&& candContent * 5 >= checked * 2;
 	}
 
-	private int backgroundLuma(PixelReader reader) {
+	static int backgroundLuma(PixelReader reader) {
 		int w = reader.width;
 		int h = reader.height;
 		long sum = 0;
@@ -419,79 +427,11 @@ public class ClusterDiffer implements Differ {
 		return count == 0 ? 0 : (int) (sum / count);
 	}
 
-	private static int luma(int rgb) {
+	static int luma(int rgb) {
 		int r = (rgb >> 16) & 0xFF;
 		int g = (rgb >> 8) & 0xFF;
 		int b = rgb & 0xFF;
 		return (r * 299 + g * 587 + b * 114) / 1000;
-	}
-
-	private boolean replacedFlatBackground(RawCluster cluster, PixelReader ra, PixelReader rb) {
-		int inset = 1;
-		int minX = Math.min(cluster.minX + inset, cluster.maxX);
-		int maxX = Math.max(cluster.maxX - inset, cluster.minX);
-		int minY = Math.min(cluster.minY + inset, cluster.maxY);
-		int maxY = Math.max(cluster.maxY - inset, cluster.minY);
-		boolean refFlat = isFlatNearBackground(ra, minX, minY, maxX, maxY);
-		boolean candFlat = isFlatNearBackground(rb, minX, minY, maxX, maxY);
-		return refFlat != candFlat;
-	}
-
-	/**
-	 * True when the region looks empty: locally uniform and close to the
-	 * window background, estimated as the median border color.
-	 */
-	private boolean isFlatNearBackground(PixelReader reader, int minX, int minY, int maxX, int maxY) {
-		int w = reader.width;
-		int h = reader.height;
-		int[] frame = new int[128];
-		int frameSize = 0;
-		int step = Math.max(1, w / 64);
-		for (int x = 0; x < w && frameSize < frame.length; x += step)
-			frame[frameSize++] = reader.rgb(x, 0);
-		for (int x = 0; x < w && frameSize < frame.length; x += step)
-			frame[frameSize++] = reader.rgb(x, h - 1);
-		int bgRed = medianChannel(frame, frameSize, 16);
-		int bgGreen = medianChannel(frame, frameSize, 8);
-		int bgBlue = medianChannel(frame, frameSize, 0);
-
-		int minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
-		for (int y = minY; y <= maxY; y++) {
-			for (int x = minX; x <= maxX; x++) {
-				int rgb = reader.rgb(x, y);
-				int r = (rgb >> 16) & 0xFF;
-				int g = (rgb >> 8) & 0xFF;
-				int b = rgb & 0xFF;
-				minR = Math.min(minR, r);
-				maxR = Math.max(maxR, r);
-				minG = Math.min(minG, g);
-				maxG = Math.max(maxG, g);
-				minB = Math.min(minB, b);
-				maxB = Math.max(maxB, b);
-			}
-		}
-		if (minR > maxR)
-			return false;
-		boolean flat = maxR - minR <= 8 && maxG - minG <= 8 && maxB - minB <= 8;
-		if (!flat)
-			return false;
-		int midR = (minR + maxR) / 2;
-		int midG = (minG + maxG) / 2;
-		int midB = (minB + maxB) / 2;
-		return Math.abs(midR - bgRed) <= 12 && Math.abs(midG - bgGreen) <= 12
-				&& Math.abs(midB - bgBlue) <= 12;
-	}
-
-	/** Median of one channel collected from packed samples. */
-	private static int medianChannel(int[] samples, int size, int shift) {
-		int n = Math.min(size, samples.length);
-		if (n == 0)
-			return 0;
-		int[] values = new int[n];
-		for (int i = 0; i < n; i++)
-			values[i] = (samples[i] >> shift) & 0xFF;
-		Arrays.sort(values);
-		return values[n / 2];
 	}
 
 	private static int peakDelta(int ca, int cb) {
@@ -531,9 +471,10 @@ public class ClusterDiffer implements Differ {
 	/**
 	 * Reads packed RGB pixels from one ImageData, decoding direct palettes
 	 * inline and indexing indexed palettes through the palette table, so the
-	 * compare loop allocates nothing per pixel.
+	 * compare loop allocates nothing per pixel. Package-private so the T07
+	 * classifier can read pixels through the same decoder.
 	 */
-	private abstract static class PixelReader {
+	static abstract class PixelReader {
 		final int width;
 		final int height;
 

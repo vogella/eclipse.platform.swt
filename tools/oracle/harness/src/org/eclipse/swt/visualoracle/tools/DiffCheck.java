@@ -38,7 +38,9 @@ public final class DiffCheck {
 
 	// ---------------------------------------------------------------- checks
 
-	/** Identical images under the default tolerance: EQUAL, nothing reported. */
+	/**
+	 * Identical images under the default tolerance: EQUAL, nothing reported.
+	 */
 	public static void checkEquality(CapturedImage capture, PrintStream out) {
 		DiffResult result = new ClusterDiffer().compare(capture,
 				new BasicCapturedImage(capture.imageData()), ClusterDiffer.DEFAULT_TOLERANCE);
@@ -47,6 +49,111 @@ public final class DiffCheck {
 		require(result.maxChannelDelta() == 0, "maxChannelDelta is " + result.maxChannelDelta());
 		require(result.clusters().isEmpty(), "equal images produced clusters");
 		require(result.probableClass() == DefectClass.NONE, "probableClass is " + result.probableClass());
+	}
+
+	/**
+	 * An element present on one side only, whichever side that is: removing a
+	 * rectangle from the candidate and adding one to it must both classify as
+	 * MISSING_ELEMENT. The frozen enum constant is direction-neutral.
+	 */
+	public static void checkMissingElementClassified(CapturedImage capture, PrintStream out) {
+		ImageData plain = capture.imageData();
+		Rect square = new Rect(plain.width / 2 - 12, plain.height / 2 - 10, 24, 20);
+		ImageData withSquare = fillRect(plain, square, contrastingColor(plain, square));
+
+		DiffResult removed = compare(withSquare, plain);
+		require(removed.verdict() == Verdict.DIFFERENT, "removed rectangle verdict is " + removed.verdict());
+		require(removed.probableClass() == DefectClass.MISSING_ELEMENT,
+				"removed rectangle classified as " + removed.probableClass());
+
+		DiffResult added = compare(plain, withSquare);
+		require(added.verdict() == Verdict.DIFFERENT, "added rectangle verdict is " + added.verdict());
+		require(added.probableClass() == DefectClass.MISSING_ELEMENT,
+				"added rectangle classified as " + added.probableClass());
+		out.printf("      removed/added 24x20 rectangle: changed=%d, class=%s both directions%n",
+				removed.changedPixels(), removed.probableClass());
+	}
+
+	/**
+	 * The same geometry with different fill must classify as WRONG_COLOR,
+	 * bounded to a region and spread over the whole canvas. Both variants
+	 * darken uniformly so every luma gradient survives intact and only the
+	 * colours move.
+	 */
+	public static void checkWrongColorClassified(CapturedImage capture, PrintStream out) {
+		ImageData plain = capture.imageData();
+		Rect region = new Rect(plain.width / 2 - 15, plain.height / 2 - 8, 30, 16);
+		DiffResult bounded = compare(plain, tintRegion(plain, region, -48));
+		require(bounded.verdict() == Verdict.DIFFERENT, "bounded recolour verdict is " + bounded.verdict());
+		require(bounded.probableClass() == DefectClass.WRONG_COLOR,
+				"bounded recolour classified as " + bounded.probableClass());
+
+		DiffResult everywhere = compare(plain, tinted(plain, -16));
+		require(everywhere.verdict() == Verdict.DIFFERENT, "global tint verdict is " + everywhere.verdict());
+		require(everywhere.probableClass() == DefectClass.WRONG_COLOR,
+				"global tint classified as " + everywhere.probableClass());
+		out.printf("      recoloured fill and global tint: class=%s%n", bounded.probableClass());
+	}
+
+	/**
+	 * Displaced strokes on dense structure, the signature of font
+	 * substitution or metric differences, must classify as WRONG_GLYPH. The
+	 * bars are stamped by pure pixel arithmetic, no GC and no Display.
+	 */
+	public static void checkWrongGlyphClassified(CapturedImage capture, PrintStream out) {
+		ImageData base = capture.imageData();
+		DiffResult result = compare(patternBars(base, false), patternBars(base, true));
+		require(result.verdict() == Verdict.DIFFERENT, "displaced strokes verdict is " + result.verdict());
+		require(result.probableClass() == DefectClass.WRONG_GLYPH,
+				"displaced strokes classified as " + result.probableClass());
+		out.printf("      displaced stroke bars: changed=%d, class=%s%n",
+				result.changedPixels(), result.probableClass());
+	}
+
+	/**
+	 * A size mismatch must stay one whole-area DIFFERENT rather than explode
+	 * into many small defects, and stays UNKNOWN because the frozen enum has
+	 * no constant that names a size mismatch.
+	 */
+	public static void checkSizeMismatchStaysWholeArea(CapturedImage capture) {
+		ImageData data = capture.imageData();
+		ImageData cropped = new ImageData(data.width - 24, data.height, data.depth, data.palette);
+		copyRegion(data, cropped, 0, 0);
+		DiffResult result = new ClusterDiffer().compare(capture, new BasicCapturedImage(cropped),
+				ClusterDiffer.DEFAULT_TOLERANCE);
+		require(result.verdict() == Verdict.DIFFERENT, "size mismatch verdict is " + result.verdict());
+		require(result.changedFraction() == 1.0, "size mismatch fraction is " + result.changedFraction());
+		require(result.clusters().size() == 1, "size mismatch should report one full-area cluster");
+		require(result.probableClass() == DefectClass.UNKNOWN,
+				"size mismatch classified as " + result.probableClass());
+	}
+
+	/**
+	 * Abstention is an explicit outcome: a difference that matches no class
+	 * cleanly must come out UNKNOWN rather than being forced into the
+	 * nearest one. Two proofs: an element removed here while another is
+	 * added there does not separate cleanly once the edge veto sees shared
+	 * geometry, and anti-aliasing disagreement beyond the tolerance envelope
+	 * is scattered halo, not glyphs, colours or a shift.
+	 */
+	public static void checkAmbiguousDifferenceAbstains(CapturedImage capture, PrintStream out) {
+		ImageData plain = capture.imageData();
+		Rect gone = new Rect(plain.width / 6 - 8, plain.height / 4 - 6, 16, 12);
+		Rect appeared = new Rect(plain.width / 2 - 8, plain.height / 4 - 6, 16, 12);
+		ImageData refSide = fillRect(plain, gone, contrastingColor(plain, gone));
+		ImageData candSide = fillRect(plain, appeared, contrastingColor(plain, appeared));
+		DiffResult mixed = compare(refSide, candSide);
+		require(mixed.verdict() == Verdict.DIFFERENT, "mixed defects verdict is " + mixed.verdict());
+		require(mixed.probableClass() == DefectClass.UNKNOWN,
+				"mixed defects forced into class " + mixed.probableClass());
+
+		DiffResult scattered = compareWithVariant(capture, antiAliased(plain, 48));
+		require(scattered.verdict() == Verdict.DIFFERENT,
+				"AA disagreement beyond the envelope verdict is " + scattered.verdict());
+		require(scattered.probableClass() == DefectClass.UNKNOWN,
+				"scattered AA disagreement forced into class " + scattered.probableClass());
+		out.printf("      mixed defects and scattered AA: class=%s (abstained)%n",
+				mixed.probableClass());
 	}
 
 	/**
@@ -257,12 +364,44 @@ public final class DiffCheck {
 
 	/** Adds delta to every channel of every pixel, clamped. */
 	static ImageData tinted(ImageData source, int delta) {
+		return tintRegion(source, new Rect(0, 0, source.width, source.height), delta);
+	}
+
+	/** Adds delta to every channel inside the rect, clamped. */
+	static ImageData tintRegion(ImageData source, Rect rect, int delta) {
 		ImageData out = copy(source);
-		for (int y = 0; y < source.height; y++) {
-			for (int x = 0; x < source.width; x++) {
+		for (int y = rect.y(); y < rect.y() + rect.h(); y++)
+			for (int x = rect.x(); x < rect.x() + rect.w(); x++) {
 				RGB c = rgbAt(source, x, y);
 				setRgb(out, x, y, clamp(c.red + delta), clamp(c.green + delta), clamp(c.blue + delta));
 			}
+		return out;
+	}
+
+	/**
+	 * Clears a box and stamps vertical glyph-like bars; pure pixel arithmetic,
+	 * no GC and no Display. The displaced variant shifts each bar by two
+	 * pixels and thickens it by one, the signature of font substitution:
+	 * strokes move slightly while both sides stay dense.
+	 */
+	static ImageData patternBars(ImageData source, boolean displaced) {
+		ImageData out = copy(source);
+		int x0 = source.width / 6;
+		int y0 = source.height / 3;
+		int bw = 2 * source.width / 3;
+		int bh = Math.max(8, source.height / 3);
+		RGB bg = rgbAt(source, source.width / 2, 2);
+		for (int y = y0; y < y0 + bh && y < source.height; y++)
+			for (int x = x0; x < x0 + bw && x < source.width; x++)
+				setRgb(out, x, y, bg);
+		RGB ink = new RGB(clamp(bg.red - 120), clamp(bg.green - 120), clamp(bg.blue - 120));
+		int spacing = (bw - 12) / 7;
+		for (int i = 0; i < 7; i++) {
+			int bx = x0 + 4 + i * spacing + (displaced ? (i % 2 == 0 ? -2 : 2) : 0);
+			int barWidth = 5 + (displaced ? 1 : 0);
+			for (int y = y0 + 1; y < y0 + bh - 1 && y < source.height; y++)
+				for (int x = bx; x < bx + barWidth && x < x0 + bw - 1 && x < source.width; x++)
+					setRgb(out, x, y, ink);
 		}
 		return out;
 	}
