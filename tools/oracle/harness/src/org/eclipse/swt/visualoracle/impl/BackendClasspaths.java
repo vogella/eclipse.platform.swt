@@ -37,18 +37,20 @@ public final class BackendClasspaths {
 	public static String backendClasspath(String backendId) {
 		return switch (backendId) {
 			case NativeBackend.ID -> nativeClasspath();
-			case SkijaProtoBackend.ID -> runBuild(backendId);
+			case SkiaCanvasBackend.ID, SkijaProtoBackend.ID -> runBuild(backendId);
 			default -> throw new IllegalArgumentException("no build recipe for backend '" + backendId + "'");
 		};
 	}
 
 	/**
 	 * The directory whose natives a backend child must load: the worktree's
-	 * GTK binaries for native, the fork checkout's binaries for skija-proto.
+	 * GTK binaries for native and skia-canvas (the fragment runs on the host
+	 * bundle's natives), the fork checkout's binaries for skija-proto.
 	 */
 	public static Path libraryPathFor(String backendId) {
 		return switch (backendId) {
-			case NativeBackend.ID -> repoRoot().resolve("binaries/org.eclipse.swt.gtk.linux.x86_64");
+			case NativeBackend.ID, SkiaCanvasBackend.ID ->
+				repoRoot().resolve("binaries/org.eclipse.swt.gtk.linux.x86_64");
 			case SkijaProtoBackend.ID -> cacheRoot().resolve(
 					"checkouts/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64");
 			default -> throw new IllegalArgumentException("no library path known for backend '" + backendId + "'");

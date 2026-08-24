@@ -206,6 +206,18 @@ public class SelfTest {
 					NativeCheck.checkUnsupportedAsData(display, nativeBackend, env, out));
 			check(index++, "native-versus-native-sweep-equal-over-catalog", () ->
 					NativeCheck.checkNativeVsNativeSweep(display, nativeBackend, env, out));
+			check(index++, "skiacanvas-backend-genuinely-activates", () ->
+					SkiaCanvasCheck.checkActivation(out));
+			check(index++, "skiacanvas-supported-specimen-captures", () ->
+					SkiaCanvasCheck.checkSupportedCapture(out));
+			check(index++, "skiacanvas-unsupported-specimen-reported-as-data", () ->
+					SkiaCanvasCheck.checkUnsupportedReported(out));
+			check(index++, "skiacanvas-catalog-coverage-counted", () ->
+					SkiaCanvasCheck.checkCatalogCoverage(out));
+			check(index++, "skiacanvas-flat-skia-style-collision-reported", () ->
+					SkiaCanvasCheck.checkFlatSkiaCollision(display, out));
+			check(index++, "skiacanvas-zoom200-size-discrepancy-measured", () ->
+					SkiaCanvasCheck.checkZoom200DiscrepancyMeasured(out));
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);

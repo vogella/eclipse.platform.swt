@@ -61,7 +61,7 @@ public final class ChildProcessLauncher {
 
 	/** Backends a child can be launched for; each needs its own classpath. */
 	private static final java.util.Set<String> SUPPORTED_BACKENDS = java.util.Set.of(
-			NativeBackend.ID, SkijaProtoBackend.ID);
+			NativeBackend.ID, SkiaCanvasBackend.ID, SkijaProtoBackend.ID);
 
 	private final Config config;
 
@@ -148,7 +148,7 @@ public final class ChildProcessLauncher {
 		// fail the batch immediately instead of once per child, and build
 		// time must not eat into any child's timeout.
 		for (ChildRequest request : requests)
-			if (SkijaProtoBackend.ID.equals(request.backendId())) {
+			if (!NativeBackend.ID.equals(request.backendId())) {
 				BackendClasspaths.harnessClasspath();
 				BackendClasspaths.backendClasspath(request.backendId());
 			}
@@ -245,6 +245,7 @@ public final class ChildProcessLauncher {
 	private List<String> buildCommand(ChildRequest request, Path dir) {
 		LaunchConfig launch = SwtRenderEnvs.launch(request.env());
 		boolean protoBackend = SkijaProtoBackend.ID.equals(request.backendId());
+		boolean canvasBackend = SkiaCanvasBackend.ID.equals(request.backendId());
 		List<String> command = new ArrayList<>();
 		// setsid puts the child in its own process group. Process.destroyForcibly()
 		// kills only the direct child, which is the xvfb-run wrapper; the JVM and the
@@ -257,22 +258,25 @@ public final class ChildProcessLauncher {
 		command.add("-screen 0 1600x1200x24");
 		command.add(javaCommand());
 		command.add("--enable-native-access=ALL-UNNAMED");
-		if (protoBackend)
-			command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(SkijaProtoBackend.ID));
+		if (protoBackend || canvasBackend)
+			command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(request.backendId()));
 		else {
 			String libPath = System.getProperty("java.library.path", "");
 			if (!libPath.isEmpty())
 				command.add("-Djava.library.path=" + libPath);
 		}
 		command.add("-Doracle.repoRoot=" + repoRoot());
+		if (canvasBackend)
+			for (String property : SkiaCanvasBackend.activationJvmProperties())
+				command.add(property);
 		command.addAll(launch.jvmProperties());
 		command.add("-cp");
-		// One backend's SWT classes per process (ADR-002): a skija-proto child
-		// gets the harness classes plus the fork build, never the parent's
-		// native backend classes.
-		command.add(protoBackend
+		// One backend's SWT classes per process (ADR-002): a non-native child
+		// gets the harness classes plus its own backend's build, never the
+		// parent's native backend classes.
+		command.add(protoBackend || canvasBackend
 				? BackendClasspaths.harnessClasspath() + java.io.File.pathSeparator
-						+ BackendClasspaths.backendClasspath(SkijaProtoBackend.ID)
+						+ BackendClasspaths.backendClasspath(request.backendId())
 				: System.getProperty("java.class.path"));
 		command.add(CaptureChild.class.getName());
 		command.add("--out");

@@ -14,21 +14,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.SkiaCanvasBackend;
 import org.eclipse.swt.visualoracle.impl.SkijaProtoBackend;
+import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.Specimen;
 import org.eclipse.swt.visualoracle.spi.SpecimenCatalog;
 
 /**
- * Reports skija-proto coverage over specimens: how many of the catalog the
- * fork's custom-drawn renderers actually reach. Counting unsupported
- * specimens is the migration progress metric; this probe produces it without
- * capturing any pixels, so it stays fast enough to run per selftest.
+ * Reports backend coverage over specimens: how many of the catalog a backend
+ * actually reaches. Counting unsupported specimens is the migration progress
+ * metric; this probe produces it without capturing any pixels, so it stays
+ * fast enough to run per selftest.
  *
- * Runs inside a JVM whose classpath carries the prototype-skija build (see
- * impl/BackendClasspaths callers); on stock SWT classes it fails loudly.
+ * Runs inside a JVM whose classpath carries the probed backend's SWT build
+ * (see impl/BackendClasspaths callers); on the wrong classes it fails loudly.
+ * For skia-canvas it must be launched with
+ * {@link SkiaCanvasBackend#activationJvmProperties()}, because specimen
+ * factories cannot pass {@code SWT.SKIA} themselves.
  *
- * Usage: CoverageProbe [specimenId...]   (no ids means the whole catalog)
+ * Usage: CoverageProbe [--backend ID] [specimenId...]   (no ids means the
+ * whole catalog; no --backend means skija-proto)
  *
  * Output: one "UNSUPPORTED <id>" or "PROBE-ERROR <id> : <cause>" line per
  * non-supported specimen, then "COVERAGE total=<n> supported=<n>
@@ -46,9 +53,28 @@ public final class CoverageProbe {
 	}
 
 	static int run(String[] args) {
+		String backendId = SkijaProtoBackend.ID;
+		List<String> ids = new ArrayList<>();
+		for (int i = 0; i < args.length; i++) {
+			if ("--backend".equals(args[i])) {
+				if (++i >= args.length) {
+					System.err.println("coverage-probe: --backend needs an id");
+					return EXIT_USAGE;
+				}
+				backendId = args[i];
+			} else {
+				ids.add(args[i]);
+			}
+		}
+		if (!NativeBackend.ID.equals(backendId) && !SkiaCanvasBackend.ID.equals(backendId)
+				&& !SkijaProtoBackend.ID.equals(backendId)) {
+			System.err.println("coverage-probe: unknown backend: " + backendId);
+			return EXIT_USAGE;
+		}
+
 		SpecimenCatalog catalog = SpecimenCatalog.discover();
 		List<Specimen> targets = new ArrayList<>();
-		for (String id : args) {
+		for (String id : ids) {
 			Specimen specimen = catalog.byId(id).orElse(null);
 			if (specimen == null) {
 				System.err.println("coverage-probe: unknown specimen id: " + id);
@@ -61,14 +87,18 @@ public final class CoverageProbe {
 
 		Display display = new Display();
 		try {
-			SkijaProtoBackend backend = new SkijaProtoBackend();
+			Backend backend = createBackend(backendId);
 			try {
 				backend.configure(display);
 			} catch (BackendUnavailableException e) {
 				System.err.println("COVERAGE-FAILED: backend unavailable: " + e);
 				return EXIT_BACKEND;
 			}
-			System.out.println("BACKEND-GC=" + backend.observedGcClassName());
+			if (backend instanceof SkijaProtoBackend skija)
+				System.out.println("BACKEND-GC=" + skija.observedGcClassName());
+			if (backend instanceof SkiaCanvasBackend canvas)
+				System.out.println("BACKEND-CANVAS=" + canvas.observedHandlerClassName()
+						+ " force=" + canvas.isForceEnabled());
 
 			int supported = 0;
 			int unsupported = 0;
@@ -92,5 +122,14 @@ public final class CoverageProbe {
 		} finally {
 			display.dispose();
 		}
+	}
+
+	private static Backend createBackend(String backendId) {
+		return switch (backendId) {
+			case NativeBackend.ID -> new NativeBackend();
+			case SkijaProtoBackend.ID -> new SkijaProtoBackend();
+			case SkiaCanvasBackend.ID -> new SkiaCanvasBackend();
+			default -> throw new IllegalArgumentException("backend '" + backendId + "' has no adapter");
+		};
 	}
 }
