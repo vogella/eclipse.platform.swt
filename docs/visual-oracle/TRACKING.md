@@ -53,6 +53,12 @@ Once T20 exists, tasks that touch rendering must also show a passing filtered ru
 A handoff without evidence is rejected without review.
 This rule exists because the entire point of the project is that verification is cheap; a worker that skips it is not saving time, it is moving the cost onto the orchestrator.
 
+### Never use `git stash` in a task worktree
+
+The stash stack is repository-wide, not worktree-local, and this repository has several worktrees with live agents plus the user's own checkout and their existing stashes.
+A crash between push and pop strands work on a shared stack, and a concurrent `pop` can take an entry belonging to someone else.
+To test whether a failure is pre-existing, use a scratch worktree at the base commit instead: `git worktree add --detach /tmp/opencode/<task>-base <sha>`.
+
 ### Headless run requirement
 
 Every run is headless and Wayland-safe:
