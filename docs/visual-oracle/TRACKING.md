@@ -53,6 +53,13 @@ Once T20 exists, tasks that touch rendering must also show a passing filtered ru
 A handoff without evidence is rejected without review.
 This rule exists because the entire point of the project is that verification is cheap; a worker that skips it is not saving time, it is moving the cost onto the orchestrator.
 
+### Reap everything you spawn
+
+A task that starts background processes must kill them before it finishes, and must not leave anything running after its own verification.
+This is not hypothetical: T12 spawned 25 `sha256sum /dev/zero` load generators to test its settle bound under contention and never reaped them; they were orphaned to systemd and burned CPU for over four hours, on top of 70 leaked child JVMs from a separate defect.
+The damage is worse than wasted CPU, because a task calibrating anything load-sensitive then measures a machine that is loaded by its own litter.
+Before declaring done, check: `ps -eo etime,args --sort=-etime | head -20`.
+
 ### Never use `git stash` in a task worktree
 
 The stash stack is repository-wide, not worktree-local, and this repository has several worktrees with live agents plus the user's own checkout and their existing stashes.
