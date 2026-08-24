@@ -55,6 +55,20 @@ Carries the process' `RenderEnv` (`env()`) and applies it to a fresh control via
 Calling `configure` exactly once per created control is part of the specimen contract;
 it is how the harness guarantees all backends render under identical settings.
 
+### `SpecimenModule` and `SpecimenCatalog`
+
+One widget family contributes one `SpecimenModule` in
+`org.eclipse.swt.visualoracle.catalog`, with a class name ending in `Module` and a
+public no-argument constructor: `family()` returns the lowercase family name,
+`specimens()` returns that family's specimens without touching a Display.
+
+`SpecimenCatalog.discover()` finds every such class by scanning the compiled
+catalog package, then fails loudly on a duplicate specimen id.
+
+There is deliberately **no central registration file**. Widget families are added by
+several agents working in parallel, and a shared list would make every one of them
+conflict with the others. Adding a family means adding files, never editing them.
+
 ### `Tag`
 
 Filterable specimen properties: `TEXT_HEAVY`, `ANIMATED`, `FOCUS_SENSITIVE`,
