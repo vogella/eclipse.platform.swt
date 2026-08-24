@@ -199,12 +199,12 @@ public final class ChildProcessLauncher {
 				exitCode = process.exitValue();
 			} else {
 				timedOut = true;
-				process.destroyForcibly();
+				killProcessTree(process);
 				process.waitFor(KILL_GRACE_SECONDS, TimeUnit.SECONDS);
 			}
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
-			process.destroyForcibly();
+			killProcessTree(process);
 			return new ChildOutcome(request, dir, exitCode, true,
 					"launcher interrupted while waiting for the child", null, "", elapsed(start));
 		}
@@ -222,10 +222,35 @@ public final class ChildProcessLauncher {
 		return new ChildOutcome(request, dir, exitCode, false, reason, null, stderr, elapsed(start));
 	}
 
+	/**
+	 * Kills the child and everything it started. Because the child runs under
+	 * {@code setsid}, its pid is also its process group id, so a negative pid
+	 * signals the whole group: the xvfb-run wrapper, the JVM under it and the
+	 * Xvfb server. Falls back to the direct child if the group kill is
+	 * unavailable, which at worst restores the previous leaky behaviour rather
+	 * than failing the run.
+	 */
+	private static void killProcessTree(Process process) {
+		long pid = process.pid();
+		try {
+			new ProcessBuilder("kill", "-KILL", "-" + pid).start().waitFor(5, TimeUnit.SECONDS);
+		} catch (IOException | InterruptedException e) {
+			if (e instanceof InterruptedException)
+				Thread.currentThread().interrupt();
+		}
+		process.descendants().forEach(ProcessHandle::destroyForcibly);
+		process.destroyForcibly();
+	}
+
 	private List<String> buildCommand(ChildRequest request, Path dir) {
 		LaunchConfig launch = SwtRenderEnvs.launch(request.env());
 		boolean protoBackend = SkijaProtoBackend.ID.equals(request.backendId());
 		List<String> command = new ArrayList<>();
+		// setsid puts the child in its own process group. Process.destroyForcibly()
+		// kills only the direct child, which is the xvfb-run wrapper; the JVM and the
+		// Xvfb server it starts are grandchildren and survive, leaking one JVM and one
+		// X server per timed-out child. Killing the whole group is what actually reaps them.
+		command.add("setsid");
 		command.add("xvfb-run");
 		command.add("-a");
 		command.add("-s");
