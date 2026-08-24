@@ -39,8 +39,8 @@ import org.eclipse.swt.visualoracle.catalog.ButtonModule;
 import org.eclipse.swt.visualoracle.impl.BasicCapturedImage;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.ChildProcessLauncher;
-import org.eclipse.swt.visualoracle.impl.ExactDiffer;
 import org.eclipse.swt.visualoracle.impl.LaunchConfig;
+import org.eclipse.swt.visualoracle.impl.ClusterDiffer;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
 import org.eclipse.swt.visualoracle.impl.ResultMerger;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
@@ -138,6 +138,23 @@ public class SelfTest {
 			check(index++, "crashed-child-recorded-run-continues", () -> checkCrashedChild());
 			check(index++, "hung-child-times-out-run-continues", () -> checkHungChild());
 			check(index++, "merged-child-results-validate-against-schema", () -> checkMergedResults());
+			check(index++, "diff-equality-under-default-tolerance", () ->
+					DiffCheck.checkEquality(firstCapture, out));
+			check(index++, "diff-aa-edge-noise-stays-within-tolerance", () ->
+					DiffCheck.checkAntiAliasingWithinTolerance(firstCapture, out));
+			check(index++, "diff-global-tint-is-different", () ->
+					DiffCheck.checkGlobalTintDetected(firstCapture));
+			check(index++, "diff-missing-ring-is-different-and-bounded", () ->
+					DiffCheck.checkThinRingDefect(firstCapture, out));
+			check(index++, "diff-removed-square-is-different-and-bounded", () ->
+					DiffCheck.checkRemovedSquareBoundedByClusters(firstCapture, out));
+			check(index++, "diff-shifted-content-classified", () ->
+					DiffCheck.checkShiftedContentClassified(firstCapture));
+			check(index++, "diff-two-defects-two-clusters", () ->
+					DiffCheck.checkTwoDefectsTwoClusters(firstCapture));
+			check(index++, "diff-size-mismatch-whole-area", () ->
+					DiffCheck.checkSizeMismatchWholeArea(firstCapture));
+			check(index++, "diff-throughput-measured", () -> DiffCheck.checkThroughput(out));
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);
@@ -219,7 +236,7 @@ public class SelfTest {
 	}
 
 	private void checkDifferEqual() {
-		Differ differ = new ExactDiffer();
+		Differ differ = new ClusterDiffer();
 		equalResult = differ.compare(firstCapture, secondCapture, Tolerance.EXACT);
 		require(equalResult.verdict() == Verdict.EQUAL, "verdict is " + equalResult.verdict());
 		require(equalResult.changedPixels() == 0,
@@ -229,7 +246,7 @@ public class SelfTest {
 	}
 
 	private void checkDifferDetectsChange() {
-		Differ differ = new ExactDiffer();
+		Differ differ = new ClusterDiffer();
 		CapturedImage altered = new BasicCapturedImage(paintPatch(firstCapture.imageData()));
 		alteredResult = differ.compare(firstCapture, altered, Tolerance.EXACT);
 		require(alteredResult.verdict() == Verdict.DIFFERENT,

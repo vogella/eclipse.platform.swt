@@ -73,19 +73,29 @@ The diff of two captures of the same specimen from different backends.
 | `probableDefectClass` | string enum | `"NONE"`, `"UNKNOWN"`, `"SHIFTED"`, `"MISSING_ELEMENT"`, `"WRONG_COLOR"`, `"WRONG_GLYPH"` |
 | `clusters` | array | of cluster objects, possibly empty |
 
-Verdict semantics:
+Verdict semantics (as implemented by the T06 diff engine):
 
-* `EQUAL`: images are bit-identical; `changedPixels` and `maxChannelDelta` are 0.
-* `WITHIN_TOLERANCE`: differences exist but none exceeds the requested tolerance;
-  `changedPixels` counts only pixels beyond tolerance.
-* `DIFFERENT`: at least one pixel exceeds tolerance.
+* `EQUAL`: images are bit-identical; `changedPixels`, `changedFraction` and
+  `maxChannelDelta` are 0 and `clusters` is empty.
+* `WITHIN_TOLERANCE`: differences exist but stay within tolerance: every
+  changed pixel is inside a cluster whose mean peak channel delta indicates
+  anti-aliasing-like disagreement, and the changed fraction does not exceed
+  the tolerance's `maxChangedFraction`. `changedPixels` counts pixels beyond
+  the per-channel tolerance.
+* `DIFFERENT`: differences exceed the tolerance, either because more than
+  `maxChangedFraction` of all pixels changed or because at least one change
+  cluster is structural (coherent group of strongly-changed pixels).
 
 A size mismatch between the two images yields `DIFFERENT` with
-`changedFraction` 1.0 over the larger area.
+`changedFraction` 1.0 over the larger area, `changedPixels` equal to the
+larger area, and one cluster spanning the larger bounds.
 
 ## Cluster objects (`clusters[]`)
 
-Connected regions of change in image pixel space, origin top-left.
+Connected regions of change in image pixel space, origin top-left, as found
+by the T06 engine. Grouping bridges gaps of up to two pixels (8-connected
+after dilation) so the halo around one conceptual change forms one cluster;
+bounds and pixel counts always describe the actually-changed pixels.
 
 | Field | Type | Rules |
 |---|---|---|
@@ -95,9 +105,10 @@ Connected regions of change in image pixel space, origin top-left.
 | `height` | integer | >= 1 |
 | `changedPixels` | integer | >= 0, pixels of this cluster |
 
-Until T06 delivers real cluster detection, the harness writes at most one
-bounding-box cluster per comparison; consumers must treat cluster count and shape
-as provisional until schema version 2.
+Clusters are ordered by significance: most changed pixels first, then
+tighter bounding box, then position. At most 64 clusters are reported; if a
+comparison produces more (heavy anti-aliasing speckle), the least
+significant are dropped and their pixels remain counted in `changedPixels`.
 
 ## Example
 

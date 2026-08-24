@@ -33,7 +33,7 @@ import org.eclipse.swt.visualoracle.spi.Verdict;
  * @param changedFraction changedPixels over total pixels
  * @param maxChannelDelta largest per-channel absolute difference, 0..255
  * @param probableDefectClass best guess at the root cause
- * @param clusters connected regions of change, empty until T06 exists
+ * @param clusters connected regions of change, ordered by significance
  */
 public record ComparisonEntry(String specimen, String referenceBackend, String candidateBackend,
 		String referenceImage, String candidateImage, Verdict verdict,

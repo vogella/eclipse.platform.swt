@@ -457,6 +457,15 @@ Parallelism measurement (idle 8-vCPU machine, software GL, batches of identical 
 MAX=1 WALL=6.8s AVG_CHILD=1.12s | MAX=2 WALL=3.4s AVG=1.12s | MAX=4 WALL=2.4s AVG=1.22s | MAX=6 WALL=1.3s AVG=1.29s | 8 children: MAX=6 AVG=1.45s, MAX=8 AVG=1.52-1.78s FAILED=0 everywhere.
 Per-child time is flat up to 4 (+0%), degrades past CPU count (+36-59% at 8). Sustainable concurrency: 4; that is the shipped default.
 Out of scope, deliberately: cross-backend comparison and verdicts (T20 drives these classes from the reserved `run` verb; no new CLI verb added since SPI.md freezes the verb table), HTML report (T19), diff engine (T06), catalog extensions (T14/T15). Untouched: `build.sh`, `verify-backend.sh`, `build-harness.sh`, the `oracle` wrapper, `spi/`, `catalog/`, `CaptureRuntime`, `ExactDiffer`.
+### T06 handoff, 2026-08-24
+Branch: oracle/T06, one commit on top of 8f8b54954c; this record ships inside that commit
+Scope delivered:
+`impl/ClusterDiffer` replaces `impl/ExactDiffer` behind the unchanged frozen `Differ` interface (ExactDiffer deleted; SelfTest CHECKs 3/4 repointed, same check names). Engine: per-pixel peak channel delta, changed = delta > maxChannelDelta; cluster grouping by dilation radius 1 plus 8-connected labelling plus bounding-box-overlap merge (both steps only reunite fragments of one conceptual change: AA halo bands, sliver pairs of small shifts), bounds/pixel counts always from the undilated mask, clusters ordered by significance (changedPixels desc, tighter box first, then position) and capped at 64 with totals preserved in changedPixels. Verdict rule: EQUAL only bit-identical; DIFFERENT when the changed fraction exceeds maxChangedFraction OR any cluster is structural (>= 3 changed pixels with mean peak delta >= MEAN_DELTA_STRUCTURAL = 32); else WITHIN_TOLERANCE. DEFAULT_TOLERANCE = (8, 0.5) proposed for oracle runs. Size mismatch: DIFFERENT, fraction 1.0 over the larger area, changedPixels = larger area, one full-bounds cluster, sentinel maxChannelDelta 255, never an exception. DefectClass populated only where obvious: SHIFTED when a translation within +-2 px reproduces >= 96% of all changed pixels away from image borders while both sides carry comparable content mass (the mass condition keeps a merely-added thin shape, which self-overlaps under translation, from reading as a shift); MISSING_ELEMENT when a single cluster replaces flat near-background pixels with structure or vice versa; otherwise UNKNOWN; NONE when not DIFFERENT. Buffers reused across calls, no allocation per pixel (inline direct-palette decode, indexed palette table); instances not thread-safe like the rest of impl.
+Why these thresholds (measured, scratch driver `/tmp/opencode/oracle-t06/Calibrate.java`, two consecutive processes agreeing except where noted): synthetic AA on the real button.push.default capture (edge pixels perturbed by signed magnitude m) stays WITHIN_TOLERANCE for m = 4..32 and flips DIFFERENT at 34: the cliff is exactly MEAN_DELTA_STRUCTURAL, because AA cluster means equal m while ring/square defect means sit far above. AA coverage at those magnitudes reached 822 of 5600 px = 14.7% of the widget (button) and 917 of 12800 px = 7.2% across 2 clusters (link.multiline), which is why default maxChangedFraction is 0.5, above any measured AA coverage, so the fraction trigger remains free to catch whole-canvas drift: darkening tint of delta 9 over everything reads DIFFERENT with all cluster means below 32, proving that trigger stands alone. Removed squares are detected down to 4x4 (14 changed px); a 2x2 mark (2 px) is below MIN_CLUSTER_PIXELS = 3 and deliberately reads WITHIN_TOLERANCE, visible in clusters but not flipping verdicts, so single-pixel grab noise cannot fail a run. A 1px missing ring, thin and edge-hugging like AA but high-contrast, is DIFFERENT with exactly one cluster whose bounds equal the ring (244 of 244 ring pixels changed).
+Performance: 97 us per 140x40 pair through BasicCapturedImage's defensive clones (~58 MP/s), ~72 us / ~78 MP/s engine core without clone, 16.3-17.1 ms per 1 MP pair (~59-61 MP/s) in the selftest benchmark. Orders of magnitude under the 1 s/pair failure mode; CHECK 23 asserts a 20 MP/s floor as a gross-regression tripwire, not as a tight number.
+Selftest grows 15 -> 24 checks (CHECK 15..23 in `tools/DiffCheck`, selftest infra like CatalogCheck): equality under default tolerance, AA envelope within/beyond, global tint, missing ring bounded, removed square bounded (exact single-cluster bounds), shift classified SHIFTED, two separated defects give two clusters each inside its own region and ordered by significance, size mismatch whole-area, throughput floor. All pairs synthesized in-process from the real CHECK 1 capture by pixel arithmetic; deterministic, no image files, and every assertion is independent of cross-process capture wobble by construction.
+RESULT-SCHEMA.md: verdict-semantics and cluster sections rewritten to the implemented reality (no field, type or enum change; schemaVersion untouched); stale ComparisonEntry javadoc line fixed.
+Out of scope, deliberately: detailed DefectClass mapping incl. WRONG_COLOR/WRONG_GLYPH (T07; SHIFTED/MISSING_ELEMENT here only where unambiguous), specimen catalog (untouched), environment processes (T05), HTML report (T19), run/triage (T20), spi/, build.sh, verify-backend.sh, build-harness.sh, the oracle wrapper and CaptureRuntime.java all untouched.
 Verified with:
 
 ```
@@ -483,4 +492,34 @@ EXIT=0
 
 Four consecutive green full runs (69.0, 65.6, 64.6, 61.1 s) plus a fifth after the last edit (63.7 s), all headless via the wrapper. Pixel evidence cross-checked with ImageMagick from the shell only (compare -metric AE, identify); no image read into context.
 Known gaps: CHECK 11 (xgrab byte-agreement at zoom 100, pre-existing T04/T13 code untouched by this task) flaked once during development and passed in all five full runs around it; its history-dependence is already documented by T13. Font pinning trusts Pango: an unknown family is silently substituted rather than detected (detection needs pango fontset introspection; suggested for T09/T21). Merged documents reference child images across subdirectories, relative to the merged document's own directory, as RESULT-SCHEMA.md prescribes; consumers must resolve paths that way. Parallelism was measured on this machine only; CI hardware should tune `-Doracle.children.parallelism`. Children validate `--backend native` only until the T10/T11 adapters exist.
+CHECK 0 backend-classpath: PASS
+CHECK 1 specimen-created-and-captured: PASS
+CHECK 2 capture-is-deterministic: PASS
+CHECK 3 differ-reports-equality: PASS
+CHECK 4 differ-detects-altered-image: PASS
+CHECK 5 result-json-conforms-to-schema: PASS
+CHECK 6 verify-backend-fails-on-disabled-canvas: PASS
+CHECK 7 verify-backend-passes-on-enabled-canvas: PASS
+CHECK 8 shell-reuse-prevents-cross-talk: PASS
+CHECK 9 throwing-specimen-reported-as-failure: PASS
+CHECK 10 capture-deterministic-across-processes: PASS
+CHECK 11 xgrab-agrees-with-copyarea-at-zoom100: PASS
+CHECK 12 xgrab-agrees-with-copyarea-at-zoom200: PASS
+CHECK 13 catalog-discovered-and-wellformed: PASS
+CHECK 14 catalog-triple-render-deterministic: PASS
+CHECK 15 diff-equality-under-default-tolerance: PASS
+CHECK 16 diff-aa-edge-noise-stays-within-tolerance: PASS
+CHECK 17 diff-global-tint-is-different: PASS
+CHECK 18 diff-missing-ring-is-different-and-bounded: PASS
+CHECK 19 diff-removed-square-is-different-and-bounded: PASS
+CHECK 20 diff-shifted-content-classified: PASS
+CHECK 21 diff-two-defects-two-clusters: PASS
+CHECK 22 diff-size-mismatch-whole-area: PASS
+CHECK 23 diff-throughput-measured: PASS
+SELFTEST-OK: 24/24 checks passed (51.5 s)
+EXIT=0
+```
+
+Four green full runs this session (51.2, 51.3, 51.5 s among them); one intervening run failed the pre-existing CHECK 7 (skia-canvas positive control, the check T03 flagged as needing network once) and passed on immediate rerun with no cache change, so treated as transient infrastructure, not a harness defect. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24).
+Known gaps: The spec documents contradict each other and the engine had to pick: SPI.md and Tolerance.java say fraction at or below maxChangedFraction is WITHIN_TOLERANCE, RESULT-SCHEMA.md v1 said any pixel beyond tolerance is DIFFERENT, and ExactDiffer implemented the latter ignoring the fraction entirely. Purely fraction-based separation is also provably insufficient: measured AA covers up to ~15% of a widget while a missing icon covers ~0.1%, so no single fraction separates them; hence the structural-cluster trigger. RESULT-SCHEMA.md now documents the implemented semantics; since that document is consumer-facing, the orchestrator may want to eyeball the rewording. MISSING_ELEMENT fires conservatively and stayed UNKNOWN on Adwaita faces (gradient exceeds the uniformity window; face-vs-window-background proximity is theme-dependent); verdicts and clusters are unaffected, richer mapping is T07. One capture-wobble observation for T12: early in the session two calibration processes captured button.push.default with different edge-pixel counts (822 vs 782) while ring/square/tint counts matched to the pixel; afterwards 10+ consecutive processes were byte-identical (sha 2fbe8a0f...) across Xvfb displays :97/:98/:99, and both wobble states produced identical verdict tables, so calibration conclusions stand; looks like a GTK/fontconfig warm-up effect. SPI.md still describes ExactDiffer as the current implementation and DiffResult's javadoc still says clusters may be empty "while T06 does not exist yet"; spi/ files are worker-untouchable, left for the orchestrator to refresh. Alpha channels are ignored as before (captures are opaque). ClusterDiffer.DEFAULT_TOLERANCE is the proposed default for T20's `run`.
 Open questions: none.
