@@ -243,6 +243,15 @@ public final class SkiaCanvasCheck {
 		InkBox skiaAuto200 = inkOf(evidencePath(skiaAutoDir.resolve("out"),
 				documentOf(skiaAutoDir), ZOOM_SPECIMEN));
 
+		// A content box spanning the whole capture means the measurement is
+		// looking at garbage (measured T26: controls hanging past an undersized
+		// shell read back as black bands that saturate the box) and must fail
+		// loudly rather than produce a meaningless ratio.
+		for (InkBox box : List.of(skia100, native200, skia200, skiaAuto200))
+			require(box.boxWidth() < box.imageWidth(),
+					"content box of the zoom measurement saturates the capture (" + box
+							+ "); the pixels are corrupted, not the rendering");
+
 		double nativeOverSkia = (double) native200.boxWidth() / skia200.boxWidth();
 		double skiaGrowth = (double) skia200.boxWidth() / skia100.boxWidth();
 		double skiaAutoGrowth = (double) skiaAuto200.boxWidth() / skia100.boxWidth();

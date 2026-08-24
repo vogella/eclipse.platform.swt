@@ -768,3 +768,39 @@ Known gaps:
 3. The adapter asserts the handler's class name (`SkiaGlCanvasExtension`); a rename inside the PR fails CHECK 53 loudly rather than silently.
 4. The coverage probe creates each of the 149 specimens once in a scratch shell (same shape as T10), adding roughly a minute to the selftest.
 Open questions: whether the orchestrator wants the autoScale-vs-GDK_SCALE distinction filed upstream together with the defect; the numbers above are reproducible from this branch.
+
+### T26 handoff, 2026-08-24
+Branch: oracle/T26, single commit; this record ships inside that commit.
+Scope delivered:
+Three root causes behind the four red integration checks, fixed at the source; no check weakened, no tolerance widened, no specimen dropped.
+
+1. Settle bound rejected a stable rendering (CHECK 14 and CHECK 56, one cause). The failure message was the diagnosis: one distinct rendering held 19750 ms of a 20000 ms budget, then "non-deterministic". Arithmetic pins the mechanism: with a delivered-but-differing repaint each loop iteration costs tens of milliseconds and the 240-grab bound would fire first (~10 s); only an UNDELIVERED repaint costs its full 1000 ms grace per iteration, which lands the loop on the 20 s deadline with hold times approaching the budget, exactly what both failures reported. So `repaintReproduces` returning false because no Paint event could be delivered under starvation was being read as evidence against the held value, when it is absence of evidence. Fix in `impl/CaptureRuntime`: the faithfulness confirmation now reports REPRODUCED / CHANGED / UNDELIVERED, and a rendering settles on UNDELIVERED when it is the only distinct value seen, has held across the observation window, and no delivered repaint ever contradicted it (tracked by a sticky flag). A genuinely animated widget still produces many distinct renderings and fails through both budgets unchanged, and a stale frame contradicted by a delivered repaint still never settles via this path. Proven A/B by forcing the starvation condition deterministically (repaint grace compiled to 0 so every confirmation is undeliverable): base logic reproduces the exact production failure ('Label' produced no stable rendering in two attempts ... 1 distinct renderings), fixed logic reports DETERMINISTIC for the same specimens, whole lint 8 s instead of 62 s. Counterfactual note: I could not reproduce the failure with base code merely by adding CPU burners (10 spinners, full 148-specimen warmup before the separator); the original red runs happened while sibling agent sessions pushed 1-minute load to ~12, and the grace-0 harness above is the honest deterministic reproduction of that state.
+2. Corrupted captures from controls hosted outside their shell window (CHECK 48's UNKNOWN, CHECK 62's ratio 1.00). Evidence trail from the failing run's own PNGs: button.push.default native reference had rows 23..39 of 40 pure black, clabel.default captures had identical full-width black bands at zoom 100 (rows 23..39 of 40) and under GDK_SCALE=2 (rows 46..79 of 80) in BOTH backends, always byte-stable, so every stability rule passed garbage through. A geometry probe caught the shell at 158x35 after a requested 164x64: when the applied shell geometry lags or loses the resize request, the control extends past the client area and copyArea reads uninitialized memory beyond the window. That one defect explains both check failures numerically: CHECK 62's content boxes saturated to the full image width (native union of text ink plus band = 320x50, skia band-only = 320x34, ratio 1.00), and CHECK 48's synthetic pair gained the band-boundary edge line shared by both sides inside the cluster region, which pushed strict edge agreement over the MISSING_ELEMENT gate into abstention (UNKNOWN). Fix in `impl/CaptureRuntime.host`: after open, verify the control lies fully inside the shell's client area at its declared preferred size; re-assert the size and re-check for up to 2 s, then fail loudly naming declared size, bounds, shell and client. Quiet machines pay one geometry query per capture. Guard proven end-to-end: a control placed past the screen bound yields CaptureFailedException "'Label' does not fit the shell that must display it: declared 200x50, bounds Rectangle {12, 1250, 200, 50}, shell Point {224, 74}, client Rectangle {0, 0, 224, 74}; the capture would read past the window".
+3. CHECK 62 hardened against silent garbage, per the brief's robustness requirement without touching its assertions: the four measured content boxes must not saturate the capture width, otherwise the check now fails saying the pixels are corrupted rather than reporting a misleading ratio. After fixes 1+2 the measurement is back on clean input and reads T11's original numbers again (see verification output).
+
+Classifier untouched: CHECK 48's classifier was right all along; the captures it was fed were wrong, and fix 2 repairs the fixture's input at the source. No SPI file touched; no catalog or quarantine change; DeterminismLint, NativeCheck, DiffCheck logic untouched.
+
+Out of scope, deliberately: upstream GTK/SWT question of why gtk_window_resize requests can lag or get lost without a window manager under load (evidence recorded above; needs an owner outside this task); CHECK 62's autoScale-vs-GDK_SCALE contrast finding stays as T11 recorded it.
+Verified with:
+
+```
+$ tools/oracle/build-harness.sh && tools/oracle/oracle selftest
+CHECK 14 catalog-triple-render-deterministic: PASS
+CHECK 17 lint-animated-specimen-fails-despite-retry: PASS
+      lint verdict for animated fixture: NONDETERMINISTIC (... last attempt saw 14 distinct
+        renderings, longest held 115 ms; the widget looks animated rather than the machine starved)
+CHECK 18 settle-timeout-passes-on-retry-with-larger-budget: PASS
+CHECK 48 diff-missing-element-classified: PASS
+CHECK 56 native-versus-native-sweep-equal-over-catalog: PASS
+      swept 147 specimens native-vs-native, all EQUAL (2 quarantined-excluded)
+CHECK 62 skiacanvas-zoom200-size-discrepancy-measured: PASS
+      zoom-200 content boxes: native content 82x20 in image 320x80 vs skia-canvas content 36x10
+        in image 320x80 (ratio 2.28); skia stayed at its zoom-100 logical size content 36x9 in
+        image 160x40 (growth 1.00)
+SELFTEST-OK: 63/63 checks passed (351.7 s)
+EXIT=0
+```
+
+Two consecutive green runs (351.7 s / 353.3 s), all 63 checks passing in each. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24). Targeted proofs: separator.horizontal x5 through CaptureRuntime, 300-330 ms each, byte-identical; GuardProbe animated fixture NONDETERMINISTIC with 14 distinct renderings; grace-0 A/B counterfactual as described in (1). Before finishing: burners started for load experiments were killed and verified gone; `ps -eo etime,args --sort=-etime | head -20` shows no java/Xvfb/import leftovers from this task.
+Known gaps: the settle acceptance path can, in principle, accept a stale frame whose replacement never arrives AND whose repaint is never deliverable; that is the tradeoff the brief mandates ("one distinct rendering that held for essentially the whole budget is the definition of stable"), it requires zero counter-evidence, and cross-capture comparison in the lint still catches systematic staleness between rounds. The geometry guard converts lost resizes into loud failures; if a machine ever persistently cannot host a widget, selftest now names the geometry instead of silently comparing black bands. Load experiments suggest ambient load near 12 makes this stack misbehave in more ways than this task could chase; CI sizing (T21) should keep headless runners quiet.
+Open questions: none.

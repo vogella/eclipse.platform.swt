@@ -201,7 +201,50 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		host.redraw();
 		if (!host.isVisible())
 			host.open();
+		requireControlWithinShell(host, control, preferred);
 		return control;
+	}
+
+	/**
+	 * How long the hosting sequence may take to reach the geometry the
+	 * capture depends on before it becomes failure data.
+	 */
+	private static final long GEOMETRY_VERIFY_MILLIS = 2000;
+
+	/**
+	 * Verifies that the control really lies fully inside the shell's client
+	 * area, because the pixels are read from the screen: whatever hangs past
+	 * the window comes back from {@code copyArea} as uninitialized memory,
+	 * typically a pure-black band. Measured failure mode without this check
+	 * (T26): under load the applied shell geometry lagged or lost the
+	 * requested size, controls extended past the client area, and captures
+	 * came back byte-stable but corrupted, so no stability rule could notice
+	 * and downstream measurements silently compared garbage. The request is
+	 * re-asserted and re-checked for a bounded time before failing loudly;
+	 * quiet machines pay one geometry query per capture.
+	 */
+	private void requireControlWithinShell(Shell host, Control control,
+			org.eclipse.swt.graphics.Point preferred) {
+		long end = System.currentTimeMillis() + GEOMETRY_VERIFY_MILLIS;
+		while (true) {
+			org.eclipse.swt.graphics.Rectangle client = host.getClientArea();
+			org.eclipse.swt.graphics.Rectangle bounds = control.getBounds();
+			boolean contained = bounds.x >= 0 && bounds.y >= 0
+					&& bounds.x + bounds.width <= client.width
+					&& bounds.y + bounds.height <= client.height
+					&& bounds.width == preferred.x && bounds.height == preferred.y;
+			if (contained)
+				return;
+			if (System.currentTimeMillis() >= end)
+				throw new CaptureFailedException("'"
+						+ control.getClass().getSimpleName()
+						+ "' does not fit the shell that must display it: declared "
+						+ preferred.x + "x" + preferred.y + ", bounds " + bounds + ", shell "
+						+ host.getSize() + ", client " + client
+						+ "; the capture would read past the window");
+			host.setSize(preferred.x + 2 * MARGIN, preferred.y + 2 * MARGIN);
+			pump(host.getDisplay(), FRAME_PERIOD_MILLIS);
+		}
 	}
 
 	private Shell shellFor(Display display) {
@@ -318,24 +361,39 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	 *
 	 * Persistence alone is still only half the proof. "Nothing changed for
 	 * 250 ms" can equally mean "the frame that should have replaced this one
-	 * never got painted": under CPU contention, state that GTK applies after
-	 * the first paint (focus highlighting, lazy style and font computation)
-	 * can arrive late, and a frame that predates it is perfectly stable,
-	 * because nothing ever damages it again. The second half of the contract
-	 * closes this: once a value has persisted across the window, the control
-	 * is fully invalidated and repainted, and the value counts as settled
-	 * only when that forced repaint reproduces it byte for byte. A stale or
+	 * never got painted": state that GTK applies after the first paint
+	 * (focus highlighting, lazy style and font computation) can arrive late,
+	 * and a frame that predates it is perfectly stable, because nothing ever
+	 * damages it again. The second half of the contract closes this: once a
+	 * value has persisted across the window, the control is fully
+	 * invalidated and repainted, and the value counts as settled only when
+	 * that forced repaint reproduces it byte for byte. A stale or
 	 * half-styled frame fails the repaint; the settled rendering reproduces
 	 * itself. That makes the captured pixels faithful, not merely quiet.
+	 *
+	 * The confirmation has one failure mode it cannot distinguish by itself:
+	 * the repaint may be undeliverable because the machine is too starved to
+	 * deliver paint events within the grace period at all. Starving the
+	 * confirmation must not read as contradicting it. When the attempt saw
+	 * exactly <em>one</em> distinct rendering, that rendering held for the
+	 * observation window, and no delivered repaint ever contradicted it,
+	 * there is no evidence of a second value anywhere in the attempt, and
+	 * holding the capture until the budget burns down would report a stable
+	 * widget as non-deterministic (measured: one distinct rendering, longest
+	 * hold within milliseconds of the full budget). Such a rendering settles;
+	 * this is the only path that returns without a delivered confirmation,
+	 * and it requires the absence of any counter-evidence, so a genuinely
+	 * animated widget (many distinct renderings) and a stale frame that a
+	 * delivered repaint contradicted both still fail loudly.
 	 *
 	 * What this contract deliberately does not cover is the first capture of
 	 * a widget class in a fresh process: GTK computes styles and metrics
 	 * lazily, so capture one of a specimen can differ from every later one
 	 * while each is faithful on its own terms. That is a convergence cost,
 	 * not instability, and it is handled by consumers priming a specimen
-	 * before judging it ({@code DeterminismLint} discards one prime capture
-	 * per specimen); measured on this stack, renderings are byte-stable from
-	 * the second capture on, idle and loaded alike.
+	 * before judging it ({@code DeterminismLint} discards warmup captures);
+	 * measured on this stack, renderings are byte-stable from the second
+	 * capture on, idle and loaded alike.
 	 *
 	 * The give-up bound is where machine speed enters, and it is treated as
 	 * the two different things it can mean:
@@ -417,6 +475,7 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		long heldSince = 0;
 		int distinctRenderings = 0;
 		long longestHoldMillis = 0;
+		boolean repaintContradicted = false;
 		long start = System.currentTimeMillis();
 		long deadline = start + budget.timeoutMillis();
 		for (int grabs = 1;; grabs++) {
@@ -435,10 +494,22 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 			if (candidate != null && Arrays.equals(candidate.pngBytes(), current.pngBytes())) {
 				long heldFor = now - heldSince;
 				longestHoldMillis = Math.max(longestHoldMillis, heldFor);
-				if (heldFor >= STABILITY_HOLD_MILLIS && repaintReproduces(control, display, current)) {
-					longestHoldMillis = Math.max(longestHoldMillis,
-							System.currentTimeMillis() - heldSince);
-					return current;
+				if (heldFor >= STABILITY_HOLD_MILLIS) {
+					RepaintOutcome outcome = confirmByRepaint(control, display, current);
+					if (outcome == RepaintOutcome.REPRODUCED) {
+						longestHoldMillis = Math.max(longestHoldMillis,
+								System.currentTimeMillis() - heldSince);
+						return current;
+					}
+					if (outcome == RepaintOutcome.CHANGED)
+						repaintContradicted = true;
+					else if (!repaintContradicted && distinctRenderings == 1) {
+						// Sole value seen, held over the whole observation window, and no
+						// delivered repaint ever contradicted it: there is no second
+						// rendering in the evidence, so the undeliverable confirmation
+						// says the machine is starved, not that the widget moves.
+						return current;
+					}
 				}
 			} else {
 				candidate = current;
@@ -448,18 +519,29 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		}
 	}
 
+	/** What the forced-repaint faithfulness check observed. */
+	private enum RepaintOutcome {
+		/** The repaint was delivered and reproduced the held bytes exactly. */
+		REPRODUCED,
+		/** The repaint was delivered but produced different pixels. */
+		CHANGED,
+		/** No repaint arrived within the grace period; nothing was contradicted. */
+		UNDELIVERED
+	}
+
 	/**
 	 * Invalidates the whole control, waits for the resulting repaint to be
-	 * delivered, and reports whether the pixels after it are byte-identical
-	 * to {@code held}. Used as the faithfulness half of the settling
-	 * contract: a frame that only looks stable because its replacement never
-	 * got painted fails here.
+	 * delivered, and reports how the pixels afterwards compare to {@code
+	 * held}. Used as the faithfulness half of the settling contract: a frame
+	 * that only looks stable because its replacement never got painted fails
+	 * here.
 	 *
 	 * When the repaint cannot be delivered within the grace period the answer
-	 * is "no", which is the safe direction: it costs budget instead of
-	 * accepting an unverified frame.
+	 * is {@link RepaintOutcome#UNDELIVERED}, which is not evidence against
+	 * the held frame; the caller decides whether undelivered confirmations
+	 * may still settle.
 	 */
-	private boolean repaintReproduces(Control control, Display display, CapturedImage held) {
+	private RepaintOutcome confirmByRepaint(Control control, Display display, CapturedImage held) {
 		boolean[] painted = new boolean[1];
 		Listener once = e -> {
 			if (e.type == SWT.Paint && e.widget == control)
@@ -478,9 +560,11 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 			control.removeListener(SWT.Paint, once);
 		}
 		if (!painted[0])
-			return false;
+			return RepaintOutcome.UNDELIVERED;
 		pump(display, FRAME_PERIOD_MILLIS);
-		return Arrays.equals(grabByCopyArea(control).pngBytes(), held.pngBytes());
+		return Arrays.equals(grabByCopyArea(control).pngBytes(), held.pngBytes())
+				? RepaintOutcome.REPRODUCED
+				: RepaintOutcome.CHANGED;
 	}
 
 	/** Dispatches events for the given duration, so scheduled frames can run. */
