@@ -14,16 +14,14 @@ import java.io.PrintStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.visualoracle.catalog.ButtonModule;
-import org.eclipse.swt.visualoracle.catalog.CLabelModule;
-import org.eclipse.swt.visualoracle.catalog.LabelModule;
-import org.eclipse.swt.visualoracle.catalog.LinkModule;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
@@ -41,11 +39,14 @@ import org.eclipse.swt.visualoracle.spi.SpecimenModule;
 public final class CatalogCheck {
 
 	/** The modules this task contributes; extend when families are added. */
-	private static final List<Class<? extends SpecimenModule>> FAMILY_MODULES = List.of(
-			ButtonModule.class,
-			LabelModule.class,
-			CLabelModule.class,
-			LinkModule.class);
+	/**
+	 * Where the catalog's module sources live, used to cross-check discovery
+	 * against what is actually on disk. Deliberately a directory scan and not a
+	 * hardcoded class list: widget families are added by several agents in
+	 * parallel, and a shared list would make every one of them conflict.
+	 */
+	private static final String CATALOG_SOURCE_DIR =
+			"tools/oracle/harness/src/org/eclipse/swt/visualoracle/catalog";
 
 	private static final String ID_PATTERN = "[a-z0-9]+(\\.[a-z0-9]+)+";
 
@@ -73,20 +74,42 @@ public final class CatalogCheck {
 			require(catalog.byId(id).isPresent(), id + " lost during discovery");
 		}
 
-		for (Class<? extends SpecimenModule> type : FAMILY_MODULES) {
+		for (String simpleName : moduleSourceNames()) {
 			SpecimenModule module;
 			try {
-				module = type.getDeclaredConstructor().newInstance();
+				Class<?> type = Class.forName(
+						"org.eclipse.swt.visualoracle.catalog." + simpleName);
+				module = (SpecimenModule) type.getDeclaredConstructor().newInstance();
 			} catch (ReflectiveOperationException e) {
-				throw new AssertionError("cannot instantiate " + type.getSimpleName(), e);
+				throw new AssertionError("cannot instantiate " + simpleName
+						+ "; a catalog module needs a public no-argument constructor", e);
 			}
 			for (Specimen specimen : module.specimens()) {
 				if (!catalog.byId(specimen.id()).isPresent()) {
 					throw new AssertionError("catalog did not discover "
-							+ specimen.id() + " from " + type.getSimpleName());
+							+ specimen.id() + " from " + simpleName);
 				}
 			}
 		}
+	}
+
+	/**
+	 * Every {@code *Module.java} in the catalog source directory. Scanning
+	 * sources rather than compiled classes keeps this an independent check on
+	 * discovery: a module that exists but is never discovered fails here.
+	 */
+	private static List<String> moduleSourceNames() {
+		File dir = new File(CATALOG_SOURCE_DIR);
+		require(dir.isDirectory(), "catalog source directory not found: " + dir.getAbsolutePath()
+				+ " (run selftest from the repository root)");
+		String[] files = dir.list((d, name) -> name.endsWith("Module.java"));
+		require(files != null && files.length > 0, "no *Module.java found in " + CATALOG_SOURCE_DIR);
+		List<String> names = new ArrayList<>();
+		for (String file : files) {
+			names.add(file.substring(0, file.length() - ".java".length()));
+		}
+		names.sort(null);
+		return names;
 	}
 
 	/** Triple render per specimen: byte-identical PNGs at preferred size. */
