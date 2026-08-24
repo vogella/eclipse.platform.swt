@@ -692,3 +692,45 @@ CHECK 14 catalog-triple-render-deterministic: FAIL
 Post-fix, same machine: three green full runs of the final build, 176.9 s / 194.3 s idle-ish (ambient load 31 to 41) and 209.5 s under a generated `yes > /dev/null` storm (load ~53); plus six concurrent lint runs over the scrollbar family under load, all reporting `3 deterministic, 2 quarantined, 0 non-deterministic`. One earlier storm-12 run failed CHECK 36 (diff-throughput tripwire, 14.3 MP/s below the 20 MP/s floor), a pure-CPU benchmark starved by twelve spinners; it passes in every non-storm run and at storm strength 6. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24).
 Known gaps: the two quarantined specimens leave horizontal-scroll chrome uncovered by unattended determinism judging; a cure needs specimen-side post-realize application of the scroll value (catalog frozen for this task) or an SPI-side post-realize hook, both out of scope here and SCR-worthy if the orchestrator agrees. CHECK 36's throughput floor is load-sensitive by construction (CPU-bound benchmark); CI on shared runners may want a lower floor or a quiet-machine gate. `MAX_WARMUP_CAPTURES = 6` and the EXTENDED budget size are measured margins on this 8-core stack, not constants derived from theory; CI hardware slower than this may need them raised via the existing budget constructor.
 Open questions: none.
+
+### T09 handoff, 2026-08-24
+Branch: oracle/T09 at 1c892806e4 (parent of this commit; this record ships inside the single T09 commit)
+Scope delivered:
+`impl/NativeBackend` hardened from T03's minimal stub into a first-class adapter aligned with `SkijaProtoBackend` (T10, read and matched), still behind the unchanged frozen SPI. Four things, per the brief:
+1. Activation evidence instead of assumption. `configure(Display)` proves the GC in use is genuinely the native one before any specimen exists; every link of the chain is required: (a) a paint event from a probe button within 5 s; (b) a real JNI round trip into the loaded SWT natives (`GTK3.gtk_widget_get_window(probe.handle) != 0`, proving realization plus linkage); (c) the GC handed out for that very control being exactly stock `org.eclipse.swt.graphics.GC`; (d) glyph ink: text drawn through a GC must leave >= 20 pixels distinct from the background, compared palette-independently against pixel(0,0). On top, refusal of foreign renderers: when the prototype-skija fork's `Drawing.createGraphicsContext(GC, Control)` is on the classpath it must return the identical raw GC instance; any wrapper throws `BackendUnavailableException`, which closes the compare-native-against-the-fork hole at class level rather than by process hygiene alone. The observed GC class is exposed via `observedGcClassName()`, mirroring T10's API shape.
+2. Environment fidelity. `configure` records `SwtRenderEnvs.current(display)`; `environment()` exposes it as data; `requireEnvironment(RenderEnv)` refuses a mismatch with `UnsupportedEnvironmentException` naming both environments, semantically compared through `SwtRenderEnvs.matches` exactly as the frozen Capture contract prescribes (a system-font request accepts whatever font the machine reports).
+3. Support and refusal as data. `supports(Specimen)` decides per specimen id, cached like T10, never throws for coverage. It returns false only for specimens tagged `Tag.NATIVE_POPUP`: their distinguishing content lives in transient windows outside the captured control bounds, so it can never reach the comparison substrate and comparing would report agreement over chrome while missing the subject. Everything else true; stock GTK renders every catalog family. No discovered specimen carries the tag today, so catalog coverage stays 149/149; the criterion is proven by fixture.
+4. The oracle cross-checked against itself. New CHECK 56 sweeps the whole discovered catalog native-versus-native in one process through the real `CaptureRuntime` + `ClusterDiffer` at `Tolerance.EXACT`: every judged specimen must come out EQUAL with changedPixels 0 and maxChannelDelta 0 across two independent captures. Convergence rule mirrors the determinism lint (up to 6 captures for a consecutive agreeing byte-identical pair, that pair then judged); specimens on the official `DeterminismLint.CATALOG_QUARANTINE` are excluded from judging and reported as data lines with their recorded reasons.
+Selftest grows 53 to 57 checks (`tools/NativeCheck`): CHECK 53 activation evidence, CHECK 54 wrong zoom/theme/direction refused with both environments named plus pinned-environment acceptance, CHECK 55 unsupported-as-data end to end (`test.nativepopup.menu`: supports() false as boolean data, `UnsupportedSpecimenException` naming backend and specimen, sibling capture unaffected), CHECK 56 the sweep with its specimen count printed. None of the existing 53 checks touched.
+Out of scope, deliberately: skija-proto/skia-canvas adapters, CLI verbs, report, CI, gates. Untouched as ordered: `build.sh`, `verify-backend.sh`, `spi/`, `catalog/`, `impl/CaptureRuntime.java`, `impl/SkijaProtoBackend.java`. `CaptureChild` also untouched, so children keep printing `BACKEND-GC=` only for backends with fork-specific evidence; native activation evidence is asserted in-process by CHECK 53 instead.
+Verified with:
+
+```
+$ tools/oracle/build-harness.sh && tools/oracle/oracle selftest
+CHECK 0 backend-classpath: PASS
+...
+CHECK 52 diff-ambiguous-difference-abstains: PASS
+CHECK 53 native-backend-genuinely-activates: PASS
+      activation evidence: GC=org.eclipse.swt.graphics.GC, paint+jni+ink proven,
+        env=RenderEnv[zoomPercent=100, theme=, direction=LTR, fontFamily=Sans, fontSize=10]
+CHECK 54 native-backend-refuses-wrong-environment: PASS
+      refused wrong zoom, theme and direction; accepted the pinned RenderEnv[...]
+CHECK 55 native-unsupported-specimen-reported-as-data: PASS
+      test.nativepopup.menu reported as data (supports=false, UnsupportedSpecimenException),
+        button.push.default unaffected
+CHECK 56 native-versus-native-sweep-equal-over-catalog: PASS
+      sweep scrollbar.horizontal.scrolled: QUARANTINED: flips between two faithful
+        horizontal-offset renderings under CPU contention on GTK3/Yaru; ...
+      sweep scrollbar.both.scrolled: QUARANTINED: same horizontal-offset flip ...
+      swept 147 specimens native-vs-native, all EQUAL (2 quarantined-excluded)
+SELFTEST-OK: 57/57 checks passed (343.6 s)
+EXIT=0
+```
+
+Three consecutive green full runs (343.6 / 305.4 / 307.8 s), each sweeping 147 judged specimens EQUAL over the 149-specimen catalog. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24). The four new checks were additionally smoke-tested standalone before the first full run.
+Known gaps:
+1. CHECK 56 runs warm by construction (after CHECK 14 has hosted every widget family several times), so the cold-process divergence documented by T14/T15/T16 does not exercise it; any harness change that ever captures item widgets cold would flake CHECK 56 exactly as it would CHECK 14.
+2. Selftest cost grew from roughly 190-210 s to 300-345 s: the sweep adds two captures per specimen, about 100 s. The wrapper's 900 s timeout keeps ample headroom on this machine.
+3. The NATIVE_POPUP coverage criterion is dormant in the shipped catalog (no specimen carries the tag) and exercised only by the CHECK 55 fixture. If the catalog ever grows a popup-bearing specimen, native reports UNSUPPORTED for it by design until a capture strategy can reach popup content.
+4. The foreign-renderer probe invokes `Drawing.createGraphicsContext` reflectively whenever that class exists; on a hypothetical non-fork classpath carrying an incompatible Drawing class it refuses loudly rather than guessing, trading a false stop for never comparing against the wrong oracle.
+Open questions: none.

@@ -198,6 +198,14 @@ public class SelfTest {
 					DiffCheck.checkSizeMismatchStaysWholeArea(firstCapture));
 			check(index++, "diff-ambiguous-difference-abstains", () ->
 					DiffCheck.checkAmbiguousDifferenceAbstains(firstCapture, out));
+			check(index++, "native-backend-genuinely-activates", () ->
+					NativeCheck.checkActivation(display, out));
+			check(index++, "native-backend-refuses-wrong-environment", () ->
+					NativeCheck.checkEnvironmentRefusal(display, out));
+			check(index++, "native-unsupported-specimen-reported-as-data", () ->
+					NativeCheck.checkUnsupportedAsData(display, nativeBackend, env, out));
+			check(index++, "native-versus-native-sweep-equal-over-catalog", () ->
+					NativeCheck.checkNativeVsNativeSweep(display, nativeBackend, env, out));
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);
