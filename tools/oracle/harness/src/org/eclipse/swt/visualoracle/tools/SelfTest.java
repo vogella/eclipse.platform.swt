@@ -163,6 +163,21 @@ public class SelfTest {
 					SkijaProtoCheck.checkUnsupportedReported(out));
 			check(index++, "skijaproto-catalog-coverage-counted", () ->
 					SkijaProtoCheck.checkCatalogCoverage(out));
+			check(index++, "result-roundtrip-empty-run", () -> ResultCheck.checkRoundTripEmptyRun(env));
+			check(index++, "result-roundtrip-failed-and-unsupported-captures", () ->
+					ResultCheck.checkRoundTripFailureStatuses(env));
+			check(index++, "result-roundtrip-clusters-including-zero-pixels", () ->
+					ResultCheck.checkRoundTripClusters(env));
+			check(index++, "result-roundtrip-full-model-equals", () ->
+					ResultCheck.checkRoundTripFullModel(env, specimen.id(), firstCapture, equalResult));
+			check(index++, "result-schema-version-enforced", () -> ResultCheck.checkVersionEnforcement());
+			check(index++, "result-validator-errors-name-field-and-location", () ->
+					ResultCheck.checkValidatorMessages());
+			check(index++, "merge-order-independent-bytes", () -> {
+				ensureT05Batch();
+				ResultCheck.checkMergeOrderIndependentBytes(t05Batch.get("ltrA"), t05Batch.get("ltrB"),
+						OracleCli.VERSION, out);
+			});
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);

@@ -12,9 +12,13 @@ package org.eclipse.swt.visualoracle.impl;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.eclipse.swt.visualoracle.json.JsonWriter;
+import org.eclipse.swt.visualoracle.json.ResultSchemaValidator;
 
 /**
  * Merges the schema-v1 result documents of several children into one run
@@ -26,6 +30,11 @@ import java.util.Map;
  * because one process serves exactly one environment. Merging therefore
  * refuses mixed environments rather than writing a document whose label
  * would be a lie; grouping by environment is the caller's job (T20).
+ *
+ * Merging is deterministic: the same inputs in any arrival order produce
+ * byte-identical output. Captures and comparisons are ordered canonically
+ * (by specimen id, then backend ids), so the report does not churn between
+ * runs.
  */
 public final class ResultMerger {
 
@@ -49,7 +58,8 @@ public final class ResultMerger {
 		List<Object> comparisons = new ArrayList<>();
 		for (MergeInput input : inputs) {
 			Map<String, Object> doc = input.document();
-			Map<String, Object> docEnv = envMap(doc);
+			requireMergeable(doc);
+			Map<String, Object> docEnv = canonicalEnvironment(envMap(doc));
 			if (environment == null) {
 				environment = docEnv;
 			} else if (!environment.equals(docEnv)) {
@@ -61,8 +71,10 @@ public final class ResultMerger {
 			for (Object entry : listOrEmpty(doc.get("comparisons")))
 				comparisons.add(rebaseComparison(asMap(entry), input.documentDir(), mergedDocDir));
 		}
+		captures.sort(CAPTURE_ORDER);
+		comparisons.sort(COMPARISON_ORDER);
 		Map<String, Object> merged = new LinkedHashMap<>();
-		merged.put("schemaVersion", Integer.valueOf(1));
+		merged.put("schemaVersion", Integer.valueOf(ResultSchemaValidator.SUPPORTED_SCHEMA_VERSION));
 		merged.put("generator", generator);
 		merged.put("environment", environment);
 		merged.put("captures", captures);
@@ -70,12 +82,63 @@ public final class ResultMerger {
 		return merged;
 	}
 
+	private static final Comparator<Object> CAPTURE_ORDER = Comparator
+			.comparing((Object entry) -> text(asMap(entry), "specimen"))
+			.thenComparing(entry -> text(asMap(entry), "backend"))
+			.thenComparing(ResultMerger::canonicalForm);
+
+	private static final Comparator<Object> COMPARISON_ORDER = Comparator
+			.comparing((Object entry) -> text(asMap(entry), "specimen"))
+			.thenComparing(entry -> text(asMap(entry), "referenceBackend"))
+			.thenComparing(entry -> text(asMap(entry), "candidateBackend"))
+			.thenComparing(ResultMerger::canonicalForm);
+
+	/**
+	 * Entries equal on all sort keys (duplicates from different children)
+	 * still need one fixed relative order, so their serialised form breaks
+	 * the tie and arrival order cannot leak into the output.
+	 */
+	private static String canonicalForm(Object entry) {
+		return JsonWriter.write(entry);
+	}
+
+	private static String text(Map<?, ?> map, String key) {
+		Object value = map.get(key);
+		return value instanceof String s ? s : "";
+	}
+
+	/**
+	 * A merge input must itself be a valid result document of the supported
+	 * schema version; merging silently passes garbage through otherwise.
+	 */
+	private static void requireMergeable(Map<String, Object> doc) {
+		Object version = doc.get("schemaVersion");
+		long found = version instanceof Number n ? n.longValue() : -1;
+		if (found != ResultSchemaValidator.SUPPORTED_SCHEMA_VERSION)
+			throw new IllegalArgumentException("refusing to merge: document has schemaVersion "
+					+ version + ", expected " + ResultSchemaValidator.SUPPORTED_SCHEMA_VERSION);
+		List<String> errors = ResultSchemaValidator.validate(doc);
+		if (!errors.isEmpty())
+			throw new IllegalArgumentException("refusing to merge: document violates schema version "
+					+ ResultSchemaValidator.SUPPORTED_SCHEMA_VERSION + ": " + String.join("; ", errors));
+	}
+
+	/** Rebuilds the environment map in documented member order. */
+	private static Map<String, Object> canonicalEnvironment(Map<String, Object> env) {
+		Map<String, Object> canonical = new LinkedHashMap<>();
+		for (String key : List.of("zoomPercent", "theme", "direction", "fontFamily", "fontSize")) {
+			if (!env.containsKey(key))
+				throw new IllegalArgumentException("environment is missing '" + key + "'");
+			canonical.put(key, env.get(key));
+		}
+		return canonical;
+	}
+
 	private static Map<String, Object> rebaseComparison(Map<String, Object> entry, Path from, Path to) {
 		entry = rebase(entry, from, to, "referenceImage");
 		return rebase(entry, from, to, "candidateImage");
 	}
 
-	@SuppressWarnings("unchecked")
 	private static Map<String, Object> rebase(Map<String, Object> entry, Path from, Path to, String pathField) {
 		Object relative = entry.get(pathField);
 		if (!(relative instanceof String path) || path.isEmpty())

@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.swt.visualoracle.json.JsonException;
 import org.eclipse.swt.visualoracle.json.JsonWriter;
 import org.eclipse.swt.visualoracle.spi.RenderEnv;
 
@@ -46,6 +47,20 @@ public record RunResult(int schemaVersion, String generator, RenderEnv environme
 	 */
 	public String toJson() {
 		return JsonWriter.write(toJsonMap());
+	}
+
+	/**
+	 * Reads a result document back into this model, the exact inverse of
+	 * {@link #toJson()}; throws {@link JsonException} on malformed input,
+	 * an unsupported schema version or any schema violation.
+	 */
+	public static RunResult fromJson(String text) {
+		return ResultJson.read(text);
+	}
+
+	/** Reads an already-parsed result document into this model. */
+	public static RunResult fromJsonMap(Object document) {
+		return ResultJson.readDocument(document);
 	}
 
 	Map<String, Object> toJsonMap() {

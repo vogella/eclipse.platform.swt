@@ -25,16 +25,23 @@ import org.eclipse.swt.visualoracle.spi.CapturedImage;
  * @param height captured image height, only for CAPTURED
  * @param image path of the PNG file relative to the result document,
  *     only for CAPTURED
- * @param message failure or skip reason, only when status is not CAPTURED
+ * @param message failure or skip reason, only when status is not CAPTURED;
+ *     may be null but never empty
  */
 public record CaptureEntry(String specimen, String backend, CaptureStatus status,
 		Integer width, Integer height, String image, String message) {
 
 	public CaptureEntry {
+		if (status == null)
+			throw new IllegalArgumentException("status is required");
 		if (status == CaptureStatus.CAPTURED && (width == null || height == null || image == null))
 			throw new IllegalArgumentException("CAPTURED entries need width, height and image");
+		if (status == CaptureStatus.CAPTURED && message != null)
+			throw new IllegalArgumentException("CAPTURED entries must omit message");
 		if (status != CaptureStatus.CAPTURED && (width != null || height != null || image != null))
 			throw new IllegalArgumentException("non-CAPTURED entries must omit width, height and image");
+		if (status != CaptureStatus.CAPTURED && message != null && message.isEmpty())
+			throw new IllegalArgumentException("non-CAPTURED message must be non-empty when present");
 	}
 
 	/** Factory for a successful capture. */
@@ -57,8 +64,8 @@ public record CaptureEntry(String specimen, String backend, CaptureStatus status
 			map.put("width", width);
 			map.put("height", height);
 			map.put("image", image);
-		} else {
-			map.put("message", message == null ? "" : message);
+		} else if (message != null) {
+			map.put("message", message);
 		}
 		return map;
 	}
