@@ -32,6 +32,11 @@ major="$(java -version 2>&1 | head -1 | sed 's/^[^"]*"\([0-9]*\).*/\1/')"
 
 backend_cp="$("$SCRIPT_DIR/build.sh" native)" || die "building 'native' backend classpath failed"
 
+# Remove stale classes before compiling. A deleted or renamed source otherwise
+# leaves a ghost .class behind, and SpecimenCatalog discovers catalog modules by
+# scanning compiled classes, so a ghost module reappears in the catalog and
+# collides with the real one.
+rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
 args_file="$(mktemp /tmp/opencode/oracle-t03/harness-javac-XXXXXX.args)"
 trap 'rm -f "$args_file"' EXIT
