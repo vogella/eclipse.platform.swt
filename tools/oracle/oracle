@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# The oracle command line entry point.
+#
+# Usage: tools/oracle/oracle <verb> [args]
+#
+# Compiles the harness (fast, always recompiles) and runs it against the
+# native backend classpath. Verbs that need a Display are run headless under
+# Xvfb with the Wayland variables unset and GDK pinned to X11, so a caller
+# never has to remember the incantation; see docs/visual-oracle/PLAN.md and
+# TRACKING.md "Headless run requirement".
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+die() { printf 'oracle: %s\n' "$*" >&2; exit 2; }
+
+[ $# -ge 1 ] || die "usage: oracle <verb> [args], try 'oracle help'"
+
+verb="$1"
+
+classes="$("$SCRIPT_DIR/build-harness.sh")" || die "building harness failed"
+
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+native_cp="$("$SCRIPT_DIR/build.sh" native)" || die "building native backend classpath failed"
+
+main_class=org.eclipse.swt.visualoracle.tools.OracleCli
+java_cmd=(
+	java --enable-native-access=ALL-UNNAMED
+	-Djava.library.path="$REPO_ROOT/binaries/org.eclipse.swt.gtk.linux.x86_64"
+	-Doracle.repoRoot="$REPO_ROOT"
+	-cp "$classes:$native_cp"
+	"$main_class"
+)
+
+case "$verb" in
+	help|-h|--help|version|--version)
+		exec "${java_cmd[@]}" "$@"
+		;;
+	selftest)
+		command -v xvfb-run >/dev/null 2>&1 \
+			|| die "xvfb-run not found, install xvfb (selftest needs a headless X server)"
+		exec env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
+			xvfb-run -a -s "-screen 0 1600x1200x24" timeout 900 "${java_cmd[@]}" "$@"
+		;;
+	run|triage)
+		# Attach points for T20: same headless wrapping as selftest will apply.
+		command -v xvfb-run >/dev/null 2>&1 \
+			|| die "xvfb-run not found, install xvfb (graphical verbs need a headless X server)"
+		exec env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
+			xvfb-run -a -s "-screen 0 1600x1200x24" "${java_cmd[@]}" "$@"
+		;;
+	*)
+		"${java_cmd[@]}" "$@" || true
+		exit 2
+		;;
+esac

@@ -309,3 +309,30 @@ Verified with:
   DET-CROSS print/copyarea/xgrab all IDENTICAL over 5 processes
 Known gaps: `xgrab` crop origin is offset by 24px at zoom 200 and must be fixed before the fallback is used at non-unit zoom.
 Open questions: none.
+
+
+### T03 handoff, 2026-08-24
+Branch: oracle/T03 at 3d09f01b59
+Scope delivered:
+`tools/oracle/harness/src` (plain javac, package root `org.eclipse.swt.visualoracle`, subpackages `spi`, `json`, `result`, `impl`, `tools`): the five SPI interfaces plus supporting types frozen and documented in `docs/visual-oracle/SPI.md`; result JSON schema v1 documented in `docs/visual-oracle/RESULT-SCHEMA.md` and enforced in both directions by a strict parser + strict validator (valid accepted, six mutation classes rejected); minimal reference implementations (ButtonPushSpecimen, NativeBackend, CopyAreaCapture per ADR-001, ExactDiffer with changed-pixel count); CLI `tools/oracle/oracle` with `selftest` implemented and `run`/`triage` attach points defined (exit 3, dispatch cases ready for T20); `build-harness.sh` compiling the harness against the T02 native classpath; the wrapper applies the Wayland-safe Xvfb environment itself. The T02 gap is closed: selftest proves `verify-backend.sh skia-canvas` fails when the canvas is disabled (`-Dorg.eclipse.swt.external.canvas:disabled=true` injected via `JDK_JAVA_OPTIONS`, verify-backend.sh untouched) AND still passes when enabled (positive control against an unconditionally-failing script).
+Deviations from the PLAN.md SPI sketch, all documented in SPI.md: multi-process merging replaces same-process dual rendering (ADR-002: one classpath/natives per backend; SWT pins env at Display creation); Capture keeps the sketch signature but must fail with UnsupportedEnvironmentException on process/env mismatch; DiffResult gains changedPixels; result status model CAPTURED/UNSUPPORTED/FAILED added so supports() gaps and failures are data.
+Out of scope, deliberately: production capture runtime incl. xgrab fallback (T04), environment control processes (T05), real diff engine and clusters (T06/T07), schema hardening beyond v1 (T08), skija-canvas/skija-proto adapters (T10/T11), run/triage implementation (T20).
+Verified with:
+
+```
+$ tools/oracle/build-harness.sh && tools/oracle/oracle selftest
+CHECK 0 backend-classpath: PASS
+CHECK 1 specimen-created-and-captured: PASS
+CHECK 2 capture-is-deterministic: PASS
+CHECK 3 differ-reports-equality: PASS
+CHECK 4 differ-detects-altered-image: PASS
+CHECK 5 result-json-conforms-to-schema: PASS
+CHECK 6 verify-backend-fails-on-disabled-canvas: PASS
+CHECK 7 verify-backend-passes-on-enabled-canvas: PASS
+SELFTEST-OK: 8/8 checks passed (9.6 s)
+EXIT=0
+```
+
+Four consecutive full runs green (7.5-9.6 s each). All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24).
+Known gaps: ExactDiffer writes at most one bounding-box placeholder cluster (flagged as provisional for consumers until T06 in RESULT-SCHEMA.md); CopyAreaCapture is skeleton-grade, it owns shell+settle inline using the T01-proven paint-event wait and is meant to be replaced wholesale by T04 behind the same interface; the two verify-backend checks build skia-canvas, so a cold skija jar cache makes them need network once.
+Open questions: PLAN.md's architecture paragraph still says "renders the widget twice in the same process"; SPI.md documents the multi-process reality that follows from ADR-002, but only the orchestrator can decide whether to update PLAN.md itself.
