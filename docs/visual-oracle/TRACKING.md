@@ -352,3 +352,36 @@ Coordinator verification, run independently of the agent's claims:
 Design correction accepted: the agent found that the PLAN.md sketch assumed both backends render in one process, which ADR-002 and SWT's Display-time environment binding make impossible. Recorded as D6 in PLAN.md; T05 and T20 change shape as a result.
 Board updates: T03 to MERGED. Phase 2 opened.
 Newly unblocked: T04, T05, T06, T08, T09, T10, T11, T13, T14, T15, T16, T17.
+
+### T04 handoff, 2026-08-24
+Branch: oracle/T04, one commit on top of bbb03639e9; this record ships inside that commit
+Scope delivered:
+`impl/CaptureRuntime` replaces `impl/CopyAreaCapture` behind the unchanged frozen `Capture` interface. One shell per display, reused across specimens: children disposed, bounds reset, client area invalidated between specimens (cross-talk proven absent by CHECK 8: button/label/button interleaving plus fresh-shell equivalence, all byte-identical). Settling waits for the control's first paint, then forces pending damage out with `Control.update()` and drains until two consecutive quiet cycles show zero paint/resize/move activity; why that condition is sufficient is documented inline (event-driven drawing means nothing can change pixels once a full drain produces no activity; animations stay T12's concern). Failure handling: specimen creation throwables surface as `CaptureFailedException` with the specimen id and original cause, the shell stays clean and the run continues (CHECK 9).
+Both ADR-001 strategies live behind one interface: `COPY_AREA` primary, `X11_GRAB` fallback. The fallback grabs the control's own X window **by id** (`import -window 0x…`), so the X server does the cropping and no coordinate arithmetic exists to get wrong; the grabbed data's true zoom basis is derived from its physical/logical width ratio and normalized through SWT's own DPI machinery (`ImageDataProvider`), which makes it byte-identical to `copyArea`. Root cause of the ADR-001 defect, established by measurement: under `-Dswt.autoScale=200` on a 96 dpi X server the widget windows are *not* scaled on screen, `toDisplay` already returns true device coordinates, and multiplying by `zoom/100` overshoots the origin by exactly the scale factor. That reproduces every spike number analytically (predicted marker intersection 1044 px, bbox 0,0..168,22, hence markerTop/markerLeft=24 and uniqColors=15).
+Captures now carry device-zoom pixels (`getImageData(deviceZoom)`), not the skeleton's implicit zoom-100 downscale. `tools/CaptureProbe` captures the reference specimen in a child process and prints a CAPTURE line. Selftest grows 8 -> 13 checks (shell-reuse isolation, throwing-specimen-as-data, cross-process determinism tied to the in-process capture, strategy agreement at zoom 100 and at zoom 200). Harness scratch moved from `/tmp/opencode/oracle-t03` to `/tmp/opencode/oracle-t04`.
+Out of scope, deliberately: diff engine (T06), specimen catalog (T13+), determinism lint (T12), environment processes (T05), `run`/`triage` (T20). Untouched: `build.sh`, `verify-backend.sh`, `build-harness.sh`, the `oracle` wrapper, `spi/`, and the T01 spike.
+Verified with:
+
+```
+$ tools/oracle/build-harness.sh && tools/oracle/oracle selftest
+CHECK 0 backend-classpath: PASS
+CHECK 1 specimen-created-and-captured: PASS
+CHECK 2 capture-is-deterministic: PASS
+CHECK 3 differ-reports-equality: PASS
+CHECK 4 differ-detects-altered-image: PASS
+CHECK 5 result-json-conforms-to-schema: PASS
+CHECK 6 verify-backend-fails-on-disabled-canvas: PASS
+CHECK 7 verify-backend-passes-on-enabled-canvas: PASS
+CHECK 8 shell-reuse-prevents-cross-talk: PASS
+CHECK 9 throwing-specimen-reported-as-failure: PASS
+CHECK 10 capture-deterministic-across-processes: PASS
+CHECK 11 xgrab-agrees-with-copyarea-at-zoom100: PASS
+CHECK 12 xgrab-agrees-with-copyarea-at-zoom200: PASS
+SELFTEST-OK: 13/13 checks passed (9.3 s)
+EXIT=0
+```
+
+Five consecutive green runs (9.3, 22.2, 24.5, 22.5, 9.3 s), all headless through the wrapper.
+Crop-fix counterfactual (scratch probe, `-Dswt.autoScale=200`, same button): pre-fix formula computes crop origin 24,24 where the true device rect starts at 12,12; copyAreaSha=`44983467…`, prefixFormulaSha=`5c1780b7…`, `agree=false`, so CHECK 12 would have failed before the fix. At zoom 100 both coincide, `agree=true`, matching the spike's own history.
+Known gaps: under genuine GDK scale factors (`GDK_SCALE=2`) the X window pixmap and the application-side cairo surface are two different renderings; measured residual 2045 of 56320 pixels differing, maxChannelDelta 138, best shift alignment no better than identity, i.e. antialiasing resampling, not offset. Byte agreement between the strategies there is impossible by construction; extents remain exact. The canonical zoom-200 environment stays `-Dswt.autoScale=200` (ADR-001, run-spike.sh); T05/T21 should pin that mechanism whenever strategies are compared across zooms. The fallback needs ImageMagick `import` and gtk/X11 and reports their absence as data (`CaptureFailedException`/`UnsupportedEnvironmentException`). Fractional zooms (150) follow the same code path but are only proven at 100 and 200. Note: SPI.md enumerates package `tools` as "SelfTest and OracleCli"; `CaptureProbe` joins them as selftest infrastructure, no frozen signature touched.
+Open questions: none.
