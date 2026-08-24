@@ -22,7 +22,9 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
@@ -36,8 +38,11 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.visualoracle.catalog.ButtonModule;
 import org.eclipse.swt.visualoracle.impl.BasicCapturedImage;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
+import org.eclipse.swt.visualoracle.impl.ChildProcessLauncher;
 import org.eclipse.swt.visualoracle.impl.ExactDiffer;
+import org.eclipse.swt.visualoracle.impl.LaunchConfig;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.ResultMerger;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
 import org.eclipse.swt.visualoracle.json.JsonParser;
 import org.eclipse.swt.visualoracle.json.JsonWriter;
@@ -52,10 +57,13 @@ import org.eclipse.swt.visualoracle.spi.CaptureFailedException;
 import org.eclipse.swt.visualoracle.spi.DefectClass;
 import org.eclipse.swt.visualoracle.spi.Differ;
 import org.eclipse.swt.visualoracle.spi.DiffResult;
+import org.eclipse.swt.visualoracle.spi.Direction;
 import org.eclipse.swt.visualoracle.spi.RenderEnv;
 import org.eclipse.swt.visualoracle.spi.Specimen;
+import org.eclipse.swt.visualoracle.spi.SpecimenCatalog;
 import org.eclipse.swt.visualoracle.spi.SpecimenContext;
 import org.eclipse.swt.visualoracle.spi.Tolerance;
+import org.eclipse.swt.visualoracle.spi.Theme;
 import org.eclipse.swt.visualoracle.spi.Verdict;
 
 /**
@@ -120,6 +128,16 @@ public class SelfTest {
 			check(index++, "catalog-discovered-and-wellformed", CatalogCheck::checkDiscovery);
 			check(index++, "catalog-triple-render-deterministic", () ->
 					CatalogCheck.checkTripleRender(display, nativeBackend, env, out));
+			check(index++, "launch-config-maps-environment-to-process-settings", () ->
+					checkLaunchConfigMapping());
+			check(index++, "child-parallelism-bound-honored", () -> checkParallelismBound());
+			check(index++, "child-zoom-proven-by-captured-size", () -> checkChildZoom());
+			check(index++, "child-mirrors-right-to-left", () -> checkChildRtl());
+			check(index++, "child-theme-takes-effect", () -> checkChildTheme());
+			check(index++, "child-refuses-wrong-environment", () -> checkChildMismatch());
+			check(index++, "crashed-child-recorded-run-continues", () -> checkCrashedChild());
+			check(index++, "hung-child-times-out-run-continues", () -> checkHungChild());
+			check(index++, "merged-child-results-validate-against-schema", () -> checkMergedResults());
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);
@@ -411,6 +429,340 @@ public class SelfTest {
 				"X11 grab and copyArea disagree at zoom 200: "
 						+ xgrab.sha256() + " vs " + copyArea.sha256()
 						+ "; the crop origin fix regressed");
+	}
+
+	// ------------------------------------------------- environment control
+
+	private static final String SCRATCH_ROOT_T05 = "/tmp/opencode/oracle-t05";
+	/** The specimen whose pixels visibly move under RTL; centered captions do not. */
+	private static final String MIRROR_SPECIMEN = "label.default";
+	private static final String REFERENCE_SPECIMEN = "button.push.default";
+
+	private Map<String, ChildProcessLauncher.ChildOutcome> t05Batch;
+
+	/**
+	 * Launches the standard T05 child batch once: two left-to-right children
+	 * (split specimens, for merging), one right-to-left, one HighContrast
+	 * theme and one zoom-200 child. Every child gets its own Xvfb display.
+	 */
+	private void ensureT05Batch() {
+		if (t05Batch != null)
+			return;
+		RenderEnv ltr = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1);
+		List<ChildProcessLauncher.ChildRequest> requests = List.of(
+				ChildProcessLauncher.ChildRequest.of(ltr, REFERENCE_SPECIMEN),
+				ChildProcessLauncher.ChildRequest.of(ltr, MIRROR_SPECIMEN),
+				ChildProcessLauncher.ChildRequest.of(new RenderEnv(100, Theme.PLATFORM_DEFAULT,
+						Direction.RTL, "", -1), MIRROR_SPECIMEN, REFERENCE_SPECIMEN),
+				ChildProcessLauncher.ChildRequest.of(new RenderEnv(100, new Theme("HighContrast"),
+						Direction.LTR, "", -1), REFERENCE_SPECIMEN),
+				ChildProcessLauncher.ChildRequest.of(new RenderEnv(200, Theme.PLATFORM_DEFAULT,
+						Direction.LTR, "", -1), REFERENCE_SPECIMEN));
+		Path scratch = Path.of(SCRATCH_ROOT_T05, "selftest-" + Long.toString(System.currentTimeMillis(), 36));
+		t05Batch = new LinkedHashMap<>();
+		List<ChildProcessLauncher.ChildOutcome> outcomes =
+				new ChildProcessLauncher(ChildProcessLauncher.configFromSystemProperties(scratch)).run(requests);
+		String[] tags = {"ltrA", "ltrB", "rtl", "hc", "z200"};
+		for (int i = 0; i < tags.length; i++)
+			t05Batch.put(tags[i], outcomes.get(i));
+	}
+
+	/**
+	 * Pure mapping proof: a requested {@link RenderEnv} becomes the process
+	 * settings that realise it (zoom property, GTK_THEME variable or its
+	 * removal for the platform default, direction and font properties), and
+	 * environment matching accepts the system font whatever it is called.
+	 */
+	private void checkLaunchConfigMapping() {
+		LaunchConfig themed = SwtRenderEnvs.launch(
+				new RenderEnv(150, new Theme("Adwaita"), Direction.RTL, "Sans", 12));
+		require(themed.jvmProperties().contains("-Dswt.autoScale=150"),
+				"zoom 150 did not map to the swt.autoScale property: " + themed.jvmProperties());
+		require("Adwaita".equals(themed.variables().get("GTK_THEME")),
+				"theme Adwaita did not map to the GTK_THEME variable");
+		require(!themed.removedVariables().contains("GTK_THEME"), "themed config removes GTK_THEME");
+		require(themed.jvmProperties().contains("-D" + SwtRenderEnvs.DIRECTION_PROPERTY + "=RTL"),
+				"RTL did not map to the direction property");
+
+		LaunchConfig deflt = SwtRenderEnvs.launch(
+				new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1));
+		require(deflt.jvmProperties().contains("-Dswt.autoScale=100"),
+				"zoom 100 did not map to the swt.autoScale property");
+		require(deflt.variables().isEmpty() && deflt.removedVariables().contains("GTK_THEME"),
+				"platform default theme must remove GTK_THEME instead of setting it");
+
+		RenderEnv systemFont = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1);
+		RenderEnv actual = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "Whatever", 11);
+		require(SwtRenderEnvs.matches(systemFont, actual),
+				"a system-font request must accept any reported system font");
+		require(!SwtRenderEnvs.matches(systemFont,
+						new RenderEnv(200, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1)),
+				"a zoom mismatch must never match");
+	}
+
+	/** Proves the concurrency bound bites: at most N tasks in flight. */
+	private void checkParallelismBound() {
+		AtomicInteger inFlight = new AtomicInteger();
+		AtomicInteger peak = new AtomicInteger();
+		List<Callable<Integer>> tasks = new ArrayList<>();
+		for (int i = 0; i < 8; i++) {
+			tasks.add(() -> {
+				int now = inFlight.incrementAndGet();
+				peak.accumulateAndGet(now, Math::max);
+				Thread.sleep(120);
+				inFlight.decrementAndGet();
+				return now;
+			});
+		}
+		List<Integer> results = ChildProcessLauncher.runBounded(2, tasks);
+		require(results.size() == 8, "bounded runner lost results");
+		require(peak.get() == 2, "expected peak concurrency exactly 2, observed " + peak.get());
+	}
+
+	/**
+	 * The zoom-200 child must genuinely render at 200 percent, proven by the
+	 * captured extent being twice the specimen's preferred size, both as
+	 * recorded in the result document and as decoded from the PNG evidence.
+	 */
+	private void checkChildZoom() {
+		ensureT05Batch();
+		ChildProcessLauncher.ChildOutcome outcome = t05Batch.get("z200");
+		require(outcome.succeeded(), "zoom-200 child failed: " + outcome.failureReason() + "\n" + outcome.stderrTail());
+		Map<?, ?> capture = soleCapture(outcome.resultDocument(), REFERENCE_SPECIMEN);
+		Specimen specimen = SpecimenCatalog.discover().byId(REFERENCE_SPECIMEN)
+				.orElseThrow(() -> new AssertionError(REFERENCE_SPECIMEN + " missing from catalog"));
+		int expectedWidth = Math.round(specimen.preferredSize().x * 2f);
+		int expectedHeight = Math.round(specimen.preferredSize().y * 2f);
+		require(intValue(capture.get("width")) == expectedWidth && intValue(capture.get("height")) == expectedHeight,
+				"child document records " + capture.get("width") + "x" + capture.get("height")
+						+ ", expected device extent " + expectedWidth + "x" + expectedHeight + " at zoom 200");
+		ImageData png = new ImageData(pngPath(outcome.directory(), capture).toString());
+		require(png.width == expectedWidth && png.height == expectedHeight,
+				"PNG evidence is " + png.width + "x" + png.height + ", not the zoom-200 extent");
+		require(intValue(((Map<?, ?>) outcome.resultDocument().get("environment")).get("zoomPercent")) == 200,
+				"document does not record zoomPercent 200");
+		out.println("      zoom-200 child rendered " + png.width + "x" + png.height + " (preferred size doubled)");
+	}
+
+	/**
+	 * The right-to-left child must genuinely mirror: same specimen, same
+	 * machine, only the direction differs, yet the pixels move.
+	 */
+	private void checkChildRtl() {
+		ensureT05Batch();
+		ChildProcessLauncher.ChildOutcome ltr = t05Batch.get("ltrB");
+		ChildProcessLauncher.ChildOutcome rtl = t05Batch.get("rtl");
+		require(ltr.succeeded() && rtl.succeeded(),
+				"a baseline child failed: " + ltr.failureReason() + " / " + rtl.failureReason());
+		int changed = pixelDiff(pngPath(ltr.directory(), soleCapture(ltr.resultDocument(), MIRROR_SPECIMEN)),
+				pngPath(rtl.directory(), soleCapture(rtl.resultDocument(), MIRROR_SPECIMEN)));
+		require(changed > 100, "RTL child rendered identical pixels to LTR (" + changed
+				+ " differing); text direction control has no effect");
+		out.println("      RTL mirrors " + MIRROR_SPECIMEN + ": " + changed + " pixels moved vs LTR");
+	}
+
+	/** The themed child must render differently from the default theme. */
+	private void checkChildTheme() {
+		ensureT05Batch();
+		ChildProcessLauncher.ChildOutcome plain = t05Batch.get("ltrA");
+		ChildProcessLauncher.ChildOutcome hc = t05Batch.get("hc");
+		require(plain.succeeded() && hc.succeeded(),
+				"a theme child failed: " + plain.failureReason() + " / " + hc.failureReason());
+		int changed = pixelDiff(pngPath(plain.directory(), soleCapture(plain.resultDocument(), REFERENCE_SPECIMEN)),
+				pngPath(hc.directory(), soleCapture(hc.resultDocument(), REFERENCE_SPECIMEN)));
+		require(changed > 500, "HighContrast child differs by only " + changed
+				+ " pixels; the GTK_THEME control appears ineffective");
+		out.println("      HighContrast theme changes " + changed + " of "
+				+ intValue(soleCapture(hc.resultDocument(), REFERENCE_SPECIMEN).get("width")) + "x"
+				+ intValue(soleCapture(hc.resultDocument(), REFERENCE_SPECIMEN).get("height"))
+				+ " pixels");
+	}
+
+	/**
+	 * A child that finds itself in a different environment than requested
+	 * refuses to lie: every entry FAILED, exit code says so. The conflicting
+	 * launch bypasses the launcher on purpose, because the launcher cannot
+	 * produce one.
+	 */
+	private void checkChildMismatch() throws Exception {
+		Path dir = Path.of(SCRATCH_ROOT_T05, "selftest-mismatch-" + Long.toString(System.currentTimeMillis(), 36));
+		int exit = spawnRawChild(dir, dir.resolve("out"), REFERENCE_SPECIMEN,
+				"-Dswt.autoScale=200",
+				"-D" + SwtRenderEnvs.ZOOM_PROPERTY + "=100",
+				"-D" + SwtRenderEnvs.THEME_PROPERTY + "=",
+				"-D" + SwtRenderEnvs.DIRECTION_PROPERTY + "=LTR",
+				"-D" + SwtRenderEnvs.FONT_FAMILY_PROPERTY + "=",
+				"-D" + SwtRenderEnvs.FONT_SIZE_PROPERTY + "=-1");
+		require(exit == CaptureChild.EXIT_ENV_MISMATCH,
+				"mismatched child exited with " + exit + ", expected " + CaptureChild.EXIT_ENV_MISMATCH);
+		Object doc = JsonParser.parse(Files.readString(dir.resolve("out").resolve("result.json")));
+		List<String> errors = ResultSchemaValidator.validate(doc);
+		require(errors.isEmpty(), "mismatch result invalid: " + String.join("; ", errors));
+		List<?> captures = (List<?>) ((Map<?, ?>) doc).get("captures");
+		require(!captures.isEmpty(), "mismatch result carries no captures");
+		for (Object o : captures) {
+			Map<?, ?> capture = (Map<?, ?>) o;
+			require("FAILED".equals(capture.get("status")),
+					"mismatched capture not recorded as failure: " + capture);
+			require(String.valueOf(capture.get("message")).contains("environment mismatch"),
+					"failure message does not name the mismatch: " + capture.get("message"));
+		}
+	}
+
+	/** A crashing child becomes failure data with its stderr; the run continues. */
+	private void checkCrashedChild() {
+		Path scratch = Path.of(SCRATCH_ROOT_T05, "selftest-crash-" + Long.toString(System.currentTimeMillis(), 36));
+		RenderEnv base = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1);
+		List<ChildProcessLauncher.ChildOutcome> outcomes = new ChildProcessLauncher(
+				ChildProcessLauncher.configFromSystemProperties(scratch)).run(List.of(
+				new ChildProcessLauncher.ChildRequest(NativeBackend.ID, base,
+						List.of("test.does.not.exist"), CaptureRuntime.Strategy.COPY_AREA, false),
+				ChildProcessLauncher.ChildRequest.of(base, REFERENCE_SPECIMEN)));
+		ChildProcessLauncher.ChildOutcome crashed = outcomes.get(0);
+		ChildProcessLauncher.ChildOutcome healthy = outcomes.get(1);
+		require(crashed.resultDocument() == null && !crashed.succeeded(),
+				"a child that exits non-zero must be recorded as failure");
+		require(String.valueOf(crashed.failureReason()).contains("exit"),
+				"failure reason does not mention the exit code: " + crashed.failureReason());
+		require(crashed.stderrTail().contains("unknown specimen id"),
+				"stderr tail lacks the child's diagnosis:\n" + crashed.stderrTail());
+		require(!crashed.failureEntries().isEmpty()
+						&& "FAILED".equals(crashed.failureEntries().get(0).status().name()),
+				"synthesized entries are not failures");
+		require(healthy.succeeded(), "the run did not continue past the crash: " + healthy.failureReason());
+		out.println("      crash recorded: '" + crashed.failureReason() + "', stderr kept ("
+				+ crashed.stderrTail().length() + " chars); sibling completed normally");
+	}
+
+	/** A hung child is killed at the timeout and recorded; the run continues. */
+	private void checkHungChild() {
+		Path scratch = Path.of(SCRATCH_ROOT_T05, "selftest-hang-" + Long.toString(System.currentTimeMillis(), 36));
+		RenderEnv base = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1);
+		ChildProcessLauncher.Config config = new ChildProcessLauncher.Config(2, 8, scratch);
+		List<ChildProcessLauncher.ChildOutcome> outcomes = new ChildProcessLauncher(config).run(List.of(
+				new ChildProcessLauncher.ChildRequest(NativeBackend.ID, base,
+						List.of(REFERENCE_SPECIMEN), CaptureRuntime.Strategy.COPY_AREA, true),
+				ChildProcessLauncher.ChildRequest.of(base, MIRROR_SPECIMEN)));
+		ChildProcessLauncher.ChildOutcome hung = outcomes.get(0);
+		ChildProcessLauncher.ChildOutcome healthy = outcomes.get(1);
+		require(hung.timedOut(), "the hanging child was not recognized as timed out");
+		require(hung.exitCode() == null, "a killed child cannot report an exit code");
+		require(String.valueOf(hung.failureReason()).contains("timed out"),
+				"failure reason does not say timed out: " + hung.failureReason());
+		require(!hung.failureEntries().isEmpty(), "no failure entries synthesized for the hung child");
+		require(healthy.succeeded(), "the run did not continue past the hang: " + healthy.failureReason());
+		out.println("      hang killed after 8 s, recorded as failure; sibling completed normally");
+	}
+
+	/** Two children's documents merge into one schema-valid run result. */
+	private void checkMergedResults() throws IOException {
+		ensureT05Batch();
+		ChildProcessLauncher.ChildOutcome first = t05Batch.get("ltrA");
+		ChildProcessLauncher.ChildOutcome second = t05Batch.get("ltrB");
+		require(first.succeeded() && second.succeeded(), "merge inputs failed to run");
+
+		Path mergedDir = Path.of(SCRATCH_ROOT_T05,
+				"selftest-merged-" + Long.toString(System.currentTimeMillis(), 36));
+		Map<String, Object> merged = ResultMerger.merge(
+				List.of(new ResultMerger.MergeInput(first.resultDocument(), first.directory()),
+						new ResultMerger.MergeInput(second.resultDocument(), second.directory())),
+				"oracle-harness/" + OracleCli.VERSION + "/selftest-merger", mergedDir);
+		Path mergedFile = mergedDir.resolve("result.json");
+		Files.createDirectories(mergedDir);
+		Files.writeString(mergedFile, JsonWriter.write(merged), StandardCharsets.UTF_8);
+
+		Object reparsed = JsonParser.parse(Files.readString(mergedFile, StandardCharsets.UTF_8));
+		List<String> errors = ResultSchemaValidator.validate(reparsed);
+		require(errors.isEmpty(), "merged result rejected by schema: " + String.join("; ", errors));
+
+		List<?> captures = (List<?>) ((Map<?, ?>) reparsed).get("captures");
+		require(captures.size() == 2, "merged document should carry both children's captures, has "
+				+ captures.size());
+		for (Object o : captures) {
+			String image = String.valueOf(((Map<?, ?>) o).get("image"));
+			require(Files.isRegularFile(mergedDir.resolve(image)),
+					"rebased image path does not resolve: " + image);
+			require(!image.startsWith("/"), "image path must stay relative: " + image);
+		}
+		out.println("      merged 2 children into " + mergedFile + ", schema-valid, images resolve");
+	}
+
+	private static Map<?, ?> soleCapture(Map<String, Object> document, String specimenId) {
+		List<?> captures = (List<?>) document.get("captures");
+		Map<?, ?> found = null;
+		for (Object o : captures) {
+			Map<?, ?> capture = (Map<?, ?>) o;
+			if (specimenId.equals(capture.get("specimen")))
+				found = capture;
+		}
+		if (found == null)
+			throw new AssertionError("document has no capture of '" + specimenId + "'");
+		if (!"CAPTURED".equals(found.get("status")))
+			throw new AssertionError("capture of '" + specimenId + "' is " + found.get("status"));
+		return found;
+	}
+
+	private static Path pngPath(Path childDir, Map<?, ?> capture) {
+		return childDir.resolve(String.valueOf(capture.get("image"))).normalize();
+	}
+
+	private static int intValue(Object value) {
+		return ((Number) value).intValue();
+	}
+
+	/** Counts pixels that differ between two PNG files, numbers only. */
+	private static int pixelDiff(Path a, Path b) {
+		ImageData dataA = new ImageData(a.toString());
+		ImageData dataB = new ImageData(b.toString());
+		if (dataA.width != dataB.width || dataA.height != dataB.height)
+			throw new AssertionError("extents differ: " + dataA.width + "x" + dataA.height + " vs "
+					+ dataB.width + "x" + dataB.height);
+		int changed = 0;
+		for (int y = 0; y < dataA.height; y++) {
+			for (int x = 0; x < dataA.width; x++) {
+				if (dataA.getPixel(x, y) != dataB.getPixel(x, y))
+					changed++;
+				else if (dataA.alphaData != null && dataB.alphaData != null
+						&& dataA.getAlpha(x, y) != dataB.getAlpha(x, y))
+					changed++;
+			}
+		}
+		return changed;
+	}
+
+	/**
+	 * Spawns CaptureChild directly with arbitrary JVM options, so tests can
+	 * create configurations the launcher itself would never produce.
+	 * Returns the child's exit code.
+	 */
+	private int spawnRawChild(Path dir, Path outDir, String specimenId, String... jvmOptions) throws Exception {
+		List<String> command = new ArrayList<>();
+		command.add("env");
+		command.addAll(List.of("-u", "WAYLAND_DISPLAY", "-u", "XDG_SESSION_TYPE", "-u", "DISPLAY"));
+		command.addAll(List.of("GDK_BACKEND=x11", "LIBGL_ALWAYS_SOFTWARE=1"));
+		command.add("xvfb-run");
+		command.addAll(List.of("-a", "-s", "-screen 0 1600x1200x24"));
+		command.add(ProcessHandle.current().info().command().orElse("java"));
+		command.add("--enable-native-access=ALL-UNNAMED");
+		command.add("-Djava.library.path=" + System.getProperty("java.library.path", ""));
+		command.add("-Doracle.repoRoot=" + repoRoot);
+		for (String option : jvmOptions)
+			command.add(option);
+		command.add("-cp");
+		command.add(System.getProperty("java.class.path"));
+		command.add(CaptureChild.class.getName());
+		command.add("--out");
+		command.add(outDir.toString());
+		command.add(specimenId);
+
+		Files.createDirectories(dir);
+		ProcessBuilder pb = new ProcessBuilder(command);
+		pb.redirectOutput(dir.resolve("raw.out.log").toFile());
+		pb.redirectError(dir.resolve("raw.err.log").toFile());
+		Process process = pb.start();
+		if (!process.waitFor(180, TimeUnit.SECONDS))
+			process.destroyForcibly();
+		return process.exitValue();
 	}
 
 	private void requireExpectedExtent(CapturedImage image, Specimen captured) {

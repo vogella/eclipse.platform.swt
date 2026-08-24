@@ -444,3 +444,43 @@ Coordinator verification, run independently of the agents' claims:
 Integration finding worth keeping: both tasks were correct alone and broken together. T13 measured determinism against the skeleton's fixed 150 ms settle; T04 replaced it with an event-driven drain, and GTK theme CSS transitions animate on the frame clock, so the event queue can fall quiet while pixels are still changing. The fix is capture-until-stable, requiring one rendering to persist byte-identical across a pumped 250 ms window, bounded at 60 grabs and 5 s. The agent measured and rejected the weaker "two consecutive identical grabs" design first, which would have passed the check while still capturing mid-animation frames.
 Cost: `selftest` grew from about 20 s to 60-80 s. Accepted: determinism by construction is worth more than a fast check that lies.
 Board updates: T04 and T13 to MERGED.
+
+### T05 handoff, 2026-08-24
+Branch: oracle/T05, one commit; this record ships inside that commit
+Scope delivered:
+Environment control per decision D6. `impl/LaunchConfig` + `SwtRenderEnvs.launch(RenderEnv)` turn a requested environment into the process settings that realise it on Linux/GTK: `-Dswt.autoScale=<zoom>` (the ADR-001 canonical mechanism), `GTK_THEME` set for a named theme and removed again for the platform default so an inherited value cannot silently win, plus `oracle.env.*` properties carrying the requested environment into the child. Direction and base font are realised per control by `BasicSpecimenContext.configure` (the SPI contract for orientation); GTK's locale-derived default cannot be switched without an installed RTL locale and SWT exposes no Display-wide switch, so the process records its direction in a property and pixels prove effect. `SwtRenderEnvs.current` now measures zoom through `DPIUtil.getDeviceZoom()` instead of deriving it from `Display.getDPI()`, because on GTK the reported DPI does not follow swt.autoScale; the new child-side verification caught that first live (it refused to capture, claiming pinned-to-100 while 200 was requested, instead of silently mislabelling results). `matches()` compares semantically: a system-font request accepts whatever font the machine reports, everything else must match exactly.
+`tools/CaptureChild` generalises `CaptureProbe` from one hardcoded specimen to a driven batch: one JVM = one backend x one environment, any number of specimens by catalog id, one schema-v1 `result.json` plus PNG evidence per child. After Display creation it verifies what it really got (measured device zoom, GTK_THEME) against what was requested and refuses to lie: on mismatch every specimen is recorded FAILED with both environments named and exit code 3 says so. Requested non-empty fonts are created eagerly so a bad pin fails before any capture. Exit codes: 0 ok, 2 usage/unknown specimen, 3 environment mismatch, 4 font, 5 backend unavailable, 6 some captures FAILED (document still written).
+`impl/ChildProcessLauncher` spawns one child per (backend, environment): each child gets its own Xvfb display (`DISPLAY` stripped, `xvfb-run -a` picks a free number; children never share the parent's server), logs go to files (no pipe deadlocks), a per-child wall-clock timeout kills hung children via destroyForcibly, and every outcome is data: valid documents are parsed and schema-validated, crashes/hangs become synthesized FAILED entries carrying the reason and stderr tail while sibling children continue. Parallelism is bounded by a fixed pool: default 4, measured (below), overridable via `-Doracle.children.parallelism`; timeout via `-Doracle.child.timeoutSeconds`.
+`impl/ResultMerger` merges child documents strictly at the JSON level (no second interchange format): requires identical environments (the frozen schema carries exactly one per document, so mixed-environment merges are refused rather than mislabelled), concatenates captures/comparisons and rebases image paths to stay relative to the merged document's directory.
+Selftest grows 15 -> 24 checks: launch-config mapping, concurrency bound honored (peak exactly N), zoom proven by captured size in document AND decoded PNG (280x80 for a 140x40 specimen at zoom 200), RTL proven by pixels (label.default moves 644 px vs LTR), HighContrast theme proven by pixels (5472 of 5600 px change), wrong-environment refusal, crashed-child survivability with stderr kept, hung-child timeout at 8 s with sibling completing, and two-children merge validating against the frozen schema with resolving image paths.
+Parallelism measurement (idle 8-vCPU machine, software GL, batches of identical children capturing button/label/link):
+MAX=1 WALL=6.8s AVG_CHILD=1.12s | MAX=2 WALL=3.4s AVG=1.12s | MAX=4 WALL=2.4s AVG=1.22s | MAX=6 WALL=1.3s AVG=1.29s | 8 children: MAX=6 AVG=1.45s, MAX=8 AVG=1.52-1.78s FAILED=0 everywhere.
+Per-child time is flat up to 4 (+0%), degrades past CPU count (+36-59% at 8). Sustainable concurrency: 4; that is the shipped default.
+Out of scope, deliberately: cross-backend comparison and verdicts (T20 drives these classes from the reserved `run` verb; no new CLI verb added since SPI.md freezes the verb table), HTML report (T19), diff engine (T06), catalog extensions (T14/T15). Untouched: `build.sh`, `verify-backend.sh`, `build-harness.sh`, the `oracle` wrapper, `spi/`, `catalog/`, `CaptureRuntime`, `ExactDiffer`.
+Verified with:
+
+```
+$ tools/oracle/build-harness.sh && tools/oracle/oracle selftest
+CHECK 14 catalog-triple-render-deterministic: PASS
+CHECK 15 launch-config-maps-environment-to-process-settings: PASS
+CHECK 16 child-parallelism-bound-honored: PASS
+CHECK 17 child-zoom-proven-by-captured-size: PASS
+      zoom-200 child rendered 280x80 (preferred size doubled)
+CHECK 18 child-mirrors-right-to-left: PASS
+      RTL mirrors label.default: 644 pixels moved vs LTR
+CHECK 19 child-theme-takes-effect: PASS
+      HighContrast theme changes 5472 of 140x40 pixels
+CHECK 20 child-refuses-wrong-environment: PASS
+CHECK 21 crashed-child-recorded-run-continues: PASS
+      crash recorded: 'child exited with code 2 and wrote no usable result document', stderr kept (138 chars)
+CHECK 22 hung-child-times-out-run-continues: PASS
+      hang killed after 8 s, recorded as failure; sibling completed normally
+CHECK 23 merged-child-results-validate-against-schema: PASS
+      merged 2 children into /tmp/opencode/oracle-t05/selftest-merged-.../result.json, schema-valid, images resolve
+SELFTEST-OK: 24/24 checks passed (63.7 s)
+EXIT=0
+```
+
+Four consecutive green full runs (69.0, 65.6, 64.6, 61.1 s) plus a fifth after the last edit (63.7 s), all headless via the wrapper. Pixel evidence cross-checked with ImageMagick from the shell only (compare -metric AE, identify); no image read into context.
+Known gaps: CHECK 11 (xgrab byte-agreement at zoom 100, pre-existing T04/T13 code untouched by this task) flaked once during development and passed in all five full runs around it; its history-dependence is already documented by T13. Font pinning trusts Pango: an unknown family is silently substituted rather than detected (detection needs pango fontset introspection; suggested for T09/T21). Merged documents reference child images across subdirectories, relative to the merged document's own directory, as RESULT-SCHEMA.md prescribes; consumers must resolve paths that way. Parallelism was measured on this machine only; CI hardware should tune `-Doracle.children.parallelism`. Children validate `--backend native` only until the T10/T11 adapters exist.
+Open questions: none.
