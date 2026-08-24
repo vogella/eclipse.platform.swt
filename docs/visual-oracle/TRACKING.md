@@ -79,8 +79,8 @@ States: `BLOCKED` waiting on a dependency, `READY` dispatchable now, `CLAIMED` a
 | T02 | Target selection and build recipe | FOUNDATION | MERGED | opencode bqd2a78sf | none | Verified by coordinator, see integration log |
 | T03 | Harness skeleton and SPI freeze | FOUNDATION | MERGED | opencode (7 attempts) | T02 | SPI frozen in SPI.md, selftest 8/8 verified by coordinator |
 | T04 | Capture runtime | CORE | MERGED | opencode (1 attempt) | T01, T03 | Implements copyarea primary, xgrab fallback; must fix xgrab crop origin at zoom>100 |
-| T05 | Environment control | CORE | READY | | T03 | |
-| T06 | Diff engine | CORE | READY | | T03 | |
+| T05 | Environment control | CORE | MERGED | opencode | T03 | |
+| T06 | Diff engine | CORE | MERGED | opencode | T03 | |
 | T07 | Defect classification | CORE | BLOCKED | | T06 | |
 | T08 | Result model and JSON schema | CORE | READY | | T03 | |
 | T09 | Backend adapter: native | BACKENDS | READY | | T03 | |
@@ -88,10 +88,10 @@ States: `BLOCKED` waiting on a dependency, `READY` dispatchable now, `CLAIMED` a
 | T11 | Backend adapter: SWT.SKIA canvas | BACKENDS | READY | | T02, T03 | |
 | T12 | Determinism lint | QUALITY | BLOCKED | | T04 | |
 | T13 | Catalog: buttons and labels | CATALOG | MERGED | opencode (1 attempt + follow-up) | T03 | |
-| T14 | Catalog: text entry | CATALOG | READY | | T03 | |
-| T15 | Catalog: item widgets | CATALOG | READY | | T03 | XL, split on claim |
-| T16 | Catalog: containers | CATALOG | READY | | T03 | |
-| T17 | Catalog: range widgets | CATALOG | READY | | T03 | Freeze animation |
+| T14 | Catalog: text entry | CATALOG | MERGED | opencode | T03 | |
+| T15 | Catalog: item widgets | CATALOG | MERGED | opencode | T03 | XL, split on claim |
+| T16 | Catalog: containers | CATALOG | MERGED | opencode | T03 | |
+| T17 | Catalog: range widgets | CATALOG | MERGED | opencode | T03 | Freeze animation |
 | T18 | Catalog: state coverage generator | CATALOG | BLOCKED | | T13 | |
 | T19 | HTML report | OUTPUT | BLOCKED | | T08 | |
 | T20 | Agent CLI | OUTPUT | BLOCKED | | T04, T08 | |
@@ -234,6 +234,15 @@ Adding agents there produces conflicts and rework, not throughput.
 The temptation to parallelize the SPI freeze in Phase 1 should be resisted; it is the one task where a second opinion is worth more than a second worker.
 
 ## Current status
+
+**11 of 25 tasks merged**: T01 to T06, T13 to T17. The harness builds, runs headless, and passes 33 checks covering capture, environment control, diffing and a 149-specimen catalog across 19 widget families.
+
+### Known issue: CHECK 14 is load-sensitive
+
+`catalog-triple-render-deterministic` failed once in roughly nine consecutive runs, always while several agents were competing for the machine, and passed six times consecutively once the machine was idle.
+The capture runtime bounds its stability wait at 60 grabs and 5 seconds; under heavy CPU contention a GTK theme transition can outlast that bound, and the specimen is then reported as non-deterministic when it is really the machine that was too slow.
+This is a false negative, not a false pass, so it cannot let a rendering defect through. It does make an unattended CI run unreliable, and it must be fixed before T21 puts this in CI.
+Owner: T12, which already owns the determinism lint. The likely fix is to scale the bound with observed system load, or to retry a timed-out specimen once and fail only on a second timeout, distinguishing "did not settle" from "settled differently".
 
 Phases 0 and 1 are complete: T01, T02 and T03 are merged, the SPI is frozen in `SPI.md`, and `tools/oracle/oracle selftest` passes 8 of 8 checks from a clean checkout.
 
@@ -589,3 +598,12 @@ Known gaps:
 3. Pre-existing cold-capture variance, measured on this task's families too: the very first captures of a fresh process can catch a stale-damage state that later captures do not. Reproduced minimally with `RepeatProbe`: four consecutive in-process captures of `coolbar.one.row` gave shas r0=6b3bd84f..., r1=r2=r3=ba6ec19f... with AE(r0,r1)=1294 px, bbox 218x72+10+0, i.e. an unpainted black strip of stale layout damage at the right end (label edge at x=210 vs x=226), stable within each state across the 250 ms observation window. Which capture flaked depended on system load, not on specimen type (button.push.default flaked once as first capture; expandbar.collapsed.default once; coolbar.one.row also once as tenth capture under load average ~7), and standalone warm sequences were byte-stable across processes. The selftest is unaffected because CHECK 14 always runs after dozens of earlier captures; a harness change that ever captures any widget cold would flake. Same owner suggestion as T15's gaps 2/3: investigate allocation/damage sequencing in `CaptureRuntime.host`.
 4. Baseline note from session start: the first two full selftest runs today failed pre-existing CHECKs 2/3/9/10 identically (same sha pair be37fde1... vs 2fbe8a0f..., the latter being T06's recorded stable sha) while standalone probes were byte-stable; a third run passed without any code change, matching T06's GTK/fontconfig warm-up observation and the load correlation above. Recorded here so the orchestrator does not mistake a cold-machine first run for a regression.
 Open questions: none.
+
+### 2026-08-24 merged T05, T06, T14, T15, T16, T17
+Conflicts: `SelfTest.java` and appended handoff records on nearly every branch, resolved by the coordinator by unioning both sides; T06 additionally left a stale `ExactDiffer` import behind its own replacement `ClusterDiffer`, removed during integration.
+Coordinator verification, each run independently at the rebased commit: T05 24/24, T06 33/33, T14 33/33, T15 33/33, T16 33/33, T17 33/33.
+Catalog now holds 149 specimens across 19 families: button 23, text 14, table 13, label 9, progressbar 9, slider 9, scale 8, toolbar 8, group 7, clabel 6, combo 6, list 6, tree 6, scrollbar 5, tabfolder 5, coolbar 4, expandbar 4, link 4, sash 3.
+Findings worth keeping:
+- T14 solved the caret problem by clearing GTK can-focus on the control and on an editable combo's inner GtkEntry before realisation, so no caret exists rather than trying to capture between blinks.
+- An agent used `git stash` to test whether a failure was pre-existing. The stash stack is repository-wide, so this could have stranded work where a parallel agent would pop it. No damage occurred; the rule is now in "Work protocol".
+- Parallelism: four agents ran concurrently with zero provider drops on two of them and three on another, while load reached 22 on 8 cores. The machine, not the endpoint, is the binding constraint, because each agent runs a 60 to 160 second selftest repeatedly.
