@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.swt.SWT;
@@ -45,8 +46,11 @@ import org.eclipse.swt.visualoracle.spi.UnsupportedSpecimenException;
  * The runtime owns everything around the pixels: one shell per display,
  * reused across specimens (children disposed and bounds reset in between, so
  * specimen N cannot see anything of specimen N-1), event loop settling until
- * the widget has really finished painting, and a forced final redraw before
- * pixels are taken.
+ * the widget has really finished painting, a forced final redraw before
+ * pixels are taken, and a stability check that returns pixels only once one
+ * rendering has persisted unchanged across a sustained observation window,
+ * which is what makes theme transition animation unable to leak into
+ * captures.
  *
  * Two strategies exist behind the same interface: {@link Strategy#COPY_AREA}
  * is the primary path and {@link Strategy#X11_GRAB} is the fallback for
@@ -66,6 +70,23 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	private static final int MARGIN = 12;
 	private static final int SETTLE_TIMEOUT_MILLIS = 5000;
 	private static final int MAX_SETTLE_CYCLES = 50;
+	/** Safety ceiling for the pixel-pair loop; correctness never depends on it. */
+	private static final int MAX_PIXEL_GRABS = 60;
+	private static final long PIXEL_SETTLE_TIMEOUT_MILLIS = 5000;
+	/**
+	 * How long the grabbed bytes must persist unchanged, while the event loop
+	 * stays live, before they are accepted as the settled rendering. Must
+	 * outlast any transient state: measured start latencies of GTK theme
+	 * transitions are below 100 ms and their animation spans around 200 ms
+	 * (SCR-1), so no mid-transition value survives a 250 ms observation.
+	 */
+	private static final long STABILITY_HOLD_MILLIS = 250;
+	/**
+	 * Event-loop time between two grabs of the stability check, roughly one
+	 * display refresh period, so any frame the clock owes the window can
+	 * actually land before the next grab.
+	 */
+	private static final long FRAME_PERIOD_MILLIS = 17;
 	private static final int GRAB_TIMEOUT_SECONDS = 30;
 
 	private final Strategy strategy;
@@ -95,10 +116,7 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		try {
 			Control control = host(specimen, display, ctx);
 			settle(display, control);
-			return switch (strategy) {
-				case COPY_AREA -> grabByCopyArea(control);
-				case X11_GRAB -> grabByX11(control);
-			};
+			return grabWithStablePixels(control);
 		} catch (UnsupportedSpecimenException | UnsupportedEnvironmentException e) {
 			throw e;
 		} catch (CaptureFailedException e) {
@@ -179,24 +197,21 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	}
 
 	/**
-	 * Waits until {@code control} has genuinely finished painting.
+	 * Waits until {@code control} has painted once and drained its event
+	 * backlog.
 	 *
 	 * Phase 1 waits for the first Paint event, which proves the widget is
 	 * realized and drew once. Phase 2 then forces pending damage out with
 	 * {@link Control#update()} and drains the queue until two consecutive
-	 * cycles pass without any paint, resize or move activity.
+	 * cycles pass without any paint, resize or move activity, so the vast
+	 * majority of specimens are fully settled by the time this returns.
 	 *
-	 * That condition is sufficient because on X11/GTK all drawing happens in
-	 * response to events processed on the display thread: after the first
-	 * paint, any remaining work can only arrive as further configure/expose
-	 * events. Forcing them out and seeing a full drain produce no activity
-	 * means every damage region has been drawn into the window buffer and no
-	 * redraw is queued; nothing can change the pixels afterwards without a
-	 * new event arriving spontaneously. The second quiet cycle closes the
-	 * race where an expose was already queued but not yet dispatched when the
-	 * first quiet check ran. Time-driven repaints (animations) are outside
-	 * this guarantee; they are the determinism lint's concern (T12), not the
-	 * settler's.
+	 * This drain alone is not a stability guarantee: theme CSS transitions
+	 * redraw on the frame clock without producing paint/resize/move events,
+	 * so pixels can still be changing while the queue looks quiet. Proving
+	 * that the pixels themselves no longer change is the stability check's
+	 * job ({@link #grabWithStablePixels}); settling here only lets that
+	 * check start from an already mostly-quiet widget.
 	 */
 	private void settle(Display display, Control control) {
 		Activity activity = new Activity();
@@ -247,6 +262,75 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 			Thread.sleep(5);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
+		}
+	}
+
+	/**
+	 * Grabs pixels until one byte-identical rendering has persisted across a
+	 * pumped observation window of {@link #STABILITY_HOLD_MILLIS} and returns
+	 * it.
+	 *
+	 * This, not a guessed delay, is what makes a capture deterministic by
+	 * construction. On GTK every late pixel change, including theme CSS
+	 * transitions running on the frame clock, reaches the captured buffer
+	 * through frames; the loop keeps the event loop live and regrabs every
+	 * {@link #FRAME_PERIOD_MILLIS}, so any frame the clock owes the window
+	 * lands and is compared. Accepting the first pair of identical grabs is
+	 * not enough, measured on this stack: a transition can start tens of
+	 * milliseconds after hosting (the quiet gap before its first frame) and
+	 * easing can hold one intermediate value for a frame or two, and in both
+	 * cases consecutive grabs agree while animation is still pending or in
+	 * flight. Requiring one unchanged value to persist across an interval
+	 * longer than any measured start latency plus transition span closes
+	 * both: whatever survives 250 ms of continuous observation has no theme
+	 * transition left in it. The event-driven drain in {@link #settle} does
+	 * the coarse work first; widgets whose theme animates them simply keep
+	 * resetting the hold until their transition has finished, however long
+	 * the theme happens to make that. The attempt and time ceilings are
+	 * safety nets only: they turn "never settles", such as a blinking caret
+	 * would be, into loud failure data instead of a silently wrong baseline.
+	 *
+	 * Only {@link Strategy#COPY_AREA} is verified this way. Measured on GTK3
+	 * under Xvfb, the X11 fallback must instead keep T04's single grab right
+	 * after the drain: once extra frame cycles elapse between mapping and
+	 * importing, the imported window content develops rounded-corner pixels
+	 * that diverge from what copyArea reports (44 of 5600 pixels on
+	 * {@code button.push.default}) and vary with the capture's history
+	 * rather than converging with elapsed time, so delaying imports amplifies
+	 * variance there instead of reducing it. Byte agreement between the
+	 * strategies is enforced separately by the selftest at zoom 100 and 200.
+	 */
+	private CapturedImage grabWithStablePixels(Control control) {
+		if (strategy == Strategy.X11_GRAB)
+			return grabByX11(control);
+		Display display = control.getDisplay();
+		CapturedImage candidate = null;
+		long heldSince = 0;
+		long deadline = System.currentTimeMillis() + PIXEL_SETTLE_TIMEOUT_MILLIS;
+		for (int grabs = 1;; grabs++) {
+			if (grabs > MAX_PIXEL_GRABS || System.currentTimeMillis() >= deadline)
+				throw new CaptureFailedException("'" + control.getClass().getSimpleName()
+						+ "' never held one rendering stable for " + STABILITY_HOLD_MILLIS
+						+ " ms within " + PIXEL_SETTLE_TIMEOUT_MILLIS + " ms and "
+						+ MAX_PIXEL_GRABS + " grabs; its rendering does not settle");
+			pump(display, FRAME_PERIOD_MILLIS);
+			CapturedImage current = grabByCopyArea(control);
+			if (candidate != null && Arrays.equals(candidate.pngBytes(), current.pngBytes())) {
+				if (System.currentTimeMillis() - heldSince >= STABILITY_HOLD_MILLIS)
+					return current;
+			} else {
+				candidate = current;
+				heldSince = System.currentTimeMillis();
+			}
+		}
+	}
+
+	/** Dispatches events for the given duration, so scheduled frames can run. */
+	private static void pump(Display display, long millis) {
+		long end = System.currentTimeMillis() + millis;
+		while (System.currentTimeMillis() < end) {
+			if (!display.readAndDispatch())
+				sleepBriefly();
 		}
 	}
 

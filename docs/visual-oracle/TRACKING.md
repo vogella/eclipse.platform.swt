@@ -151,6 +151,13 @@ Rejection is cheap and carries no judgment; it is a routing decision, not a verd
 
 A worker that hits an SPI limitation stops and appends an entry here rather than editing the interface.
 
+### SCR-1: capture runtime samples GTK theme state transitions mid-flight [RESOLVED]
+Task: T13
+Interface: `impl/CaptureRuntime.java` (settling); no frozen SPI file touched
+Problem: GTK3 themes render widget state changes with a CSS transition; Adwaita declares `transition: all` (~200 ms) on the `button` node, so a push button whose state differs from the default at map time was captured mid-transition. The skeleton runtime's fixed 150 ms settle sampled the animation; measured 2-4 distinct frames per process below 250 ms settle, byte-identical across processes only from roughly 400 ms. This cost the catalog three specimens: `button.push.disabled`, `button.check.selected`, `button.radio.selected`. After the T04 merge the same failure resurfaced for `button.toggle.selected`, because T04's event-driven drain cannot see frame-clock redraws: the queue goes quiet while the pixels are still interpolating.
+Resolution: fixed in `impl/CaptureRuntime` (change authorized by the orchestrator's T13 follow-up brief after T04's agent finished): a capture is now returned only once one rendering persists byte-identical across a pumped 250 ms observation window, regrabbing every frame period and resetting on any change, bounded at 60 grabs / 5 s with a loud failure if a rendering never settles. Stability is proven by sustained observation, not timed by a fixed settle delay; quiet widgets pay only the observation window. All three dropped specimens are restored and pass the triple-render check, measurably distinct from their defaults (ImageMagick AE against the base variant: push disabled 5240, check selected 256, radio selected 212).
+State: CLOSED, superseded by the settling fix in oracle/T13; the T05 animation-disabling recipe stays unnecessary so far
+
 Template:
 
 ```
@@ -384,4 +391,40 @@ EXIT=0
 Five consecutive green runs (9.3, 22.2, 24.5, 22.5, 9.3 s), all headless through the wrapper.
 Crop-fix counterfactual (scratch probe, `-Dswt.autoScale=200`, same button): pre-fix formula computes crop origin 24,24 where the true device rect starts at 12,12; copyAreaSha=`44983467…`, prefixFormulaSha=`5c1780b7…`, `agree=false`, so CHECK 12 would have failed before the fix. At zoom 100 both coincide, `agree=true`, matching the spike's own history.
 Known gaps: under genuine GDK scale factors (`GDK_SCALE=2`) the X window pixmap and the application-side cairo surface are two different renderings; measured residual 2045 of 56320 pixels differing, maxChannelDelta 138, best shift alignment no better than identity, i.e. antialiasing resampling, not offset. Byte agreement between the strategies there is impossible by construction; extents remain exact. The canonical zoom-200 environment stays `-Dswt.autoScale=200` (ADR-001, run-spike.sh); T05/T21 should pin that mechanism whenever strategies are compared across zooms. The fallback needs ImageMagick `import` and gtk/X11 and reports their absence as data (`CaptureFailedException`/`UnsupportedEnvironmentException`). Fractional zooms (150) follow the same code path but are only proven at 100 and 200. Note: SPI.md enumerates package `tools` as "SelfTest and OracleCli"; `CaptureProbe` joins them as selftest infrastructure, no frozen signature touched.
+Open questions: none.
+
+### T13 handoff, 2026-08-24
+Branch: oracle/T13, one commit amended onto the merged T04 capture runtime; this record ships inside that commit
+Scope delivered:
+First catalog families, contributed as four `SpecimenModule` classes in `org.eclipse.swt.visualoracle.catalog` (discovered automatically, no shared registration file touched): `ButtonModule` (23 specimens: PUSH default/disabled/image/image+text/left/right/border/flat/wrap, CHECK default/selected/disabled/image/right-aligned, RADIO default/selected/disabled, TOGGLE default/selected, ARROW up/down/left/right), `LabelModule` (9: text left/center/right, image, image+text, wrap+border, disabled, separators horizontal and vertical), `CLabelModule` (6: text, image right/center, SHADOW_IN, SHADOW_OUT, truncated long text), `LinkModule` (4: markup, plain, multiline, disabled). 42 specimens total. `impl/ButtonPushSpecimen` moved into `ButtonModule.Push`, id `button.push.default` unchanged; the one SelfTest reference updated. New `tools/CatalogCheck` wired into `SelfTest` as CHECK 13 (`catalog-discovered-and-wellformed`: module presence in discovery, unique lowercase dot-separated ids, positive preferred sizes) and CHECK 14 (`catalog-triple-render-deterministic`: every discovered specimen captured three times in one process, byte-identical PNGs required at exactly `preferredSize()`). CHECK 14 iterates whatever `SpecimenCatalog.discover()` finds, so it already lints future families from T14-T17 for free.
+Follow-up settling fix, in `impl/CaptureRuntime` (change authorized by the orchestrator's follow-up brief; T04's agent is finished): a capture is returned only once one rendering persists byte-identical across a 250 ms observation window during which the event loop stays live and pixels are regrabbed every frame period, resetting on any change; bounded at 60 grabs / 5 s with a loud `CaptureFailedException` if a rendering never settles. Why that condition is sufficient is documented inline where T04 documented its own: every late pixel change on GTK, theme CSS transitions included, must reach the captured buffer through frames, and no transient value survives sustained observation longer than any measured transition start latency (below 100 ms) plus animation span (around 200 ms). The first design, returning after two consecutive identical grabs, was measured insufficient and is not what ships: instrumented timelines of `button.push.disabled` showed captures returning during the quiet gap before a transition starts (identical grabs at t=17/38 ms, wrong state) and on a two-frame mid-animation plateau. Deterministic by construction instead of timed by construction; quiet widgets pay only the observation window, which is why CHECK 14 went from failing on `button.toggle.selected` to passing all 42 specimens without weakening anything, at the cost of a slower selftest (~60-82 s, was ~20 s). The three specimens dropped under SCR-1 (`button.push.disabled`, `button.check.selected`, `button.radio.selected`) are restored and pass; measured distinct from their defaults (ImageMagick AE: 5240 / 256 / 212). The X11_GRAB fallback deliberately keeps T04's single grab directly after the drain: measured on this stack, once extra frame cycles elapse the imported window content diverges from what copyArea reports (44 of 5600 corner pixels on the reference button) in a history-dependent way rather than converging, so delaying imports amplifies variance there; strategy byte-agreement stays enforced by CHECKs 11 and 12.
+Out of scope, deliberately:
+No focus-state specimen: GTK auto-focuses the lone child on shell open regardless of specimen intent (probed: `FOCUS-CONTROL=Button`; arrow buttons and labels never take focus), and focus is pixel-neutral under GTK's focus-visible heuristic for every style here (`focusChangesPixels=false` for all ten widget styles probed), so a focused variant would render identically to these specimens anyway.
+Still dropped: `clabel.disabled`, pixel-identical to `clabel.default` (AE=0): CLabel is custom-drawn and never consults its enabled state, verified in source, so that variant can never show anything. This reason is unrelated to settling and untouched by the fix.
+Known gaps: sibling-variant distinctness verified by ImageMagick AE metrics only; no human has eyeballed any image, per project rules. On this Xvfb's icon theme, ARROW LEFT and RIGHT resolve to identical glyphs (AE=0 between them; vertical pairs differ ~53-65 px); the two styles stay covered since they are distinct SWT styles and differ on real desktop themes, but cross-backend diffs of those two will be trivially EQUAL in this environment. Specimen images are drawn programmatically (system colors, fixed geometry) and disposed via DisposeListener; no file assets. CatalogCheck hardcodes its four module classes in FAMILY_MODULES; a T14-T17 agent adds theirs by one list entry (or the orchestrator generalizes to auto-discovery later). The X11 fallback's determinism rests on T04's drain timing alone, not on the stability observation; if a future specimen class needs the fallback against animated popups, that combination is unproven territory.
+Verified with:
+
+```
+$ tools/oracle/build-harness.sh && tools/oracle/oracle selftest
+CHECK 0 backend-classpath: PASS
+CHECK 1 specimen-created-and-captured: PASS
+CHECK 2 capture-is-deterministic: PASS
+CHECK 3 differ-reports-equality: PASS
+CHECK 4 differ-detects-altered-image: PASS
+CHECK 5 result-json-conforms-to-schema: PASS
+CHECK 6 verify-backend-fails-on-disabled-canvas: PASS
+CHECK 7 verify-backend-passes-on-enabled-canvas: PASS
+CHECK 8 shell-reuse-prevents-cross-talk: PASS
+CHECK 9 throwing-specimen-reported-as-failure: PASS
+CHECK 10 capture-deterministic-across-processes: PASS
+CHECK 11 xgrab-agrees-with-copyarea-at-zoom100: PASS
+CHECK 12 xgrab-agrees-with-copyarea-at-zoom200: PASS
+CHECK 13 catalog-discovered-and-wellformed: PASS
+CHECK 14 catalog-triple-render-deterministic: PASS
+SELFTEST-OK: 15/15 checks passed (81.9 s)
+EXIT=0
+```
+
+Three consecutive green runs (81.9, 76.0, 60.4 s), each line of CHECK 14 printing `deterministic (<w>x<h>)` for all 42 specimens, restored ones included. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24).
+Targeted flake hunt on the restored troublemaker: 40 rounds of triple-rendering `button.push.disabled` through the real runtime, first settling design 6 rounds mismatched, shipped persistence-based design 0.
 Open questions: none.

@@ -19,7 +19,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
-import org.eclipse.swt.visualoracle.impl.ButtonPushSpecimen;
+import org.eclipse.swt.visualoracle.spi.SpecimenCatalog;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
 
@@ -47,7 +47,9 @@ public final class CaptureProbe {
 				System.exit(1);
 			}
 			CapturedImage image = new CaptureRuntime(strategy).capture(
-					new ButtonPushSpecimen(), backend, SwtRenderEnvs.current(display));
+					SpecimenCatalog.discover().byId("button.push.default")
+							.orElseThrow(() -> new IllegalStateException("reference specimen button.push.default is missing from the catalog")),
+					backend, SwtRenderEnvs.current(display));
 			System.out.println("CAPTURE sha256=" + hex(image.pngBytes())
 					+ " width=" + image.width() + " height=" + image.height());
 			display.dispose();

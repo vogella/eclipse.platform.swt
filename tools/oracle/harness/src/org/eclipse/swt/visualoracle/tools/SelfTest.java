@@ -33,8 +33,8 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.visualoracle.catalog.ButtonModule;
 import org.eclipse.swt.visualoracle.impl.BasicCapturedImage;
-import org.eclipse.swt.visualoracle.impl.ButtonPushSpecimen;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.ExactDiffer;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
@@ -117,6 +117,9 @@ public class SelfTest {
 			check(index++, "capture-deterministic-across-processes", () -> checkAcrossProcesses());
 			check(index++, "xgrab-agrees-with-copyarea-at-zoom100", () -> checkXGrabZoom100());
 			check(index++, "xgrab-agrees-with-copyarea-at-zoom200", () -> checkXGrabZoom200());
+			check(index++, "catalog-discovered-and-wellformed", CatalogCheck::checkDiscovery);
+			check(index++, "catalog-triple-render-deterministic", () ->
+					CatalogCheck.checkTripleRender(display, nativeBackend, env, out));
 		} catch (Throwable t) {
 			out.println("SELFTEST-ABORTED: " + t);
 			t.printStackTrace(out);
@@ -174,7 +177,7 @@ public class SelfTest {
 		if (!"gtk".equals(SWT.getPlatform()))
 			throw new IllegalStateException("expected gtk platform, found: " + SWT.getPlatform());
 		env = SwtRenderEnvs.current(display);
-		specimen = new ButtonPushSpecimen();
+		specimen = new ButtonModule.Push();
 	}
 
 	private void checkSpecimenCapture() {
