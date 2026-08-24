@@ -72,7 +72,7 @@ States: `BLOCKED` waiting on a dependency, `READY` dispatchable now, `CLAIMED` a
 | T01 | Capture strategy spike and ADR | FOUNDATION | MERGED | opencode + coordinator | none | copyarea chosen, print disqualified |
 | T02 | Target selection and build recipe | FOUNDATION | MERGED | opencode bqd2a78sf | none | Verified by coordinator, see integration log |
 | T03 | Harness skeleton and SPI freeze | FOUNDATION | MERGED | opencode (7 attempts) | T02 | SPI frozen in SPI.md, selftest 8/8 verified by coordinator |
-| T04 | Capture runtime | CORE | READY | | T01, T03 | Implements copyarea primary, xgrab fallback; must fix xgrab crop origin at zoom>100 |
+| T04 | Capture runtime | CORE | MERGED | opencode (1 attempt) | T01, T03 | Implements copyarea primary, xgrab fallback; must fix xgrab crop origin at zoom>100 |
 | T05 | Environment control | CORE | READY | | T03 | |
 | T06 | Diff engine | CORE | READY | | T03 | |
 | T07 | Defect classification | CORE | BLOCKED | | T06 | |
@@ -81,7 +81,7 @@ States: `BLOCKED` waiting on a dependency, `READY` dispatchable now, `CLAIMED` a
 | T10 | Backend adapter: prototype-skija | BACKENDS | READY | | T02, T03 | T02 proved it builds and activates |
 | T11 | Backend adapter: SWT.SKIA canvas | BACKENDS | READY | | T02, T03 | |
 | T12 | Determinism lint | QUALITY | BLOCKED | | T04 | |
-| T13 | Catalog: buttons and labels | CATALOG | READY | | T03 | |
+| T13 | Catalog: buttons and labels | CATALOG | MERGED | opencode (1 attempt + follow-up) | T03 | |
 | T14 | Catalog: text entry | CATALOG | READY | | T03 | |
 | T15 | Catalog: item widgets | CATALOG | READY | | T03 | XL, split on claim |
 | T16 | Catalog: containers | CATALOG | READY | | T03 | |
@@ -428,3 +428,13 @@ EXIT=0
 Three consecutive green runs (81.9, 76.0, 60.4 s), each line of CHECK 14 printing `deterministic (<w>x<h>)` for all 42 specimens, restored ones included. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24).
 Targeted flake hunt on the restored troublemaker: 40 rounds of triple-rendering `button.push.disabled` through the real runtime, first settling design 6 rounds mismatched, shipped persistence-based design 0.
 Open questions: none.
+
+### 2026-08-24 merged T04 and T13
+Conflicts: `SelfTest.java` and two appended handoff records, both resolved by the coordinator; `CaptureProbe` additionally retargeted from the moved `ButtonPushSpecimen` class to a catalog lookup of `button.push.default`.
+Coordinator verification, run independently of the agents' claims:
+- T04 alone: 13/13 checks, 8.1 s
+- T13 rebased onto T04: initially RED, `button.toggle.selected` non-deterministic under the new settling
+- after the follow-up: 15/15 checks, 50.1 s, 42 specimens each proven deterministic
+Integration finding worth keeping: both tasks were correct alone and broken together. T13 measured determinism against the skeleton's fixed 150 ms settle; T04 replaced it with an event-driven drain, and GTK theme CSS transitions animate on the frame clock, so the event queue can fall quiet while pixels are still changing. The fix is capture-until-stable, requiring one rendering to persist byte-identical across a pumped 250 ms window, bounded at 60 grabs and 5 s. The agent measured and rejected the weaker "two consecutive identical grabs" design first, which would have passed the check while still capturing mid-animation frames.
+Cost: `selftest` grew from about 20 s to 60-80 s. Accepted: determinism by construction is worth more than a fast check that lies.
+Board updates: T04 and T13 to MERGED.
