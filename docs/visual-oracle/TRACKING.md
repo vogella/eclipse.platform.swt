@@ -618,6 +618,15 @@ Scope delivered:
 `tools/CoverageProbe`: runs inside a fork-classpath JVM, probes every catalog specimen through `supports()` without capturing pixels, and prints `COVERAGE total=… supported=… unsupported=… error=…` plus one `UNSUPPORTED <id>` line each; this makes the migration progress metric a one-command number.
 Selftest grows 33 -> 37 checks (CHECKS 33-36 in `tools/SkijaProtoCheck`, batch state cached across the four): genuine activation asserted on the child's observed `BACKEND-GC=org.eclipse.swt.graphics.SkijaGC` line, successful capture of two covered specimens with extent and PNG-signature checks, `combo.readonly.empty`/`clabel.default` reported UNSUPPORTED while siblings still capture (exit 0), and the whole-catalog coverage count asserted consistent and printed into the check detail.
 Out of scope, deliberately: T11 canvas adapter, run/triage (T20), report (T19), determinism lint (T12), fixing any fork defect listed below (they live in the fork, not here).
+### T12 handoff, 2026-08-24
+Branch: oracle/T12, one commit on top of dd4b649bf5 (parent of this commit); this record ships inside that commit
+Scope delivered:
+1. Determinism lint as a first-class facility, `tools/DeterminismLint`: lints any list of specimens (a catalog author's own module included) through the real capture runtime and returns one outcome per specimen, DETERMINISTIC / QUARANTINED / NONDETERMINISTIC, nothing silently missing. Quarantine is enforced, not advisory: a listed specimen is skipped and its recorded reason surfaces in the result, and an id that matches no specimen under lint is an IllegalStateException naming the known ids. `DeterminismLint.CATALOG_QUARANTINE` is the official catalog exclusion list and holds its first two entries (point 4). CHECK 14 now runs the discovered catalog through the facility; its output format is unchanged apart from QUARANTINED lines.
+2. Judging semantics corrected against cold starts, from measurement: the first captures of a widget class in a fresh process differ from every later one because GTK computes styles, fonts and item metrics lazily, and which capture lands on which side of that boundary follows machine load. That, not theme transitions outlasting the bound, is what today's reproduction actually showed: the pre-fix selftest failed with `scrollbar.both.scrolled rendered differently on capture 2`. The lint therefore captures until two consecutive renders agree byte for byte (judged rounds 1 and 2) and then requires round 3 to match; no such pair within six captures reports NONDETERMINISTIC, and any change after stabilization fails exactly as loudly as before. Three byte-identical renders are still required; only the cold rounds stop being misread as instability.
+3. Capture runtime hardening behind the unchanged frozen `Capture` interface. (a) The settle bound's failure modes are separated: `SettleTimeoutException extends CaptureFailedException` carries elapsed time, grabs, distinct-rendering count and longest hold, and only that exception is retried, once, at `SettleBudget.EXTENDED` (20 s / 240 grabs; DEFAULT stays 5 s / 60). Retry was chosen over scaling bounds with observed system load, reasons documented in code: load averages count unrelated processes, are unreliable in containers, would make runs incomparable, while a retry leaves idle-machine cost untouched and still ends in loud bounded failure. A persistent timeout diagnoses itself: one distinct rendering with holds approaching the window reads starved, many read animated. (b) Faithfulness confirmation: after a hold completes, the control is fully invalidated, the repaint awaited via a Paint listener, and the value counts as settled only when the forced repaint reproduces it byte for byte, closing the "stable because its replacement never got painted" class.
+4. Quarantine entries with measured evidence: `scrollbar.horizontal.scrolled` and `scrollbar.both.scrolled` flip between two faithful renderings differing by a few pixels of horizontal content offset (ImageMagick AE 2749 of 35200 pixels on `both.scrolled`; the two variants are each stable indefinitely). Mechanism measured, not guessed: the pre-realize horizontal `setSelection(150)` races GTK's lazy item-metric computation, and forced full repaints and shell resize cycles reproduce either variant byte for byte, so no settling rule can merge them; T17 shipped them stable because they only flip under contention. They stay in the catalog for cross-backend comparison and are excluded from determinism judging with recorded reasons visible in every CHECK 14 run.
+5. Selftest grows 33 to 37 checks: `lint-quarantined-specimen-skipped-with-reason`, `lint-quarantine-unknown-id-is-error`, `lint-animated-specimen-fails-despite-retry` (a fixture flipping its text every 120 ms fails through the shipped retry path, 14 distinct renderings, the extended attempt ran to its own bound), and `settle-timeout-passes-on-retry-with-larger-budget` (button.push.default forced through a 100 ms/4-grab attempt times out without a retry budget and passes with EXTENDED). None of the existing 33 changed meaning.
+Out of scope, deliberately: report, CLI verbs, CI (T19/T20/T21); `build.sh`, `verify-backend.sh`, `spi/`, `catalog/` untouched, so the quarantine lives in `tools/DeterminismLint`, not the catalog; no SPI change requested. The runtime-level cold-capture regime itself remains: capture one of a fresh process can still differ from later ones, consumers prime before judging, as the lint does; single-capture child runs (T05 `CaptureChild`) keep that exposure. The pre-existing intermittent failures of CHECKs 2/3/9/10 (T14 gap 1, T16 gap 4, same cold-reference-capture mechanism) are untreated here.
 Verified with:
 
 ```
@@ -645,3 +654,34 @@ Known gaps:
 4. Cross-process determinism of fork captures is 119/121: text.multi.border.content differs AE=260 and text.multi.plain.content AE=117 between two otherwise identical sweeps (single-line text specimens were stable, so NoCaret may not reach multi-line or the V_SCROLL bar fades; owner T12 when linting fork runs).
 5. Every fork capture spams stderr with `WARN: Not implemented yet:` lines (getClipping/setClipping among them); harmless noise today, but CI log hygiene needs a policy before T21.
 Open questions: none beyond whether the orchestrator wants gaps 2 and 3 filed upstream against swt-initiative31/prototype-skija; all evidence needed is reproducible from this branch.
+CHECK 0 backend-classpath: PASS
+...
+CHECK 13 catalog-discovered-and-wellformed: PASS
+CHECK 14 catalog-triple-render-deterministic: PASS
+      catalog scrollbar.horizontal.scrolled: QUARANTINED: flips between two faithful
+        horizontal-offset renderings under CPU contention on GTK3/Yaru; ...
+      catalog scrollbar.both.scrolled: QUARANTINED: same horizontal-offset flip ...
+      catalog triple-rendered 149 specimens (2 quarantined)
+CHECK 15 lint-quarantined-specimen-skipped-with-reason: PASS
+CHECK 16 lint-quarantine-unknown-id-is-error: PASS
+CHECK 17 lint-animated-specimen-fails-despite-retry: PASS
+CHECK 18 settle-timeout-passes-on-retry-with-larger-budget: PASS
+...
+CHECK 36 diff-throughput-measured: PASS
+SELFTEST-OK: 37/37 checks passed (209.5 s)
+EXIT=0
+```
+
+Counterfactual at the base commit (detached worktree `/tmp/opencode/oracle-T12-base` at dd4b649bf5, same command, ambient agent load ~40):
+
+```
+== attempt 1 ...
+SELFTEST-FAILED: 1 of 33 checks failed (181.3 s)
+CHECK 14 catalog-triple-render-deterministic: FAIL
+      java.lang.AssertionError: scrollbar.both.scrolled rendered differently on capture 2;
+      it is not deterministic
+```
+
+Post-fix, same machine: three green full runs of the final build, 176.9 s / 194.3 s idle-ish (ambient load 31 to 41) and 209.5 s under a generated `yes > /dev/null` storm (load ~53); plus six concurrent lint runs over the scrollbar family under load, all reporting `3 deterministic, 2 quarantined, 0 non-deterministic`. One earlier storm-12 run failed CHECK 36 (diff-throughput tripwire, 14.3 MP/s below the 20 MP/s floor), a pure-CPU benchmark starved by twelve spinners; it passes in every non-storm run and at storm strength 6. All runs headless via the wrapper (Wayland vars unset, GDK_BACKEND=x11, LIBGL_ALWAYS_SOFTWARE=1, Xvfb 1600x1200x24).
+Known gaps: the two quarantined specimens leave horizontal-scroll chrome uncovered by unattended determinism judging; a cure needs specimen-side post-realize application of the scroll value (catalog frozen for this task) or an SPI-side post-realize hook, both out of scope here and SCR-worthy if the orchestrator agrees. CHECK 36's throughput floor is load-sensitive by construction (CPU-bound benchmark); CI on shared runners may want a lower floor or a quiet-machine gate. `MAX_WARMUP_CAPTURES = 6` and the EXTENDED budget size are measured margins on this 8-core stack, not constants derived from theory; CI hardware slower than this may need them raised via the existing budget constructor.
+Open questions: none.

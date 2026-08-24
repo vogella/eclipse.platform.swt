@@ -43,6 +43,8 @@ import org.eclipse.swt.visualoracle.impl.LaunchConfig;
 import org.eclipse.swt.visualoracle.impl.ClusterDiffer;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
 import org.eclipse.swt.visualoracle.impl.ResultMerger;
+import org.eclipse.swt.visualoracle.impl.SettleBudget;
+import org.eclipse.swt.visualoracle.impl.SettleTimeoutException;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
 import org.eclipse.swt.visualoracle.json.JsonParser;
 import org.eclipse.swt.visualoracle.json.JsonWriter;
@@ -128,6 +130,14 @@ public class SelfTest {
 			check(index++, "catalog-discovered-and-wellformed", CatalogCheck::checkDiscovery);
 			check(index++, "catalog-triple-render-deterministic", () ->
 					CatalogCheck.checkTripleRender(display, nativeBackend, env, out));
+			check(index++, "lint-quarantined-specimen-skipped-with-reason", () ->
+					checkLintQuarantineSkips());
+			check(index++, "lint-quarantine-unknown-id-is-error", () ->
+					checkLintRejectsUnknownQuarantineId());
+			check(index++, "lint-animated-specimen-fails-despite-retry", () ->
+					checkLintCatchesGenuineNondeterminism(out));
+			check(index++, "settle-timeout-passes-on-retry-with-larger-budget", () ->
+					checkTimedOutCapturePassesAfterRetry());
 			check(index++, "launch-config-maps-environment-to-process-settings", () ->
 					checkLaunchConfigMapping());
 			check(index++, "child-parallelism-bound-honored", () -> checkParallelismBound());
@@ -479,6 +489,124 @@ public class SelfTest {
 				"X11 grab and copyArea disagree at zoom 200: "
 						+ xgrab.sha256() + " vs " + copyArea.sha256()
 						+ "; the crop origin fix regressed");
+	}
+
+	// ------------------------------------------------------ determinism lint
+
+	/**
+	 * The quarantine is enforced, not advisory: a listed specimen produces a
+	 * QUARANTINED outcome carrying its recorded reason instead of captures,
+	 * while its unlisted siblings are still linted.
+	 */
+	private void checkLintQuarantineSkips() {
+		List<Specimen> sash = SpecimenCatalog.discover().family("sash");
+		require(sash.size() >= 2, "expected at least two sash specimens, found " + sash.size());
+		String reason = "pulses on this theme; excluded deliberately (T12 selftest fixture)";
+		DeterminismLint.Result result = DeterminismLint.lint(
+				List.of(sash.get(0), sash.get(1)), nativeBackend, env,
+				List.of(new DeterminismLint.Quarantine(sash.get(0).id(), reason)));
+		require(result.outcomes().size() == 2,
+				"expected one outcome per specimen, got " + result.outcomes().size());
+		DeterminismLint.Outcome skipped = result.outcomes().get(0);
+		require(skipped.verdict() == DeterminismLint.Verdict.QUARANTINED,
+				"quarantined specimen was not skipped, verdict " + skipped.verdict());
+		require(reason.equals(skipped.detail()),
+				"quarantine reason lost, detail: " + skipped.detail());
+		DeterminismLint.Outcome linted = result.outcomes().get(1);
+		require(linted.verdict() == DeterminismLint.Verdict.DETERMINISTIC,
+				"unlisted sibling did not pass the lint: " + linted.detail());
+		out.println("      quarantined " + skipped.specimenId() + " with its reason; "
+				+ linted.specimenId() + " still linted deterministic");
+	}
+
+	/** A stale or mistyped quarantine id must fail loudly, never be ignored. */
+	private void checkLintRejectsUnknownQuarantineId() {
+		Specimen sash = SpecimenCatalog.discover().family("sash").get(0);
+		try {
+			DeterminismLint.lint(List.of(sash), nativeBackend, env,
+					List.of(new DeterminismLint.Quarantine("no.such.specimen.here", "typo")));
+			throw new AssertionError("an unknown quarantine id was silently ignored");
+		} catch (IllegalStateException e) {
+			require(String.valueOf(e.getMessage()).contains("no.such.specimen.here"),
+					"error does not name the unknown id: " + e.getMessage());
+			out.println("      unknown quarantine id rejected: " + e.getMessage());
+		}
+	}
+
+	/**
+	 * A genuinely non-deterministic specimen must stay a failure after both
+	 * settle attempts. The fixture flips its text every 120 ms, so no
+	 * rendering can persist across the 250 ms stability hold; the lint has to
+	 * report NONDETERMINISTIC, and the retry must not swallow that.
+	 */
+	private void checkLintCatchesGenuineNondeterminism(PrintStream out) {
+		Specimen animated = new AnimatedTextSpecimen();
+		SettleBudget attempt = new SettleBudget(800, 40);
+		SettleBudget extendedAttempt = new SettleBudget(1600, 80);
+		DeterminismLint.Result result = DeterminismLint.lint(List.of(animated), nativeBackend, env,
+				List.of(), attempt, extendedAttempt);
+		DeterminismLint.Outcome outcome = result.outcomes().get(0);
+		require(outcome.verdict() == DeterminismLint.Verdict.NONDETERMINISTIC,
+				"an animated specimen passed the determinism lint: " + outcome.verdict());
+		require(!result.passed(), "lint passed although an animated specimen was linted");
+		out.println("      lint verdict for animated fixture: NONDETERMINISTIC ("
+				+ outcome.detail() + ")");
+
+		try (CaptureRuntime strict = new CaptureRuntime(CaptureRuntime.Strategy.COPY_AREA,
+				attempt, null)) {
+			try {
+				strict.capture(animated, nativeBackend, env);
+				throw new AssertionError("animated specimen captured without settling");
+			} catch (SettleTimeoutException e) {
+				require(e.distinctRenderings() > 1, "animated specimen reported only "
+						+ e.distinctRenderings() + " distinct renderings; counters lie");
+			}
+		}
+		try (CaptureRuntime retrying = new CaptureRuntime(CaptureRuntime.Strategy.COPY_AREA,
+				attempt, extendedAttempt)) {
+			try {
+				retrying.capture(animated, nativeBackend, env);
+				throw new AssertionError("retry swallowed a genuinely unstable rendering");
+			} catch (SettleTimeoutException e) {
+				require(e.elapsedMillis() >= extendedAttempt.timeoutMillis(),
+						"extended attempt did not run to its bound: " + e.elapsedMillis() + " ms");
+				out.println("      animated specimen failed twice: " + e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * A timeout means "no stable value yet", which under load is the machine's
+	 * fault, not the specimen's. Proven with a budget too small for any hold
+	 * to complete in: the same capture that fails at {@code tiny} passes once
+	 * retried at {@link SettleBudget#EXTENDED}. The stability hold itself is
+	 * untouched, so this cannot weaken what counts as settled.
+	 */
+	private void checkTimedOutCapturePassesAfterRetry() {
+		Specimen push = SpecimenCatalog.discover().byId("button.push.default")
+				.orElseThrow(() -> new AssertionError("button.push.default missing"));
+		SettleBudget tiny = new SettleBudget(100, 4);
+		try (CaptureRuntime strict = new CaptureRuntime(CaptureRuntime.Strategy.COPY_AREA,
+				tiny, null)) {
+			try {
+				strict.capture(push, nativeBackend, env);
+				throw new AssertionError("capture completed within a budget no hold can fit;"
+						+ " the timeout path never triggered");
+			} catch (SettleTimeoutException e) {
+				require(e instanceof CaptureFailedException,
+						"timeout lost the CaptureFailedException contract");
+			}
+		}
+		try (CaptureRuntime retrying = new CaptureRuntime(CaptureRuntime.Strategy.COPY_AREA,
+				tiny, SettleBudget.EXTENDED)) {
+			CapturedImage image = retrying.capture(push, nativeBackend, env);
+			org.eclipse.swt.graphics.Point wanted = push.preferredSize();
+			require(image.width() == wanted.x && image.height() == wanted.y,
+					"capture after retry has extent " + image.width() + "x" + image.height()
+							+ ", preferred " + wanted.x + "x" + wanted.y);
+			out.println("      timed out at " + tiny + ", passed on retry at "
+					+ SettleBudget.EXTENDED);
+		}
 	}
 
 	// ------------------------------------------------- environment control
@@ -1012,6 +1140,45 @@ public class SelfTest {
 		@Override
 		public Control create(Composite parent, SpecimenContext ctx) {
 			throw new IllegalStateException("deliberate failure for selftest");
+		}
+	}
+
+	/**
+	 * Flips its text every 120 ms, faster than the 250 ms stability hold, so
+	 * no rendering can ever persist long enough to be captured as settled.
+	 * The timer stops when the control is disposed, which the capture runtime
+	 * does between specimens.
+	 */
+	private static final class AnimatedTextSpecimen implements Specimen {
+
+		private static final int FLIP_INTERVAL_MS = 120;
+
+		@Override
+		public String id() {
+			return "test.animated.flip";
+		}
+
+		@Override
+		public org.eclipse.swt.graphics.Point preferredSize() {
+			return new org.eclipse.swt.graphics.Point(140, 40);
+		}
+
+		@Override
+		public Control create(Composite parent, SpecimenContext ctx) {
+			Display display = parent.getDisplay();
+			Label label = new Label(parent, SWT.BORDER);
+			label.setText("A");
+			ctx.configure(label);
+			Runnable[] flip = new Runnable[1];
+			flip[0] = () -> {
+				if (label.isDisposed())
+					return;
+				label.setText("A".equals(label.getText()) ? "B" : "A");
+				display.timerExec(FLIP_INTERVAL_MS, flip[0]);
+			};
+			label.addDisposeListener(e -> display.timerExec(-1, flip[0]));
+			display.timerExec(FLIP_INTERVAL_MS, flip[0]);
+			return label;
 		}
 	}
 

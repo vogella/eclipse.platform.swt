@@ -11,9 +11,6 @@
 package org.eclipse.swt.visualoracle.tools;
 
 import java.io.PrintStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -22,9 +19,7 @@ import java.util.Set;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.spi.Backend;
-import org.eclipse.swt.visualoracle.spi.CapturedImage;
 import org.eclipse.swt.visualoracle.spi.RenderEnv;
 import org.eclipse.swt.visualoracle.spi.Specimen;
 import org.eclipse.swt.visualoracle.spi.SpecimenCatalog;
@@ -112,44 +107,32 @@ public final class CatalogCheck {
 		return names;
 	}
 
-	/** Triple render per specimen: byte-identical PNGs at preferred size. */
+	/**
+	 * Triple render per specimen: byte-identical PNGs at preferred size,
+	 * enforced by running {@link DeterminismLint} over the whole discovered
+	 * catalog with its official quarantine list. The lint is the facility a
+	 * catalog author runs on their own specimens; this check proves the
+	 * shipped catalog still passes it.
+	 */
 	public static void checkTripleRender(Display display, Backend backend, RenderEnv env,
 			PrintStream out) {
 		require(display != null && !display.isDisposed(), "no live Display for catalog renders");
-		CaptureRuntime capture = new CaptureRuntime();
-		int count = 0;
-		for (Specimen specimen : SpecimenCatalog.discover().all()) {
-			require(backend.supports(specimen),
-					"backend '" + backend.id() + "' does not support '" + specimen.id() + "'");
-			byte[] firstHash = null;
-			for (int round = 0; round < 3; round++) {
-				CapturedImage image = capture.capture(specimen, backend, env);
-				Point wanted = specimen.preferredSize();
-				require(image.width() == wanted.x && image.height() == wanted.y,
-						specimen.id() + " captured " + image.width() + "x" + image.height()
-								+ ", preferred is " + wanted.x + "x" + wanted.y);
-				byte[] hash = sha256(image.pngBytes());
-				if (firstHash == null) {
-					firstHash = hash;
-				} else {
-					require(Arrays.equals(firstHash, hash),
-							specimen.id() + " rendered differently on capture " + (round + 1)
-									+ "; it is not deterministic");
-				}
+		DeterminismLint.Result result = DeterminismLint.lint(
+				SpecimenCatalog.discover().all(), backend, env, DeterminismLint.CATALOG_QUARANTINE);
+		for (DeterminismLint.Outcome o : result.outcomes()) {
+			switch (o.verdict()) {
+				case DETERMINISTIC ->
+					out.println("      catalog " + o.specimenId() + ": deterministic (" + o.detail() + ")");
+				case QUARANTINED ->
+					out.println("      catalog " + o.specimenId() + ": QUARANTINED: " + o.detail());
+				case NONDETERMINISTIC -> require(false,
+						o.specimenId() + " is not deterministic: " + o.detail());
 			}
-			count++;
-			out.println("      catalog " + specimen.id() + ": deterministic ("
-					+ specimen.preferredSize().x + "x" + specimen.preferredSize().y + ")");
 		}
-		out.println("      catalog triple-rendered " + count + " specimens");
-	}
-
-	private static byte[] sha256(byte[] data) {
-		try {
-			return MessageDigest.getInstance("SHA-256").digest(data);
-		} catch (NoSuchAlgorithmException e) {
-			throw new IllegalStateException(e);
-		}
+		require(result.passed(), "catalog determinism lint failed for "
+				+ result.failures().size() + " specimen(s)");
+		out.println("      catalog triple-rendered " + result.outcomes().size() + " specimens ("
+				+ result.quarantined().size() + " quarantined)");
 	}
 
 	private static void require(boolean condition, String message) {

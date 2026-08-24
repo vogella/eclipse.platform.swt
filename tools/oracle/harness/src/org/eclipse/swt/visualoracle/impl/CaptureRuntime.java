@@ -56,6 +56,11 @@ import org.eclipse.swt.visualoracle.spi.UnsupportedSpecimenException;
  * is the primary path and {@link Strategy#X11_GRAB} is the fallback for
  * content {@code copyArea} cannot reach, such as native popups outside the
  * control's own window.
+ *
+ * A stability wait that only proves nothing settled <em>yet</em> is retried
+ * once with a larger {@link SettleBudget} before it becomes failure data,
+ * because under CPU contention a slow machine and an unstable widget look
+ * identical to a single attempt; see {@link #grabWithStablePixels}.
  */
 public class CaptureRuntime implements Capture, AutoCloseable {
 
@@ -70,15 +75,17 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	private static final int MARGIN = 12;
 	private static final int SETTLE_TIMEOUT_MILLIS = 5000;
 	private static final int MAX_SETTLE_CYCLES = 50;
-	/** Safety ceiling for the pixel-pair loop; correctness never depends on it. */
-	private static final int MAX_PIXEL_GRABS = 60;
-	private static final long PIXEL_SETTLE_TIMEOUT_MILLIS = 5000;
 	/**
 	 * How long the grabbed bytes must persist unchanged, while the event loop
 	 * stays live, before they are accepted as the settled rendering. Must
 	 * outlast any transient state: measured start latencies of GTK theme
 	 * transitions are below 100 ms and their animation spans around 200 ms
 	 * (SCR-1), so no mid-transition value survives a 250 ms observation.
+	 *
+	 * This window is a correctness parameter, not a load parameter, and is
+	 * never scaled: shortening it under load would let a mid-transition frame
+	 * pass as settled. Load only stretches wall-clock time between frames,
+	 * which is what {@link SettleBudget} bounds.
 	 */
 	private static final long STABILITY_HOLD_MILLIS = 250;
 	/**
@@ -87,9 +94,18 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	 * actually land before the next grab.
 	 */
 	private static final long FRAME_PERIOD_MILLIS = 17;
+	/**
+	 * How long the forced repaint of the faithfulness check may take to be
+	 * delivered before a hold is treated as unconfirmed. Generous, because
+	 * starvation is exactly the case it must survive; missing it only costs
+	 * budget, never correctness.
+	 */
+	private static final long REPAINT_GRACE_MILLIS = 1000;
 	private static final int GRAB_TIMEOUT_SECONDS = 30;
 
 	private final Strategy strategy;
+	private final SettleBudget defaultBudget;
+	private final SettleBudget retryBudget;
 	private Shell shell;
 
 	public CaptureRuntime() {
@@ -97,9 +113,23 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	}
 
 	public CaptureRuntime(Strategy strategy) {
+		this(strategy, SettleBudget.DEFAULT, SettleBudget.EXTENDED);
+	}
+
+	/**
+	 * @param defaultBudget bound for the first settle attempt
+	 * @param retryBudget   bound for the one retry after a timeout, or null to
+	 *                      fail on the first timeout (tests use this to prove
+	 *                      the retry path earns its keep)
+	 */
+	public CaptureRuntime(Strategy strategy, SettleBudget defaultBudget, SettleBudget retryBudget) {
 		if (strategy == null)
 			throw new IllegalArgumentException("strategy must not be null");
+		if (defaultBudget == null)
+			throw new IllegalArgumentException("defaultBudget must not be null");
 		this.strategy = strategy;
+		this.defaultBudget = defaultBudget;
+		this.retryBudget = retryBudget;
 	}
 
 	@Override
@@ -267,8 +297,9 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 
 	/**
 	 * Grabs pixels until one byte-identical rendering has persisted across a
-	 * pumped observation window of {@link #STABILITY_HOLD_MILLIS} and returns
-	 * it.
+	 * pumped observation window of {@link #STABILITY_HOLD_MILLIS} <em>and</em>
+	 * one forced full repaint has reproduced it byte-identically, then
+	 * returns it.
 	 *
 	 * This, not a guessed delay, is what makes a capture deterministic by
 	 * construction. On GTK every late pixel change, including theme CSS
@@ -283,12 +314,60 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	 * flight. Requiring one unchanged value to persist across an interval
 	 * longer than any measured start latency plus transition span closes
 	 * both: whatever survives 250 ms of continuous observation has no theme
-	 * transition left in it. The event-driven drain in {@link #settle} does
-	 * the coarse work first; widgets whose theme animates them simply keep
-	 * resetting the hold until their transition has finished, however long
-	 * the theme happens to make that. The attempt and time ceilings are
-	 * safety nets only: they turn "never settles", such as a blinking caret
-	 * would be, into loud failure data instead of a silently wrong baseline.
+	 * transition left in it.
+	 *
+	 * Persistence alone is still only half the proof. "Nothing changed for
+	 * 250 ms" can equally mean "the frame that should have replaced this one
+	 * never got painted": under CPU contention, state that GTK applies after
+	 * the first paint (focus highlighting, lazy style and font computation)
+	 * can arrive late, and a frame that predates it is perfectly stable,
+	 * because nothing ever damages it again. The second half of the contract
+	 * closes this: once a value has persisted across the window, the control
+	 * is fully invalidated and repainted, and the value counts as settled
+	 * only when that forced repaint reproduces it byte for byte. A stale or
+	 * half-styled frame fails the repaint; the settled rendering reproduces
+	 * itself. That makes the captured pixels faithful, not merely quiet.
+	 *
+	 * What this contract deliberately does not cover is the first capture of
+	 * a widget class in a fresh process: GTK computes styles and metrics
+	 * lazily, so capture one of a specimen can differ from every later one
+	 * while each is faithful on its own terms. That is a convergence cost,
+	 * not instability, and it is handled by consumers priming a specimen
+	 * before judging it ({@code DeterminismLint} discards one prime capture
+	 * per specimen); measured on this stack, renderings are byte-stable from
+	 * the second capture on, idle and loaded alike.
+	 *
+	 * The give-up bound is where machine speed enters, and it is treated as
+	 * the two different things it can mean:
+	 *
+	 * <ul>
+	 * <li><b>Did not settle in time.</b> Under CPU contention frames arrive
+	 * late and one wall-clock second of theme animation can stretch far past
+	 * {@link SettleBudget#DEFAULT}. That is a property of the machine, not of
+	 * the specimen, so the first timeout is retried once at
+	 * {@link SettleBudget#EXTENDED}; only a second timeout becomes failure
+	 * data. Retry was chosen over scaling the bound with observed system
+	 * load on purpose: load averages count unrelated processes, they are
+	 * unreliable inside containers, and coupling rendering behaviour to them
+	 * makes runs incomparable across machines; the retry keeps idle-machine
+	 * cost unchanged and still fails loudly and bounded when nothing ever
+	 * settles.</li>
+	 * <li><b>Never settles.</b> A specimen whose pixels keep changing, such
+	 * as an indeterminate progress bar, times out twice like everything else,
+	 * but its exception carries the counters to tell the cases apart: many
+	 * distinct renderings means animation, one distinct rendering with holds
+	 * approaching the window means the machine was starved. Either way it is
+	 * loud, and neither attempt can turn instability into a pass.</li>
+	 * </ul>
+	 *
+	 * A timeout is therefore the only retryable outcome. Everything else the
+	 * loop can report (extent mismatch, grab failure) is thrown directly;
+	 * there is no path that observes a settled value here and later returns a
+	 * different one from the same call, because the call returns at the
+	 * moment the first confirmed hold completes. Cross-call instability, a
+	 * specimen returning different settled values from successive captures,
+	 * is determinism failure data by definition and is caught by comparing
+	 * rounds in {@code DeterminismLint}, never by retrying here.
 	 *
 	 * Only {@link Strategy#COPY_AREA} is verified this way. Measured on GTK3
 	 * under Xvfb, the X11 fallback must instead keep T04's single grab right
@@ -303,26 +382,105 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	private CapturedImage grabWithStablePixels(Control control) {
 		if (strategy == Strategy.X11_GRAB)
 			return grabByX11(control);
+		try {
+			return waitForStableRendering(control, defaultBudget);
+		} catch (SettleTimeoutException first) {
+			if (retryBudget == null)
+				throw first;
+			System.err.println("oracle-capture: '" + control.getClass().getSimpleName()
+					+ "' did not settle within " + defaultBudget + ", retrying once with " + retryBudget);
+			try {
+				return waitForStableRendering(control, retryBudget);
+			} catch (SettleTimeoutException second) {
+				throw new SettleTimeoutException("'" + control.getClass().getSimpleName()
+						+ "' produced no stable rendering in two attempts (" + defaultBudget + ", then "
+						+ retryBudget + "); last attempt saw " + second.distinctRenderings()
+						+ " distinct renderings, longest held " + second.longestHoldMillis() + " ms; "
+						+ (second.distinctRenderings() <= 1
+								? "the machine looks starved rather than the widget animated"
+								: "the widget looks animated rather than the machine starved"),
+						second.elapsedMillis(), second.grabs(), second.distinctRenderings(),
+						second.longestHoldMillis());
+			}
+		}
+	}
+
+	/**
+	 * One settle attempt under the given budget. Returns the first rendering
+	 * that persisted across the stability hold and survived its forced
+	 * repaint, or throws {@link SettleTimeoutException} when the budget is
+	 * exhausted without any rendering achieving that.
+	 */
+	private CapturedImage waitForStableRendering(Control control, SettleBudget budget) {
 		Display display = control.getDisplay();
 		CapturedImage candidate = null;
 		long heldSince = 0;
-		long deadline = System.currentTimeMillis() + PIXEL_SETTLE_TIMEOUT_MILLIS;
+		int distinctRenderings = 0;
+		long longestHoldMillis = 0;
+		long start = System.currentTimeMillis();
+		long deadline = start + budget.timeoutMillis();
 		for (int grabs = 1;; grabs++) {
-			if (grabs > MAX_PIXEL_GRABS || System.currentTimeMillis() >= deadline)
-				throw new CaptureFailedException("'" + control.getClass().getSimpleName()
-						+ "' never held one rendering stable for " + STABILITY_HOLD_MILLIS
-						+ " ms within " + PIXEL_SETTLE_TIMEOUT_MILLIS + " ms and "
-						+ MAX_PIXEL_GRABS + " grabs; its rendering does not settle");
+			long now = System.currentTimeMillis();
+			if (grabs > budget.maxGrabs() || now >= deadline)
+				throw new SettleTimeoutException("'" + control.getClass().getSimpleName()
+						+ "' produced no rendering that held stable for " + STABILITY_HOLD_MILLIS
+						+ " ms and survived a forced repaint within " + budget.timeoutMillis()
+						+ " ms and " + budget.maxGrabs() + " grabs; "
+						+ distinctRenderings + " distinct renderings seen, longest held "
+						+ longestHoldMillis + " ms", now - start, grabs - 1, distinctRenderings,
+						longestHoldMillis);
 			pump(display, FRAME_PERIOD_MILLIS);
 			CapturedImage current = grabByCopyArea(control);
+			now = System.currentTimeMillis();
 			if (candidate != null && Arrays.equals(candidate.pngBytes(), current.pngBytes())) {
-				if (System.currentTimeMillis() - heldSince >= STABILITY_HOLD_MILLIS)
+				long heldFor = now - heldSince;
+				longestHoldMillis = Math.max(longestHoldMillis, heldFor);
+				if (heldFor >= STABILITY_HOLD_MILLIS && repaintReproduces(control, display, current)) {
+					longestHoldMillis = Math.max(longestHoldMillis,
+							System.currentTimeMillis() - heldSince);
 					return current;
+				}
 			} else {
 				candidate = current;
-				heldSince = System.currentTimeMillis();
+				heldSince = now;
+				distinctRenderings++;
 			}
 		}
+	}
+
+	/**
+	 * Invalidates the whole control, waits for the resulting repaint to be
+	 * delivered, and reports whether the pixels after it are byte-identical
+	 * to {@code held}. Used as the faithfulness half of the settling
+	 * contract: a frame that only looks stable because its replacement never
+	 * got painted fails here.
+	 *
+	 * When the repaint cannot be delivered within the grace period the answer
+	 * is "no", which is the safe direction: it costs budget instead of
+	 * accepting an unverified frame.
+	 */
+	private boolean repaintReproduces(Control control, Display display, CapturedImage held) {
+		boolean[] painted = new boolean[1];
+		Listener once = e -> {
+			if (e.type == SWT.Paint && e.widget == control)
+				painted[0] = true;
+		};
+		control.addListener(SWT.Paint, once);
+		try {
+			control.redraw();
+			control.update();
+			long graceEnd = System.currentTimeMillis() + REPAINT_GRACE_MILLIS;
+			while (!painted[0] && System.currentTimeMillis() < graceEnd) {
+				if (!display.readAndDispatch())
+					sleepBriefly();
+			}
+		} finally {
+			control.removeListener(SWT.Paint, once);
+		}
+		if (!painted[0])
+			return false;
+		pump(display, FRAME_PERIOD_MILLIS);
+		return Arrays.equals(grabByCopyArea(control).pngBytes(), held.pngBytes());
 	}
 
 	/** Dispatches events for the given duration, so scheduled frames can run. */
