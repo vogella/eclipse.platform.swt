@@ -200,6 +200,9 @@ Newly unblocked: <task IDs moved to READY>
 
 Run this loop once per working session.
 
+0. After every merge, update `PLAN.md` so it states decisions rather than open questions.
+   A worker dispatched next week reads `PLAN.md` as its specification and cannot ask what changed, so a stale design document sends it down a path the project has already abandoned.
+   Replace superseded decisions in place, name the ADR that settled them, and record any defect the merged task left open together with the task that now owns it.
 1. Read the board and the handoff records added since the last session.
 2. Review every task in `REVIEW`: read the diff, run the acceptance commands yourself, and either merge or reject with specific notes.
 3. Update the board states, and move every task whose dependencies are now `MERGED` to `READY`.

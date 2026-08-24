@@ -1,5 +1,11 @@
 # SWT Visual Oracle: Plan
 
+This is a living document.
+The coordinator updates it whenever a task is merged, so that a worker starting later reads decisions rather than open questions.
+Task status lives in `TRACKING.md`, not here; this document holds the design and the decisions behind it.
+
+Merged so far: T02 (build recipe), T01 (capture strategy).
+
 ## Goal
 
 Build an automated visual oracle for SWT widget rendering.
@@ -40,18 +46,20 @@ A run is self-contained and its verdict does not depend on any previously record
 Consequence: the harness cannot detect a defect that both backends share, and it cannot detect a native regression.
 Both are acceptable, because the question it answers is "does Skija match native", not "is native correct".
 
-### D2: Capture strategy is decided by a spike, not up front
+### D2: Capture uses `GC.copyArea`, with an X11 grab as fallback
 
-Three candidate strategies exist and they differ in fidelity and portability:
+Decided by T01 and recorded with evidence in `adr/ADR-001-capture-strategy.md`. Superseded the original "decide this with a spike" placeholder.
 
-1. `Control.print(GC)` into an `Image`, per widget.
-2. `new GC(control)` plus `Image` copy, per widget.
-3. Full shell capture under Xvfb via an X11 grab, cropped to widget bounds.
+`Control.print(GC)` is **rejected**, for two independent reasons.
+It is blind to the GL content the Skia canvas renders into its GLX child window: on a canvas that is 58 percent GL-painted it captured zero such pixels, a blank image.
+Had the harness been built on it, every Skia specimen would have compared an empty image against native, and the failures would have looked like renderer bugs rather than a broken oracle.
+Separately, its capture of a plain native `Button` hashes differently from both other strategies, which agree byte for byte, so it re-renders the widget rather than capturing what is on screen.
 
-Option 3 is known to work already: it was used to verify PR 3231 on Linux with `xvfb-run` and `import -window root`.
-Options 1 and 2 give tighter crops and no compositor involvement, but their behavior differs between GTK and Win32 and needs to be measured.
+`GC.copyArea` is the primary strategy.
+It sees GL content, runs at 0.52 ms per capture against 154 ms for a full screen grab, is byte-identical across processes, and stays crop-exact at zoom 200.
 
-Task T01 decides this with a working spike on both platforms, and records the decision as an ADR before any other capture work starts.
+The X11 grab (`import -window root` plus crop) is kept as a fallback behind the same `Capture` interface, for anything `copyArea` cannot reach, such as a widget owning a native popup outside its own bounds.
+**Known defect, owned by T04:** its crop origin is offset at zoom 200, capturing a shifted region. Fix before using the fallback at any zoom other than 100.
 
 ### D3: Determinism is a hard requirement, enforced by a lint
 
@@ -65,6 +73,10 @@ Known offenders to handle explicitly: `Caret` blink, indeterminate `ProgressBar`
 The harness must not hardcode a Skija implementation.
 It talks to a `Backend` SPI with at least three implementations: stock native SWT, the prototype-skija fork, and the `SWT.SKIA` canvas from PR 3231.
 A future lightweight, handle-free widget layer becomes a fourth adapter and inherits the entire catalog for free.
+
+T02 proved all three build and genuinely activate, verified per backend rather than assumed, and recorded the recipe in `adr/ADR-002-build-target.md`.
+One incompatibility surfaced there and matters to anyone comparing the two Skija efforts: `prototype-skija` pins Skija **0.116.3** with jars committed in its own tree, while PR 3231 expects **0.143.17** from Maven Central.
+Each backend gets its own class output and classpath, so the versions never mix.
 
 ### D5: The agent-facing CLI is a first-class deliverable
 
@@ -118,9 +130,23 @@ Classification matters more than a single number: a one-pixel baseline shift, a 
 
 **CI runner** executes the matrix headless and publishes the report.
 
+### Tooling already delivered, do not rebuild it
+
+`tools/oracle/build.sh <backend>` prints a ready classpath for `native`, `skia-canvas` or `skija-proto`.
+Cold build 35 s, warm rebuild under a second, incremental on a source fingerprint, Maven Central jars pinned by sha256.
+`tools/oracle/verify-backend.sh <backend>` asserts a backend is genuinely active rather than silently falling back to native.
+`tools/oracle-spike/` is the T01 capture spike, kept as executable evidence for ADR-001.
+
+Any task needing a compiled SWT calls `build.sh`. Writing another `javac` invocation is out of scope for every remaining task, and the previous attempt to do so failed on the `../../` prefixes in `build.properties`.
+
 ### SPI sketch
 
-Frozen early, owned by the orchestrator, changed only through the request process in `TRACKING.md`.
+This sketch predates T01 and T02 and is **intent, not the contract**.
+T03 freezes the real SPI and documents it in `SPI.md`; once that is merged, `SPI.md` is authoritative and this sketch is historical.
+
+Two gaps the sketch does not handle, both required: a backend cannot render every widget, and most `RenderEnv` combinations need a separate process because SWT reads zoom, theme and text direction once at `Display` creation.
+
+Frozen early, owned by the coordinator, changed only through the request process in `TRACKING.md`.
 
 ```java
 public interface Specimen {
@@ -263,6 +289,15 @@ T05 pins an explicit font family and fails the run when it is not installed, rat
 **GTK theme differences between machines.**
 A run is only comparable to itself.
 Cross-machine comparison of results is out of scope and must be stated in the report.
+
+**Agents losing work to dropped provider streams.**
+T01 lost six sessions this way, T02 none.
+The likeliest cause is large image payloads read into agent context, so briefs forbid reading PNGs and require ImageMagick from the shell instead.
+Briefs also require committing early and amending, because a task that does 49 tool calls before its first commit loses all of it to one dropped connection.
+
+**Scratch paths outside the worktree.**
+The agent permission layer auto-rejects them non-interactively and the run stops with no useful error, exiting zero having done nothing.
+Only `/tmp/opencode/<task>/` is permitted, and a zero exit code from an agent proves nothing; only the worktree diff does.
 
 **Wayland silently defeating headless runs.**
 Documented already in the repository conventions: unset `WAYLAND_DISPLAY` and `XDG_SESSION_TYPE` and pin `GDK_BACKEND=x11`, otherwise `xvfb-run` renders on the real compositor.
