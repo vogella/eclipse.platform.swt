@@ -242,76 +242,68 @@ The temptation to parallelize the SPI freeze in Phase 1 should be resisted; it i
 
 ## Current status
 
-**11 of 25 tasks merged**: T01 to T06, T13 to T17. The harness builds, runs headless, and passes 33 checks covering capture, environment control, diffing and a 149-specimen catalog across 19 widget families.
+**Stand 2026-08-25, vor Rechner-Neustart.**
 
-### Known issue: CHECK 14 is load-sensitive
+**20 von 25 Aufgaben gemerged**: T01 bis T12, T13 bis T17, T20. Integration ist grün bei 67 Checks über 149 Specimens, 19 Widget-Familien, 3 Backends.
 
-`catalog-triple-render-deterministic` failed once in roughly nine consecutive runs, always while several agents were competing for the machine, and passed six times consecutively once the machine was idle.
-The capture runtime bounds its stability wait at 60 grabs and 5 seconds; under heavy CPU contention a GTK theme transition can outlast that bound, and the specimen is then reported as non-deterministic when it is really the machine that was too slow.
-This is a false negative, not a false pass, so it cannot let a rendering defect through. It does make an unattended CI run unreliable, and it must be fixed before T21 puts this in CI.
-Owner: T12, which already owns the determinism lint. The likely fix is to scale the bound with observed system load, or to retry a timed-out specimen once and fail only on a second timeout, distinguishing "did not settle" from "settled differently".
+### Offene Branches, nicht gemerged
 
-Phases 0 and 1 are complete: T01, T02 and T03 are merged, the SPI is frozen in `SPI.md`, and `tools/oracle/oracle selftest` passes 8 of 8 checks from a clean checkout.
+| Branch | Zustand |
+|---|---|
+| `oracle/T21` (Linux CI) | fertig, 3 Skripte plus Workflow, Verifikation des `--prove`-Leak-Nachweises lief noch |
+| `oracle/T23` (Gate Buttons) | fertig, enthält `FINDINGS-buttons.md` und `report-buttons.html`; Selftest muss nach Rebase erneut laufen |
+| `oracle/T27` (Stale Captures) | nur Brief committed, Agent kam wegen Provider-Ausfall nicht weiter, 17 von 19 Versuchen abgebrochen |
+| `oracle/T19` (HTML-Report) | tot, 32 von 33 Versuchen abgebrochen, kein Quellcode |
 
-Phase 2 is open. CORE (T04, T05, T06, T08), BACKENDS (T09, T10, T11) and CATALOG (T13 to T17) are all `READY` and touch disjoint files.
+### Blocker: veraltete Aufnahmen (T27)
 
-Third operational finding, from T03. The configured opencode model is a free alpha endpoint that drops streams unpredictably: T03 took 7 attempts and 5 drops to finish, T01 lost 6 sessions to the same cause, T02 was untouched.
-The user chose to keep that endpoint, so every dispatch now runs under a supervising driver that resumes the same session with `--continue` after each drop and stops only when HEAD has moved and the tree is clean.
-Drops occur at stream start and cost little when resumed, so combined with commit-early briefs the throughput cost is tolerable, but it roughly doubles wall-clock per task.
+Ein Mensch hat im visuellen Report gesehen, was 67 Checks nicht gesehen haben: die native Aufnahme von `button.arrow.right` zeigt einen nach links zeigenden Pfeil.
 
-Two operational findings from the first dispatches, both now folded into the rules above.
+Nachgewiesen: die nativen PNGs von `arrow.left` und `arrow.right` sind byte-identisch (`de182b4822a315ec`), waehrend Skija vier verschiedene liefert. Ein unabhaengiges Programm ausserhalb der Harness zeigt, dass SWT alle vier Richtungen korrekt zeichnet.
 
-Scratch paths outside the worktree are auto-rejected by opencode's permission layer in non-interactive runs.
-The agent then exits with code zero having done nothing, so a zero exit proves nothing and only the worktree diff does.
-`/tmp/opencode/` is permitted, arbitrary `/tmp/` paths are not.
+Zwei verkettete Fehler:
 
-Concurrent opencode sessions appear to be unreliable: T01 took four provider stream errors at stream start while T02 ran, and was dispatched successfully only once T02 had finished.
-Until this is understood, dispatch one agent at a time, which costs nothing in Phases 0, 1 and 3 and will need revisiting before the wide parallel Phase 2.
+1. Die Shell ist fuer ein 44x44-Specimen zu klein (Client 62x39). Allein verweigert die T26-Schutzpruefung korrekt; im Familienlauf ist die wiederverwendete Shell noch gross genug, also greift sie nicht.
+2. **Stabilitaet ist nicht Frische.** Die Aufnahme wird akzeptiert, sobald sich das Bild nicht mehr aendert. Ein Control, das noch nicht gemalt hat, laesst die Pixel des vorherigen stehen, und die sind vollkommen stabil.
 
-### T02 handoff, 2026-08-23
-Branch: oracle/T02 at ac7283c8f1 (parent of this commit; this record ships inside the single T02 commit)
-Scope delivered:
-`tools/oracle/build.sh`: builds each backend with plain javac in seconds, idempotent via source fingerprints, classpath only on stdout, all diagnostics on stderr.
-Backends: `native` (this worktree, GTK Linux x86_64 fragment), `skia-canvas` (same host bundle plus the `org.eclipse.swt.skia` fragment from PR 3231, pinned skija-shared/skija-linux-x64 0.143.17 + types 0.2.0 from Maven Central, checksum-pinned, cached outside the worktree), `skija-proto` (clone of swt-initiative31/prototype-skija@master into the cache; the fork declares its Skija dependency as committed jars 0.116.3 in `binaries/.../lib`, referenced by `jars.extra.classpath`, so no download is needed and plain javac works for it unchanged).
-Non-Java resources are copied per source folder into each class output directory; this is what makes both the GTK theming CSS and the ServiceLoader registration (`META-INF/services/org.eclipse.swt.internal.canvasext.IExternalCanvasFactory`) work.
-`tools/oracle/verify-backend.sh <id>` runs a probe program headless under Xvfb and asserts genuine backend activation: paint events plus natives loaded for native; the `External canvas activated.` log line via `-Dorg.eclipse.swt.external.canvas:logActivation=true` for skia-canvas; `Drawing.createGraphicsContext` returning a real `SkijaGC` (raster surface created) for skija-proto. It detects and rejects the silent fallback-to-native case.
-`docs/visual-oracle/adr/ADR-002-build-target.md`: sources, pins, refresh policy, unavailability behavior.
-Out of scope, deliberately: capture strategy (T01), harness/SPI (T03), Windows/macOS builds of any backend, pinning the moving fork `master` to a fixed SHA (refresh is explicit via `ORACLE_REFRESH=1`; resolved SHA printed on every build).
-Verified with:
+`CHECK 8` faellt darauf herein, weil er zwischen Button, Label und Button wechselt; zwei gleich grosse Pfeil-Buttons unterlaufen ihn.
+
+Das verbirgt echte Unterschiede und ist damit der gefaehrlichste Fehlermodus des Projekts. **Alle Befunde des Button-Laufs stehen unter Vorbehalt, bis T27 durch ist.**
+
+Zu korrigieren, sobald das behoben ist: `FINDINGS-buttons.md` und der Report erklaeren die identischen Pfeile mit dem Icon-Theme. Diese Erklaerung stammt aus einem T13-Handoff, wurde uebernommen und ist falsch.
+
+### Erkenntnis, die den Restumfang aendert
+
+Der Fork will nicht wie nativ aussehen: `DefaultColorProvider` definiert eine feste Palette im Code und fragt nie das Betriebssystem. Damit beantwortet der Vergleich gegen nativ die Frage "wie weit weg von nativ", nicht "ist das ein Fehler".
+
+Was die Harness ohne Design-Entscheidung beurteilen kann, sind drei Dinge: absolute Fehlschlaege (malt gar nicht), Invarianten (Determinismus, Zoom-Skalierung, Zustandsunterscheidbarkeit, RTL, Geometrie) und Regression gegen frueher.
+
+Daraus folgt fuer die verbleibenden Aufgaben:
+
+- **T24 umwidmen** von "voller Katalog-Lauf als Fehlerliste" zu "Abdeckung plus Invarianten plus Distanzkennzahl zu nativ"
+- **Neue Aufgabe: Invarianten-Modus** (`oracle invariants --backend ...`), ohne Referenz, darf CI gaten
+- **T20s Exit-Code-Vertrag** braucht die Unterscheidung gating gegen informational, sonst ist CI dauerhaft rot
+- **T21/T22 gaten auf Selftest plus Invarianten**, nicht auf Gleichheit mit nativ
+- **T19 Report** muss DIFFERENT als Messung darstellen, nicht als Fehler
+
+### Gemessen: native Handles
+
+100 Buttons plus 100 Labels, beide Backends, `Control.handle` per Reflection:
 
 ```
-$ tools/oracle/build.sh native
-/home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/native/classes
-(cold build 16.2 s)
-
-$ time tools/oracle/build.sh native   # second consecutive run
-0.27 s total, stdout as above
-
-$ tools/oracle/build.sh --all         # exit 0, three lines
-native /home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/native/classes
-skia-canvas /home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/skia-canvas/classes-main:...
-skija-proto /home/vogella/.cache/swt-visual-oracle/build/50392c04a96b/skija-proto/classes:...
-
-$ tools/oracle/verify-backend.sh native
-NATIVE-ACTIVE=true
-VERIFY-OK: backend 'native' is genuinely active
-
-$ tools/oracle/verify-backend.sh skia-canvas
-External canvas activated.
-PAINTS=1
-VERIFY-OK: backend 'skia-canvas' is genuinely active
-
-$ tools/oracle/verify-backend.sh skija-proto
-PROBE-GC=org.eclipse.swt.graphics.SkijaGC
-SKIJA-PROTO-ACTIVE=true
-VERIFY-OK: backend 'skija-proto' is genuinely active
+native       WIDGETS=200  WITH_NATIVE_HANDLE=200  HANDLE_FREE=0
+skija-proto  WIDGETS=200  WITH_NATIVE_HANDLE=200  HANDLE_FREE=0
 ```
 
-All verify runs used `env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a -s "-screen 0 1024x768x24"` internally.
-Known gaps: builds and runs must use the same JDK (21+, developed against Temurin 25); `--enable-native-access=ALL-UNNAMED` is passed by probes because SWT loads natives via `System.loadLibrary`. All three backends currently require Linux x86_64 because they run prebuilt GTK binaries; other machines get a clean non-zero exit with a reason. A missing or corrupt cache jar, an unresolved git LFS pointer, or a failed clone/download each fail cleanly with a specific message.
-The verifier caught one real silent-fallback during development (service file copied under `resources/` instead of classpath root) and rejected it, which is exactly its job.
-Open questions: none.
+Der Fork spart heute exakt null Handles, weil `CustomControl` von `NativeBasedCustomControl` erbt. Vorschlag als T28: Handle-Zahl pro Specimen ins Ergebnis-JSON, plus Prozess-Ressourcen (`GetGuiResources(GR_USEROBJECTS)` auf Windows, Grenze 10000). Diese Metrik braucht weder Referenz noch Design-Entscheidung und darf daher gaten.
 
+### Betriebserfahrungen des Tages
+
+Vier Regeln stehen oben in "Work protocol": Scratch nur unter `/tmp/opencode/<task>/`, keine Bilder in den Agent-Kontext, kein `git stash`, alles Gespawnte wieder einsammeln.
+
+Drei Fehler in meinem eigenen Treiber, die Zeit gekostet haben: ein Commit, der nur den Brief enthaelt, wurde als "fertig" gewertet; es gibt keinen Backoff, sodass ein Provider-Ausfall zur heissen Schleife wird (T19: 32 Abbrueche in Minuten); und das Fertig-Kriterium prueft nicht, ob das eigentliche Deliverable existiert (T23 hatte seinen Findings-Report nicht geschrieben).
+
+Ein eigener Fehler beim Aufraeumen: 70 verwaiste JVMs plus 69 Xvfb-Server und 25 `sha256sum /dev/zero`-Brenner hatten die Maschine stundenlang auf Load 55 gehalten. Ursache war, dass `destroyForcibly()` nur den `xvfb-run`-Wrapper traf. Behoben durch `setsid` plus Prozessgruppen-Kill.
 
 ## Integration log
 
