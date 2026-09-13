@@ -105,7 +105,7 @@ public final class CaptureChild {
 		}
 		if (out == null)
 			return usage("--out DIR is required");
-		if (!NativeBackend.ID.equals(backendId) && !SkijaProtoBackend.ID.equals(backendId)
+		if (!NativeBackend.isNative(backendId) && !SkijaProtoBackend.ID.equals(backendId)
 				&& !SkiaCanvasBackend.ID.equals(backendId))
 			return usage("backend '" + backendId + "' has no child adapter yet");
 		if (specimenIds.isEmpty())
@@ -186,7 +186,8 @@ public final class CaptureChild {
 
 	private static Backend createBackend(String backendId) {
 		return switch (backendId) {
-			case NativeBackend.ID -> new NativeBackend();
+			case NativeBackend.ID, NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID ->
+				new NativeBackend(backendId);
 			case SkijaProtoBackend.ID -> new SkijaProtoBackend();
 			case SkiaCanvasBackend.ID -> new SkiaCanvasBackend();
 			default -> throw new IllegalArgumentException("backend '" + backendId + "' has no child adapter yet");

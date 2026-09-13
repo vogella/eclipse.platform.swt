@@ -55,6 +55,10 @@ public class NativeBackend implements Backend {
 
 	/** The fixed id of this backend, matching tools/oracle/build.sh. */
 	public static final String ID = "native";
+	/** Stock SWT built from ORACLE_BASELINE, see tools/oracle/build.sh. */
+	public static final String BASELINE_ID = "native-baseline";
+	/** Stock SWT built from ORACLE_CANDIDATE, see tools/oracle/build.sh. */
+	public static final String CANDIDATE_ID = "native-candidate";
 
 	private static final String STOCK_GC_CLASS = "org.eclipse.swt.graphics.GC";
 	private static final String FORK_DRAWING_CLASS = "org.eclipse.swt.graphics.Drawing";
@@ -64,14 +68,31 @@ public class NativeBackend implements Backend {
 	private static final int MIN_GLYPH_INK_PIXELS = 20;
 
 	private final Map<String, Boolean> coverageById = new ConcurrentHashMap<>();
+	private final String id;
 
 	private Display display;
 	private RenderEnv env;
 	private String observedGcClassName;
 
+	public NativeBackend() {
+		this(ID);
+	}
+
+	/** A stock SWT backend reported under {@code id}; the classpath decides which SWT it runs. */
+	public NativeBackend(String id) {
+		if (!isNative(id))
+			throw new IllegalArgumentException("not a native backend id: " + id);
+		this.id = id;
+	}
+
+	/** Whether {@code backendId} names one of the stock SWT backends. */
+	public static boolean isNative(String backendId) {
+		return ID.equals(backendId) || BASELINE_ID.equals(backendId) || CANDIDATE_ID.equals(backendId);
+	}
+
 	@Override
 	public String id() {
-		return ID;
+		return id;
 	}
 
 	/**

@@ -117,6 +117,22 @@ means several invocations (CI wiring is T21).
 Tolerance defaults come from `ClusterDiffer.DEFAULT_TOLERANCE`; verdict
 semantics are defined in `RESULT-SCHEMA.md`.
 
+### Comparing two SWT versions
+
+`native-baseline` and `native-candidate` are stock SWT like `native`, but built from another source instead of this worktree.
+`ORACLE_BASELINE` (default `master`) and `ORACLE_CANDIDATE` (required) each take a git ref of this repository or the path of an SWT checkout, whose uncommitted changes are included.
+A ref is extracted once per commit into the build cache together with its own natives.
+
+Both sides are stock SWT, so a correct change to non-rendering code must be bit-identical; use zero tolerance so that any changed pixel counts:
+
+```text
+ORACLE_BASELINE=origin/master ORACLE_CANDIDATE=~/git/eclipse.platform.swt \
+  tools/oracle/oracle run --reference native-baseline --candidate native-candidate \
+  --max-channel-delta 0 --max-changed-fraction 0
+```
+
+The harness itself is still compiled against this worktree's SWT, so a candidate that changes the internals the harness calls (`GTK`, `GDK`, `DPIUtil`, `Control.handle`) fails at activation rather than rendering.
+
 | Flag | Meaning | Default |
 |---|---|---|
 | `--batch-size N` | specimens per child process | 25 |

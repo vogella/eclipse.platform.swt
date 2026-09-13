@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 public final class BackendClasspaths {
 
 	private static volatile String nativeClasspath;
+	private static final java.util.Map<String, String> builtFromSource = new java.util.concurrent.ConcurrentHashMap<>();
 
 	private BackendClasspaths() {
 	}
@@ -38,6 +39,9 @@ public final class BackendClasspaths {
 		return switch (backendId) {
 			case NativeBackend.ID -> nativeClasspath();
 			case SkiaCanvasBackend.ID, SkijaProtoBackend.ID -> runBuild(backendId);
+			case NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID ->
+				// memoized so every child of a run sees the same build, even if the source changes meanwhile
+				builtFromSource.computeIfAbsent(backendId, BackendClasspaths::runBuild);
 			default -> throw new IllegalArgumentException("no build recipe for backend '" + backendId + "'");
 		};
 	}
@@ -51,6 +55,8 @@ public final class BackendClasspaths {
 		return switch (backendId) {
 			case NativeBackend.ID, SkiaCanvasBackend.ID ->
 				repoRoot().resolve("binaries/org.eclipse.swt.gtk.linux.x86_64");
+			case NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID ->
+				Path.of(backendClasspath(backendId)).resolveSibling("lib");
 			case SkijaProtoBackend.ID -> cacheRoot().resolve(
 					"checkouts/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64");
 			default -> throw new IllegalArgumentException("no library path known for backend '" + backendId + "'");

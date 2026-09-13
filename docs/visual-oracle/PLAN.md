@@ -94,6 +94,12 @@ T02 proved all three build and genuinely activate, verified per backend rather t
 One incompatibility surfaced there and matters to anyone comparing the two Skija efforts: `prototype-skija` pins Skija **0.116.3** with jars committed in its own tree, while PR 3231 expects **0.143.17** from Maven Central.
 Each backend gets its own class output and classpath, so the versions never mix.
 
+### D7: Stock SWT can be compared against itself
+
+`native-baseline` and `native-candidate` build stock SWT from a git ref or an SWT directory, so the same catalog answers "did this SWT change alter any pixel", with zero tolerance because both sides are the same renderer.
+This covers ordinary SWT changes and a JNI to FFM migration, still without golden images, since the baseline is rebuilt from source in the same run.
+Usage is in `CLI.md`, "Comparing two SWT versions".
+
 ### D5: The agent-facing CLI is a first-class deliverable
 
 The harness exists to be driven by agents.

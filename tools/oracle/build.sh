@@ -8,7 +8,13 @@
 #   build.sh <backend-id>    build one backend, print its classpath
 #   build.sh --all           build every backend declared available
 #
-# Backends: native | skia-canvas | skija-proto
+# Backends: native | skia-canvas | skija-proto | native-baseline | native-candidate
+#
+# native-baseline and native-candidate build stock SWT from another source,
+# given by ORACLE_BASELINE (default master) and ORACLE_CANDIDATE: either a git
+# ref of this repository or a directory holding an SWT checkout (uncommitted
+# changes included). Their classpath has a sibling lib/ with that source's
+# natives.
 #
 # Idempotent: unchanged sources make a run a no-op. All outputs live in a
 # cache directory outside the worktree:
@@ -193,6 +199,57 @@ build_native() {
 	printf '%s' "$out"
 }
 
+# Resolve an SWT source spec (directory or git ref) to a checkout directory,
+# extracting a ref once per commit into the cache.
+resolve_swt_source() {
+	local spec="$1" sha dir tmp
+	if [ -d "$spec" ]; then
+		realpath "$spec"
+		return
+	fi
+	sha="$(git -C "$REPO_ROOT" rev-parse --verify --quiet "$spec^{commit}")" \
+		|| die "'$spec' is neither a directory nor a git ref of $REPO_ROOT"
+	dir="$CHECKOUT_DIR/swt/$sha"
+	if [ ! -d "$dir" ]; then
+		info "extracting SWT at $spec ($sha) into cache"
+		mkdir -p "$CHECKOUT_DIR/swt"
+		tmp="$(mktemp -d "$CHECKOUT_DIR/swt/.extract-XXXXXX")"
+		# git archive applies the LFS smudge filter, so natives arrive as real binaries
+		git -C "$REPO_ROOT" archive "$sha" bundles/org.eclipse.swt binaries/legal_files \
+			binaries/org.eclipse.swt.gtk.linux.x86_64 | tar -x -C "$tmp" \
+			|| { rm -rf "$tmp"; die "git archive of $sha failed"; }
+		mv -T "$tmp" "$dir" 2>/dev/null || rm -rf "$tmp"
+	fi
+	printf '%s' "$dir"
+}
+
+# Build stock SWT from the source named by $2 under backend id $1.
+build_native_from() {
+	local id="$1" spec="$2"
+	require_gtk_linux_x86_64 "$id"
+	need_java
+	local src bin_dir key out_base out fp
+	src="$(resolve_swt_source "$spec")" || exit 1
+	bin_dir="$src/binaries/org.eclipse.swt.gtk.linux.x86_64"
+	[ -f "$bin_dir/build.properties" ] || die "$src is not an SWT checkout (no $bin_dir/build.properties)"
+	check_natives_present "$bin_dir"
+	key="$(printf '%s' "$src" | sha256sum | cut -c1-12)"
+	out_base="$BUILD_DIR/$id/$key"
+	out="$out_base/classes"
+	fp="$(compute_fingerprint "$bin_dir" "recipe-v2" "$(cd "$bin_dir" && sha256sum libswt-*.so | sha256sum)")"
+	if ! up_to_date "$out" "$out_base/.fingerprint" "$fp"; then
+		info "compiling $id backend (stock SWT from $spec)"
+		rm -rf "$out"
+		compile_bundle "$bin_dir" "$out" ""
+		copy_resources "$bin_dir" "$out"
+		printf '%s' "$fp" > "$out_base/.fingerprint"
+	else
+		info "$id backend up to date ($spec)"
+	fi
+	ln -sfn "$bin_dir" "$out_base/lib"
+	printf '%s' "$out"
+}
+
 build_skia_canvas() {
 	require_gtk_linux_x86_64 "skia-canvas"
 	check_natives_present "$GTK_BIN_DIR"
@@ -267,8 +324,10 @@ usage() {
 usage: build.sh <backend-id>   build one backend, print its classpath on stdout
        build.sh --all          build all backends, print "<id> <classpath>" lines
 
-backends: native, skia-canvas, skija-proto
+backends: native, skia-canvas, skija-proto, native-baseline, native-candidate
 environment:
+  ORACLE_BASELINE   git ref or SWT directory for native-baseline (default master)
+  ORACLE_CANDIDATE  git ref or SWT directory for native-candidate (required)
   ORACLE_CACHE_DIR  override cache location (default ~/.cache/swt-visual-oracle)
   ORACLE_REFRESH=1  re-fetch the prototype-skija fork before building
 USAGE
@@ -279,9 +338,13 @@ main() {
 	local target="${1:-}"
 	[ -n "$target" ] || usage
 	case "$target" in
-		native|skia-canvas|skija-proto)
+		native|skia-canvas|skija-proto|native-baseline|native-candidate)
 			local cp
 			case "$target" in
+				native-baseline) cp="$(build_native_from native-baseline "${ORACLE_BASELINE:-master}")" ;;
+				native-candidate)
+					[ -n "${ORACLE_CANDIDATE:-}" ] || die "native-candidate needs ORACLE_CANDIDATE (git ref or SWT directory)"
+					cp="$(build_native_from native-candidate "$ORACLE_CANDIDATE")" ;;
 				native) cp="$(build_native)" ;;
 				skia-canvas) cp="$(build_skia_canvas)" ;;
 				skija-proto) cp="$(build_skija_proto)" ;;

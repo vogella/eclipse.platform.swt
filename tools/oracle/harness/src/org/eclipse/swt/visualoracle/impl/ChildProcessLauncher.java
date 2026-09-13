@@ -61,7 +61,8 @@ public final class ChildProcessLauncher {
 
 	/** Backends a child can be launched for; each needs its own classpath. */
 	private static final java.util.Set<String> SUPPORTED_BACKENDS = java.util.Set.of(
-			NativeBackend.ID, SkiaCanvasBackend.ID, SkijaProtoBackend.ID);
+			NativeBackend.ID, NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID,
+			SkiaCanvasBackend.ID, SkijaProtoBackend.ID);
 
 	private final Config config;
 
@@ -244,8 +245,9 @@ public final class ChildProcessLauncher {
 
 	private List<String> buildCommand(ChildRequest request, Path dir) {
 		LaunchConfig launch = SwtRenderEnvs.launch(request.env());
-		boolean protoBackend = SkijaProtoBackend.ID.equals(request.backendId());
 		boolean canvasBackend = SkiaCanvasBackend.ID.equals(request.backendId());
+		// every backend but the parent's own native build needs its own classes and natives
+		boolean isolated = !NativeBackend.ID.equals(request.backendId());
 		List<String> command = new ArrayList<>();
 		// setsid puts the child in its own process group. Process.destroyForcibly()
 		// kills only the direct child, which is the xvfb-run wrapper; the JVM and the
@@ -258,7 +260,7 @@ public final class ChildProcessLauncher {
 		command.add("-screen 0 1600x1200x24");
 		command.add(javaCommand());
 		command.add("--enable-native-access=ALL-UNNAMED");
-		if (protoBackend || canvasBackend)
+		if (isolated)
 			command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(request.backendId()));
 		else {
 			String libPath = System.getProperty("java.library.path", "");
@@ -274,7 +276,7 @@ public final class ChildProcessLauncher {
 		// One backend's SWT classes per process (ADR-002): a non-native child
 		// gets the harness classes plus its own backend's build, never the
 		// parent's native backend classes.
-		command.add(protoBackend || canvasBackend
+		command.add(isolated
 				? BackendClasspaths.harnessClasspath() + java.io.File.pathSeparator
 						+ BackendClasspaths.backendClasspath(request.backendId())
 				: System.getProperty("java.class.path"));

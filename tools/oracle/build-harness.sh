@@ -38,6 +38,7 @@ backend_cp="$("$SCRIPT_DIR/build.sh" native)" || die "building 'native' backend 
 # collides with the real one.
 rm -rf "$OUT_DIR"
 mkdir -p "$OUT_DIR"
+mkdir -p /tmp/opencode/oracle-t03
 args_file="$(mktemp /tmp/opencode/oracle-t03/harness-javac-XXXXXX.args)"
 trap 'rm -f "$args_file"' EXIT
 mkdir -p "$(dirname "$args_file")"

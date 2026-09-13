@@ -69,7 +69,8 @@ public final class RunVerb {
 	public static final String SCRATCH_ROOT = "/tmp/opencode/oracle-T20";
 	private static final Path DEFAULT_RUNS_ROOT = Path.of(SCRATCH_ROOT, "runs");
 
-	private static final Set<String> CHILD_BACKENDS = Set.of(NativeBackend.ID, SkijaProtoBackend.ID);
+	private static final Set<String> CHILD_BACKENDS = Set.of(NativeBackend.ID, NativeBackend.BASELINE_ID,
+			NativeBackend.CANDIDATE_ID, SkijaProtoBackend.ID);
 	private static final int DEFAULT_BATCH_SIZE = 25;
 
 	private final PrintStream stdout;
@@ -249,6 +250,9 @@ public final class RunVerb {
 				  --tag TAG               select specimens tagged TAG (repeatable); no flags = whole catalog
 				  --reference BACKEND     oracle side, default native
 				  --candidate BACKEND     side under test, default skija-proto
+				                          backends: native, skija-proto, native-baseline (SWT from
+				                          $ORACLE_BASELINE, default master), native-candidate (SWT from
+				                          $ORACLE_CANDIDATE); both take a git ref or an SWT directory
 				  --dpi N                 zoom percentage for the environment, default 100
 				  --theme ID              GTK theme id, default platform theme
 				  --direction LTR|RTL     default LTR
