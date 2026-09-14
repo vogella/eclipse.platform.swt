@@ -37,6 +37,7 @@ import org.eclipse.swt.visualoracle.spi.Specimen;
 import org.eclipse.swt.visualoracle.spi.SpecimenContext;
 import org.eclipse.swt.visualoracle.spi.SpecimenModule;
 import org.eclipse.swt.visualoracle.spi.Tag;
+import org.eclipse.swt.visualoracle.spi.UnsupportedSpecimenException;
 
 /**
  * The image family: how icons reach the screen at the current zoom, through
@@ -120,6 +121,15 @@ public class ImageModule implements SpecimenModule {
 		}
 	}
 
+	/** Refuses the specimen when this SWT lacks destination-size drawImage, which a paint listener cannot report. */
+	static void requireDrawImageAtSize() {
+		try {
+			GC.class.getMethod("drawImage", Image.class, int.class, int.class, int.class, int.class);
+		} catch (NoSuchMethodException e) {
+			throw new UnsupportedSpecimenException("this SWT predates GC.drawImage(Image, int, int, int, int)");
+		}
+	}
+
 	/** A fixed opaque background, so alpha blending shows up in the pixels. */
 	static Color backdrop() {
 		return new Color(255, 236, 190);
@@ -185,6 +195,7 @@ public class ImageModule implements SpecimenModule {
 
 		@Override
 		public Control create(Composite parent, SpecimenContext ctx) {
+			requireDrawImageAtSize();
 			Canvas canvas = new Canvas(parent, SWT.NONE);
 			canvas.setBackground(backdrop());
 			Display display = parent.getDisplay();

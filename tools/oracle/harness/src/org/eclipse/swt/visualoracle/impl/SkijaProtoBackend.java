@@ -25,6 +25,7 @@ import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.RenderEnv;
 import org.eclipse.swt.visualoracle.spi.Specimen;
+import org.eclipse.swt.visualoracle.spi.UnsupportedSpecimenException;
 
 /**
  * Adapter for the prototype-skija fork (swt-initiative31/prototype-skija),
@@ -121,8 +122,8 @@ public class SkijaProtoBackend implements Backend {
 				return false;
 			requireSkijaWrap(drawing, control);
 			return true;
-		} catch (LinkageError e) {
-			// the fork's SWT predates API the specimen uses
+		} catch (UnsupportedSpecimenException | LinkageError e) {
+			// the fork's SWT predates API or a capability the specimen uses
 			return false;
 		} finally {
 			context.dispose();

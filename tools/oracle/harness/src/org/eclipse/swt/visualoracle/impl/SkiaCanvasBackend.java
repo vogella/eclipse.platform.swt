@@ -26,6 +26,7 @@ import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.RenderEnv;
 import org.eclipse.swt.visualoracle.spi.Specimen;
+import org.eclipse.swt.visualoracle.spi.UnsupportedSpecimenException;
 
 /**
  * Adapter for the {@code SWT.SKIA} canvas of PR 3231, built by
@@ -185,6 +186,8 @@ public class SkiaCanvasBackend implements Backend {
 			if (!(control instanceof Canvas))
 				return false;
 			return readHandler(control) != null;
+		} catch (UnsupportedSpecimenException | LinkageError e) {
+			return false;
 		} finally {
 			context.dispose();
 			shell.dispose();

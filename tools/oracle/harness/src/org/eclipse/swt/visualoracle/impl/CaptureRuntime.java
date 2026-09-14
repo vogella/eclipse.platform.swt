@@ -189,6 +189,8 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		Control control;
 		try {
 			control = specimen.create(host, ctx);
+		} catch (UnsupportedSpecimenException e) {
+			throw e;
 		} catch (LinkageError e) {
 			// this SWT predates API the specimen uses, e.g. an old native-baseline ref
 			throw new UnsupportedSpecimenException(
@@ -253,7 +255,9 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 
 	private Shell shellFor(Display display) {
 		if (shell == null || shell.isDisposed() || shell.getDisplay() != display)
-			shell = new Shell(display);
+			// no trim: SWT sizes a titled shell with a guessed 6x29 trim until frame extents
+			// arrive, which under load is late enough to shrink the client area below the specimen
+			shell = new Shell(display, SWT.NO_TRIM);
 		return shell;
 	}
 

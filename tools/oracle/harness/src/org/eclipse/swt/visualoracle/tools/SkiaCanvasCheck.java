@@ -163,10 +163,11 @@ public final class SkiaCanvasCheck {
 		CoverageResult result = runCoverageProbe();
 		SpecimenCatalog catalog = SpecimenCatalog.discover();
 		int catalogSize = catalog.all().size();
-		// the Canvas-derived specimens: the CLabel family and the image family's drawing canvases
+		// the Canvas-derived specimens: the CLabel family and the image and svg drawing canvases
 		Set<String> clabelIds = new HashSet<>();
 		for (var specimen : catalog.all())
-			if (specimen.id().startsWith("clabel.") || specimen.id().startsWith("image.draw."))
+			if (specimen.id().startsWith("clabel.") || specimen.id().startsWith("image.draw.")
+					|| specimen.id().startsWith("svg.draw."))
 				clabelIds.add(specimen.id());
 		Set<String> expectedUnsupported = new HashSet<>();
 		for (var specimen : catalog.all())
@@ -177,12 +178,12 @@ public final class SkiaCanvasCheck {
 		require(result.error == 0, result.error + " coverage probes errored:\n" + result.errorLines);
 		require(result.supported == clabelIds.size(),
 				"coverage probe counted " + result.supported + " supported specimens, but only the "
-						+ clabelIds.size() + " CLabel and image.draw specimens extend Canvas");
+						+ clabelIds.size() + " CLabel, image.draw and svg.draw specimens extend Canvas");
 		require(new HashSet<>(result.unsupportedIds).equals(expectedUnsupported),
 				"unsupported set differs from catalog minus the Canvas-derived specimens");
 		out.println("      skia-canvas covers " + result.supported + " of " + result.total
 				+ " catalog specimens (" + result.unsupported + " unsupported: everything"
-				+ " but clabel and image.draw), matching the catalog exactly");
+				+ " but clabel, image.draw and svg.draw), matching the catalog exactly");
 	}
 
 	/**

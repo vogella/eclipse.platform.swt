@@ -151,6 +151,53 @@ ensure_skija_jars() {
 	EOF
 }
 
+# Resolve the JSVG jar the fragment in $1 was built for, from the lower bound
+# of its Import-Package range, downloading the pinned jar once.
+jsvg_jar_for() {
+	local manifest="$1/META-INF/MANIFEST.MF" lower version sum file
+	lower="$(grep -oE 'com\.github\.weisj\.jsvg;version="\[[0-9.]+' "$manifest" | head -1 | sed 's/.*\[//')"
+	case "$lower" in
+		1.7.*) version=1.7.2 sum=5591409ef245e48004f0524790b7042cd239acc01327326cfd4edfa57f475f99 ;;
+		2.0.*) version=2.0.0 sum=81fc9ada579fc3f4924ec35f904c043de13ee8fba280322e638c7092006f1b52 ;;
+		2.1.*) version=2.1.0 sum=a538142d27c57c55066da02a535cc8eee3afd0d37b3daff8eba6344bd0ffc1b6 ;;
+		*) die "no pinned JSVG jar for the range starting at '$lower' in $manifest; add one to build.sh" ;;
+	esac
+	file="$MAVEN_DIR/com/github/weisj/jsvg/$version/jsvg-$version.jar"
+	mkdir -p "$(dirname "$file")"
+	if [ ! -f "$file" ]; then
+		info "downloading $(basename "$file") to cache"
+		curl -fsSL -o "$file" "https://repo1.maven.org/maven2/com/github/weisj/jsvg/$version/jsvg-$version.jar" \
+			|| die "failed to download JSVG $version (offline? SVG support needs network once)"
+	fi
+	echo "$sum  $file" | sha256sum -c --quiet >/dev/null 2>&1 \
+		|| die "JSVG jar $file does not match pinned checksum, delete it and retry"
+	printf '%s' "$file"
+}
+
+# Append the org.eclipse.swt.svg fragment of SWT checkout $1, compiled against
+# SWT classes $2 into $3, as ":<classes>:<jsvg jar>"; prints nothing when that
+# checkout predates the fragment, so its SVG specimens report UNSUPPORTED.
+svg_classpath() {
+	local src="$1" swt_classes="$2" out="$3" svg_dir fp jar
+	svg_dir="$src/bundles/org.eclipse.swt.svg"
+	[ -f "$svg_dir/build.properties" ] || return 0
+	jar="$(jsvg_jar_for "$svg_dir")" || exit 1
+	fp="$(compute_fingerprint "$svg_dir" "svg-recipe-v3" "$(sha256sum "$jar")" "$(cat "$swt_classes/../.fingerprint"* 2>/dev/null | sha256sum)")"
+	if ! up_to_date "$out" "$out.fingerprint" "$fp"; then
+		info "compiling org.eclipse.swt.svg from $src against $(basename "$jar")"
+		rm -rf "$out"
+		compile_bundle "$svg_dir" "$out" "$swt_classes:$jar" || die "compiling org.eclipse.swt.svg from $src failed"
+		copy_resources "$svg_dir" "$out"
+		# older fragments register the rasterizer from the bundle root instead of a source folder
+		if [ -d "$svg_dir/META-INF/services" ]; then
+			mkdir -p "$out/META-INF"
+			cp -r "$svg_dir/META-INF/services" "$out/META-INF/"
+		fi
+		printf '%s' "$fp" > "$out.fingerprint"
+	fi
+	printf ':%s:%s' "$out" "$jar"
+}
+
 ensure_fork_checkout() {
 	if [ -d "$PROTO_CHECKOUT/.git" ]; then
 		if [ "${ORACLE_REFRESH:-0}" = "1" ]; then
@@ -196,7 +243,9 @@ build_native() {
 	else
 		info "native backend up to date"
 	fi
-	printf '%s' "$out"
+	local svg
+	svg="$(svg_classpath "$REPO_ROOT" "$out" "$OUT_BASE/native/svg-classes")" || exit 1
+	printf '%s%s' "$out" "$svg"
 }
 
 # Resolve an SWT source spec (directory or git ref) to a checkout directory,
@@ -209,14 +258,16 @@ resolve_swt_source() {
 	fi
 	sha="$(git -C "$REPO_ROOT" rev-parse --verify --quiet "$spec^{commit}")" \
 		|| die "'$spec' is neither a directory nor a git ref of $REPO_ROOT"
-	dir="$CHECKOUT_DIR/swt/$sha"
+	dir="$CHECKOUT_DIR/swt-v2/$sha"
 	if [ ! -d "$dir" ]; then
 		info "extracting SWT at $spec ($sha) into cache"
-		mkdir -p "$CHECKOUT_DIR/swt"
-		tmp="$(mktemp -d "$CHECKOUT_DIR/swt/.extract-XXXXXX")"
+		mkdir -p "$CHECKOUT_DIR/swt-v2"
+		tmp="$(mktemp -d "$CHECKOUT_DIR/swt-v2/.extract-XXXXXX")"
+		local paths=(bundles/org.eclipse.swt binaries/legal_files binaries/org.eclipse.swt.gtk.linux.x86_64)
+		git -C "$REPO_ROOT" cat-file -e "$sha:bundles/org.eclipse.swt.svg" 2>/dev/null \
+			&& paths+=(bundles/org.eclipse.swt.svg)
 		# git archive applies the LFS smudge filter, so natives arrive as real binaries
-		git -C "$REPO_ROOT" archive "$sha" bundles/org.eclipse.swt binaries/legal_files \
-			binaries/org.eclipse.swt.gtk.linux.x86_64 | tar -x -C "$tmp" \
+		git -C "$REPO_ROOT" archive "$sha" "${paths[@]}" | tar -x -C "$tmp" \
 			|| { rm -rf "$tmp"; die "git archive of $sha failed"; }
 		mv -T "$tmp" "$dir" 2>/dev/null || rm -rf "$tmp"
 	fi
@@ -247,7 +298,9 @@ build_native_from() {
 		info "$id backend up to date ($spec)"
 	fi
 	ln -sfn "$bin_dir" "$out_base/lib"
-	printf '%s' "$out"
+	local svg
+	svg="$(svg_classpath "$src" "$out" "$out_base/svg-classes")" || exit 1
+	printf '%s%s' "$out" "$svg"
 }
 
 build_skia_canvas() {
@@ -284,9 +337,11 @@ build_skia_canvas() {
 	else
 		info "skia-canvas fragment up to date"
 	fi
-	printf '%s:%s:%s:%s' "$out_main" "$out_skia" \
+	local svg
+	svg="$(svg_classpath "$REPO_ROOT" "$out_main" "$OUT_BASE/skia-canvas/svg-classes")" || exit 1
+	printf '%s:%s:%s:%s%s' "$out_main" "$out_skia" \
 		"$jars" \
-		"$MAVEN_DIR/io/github/humbleui/skija-linux-x64/0.143.17/skija-linux-x64-0.143.17.jar"
+		"$MAVEN_DIR/io/github/humbleui/skija-linux-x64/0.143.17/skija-linux-x64-0.143.17.jar" "$svg"
 }
 
 build_skija_proto() {

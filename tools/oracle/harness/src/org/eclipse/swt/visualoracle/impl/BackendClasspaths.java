@@ -56,7 +56,7 @@ public final class BackendClasspaths {
 			case NativeBackend.ID, SkiaCanvasBackend.ID ->
 				repoRoot().resolve("binaries/org.eclipse.swt.gtk.linux.x86_64");
 			case NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID ->
-				Path.of(backendClasspath(backendId)).resolveSibling("lib");
+				Path.of(backendClasspath(backendId).split(java.io.File.pathSeparator)[0]).resolveSibling("lib");
 			case SkijaProtoBackend.ID -> cacheRoot().resolve(
 					"checkouts/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64");
 			default -> throw new IllegalArgumentException("no library path known for backend '" + backendId + "'");
@@ -64,16 +64,16 @@ public final class BackendClasspaths {
 	}
 
 	/**
-	 * The parent JVM's classpath minus the native backend entry: the harness
+	 * The parent JVM's classpath minus the native backend entries: the harness
 	 * classes a child needs so it can load one specific backend's SWT instead
 	 * of the parent's. Fails when the split cannot be made unambiguously.
 	 */
 	public static String harnessClasspath() {
-		String nativeCp = nativeClasspath();
+		List<String> nativeEntries = List.of(nativeClasspath().split(java.io.File.pathSeparator));
 		String parent = System.getProperty("java.class.path", "");
 		List<String> kept = new ArrayList<>();
 		for (String entry : parent.split(java.io.File.pathSeparator)) {
-			if (entry.isEmpty() || entry.equals(nativeCp))
+			if (entry.isEmpty() || nativeEntries.contains(entry))
 				continue;
 			kept.add(entry);
 		}

@@ -29,7 +29,7 @@ final class CatalogIcons {
 
 	static final int POINTS = 16;
 
-	private static Path pngDir;
+	private static Path iconDir;
 
 	private CatalogIcons() {
 	}
@@ -79,24 +79,40 @@ final class CatalogIcons {
 	 * so the file does not depend on SWT's own encoder.
 	 */
 	static synchronized String png(int scale) {
+		String name = scale == 1 ? "icon.png" : "icon@" + scale + "x.png";
+		return file(name, file -> {
+			int size = scale * POINTS;
+			BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+			for (int y = 0; y < size; y++)
+				for (int x = 0; x < size; x++)
+					image.setRGB(x, y, argb(x, y, size, size));
+			ImageIO.write(image, "png", file.toFile());
+		});
+	}
+
+	/** A text file with {@code content}, written once per process. */
+	static synchronized String text(String name, String content) {
+		return file(name, file -> Files.writeString(file, content));
+	}
+
+	private interface Writer {
+		void write(Path file) throws IOException;
+	}
+
+	private static String file(String name, Writer writer) {
 		try {
-			if (pngDir == null) {
-				pngDir = Files.createTempDirectory("oracle-icons-");
-				pngDir.toFile().deleteOnExit();
+			if (iconDir == null) {
+				iconDir = Files.createTempDirectory("oracle-icons-");
+				iconDir.toFile().deleteOnExit();
 			}
-			Path file = pngDir.resolve(scale == 1 ? "icon.png" : "icon@" + scale + "x.png");
+			Path file = iconDir.resolve(name);
 			if (!Files.exists(file)) {
-				int size = scale * POINTS;
-				BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-				for (int y = 0; y < size; y++)
-					for (int x = 0; x < size; x++)
-						image.setRGB(x, y, argb(x, y, size, size));
-				ImageIO.write(image, "png", file.toFile());
+				writer.write(file);
 				file.toFile().deleteOnExit();
 			}
 			return file.toString();
 		} catch (IOException e) {
-			throw new UncheckedIOException("cannot write test icon", e);
+			throw new UncheckedIOException("cannot write test icon " + name, e);
 		}
 	}
 }
