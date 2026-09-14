@@ -121,6 +121,9 @@ public class SkijaProtoBackend implements Backend {
 				return false;
 			requireSkijaWrap(drawing, control);
 			return true;
+		} catch (LinkageError e) {
+			// the fork's SWT predates API the specimen uses
+			return false;
 		} finally {
 			context.dispose();
 			shell.dispose();

@@ -35,6 +35,7 @@ import org.eclipse.swt.visualoracle.spi.RenderEnv;
 import org.eclipse.swt.visualoracle.spi.Specimen;
 import org.eclipse.swt.visualoracle.spi.SpecimenCatalog;
 import org.eclipse.swt.visualoracle.spi.Theme;
+import org.eclipse.swt.visualoracle.spi.UnsupportedSpecimenException;
 
 /**
  * Child-process half of the environment control: one JVM serves exactly one
@@ -206,6 +207,8 @@ public final class CaptureChild {
 			Path png = imagesDir.resolve(specimen.id() + "-" + backend.id() + ".png");
 			Files.write(png, image.pngBytes());
 			return CaptureEntry.captured(specimen.id(), backend.id(), image, out.relativize(png).toString());
+		} catch (UnsupportedSpecimenException e) {
+			return CaptureEntry.skipped(specimen.id(), backend.id(), CaptureStatus.UNSUPPORTED, String.valueOf(e));
 		} catch (CaptureFailedException e) {
 			return CaptureEntry.skipped(specimen.id(), backend.id(), CaptureStatus.FAILED, String.valueOf(e));
 		} catch (java.io.IOException e) {

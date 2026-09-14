@@ -189,6 +189,10 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		Control control;
 		try {
 			control = specimen.create(host, ctx);
+		} catch (LinkageError e) {
+			// this SWT predates API the specimen uses, e.g. an old native-baseline ref
+			throw new UnsupportedSpecimenException(
+					"specimen '" + specimen.id() + "' needs SWT API missing from this SWT: " + e);
 		} catch (Throwable t) {
 			throw new CaptureFailedException(
 					"specimen '" + specimen.id() + "' threw during creation: " + t, t);

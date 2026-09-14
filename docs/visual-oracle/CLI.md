@@ -89,7 +89,7 @@ CI case and is intentionally not behind a guard.
 An empty result is a usage error (exit 2), because a typo'd family name would
 otherwise look like a green run over zero specimens.
 
-The catalog currently carries 149 specimens over 19 families; `--list` prints
+The catalog currently carries 162 specimens over 20 families; `--list` prints
 what a selection would run without capturing anything.
 
 State-based selection (`--state hover`, as sketched in `PLAN.md` decision D5)
@@ -130,6 +130,9 @@ ORACLE_BASELINE=origin/master ORACLE_CANDIDATE=~/git/eclipse.platform.swt \
   tools/oracle/oracle run --reference native-baseline --candidate native-candidate \
   --max-channel-delta 0 --max-changed-fraction 0
 ```
+
+Run the `image` family at every zoom you care about (`--dpi 100`, `150`, `200`): it covers multi- and single-resolution providers, `@2x` files, `ImageDataAtSizeProvider`, `ImageGcDrawer`, disabled and gray images and scaled `drawImage`, and at 200 a wrongly picked resolution variant changes pixels.
+A specimen whose SWT API is missing on one side, such as `ImageDataAtSizeProvider` on a baseline older than 2025-09, is reported UNSUPPORTED rather than FAILED.
 
 The harness itself is still compiled against this worktree's SWT, so a candidate that changes the internals the harness calls (`GTK`, `GDK`, `DPIUtil`, `Control.handle`) fails at activation rather than rendering.
 
