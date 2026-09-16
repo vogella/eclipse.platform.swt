@@ -95,6 +95,12 @@ Upcall stubs have neither limit.
 One difference is deliberate: closing the arena of a stub in `unbind` invalidates the function pointer, while a stale pointer into `callback.c` lands in an empty slot and returns harmlessly.
 A callback that is still running keeps its stub alive instead, and the remaining risk is native code holding a pointer to a disposed callback, which SWT's dispose discipline rules out.
 
+### Porting os_custom.c
+
+The first pieces of `os_custom.c` are Java now, so the FFM build no longer calls them.
+`FFMUtf16` ports the five UTF-16 offset helpers, which are pure arithmetic over the bytes of a UTF-8 string, and `FFMConstructorProc` ports the six GObject constructor overrides, which call the constructor of the super class through a downcall handle and are installed as upcall stubs.
+That is about 175 of the 2,380 lines of `os_custom.c`; the `SwtFixed` widget and the accessibility bridge are what remain.
+
 ### Coverage
 
 1,456 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
@@ -103,12 +109,16 @@ The 147 that stay JNI are 93 macros or custom C functions without a declaration,
 ### Verification
 
 * `FFMCrossCheck` compares 35 struct sizes, 720 struct reads and 240 struct writes of random data through every JNI `memmove` of a struct, and 58 call results covering scalars, unsigned results, doubles, critical and copied arrays, aliased arrays, struct out-parameters, bit-fields, variadic calls with a sentinel, dynamic functions and symbol addresses: 0 mismatches.
+* `FFMUtf16` is compared against the C implementation for every offset of six strings covering ASCII, Latin-1, three byte characters, surrogate pairs and every `max` boundary, 254 comparisons.
 * The Visual Oracle harness renders all 169 specimens through stock SWT and through the FFM build and compares them at zero tolerance: every specimen is bit-identical at 100% and at 200% zoom.
   At 150% every specimen fails on both sides with `IllegalArgumentException: Argument not valid`, which is a pre-existing limitation of the harness at fractional zoom and unrelated to FFM.
 * The same cross check, JUnit and Visual Oracle runs pass unchanged with the callbacks routed through upcall stubs.
 * 127 SWT JUnit test classes (widgets, graphics, custom, accessibility, dnd, layout, events, program, printing; 4,150 tests) produce identical outcomes on the JNI build and on the FFM build: 4,059 passed, 78 failed and 11 aborted on both, the failures coming from the headless environment.
 
 ### Findings
+
+* `scrollbar.horizontal.scrolled` and `scrollbar.both.scrolled` flip between two faithful renderings under CPU contention, which the harness documents in `DeterminismLint.CATALOG_QUARANTINE` with the same 2,749 changed pixels seen here.
+  They are not a JNI versus FFM difference: the same build compared against itself flips as well, so oracle runs that matter have to happen on an idle machine.
 
 * JNI `SetBooleanField` keeps only the lowest bit of the value, while native method results are true for any non-zero low byte, so struct fields and function results need different conversions.
 * The JNI glue copies arrays back in reverse parameter order, which `Transform.multiply` relies on by passing the same `double[]` as result and operand of `cairo_matrix_multiply`.
