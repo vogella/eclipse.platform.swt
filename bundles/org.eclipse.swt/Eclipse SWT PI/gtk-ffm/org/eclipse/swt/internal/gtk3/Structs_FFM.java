@@ -23,6 +23,7 @@ import org.eclipse.swt.internal.ffm.*;
 public final class Structs_FFM {
 
 public static final long GdkEvent_SIZEOF = 96L;
+public static final long GdkEvent_TYPE_OFFSET = 0L;
 
 public static void GdkEvent_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkEvent o) {
 	o.type = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -33,6 +34,17 @@ public static void GdkEvent_write(MemorySegment s, org.eclipse.swt.internal.gtk3
 }
 
 public static final long GdkEventButton_SIZEOF = 80L;
+public static final long GdkEventButton_WINDOW_OFFSET = 8L;
+public static final long GdkEventButton_SEND_EVENT_OFFSET = 16L;
+public static final long GdkEventButton_TIME_OFFSET = 20L;
+public static final long GdkEventButton_X_OFFSET = 24L;
+public static final long GdkEventButton_Y_OFFSET = 32L;
+public static final long GdkEventButton_AXES_OFFSET = 40L;
+public static final long GdkEventButton_STATE_OFFSET = 48L;
+public static final long GdkEventButton_BUTTON_OFFSET = 52L;
+public static final long GdkEventButton_DEVICE_OFFSET = 56L;
+public static final long GdkEventButton_X_ROOT_OFFSET = 64L;
+public static final long GdkEventButton_Y_ROOT_OFFSET = 72L;
 
 public static void GdkEventButton_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkEventButton o) {
 	org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEvent_read(s, o);
@@ -65,6 +77,18 @@ public static void GdkEventButton_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long GdkEventCrossing_SIZEOF = 88L;
+public static final long GdkEventCrossing_WINDOW_OFFSET = 8L;
+public static final long GdkEventCrossing_SEND_EVENT_OFFSET = 16L;
+public static final long GdkEventCrossing_SUBWINDOW_OFFSET = 24L;
+public static final long GdkEventCrossing_TIME_OFFSET = 32L;
+public static final long GdkEventCrossing_X_OFFSET = 40L;
+public static final long GdkEventCrossing_Y_OFFSET = 48L;
+public static final long GdkEventCrossing_X_ROOT_OFFSET = 56L;
+public static final long GdkEventCrossing_Y_ROOT_OFFSET = 64L;
+public static final long GdkEventCrossing_MODE_OFFSET = 72L;
+public static final long GdkEventCrossing_DETAIL_OFFSET = 76L;
+public static final long GdkEventCrossing_FOCUS_OFFSET = 80L;
+public static final long GdkEventCrossing_STATE_OFFSET = 84L;
 
 public static void GdkEventCrossing_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkEventCrossing o) {
 	org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEvent_read(s, o);
@@ -99,6 +123,9 @@ public static void GdkEventCrossing_write(MemorySegment s, org.eclipse.swt.inter
 }
 
 public static final long GdkEventFocus_SIZEOF = 24L;
+public static final long GdkEventFocus_WINDOW_OFFSET = 8L;
+public static final long GdkEventFocus_SEND_EVENT_OFFSET = 16L;
+public static final long GdkEventFocus_IN_OFFSET = 18L;
 
 public static void GdkEventFocus_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkEventFocus o) {
 	org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEvent_read(s, o);
@@ -115,6 +142,15 @@ public static void GdkEventFocus_write(MemorySegment s, org.eclipse.swt.internal
 }
 
 public static final long GdkEventKey_SIZEOF = 56L;
+public static final long GdkEventKey_WINDOW_OFFSET = 8L;
+public static final long GdkEventKey_SEND_EVENT_OFFSET = 16L;
+public static final long GdkEventKey_TIME_OFFSET = 20L;
+public static final long GdkEventKey_STATE_OFFSET = 24L;
+public static final long GdkEventKey_KEYVAL_OFFSET = 28L;
+public static final long GdkEventKey_LENGTH_OFFSET = 32L;
+public static final long GdkEventKey_STRING_OFFSET = 40L;
+public static final long GdkEventKey_HARDWARE_KEYCODE_OFFSET = 48L;
+public static final long GdkEventKey_GROUP_OFFSET = 50L;
 
 public static void GdkEventKey_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkEventKey o) {
 	org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEvent_read(s, o);
@@ -145,6 +181,17 @@ public static void GdkEventKey_write(MemorySegment s, org.eclipse.swt.internal.g
 }
 
 public static final long GdkEventMotion_SIZEOF = 80L;
+public static final long GdkEventMotion_WINDOW_OFFSET = 8L;
+public static final long GdkEventMotion_SEND_EVENT_OFFSET = 16L;
+public static final long GdkEventMotion_TIME_OFFSET = 20L;
+public static final long GdkEventMotion_X_OFFSET = 24L;
+public static final long GdkEventMotion_Y_OFFSET = 32L;
+public static final long GdkEventMotion_AXES_OFFSET = 40L;
+public static final long GdkEventMotion_STATE_OFFSET = 48L;
+public static final long GdkEventMotion_IS_HINT_OFFSET = 52L;
+public static final long GdkEventMotion_DEVICE_OFFSET = 56L;
+public static final long GdkEventMotion_X_ROOT_OFFSET = 64L;
+public static final long GdkEventMotion_Y_ROOT_OFFSET = 72L;
 
 public static void GdkEventMotion_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkEventMotion o) {
 	org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEvent_read(s, o);
@@ -177,6 +224,10 @@ public static void GdkEventMotion_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long GdkEventWindowState_SIZEOF = 32L;
+public static final long GdkEventWindowState_WINDOW_OFFSET = 8L;
+public static final long GdkEventWindowState_SEND_EVENT_OFFSET = 16L;
+public static final long GdkEventWindowState_CHANGED_MASK_OFFSET = 20L;
+public static final long GdkEventWindowState_NEW_WINDOW_STATE_OFFSET = 24L;
 
 public static void GdkEventWindowState_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkEventWindowState o) {
 	org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEvent_read(s, o);
@@ -195,6 +246,17 @@ public static void GdkEventWindowState_write(MemorySegment s, org.eclipse.swt.in
 }
 
 public static final long GdkGeometry_SIZEOF = 56L;
+public static final long GdkGeometry_MIN_WIDTH_OFFSET = 0L;
+public static final long GdkGeometry_MIN_HEIGHT_OFFSET = 4L;
+public static final long GdkGeometry_MAX_WIDTH_OFFSET = 8L;
+public static final long GdkGeometry_MAX_HEIGHT_OFFSET = 12L;
+public static final long GdkGeometry_BASE_WIDTH_OFFSET = 16L;
+public static final long GdkGeometry_BASE_HEIGHT_OFFSET = 20L;
+public static final long GdkGeometry_WIDTH_INC_OFFSET = 24L;
+public static final long GdkGeometry_HEIGHT_INC_OFFSET = 28L;
+public static final long GdkGeometry_MIN_ASPECT_OFFSET = 32L;
+public static final long GdkGeometry_MAX_ASPECT_OFFSET = 40L;
+public static final long GdkGeometry_WIN_GRAVITY_OFFSET = 48L;
 
 public static void GdkGeometry_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkGeometry o) {
 	o.min_width = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -225,6 +287,19 @@ public static void GdkGeometry_write(MemorySegment s, org.eclipse.swt.internal.g
 }
 
 public static final long GdkWindowAttr_SIZEOF = 80L;
+public static final long GdkWindowAttr_TITLE_OFFSET = 0L;
+public static final long GdkWindowAttr_EVENT_MASK_OFFSET = 8L;
+public static final long GdkWindowAttr_X_OFFSET = 12L;
+public static final long GdkWindowAttr_Y_OFFSET = 16L;
+public static final long GdkWindowAttr_WIDTH_OFFSET = 20L;
+public static final long GdkWindowAttr_HEIGHT_OFFSET = 24L;
+public static final long GdkWindowAttr_WCLASS_OFFSET = 28L;
+public static final long GdkWindowAttr_VISUAL_OFFSET = 32L;
+public static final long GdkWindowAttr_WINDOW_TYPE_OFFSET = 40L;
+public static final long GdkWindowAttr_CURSOR_OFFSET = 48L;
+public static final long GdkWindowAttr_WMCLASS_NAME_OFFSET = 56L;
+public static final long GdkWindowAttr_WMCLASS_CLASS_OFFSET = 64L;
+public static final long GdkWindowAttr_OVERRIDE_REDIRECT_OFFSET = 72L;
 
 public static void GdkWindowAttr_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GdkWindowAttr o) {
 	o.title = s.get(JAVA_LONG_UNALIGNED, 0L);
@@ -259,6 +334,9 @@ public static void GdkWindowAttr_write(MemorySegment s, org.eclipse.swt.internal
 }
 
 public static final long GtkTargetEntry_SIZEOF = 16L;
+public static final long GtkTargetEntry_TARGET_OFFSET = 0L;
+public static final long GtkTargetEntry_FLAGS_OFFSET = 8L;
+public static final long GtkTargetEntry_INFO_OFFSET = 12L;
 
 public static void GtkTargetEntry_read(MemorySegment s, org.eclipse.swt.internal.gtk3.GtkTargetEntry o) {
 	o.target = s.get(JAVA_LONG_UNALIGNED, 0L);

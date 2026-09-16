@@ -18,7 +18,10 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.ffm.*;
+import org.eclipse.swt.internal.accessibility.gtk.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk3.*;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -374,6 +377,74 @@ public class FFMCrossCheck {
 				C.free(pointer);
 			}
 		}
+
+		// macros without a symbol: type checks, struct fields and arithmetic
+		Button button = new Button(shell, SWT.PUSH);
+		button.setText("ok");
+		long buttonHandle = button.handle, labelHandle = label.handle;
+		check("GTK_IS_BUTTON(button)", GTK.GTK_IS_BUTTON(buttonHandle), FFMMacros.GTK_IS_BUTTON(buttonHandle));
+		check("GTK_IS_BUTTON(label)", GTK.GTK_IS_BUTTON(labelHandle), FFMMacros.GTK_IS_BUTTON(labelHandle));
+		check("GTK_IS_LABEL(label)", GTK.GTK_IS_LABEL(labelHandle), FFMMacros.GTK_IS_LABEL(labelHandle));
+		check("GTK_IS_WINDOW(shell)", GTK.GTK_IS_WINDOW(handle), FFMMacros.GTK_IS_WINDOW(handle));
+		check("GTK_IS_CONTAINER(shell)", GTK.GTK_IS_CONTAINER(handle), FFMMacros.GTK_IS_CONTAINER(handle));
+		check("GTK_IS_PLUG(shell)", GTK.GTK_IS_PLUG(handle), FFMMacros.GTK_IS_PLUG(handle));
+		check("GDK_IS_X11_DISPLAY", GDK.GDK_IS_X11_DISPLAY(GDK.gdk_display_get_default()), FFMMacros.GDK_IS_X11_DISPLAY(GDK.gdk_display_get_default()));
+		check("GDK_IS_WAYLAND_DISPLAY", GDK.GDK_IS_WAYLAND_DISPLAY(GDK.gdk_display_get_default()), FFMMacros.GDK_IS_WAYLAND_DISPLAY(GDK.gdk_display_get_default()));
+		check("G_OBJECT_GET_CLASS", OS.G_OBJECT_GET_CLASS(buttonHandle), FFMMacros.G_OBJECT_GET_CLASS(buttonHandle));
+		check("GTK_WIDGET_GET_CLASS", GTK.GTK_WIDGET_GET_CLASS(buttonHandle), FFMMacros.GTK_WIDGET_GET_CLASS(buttonHandle));
+		check("G_OBJECT_TYPE", OS.G_OBJECT_TYPE(buttonHandle), FFMMacros.G_OBJECT_TYPE(buttonHandle));
+		check("G_OBJECT_TYPE_NAME", OS.G_OBJECT_TYPE_NAME(buttonHandle), FFMMacros.G_OBJECT_TYPE_NAME(buttonHandle));
+		check("G_OBJECT_CLASS_CONSTRUCTOR", OS.G_OBJECT_CLASS_CONSTRUCTOR(OS.G_OBJECT_GET_CLASS(buttonHandle)), FFMMacros.G_OBJECT_CLASS_CONSTRUCTOR(OS.G_OBJECT_GET_CLASS(buttonHandle)));
+		for (int pixels : new int[] {0, 1, 511, 512, 1024, -1024, 123456}) {
+			check("PANGO_PIXELS(" + pixels + ")", OS.PANGO_PIXELS(pixels), FFMMacros.PANGO_PIXELS(pixels));
+		}
+		check("PTR_sizeof", C.PTR_sizeof(), FFMMacros.PTR_sizeof());
+		check("GET_FUNCTION_POINTER_gtk_false", GTK.GET_FUNCTION_POINTER_gtk_false(), FFMMacros.GET_FUNCTION_POINTER_gtk_false());
+		check("localeconv_decimal_point", OS.localeconv_decimal_point(), FFMMacros.localeconv_decimal_point());
+		check("CAIRO_VERSION_ENCODE", Cairo.CAIRO_VERSION_ENCODE(1, 18, 2), FFMMacros.CAIRO_VERSION_ENCODE(1, 18, 2));
+
+		// the C macros dereference without a null check, so only non-null nodes are compared
+		long children = GTK3.gtk_container_get_children(handle);
+		if (children != 0) {
+			check("g_list_data", OS.g_list_data(children), FFMMacros.g_list_data(children));
+			check("g_list_next", OS.g_list_next(children), FFMMacros.g_list_next(children));
+			long next = OS.g_list_next(children);
+			if (next != 0) check("g_list_previous", OS.g_list_previous(next), FFMMacros.g_list_previous(next));
+			OS.g_list_free(children);
+		}
+
+		long value = C.malloc(OS.GValue_sizeof());
+		C.memset(value, 0, OS.GValue_sizeof());
+		OS.g_value_init(value, OS.G_TYPE_INT());
+		check("G_VALUE_TYPE", OS.G_VALUE_TYPE(value), FFMMacros.G_VALUE_TYPE(value));
+		check("G_VALUE_TYPE_NAME", OS.G_VALUE_TYPE_NAME(value), FFMMacros.G_VALUE_TYPE_NAME(value));
+		check("G_IS_VALUE", OS.G_IS_VALUE(value), FFMMacros.G_IS_VALUE(value));
+		OS.g_value_unset(value);
+		C.free(value);
+
+		long xevent = C.malloc(OS.XEvent_sizeof());
+		byte[] noise = new byte[OS.XEvent_sizeof()];
+		new Random(7).nextBytes(noise);
+		C.memmove(xevent, noise, noise.length);
+		check("X_EVENT_TYPE", OS.X_EVENT_TYPE(xevent), FFMMacros.X_EVENT_TYPE(xevent));
+		check("X_EVENT_WINDOW", OS.X_EVENT_WINDOW(xevent), FFMMacros.X_EVENT_WINDOW(xevent));
+		C.free(xevent);
+
+		long accessible = GTK3.gtk_widget_get_accessible(buttonHandle);
+		check("ATK_ACTION_GET_IFACE", ATK.ATK_ACTION_GET_IFACE(accessible), FFMMacros.ATK_ACTION_GET_IFACE(accessible));
+		check("ATK_COMPONENT_GET_IFACE", ATK.ATK_COMPONENT_GET_IFACE(accessible), FFMMacros.ATK_COMPONENT_GET_IFACE(accessible));
+		check("ATK_TEXT_GET_IFACE", ATK.ATK_TEXT_GET_IFACE(accessible), FFMMacros.ATK_TEXT_GET_IFACE(accessible));
+		check("ATK_VALUE_GET_IFACE", ATK.ATK_VALUE_GET_IFACE(accessible), FFMMacros.ATK_VALUE_GET_IFACE(accessible));
+
+		byte[] clicked = Converter.wcsToMbcs("clicked", true);
+		long proc = GTK.GET_FUNCTION_POINTER_gtk_false();
+		long jniHandler = OS.g_signal_connect(buttonHandle, clicked, proc, 42);
+		long ffmHandler = FFMMacros.g_signal_connect(buttonHandle, clicked, proc, 42);
+		check("g_signal_connect connects", jniHandler != 0, ffmHandler != 0);
+		check("g_signal_connect handler is the next id", jniHandler + 1, ffmHandler);
+		OS.g_signal_handler_disconnect(buttonHandle, jniHandler);
+		OS.g_signal_handler_disconnect(buttonHandle, ffmHandler);
+		button.dispose();
 
 		// dynamic function present in GTK 3
 		check("gtk_accel_group_new available", GTK.gtk_accel_group_new() != 0, GTK_FFM.gtk_accel_group_new() != 0);
