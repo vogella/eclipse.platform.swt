@@ -23,6 +23,13 @@ import org.eclipse.swt.internal.ffm.*;
 public final class Structs_FFM {
 
 public static final long GObjectClass_SIZEOF = 136L;
+public static final long GObjectClass_CONSTRUCTOR_OFFSET = 16L;
+public static final long GObjectClass_SET_PROPERTY_OFFSET = 24L;
+public static final long GObjectClass_GET_PROPERTY_OFFSET = 32L;
+public static final long GObjectClass_DISPOSE_OFFSET = 40L;
+public static final long GObjectClass_FINALIZE_OFFSET = 48L;
+public static final long GObjectClass_DISPATCH_PROPERTIES_CHANGED_OFFSET = 56L;
+public static final long GObjectClass_NOTIFY_OFFSET = 64L;
 
 public static void GObjectClass_read(MemorySegment s, org.eclipse.swt.internal.gtk.GObjectClass o) {
 	o.constructor = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -45,6 +52,16 @@ public static void GObjectClass_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long GTypeInfo_SIZEOF = 72L;
+public static final long GTypeInfo_CLASS_SIZE_OFFSET = 0L;
+public static final long GTypeInfo_BASE_INIT_OFFSET = 8L;
+public static final long GTypeInfo_BASE_FINALIZE_OFFSET = 16L;
+public static final long GTypeInfo_CLASS_INIT_OFFSET = 24L;
+public static final long GTypeInfo_CLASS_FINALIZE_OFFSET = 32L;
+public static final long GTypeInfo_CLASS_DATA_OFFSET = 40L;
+public static final long GTypeInfo_INSTANCE_SIZE_OFFSET = 48L;
+public static final long GTypeInfo_N_PREALLOCS_OFFSET = 50L;
+public static final long GTypeInfo_INSTANCE_INIT_OFFSET = 56L;
+public static final long GTypeInfo_VALUE_TABLE_OFFSET = 64L;
 
 public static void GTypeInfo_read(MemorySegment s, org.eclipse.swt.internal.gtk.GTypeInfo o) {
 	o.class_size = s.get(JAVA_SHORT_UNALIGNED, 0L);
@@ -73,6 +90,9 @@ public static void GTypeInfo_write(MemorySegment s, org.eclipse.swt.internal.gtk
 }
 
 public static final long GdkKeymapKey_SIZEOF = 12L;
+public static final long GdkKeymapKey_KEYCODE_OFFSET = 0L;
+public static final long GdkKeymapKey_GROUP_OFFSET = 4L;
+public static final long GdkKeymapKey_LEVEL_OFFSET = 8L;
 
 public static void GdkKeymapKey_read(MemorySegment s, org.eclipse.swt.internal.gtk.GdkKeymapKey o) {
 	o.keycode = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -87,6 +107,10 @@ public static void GdkKeymapKey_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long GdkRGBA_SIZEOF = 32L;
+public static final long GdkRGBA_RED_OFFSET = 0L;
+public static final long GdkRGBA_GREEN_OFFSET = 8L;
+public static final long GdkRGBA_BLUE_OFFSET = 16L;
+public static final long GdkRGBA_ALPHA_OFFSET = 24L;
 
 public static void GdkRGBA_read(MemorySegment s, org.eclipse.swt.internal.gtk.GdkRGBA o) {
 	o.red = s.get(JAVA_DOUBLE_UNALIGNED, 0L);
@@ -103,6 +127,10 @@ public static void GdkRGBA_write(MemorySegment s, org.eclipse.swt.internal.gtk.G
 }
 
 public static final long GdkRectangle_SIZEOF = 16L;
+public static final long GdkRectangle_X_OFFSET = 0L;
+public static final long GdkRectangle_Y_OFFSET = 4L;
+public static final long GdkRectangle_WIDTH_OFFSET = 8L;
+public static final long GdkRectangle_HEIGHT_OFFSET = 12L;
 
 public static void GdkRectangle_read(MemorySegment s, org.eclipse.swt.internal.gtk.GdkRectangle o) {
 	o.x = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -119,6 +147,10 @@ public static void GdkRectangle_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long GtkAllocation_SIZEOF = 16L;
+public static final long GtkAllocation_X_OFFSET = 0L;
+public static final long GtkAllocation_Y_OFFSET = 4L;
+public static final long GtkAllocation_WIDTH_OFFSET = 8L;
+public static final long GtkAllocation_HEIGHT_OFFSET = 12L;
 
 public static void GtkAllocation_read(MemorySegment s, org.eclipse.swt.internal.gtk.GtkAllocation o) {
 	o.x = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -135,6 +167,10 @@ public static void GtkAllocation_write(MemorySegment s, org.eclipse.swt.internal
 }
 
 public static final long GtkBorder_SIZEOF = 8L;
+public static final long GtkBorder_LEFT_OFFSET = 0L;
+public static final long GtkBorder_RIGHT_OFFSET = 2L;
+public static final long GtkBorder_TOP_OFFSET = 4L;
+public static final long GtkBorder_BOTTOM_OFFSET = 6L;
 
 public static void GtkBorder_read(MemorySegment s, org.eclipse.swt.internal.gtk.GtkBorder o) {
 	o.left = (int) s.get(JAVA_SHORT_UNALIGNED, 0L);
@@ -151,6 +187,8 @@ public static void GtkBorder_write(MemorySegment s, org.eclipse.swt.internal.gtk
 }
 
 public static final long GtkCellRendererClass_SIZEOF = 264L;
+public static final long GtkCellRendererClass_RENDER_OFFSET = 192L;
+public static final long GtkCellRendererClass_GET_PREFERRED_WIDTH_OFFSET = 144L;
 
 public static void GtkCellRendererClass_read(MemorySegment s, org.eclipse.swt.internal.gtk.GtkCellRendererClass o) {
 	o.render = s.get(JAVA_LONG_UNALIGNED, 192L);
@@ -163,6 +201,8 @@ public static void GtkCellRendererClass_write(MemorySegment s, org.eclipse.swt.i
 }
 
 public static final long GtkRequisition_SIZEOF = 8L;
+public static final long GtkRequisition_WIDTH_OFFSET = 0L;
+public static final long GtkRequisition_HEIGHT_OFFSET = 4L;
 
 public static void GtkRequisition_read(MemorySegment s, org.eclipse.swt.internal.gtk.GtkRequisition o) {
 	o.width = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -175,6 +215,8 @@ public static void GtkRequisition_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long GtkWidgetClass_SIZEOF = 824L;
+public static final long GtkWidgetClass_MAP_OFFSET = 184L;
+public static final long GtkWidgetClass_SIZE_ALLOCATE_OFFSET = 216L;
 
 public static void GtkWidgetClass_read(MemorySegment s, org.eclipse.swt.internal.gtk.GtkWidgetClass o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.GObjectClass_read(s, o);
@@ -189,6 +231,9 @@ public static void GtkWidgetClass_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long PangoAttrColor_SIZEOF = 24L;
+public static final long PangoAttrColor_COLOR_RED_OFFSET = 16L;
+public static final long PangoAttrColor_COLOR_GREEN_OFFSET = 18L;
+public static final long PangoAttrColor_COLOR_BLUE_OFFSET = 20L;
 
 public static void PangoAttrColor_read(MemorySegment s, org.eclipse.swt.internal.gtk.PangoAttrColor o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttribute_read(s, o);
@@ -205,6 +250,7 @@ public static void PangoAttrColor_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long PangoAttrInt_SIZEOF = 24L;
+public static final long PangoAttrInt_VALUE_OFFSET = 16L;
 
 public static void PangoAttrInt_read(MemorySegment s, org.eclipse.swt.internal.gtk.PangoAttrInt o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttribute_read(s, o);
@@ -217,6 +263,9 @@ public static void PangoAttrInt_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long PangoAttribute_SIZEOF = 16L;
+public static final long PangoAttribute_KLASS_OFFSET = 0L;
+public static final long PangoAttribute_START_INDEX_OFFSET = 8L;
+public static final long PangoAttribute_END_INDEX_OFFSET = 12L;
 
 public static void PangoAttribute_read(MemorySegment s, org.eclipse.swt.internal.gtk.PangoAttribute o) {
 	o.klass = s.get(JAVA_LONG_UNALIGNED, 0L);
@@ -231,6 +280,15 @@ public static void PangoAttribute_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long PangoItem_SIZEOF = 64L;
+public static final long PangoItem_OFFSET_OFFSET = 0L;
+public static final long PangoItem_LENGTH_OFFSET = 4L;
+public static final long PangoItem_NUM_CHARS_OFFSET = 8L;
+public static final long PangoItem_ANALYSIS_SHAPE_ENGINE_OFFSET = 16L;
+public static final long PangoItem_ANALYSIS_LANG_ENGINE_OFFSET = 24L;
+public static final long PangoItem_ANALYSIS_FONT_OFFSET = 32L;
+public static final long PangoItem_ANALYSIS_LEVEL_OFFSET = 40L;
+public static final long PangoItem_ANALYSIS_LANGUAGE_OFFSET = 48L;
+public static final long PangoItem_ANALYSIS_EXTRA_ATTRS_OFFSET = 56L;
 
 public static void PangoItem_read(MemorySegment s, org.eclipse.swt.internal.gtk.PangoItem o) {
 	o.offset = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -257,6 +315,10 @@ public static void PangoItem_write(MemorySegment s, org.eclipse.swt.internal.gtk
 }
 
 public static final long PangoLayoutLine_SIZEOF = 32L;
+public static final long PangoLayoutLine_LAYOUT_OFFSET = 0L;
+public static final long PangoLayoutLine_START_INDEX_OFFSET = 8L;
+public static final long PangoLayoutLine_LENGTH_OFFSET = 12L;
+public static final long PangoLayoutLine_RUNS_OFFSET = 16L;
 
 public static void PangoLayoutLine_read(MemorySegment s, org.eclipse.swt.internal.gtk.PangoLayoutLine o) {
 	o.layout = s.get(JAVA_LONG_UNALIGNED, 0L);
@@ -273,6 +335,8 @@ public static void PangoLayoutLine_write(MemorySegment s, org.eclipse.swt.intern
 }
 
 public static final long PangoLayoutRun_SIZEOF = 32L;
+public static final long PangoLayoutRun_ITEM_OFFSET = 0L;
+public static final long PangoLayoutRun_GLYPHS_OFFSET = 8L;
 
 public static void PangoLayoutRun_read(MemorySegment s, org.eclipse.swt.internal.gtk.PangoLayoutRun o) {
 	o.item = s.get(JAVA_LONG_UNALIGNED, 0L);
@@ -313,6 +377,10 @@ public static void PangoLogAttr_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long PangoRectangle_SIZEOF = 16L;
+public static final long PangoRectangle_X_OFFSET = 0L;
+public static final long PangoRectangle_Y_OFFSET = 4L;
+public static final long PangoRectangle_WIDTH_OFFSET = 8L;
+public static final long PangoRectangle_HEIGHT_OFFSET = 12L;
 
 public static void PangoRectangle_read(MemorySegment s, org.eclipse.swt.internal.gtk.PangoRectangle o) {
 	o.x = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -329,6 +397,10 @@ public static void PangoRectangle_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long XAnyEvent_SIZEOF = 40L;
+public static final long XAnyEvent_SERIAL_OFFSET = 8L;
+public static final long XAnyEvent_SEND_EVENT_OFFSET = 16L;
+public static final long XAnyEvent_DISPLAY_OFFSET = 24L;
+public static final long XAnyEvent_WINDOW_OFFSET = 32L;
 
 public static void XAnyEvent_read(MemorySegment s, org.eclipse.swt.internal.gtk.XAnyEvent o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.XEvent_read(s, o);
@@ -347,6 +419,7 @@ public static void XAnyEvent_write(MemorySegment s, org.eclipse.swt.internal.gtk
 }
 
 public static final long XEvent_SIZEOF = 192L;
+public static final long XEvent_TYPE_OFFSET = 0L;
 
 public static void XEvent_read(MemorySegment s, org.eclipse.swt.internal.gtk.XEvent o) {
 	o.type = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -357,6 +430,11 @@ public static void XEvent_write(MemorySegment s, org.eclipse.swt.internal.gtk.XE
 }
 
 public static final long XExposeEvent_SIZEOF = 64L;
+public static final long XExposeEvent_X_OFFSET = 40L;
+public static final long XExposeEvent_Y_OFFSET = 44L;
+public static final long XExposeEvent_WIDTH_OFFSET = 48L;
+public static final long XExposeEvent_HEIGHT_OFFSET = 52L;
+public static final long XExposeEvent_COUNT_OFFSET = 56L;
 
 public static void XExposeEvent_read(MemorySegment s, org.eclipse.swt.internal.gtk.XExposeEvent o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.XAnyEvent_read(s, o);
@@ -377,6 +455,8 @@ public static void XExposeEvent_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long XFocusChangeEvent_SIZEOF = 48L;
+public static final long XFocusChangeEvent_MODE_OFFSET = 40L;
+public static final long XFocusChangeEvent_DETAIL_OFFSET = 44L;
 
 public static void XFocusChangeEvent_read(MemorySegment s, org.eclipse.swt.internal.gtk.XFocusChangeEvent o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.XAnyEvent_read(s, o);
