@@ -11,6 +11,7 @@
 package org.eclipse.swt.visualoracle.tools;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 
 /**
  * The {@code oracle} command line entry point.
@@ -19,6 +20,8 @@ import java.io.PrintStream;
  *   selftest   run the end-to-end harness selftest (implemented here)
  *   version    print tool and schema versions
  *   help       print usage
+ *   run        render specimens, compare backends, report a verdict
+ *   triage     rank the differences of a previous run
  *
  * Exit codes: 0 success, 1 selftest failure or runtime error, 2 usage error.
  * Per-verb exit codes are documented in docs/visual-oracle/CLI.md.
@@ -45,6 +48,7 @@ public final class OracleCli {
 			printUsage(stdout);
 			return 2;
 		}
+		String[] rest = Arrays.copyOfRange(args, 1, args.length);
 		switch (args[0]) {
 			case "selftest":
 				return new SelfTest(stdout).run();
@@ -58,6 +62,10 @@ public final class OracleCli {
 			case "--help":
 				printUsage(stdout);
 				return 0;
+			case "run":
+				return new RunVerb(stdout, stderr, rest).dispatch();
+			case "triage":
+				return new TriageVerb(stdout, stderr, rest).dispatch();
 			default:
 				stderr.println("oracle: unknown verb '" + args[0] + "'");
 				printUsage(stderr);
@@ -70,6 +78,8 @@ public final class OracleCli {
 		out.println();
 		out.println("verbs:");
 		out.println("  selftest    prove the pipeline end to end; exits non-zero on any failure");
+		out.println("  run         render specimens through two backends and compare; JSON verdict on stdout");
+		out.println("  triage      rank the differences of a previous run for attention");
 		out.println("  version     print tool and result schema versions");
 		out.println("  help        this text");
 	}
