@@ -348,6 +348,33 @@ public class FFMCrossCheck {
 		Cairo.cairo_destroy(cairo);
 		Cairo.cairo_surface_destroy(surface);
 
+		// UTF-16 offset helpers: C implementation in os_custom.c against the Java port
+		String[] samples = {"", "ascii only", "Gr\u00fc\u00dfe", "\u20ac\u20ac\u20ac", "a\ud83d\ude00b\ud83c\udf0e", "\u4e2d\u6587\ud83d\ude00\u00e9x"};
+		for (String sample : samples) {
+			byte[] bytes = Converter.wcsToMbcs(sample, true);
+			long pointer = C.malloc(bytes.length);
+			C.memmove(pointer, bytes, bytes.length);
+			try {
+				for (long max = -1; max < bytes.length + 1; max++) {
+					check("g_utf16_strlen(" + sample + "," + max + ")", OS.g_utf16_strlen(pointer, max), FFMUtf16.g_utf16_strlen(pointer, max));
+				}
+				for (long offset = 0; offset < sample.length() + 2; offset++) {
+					check("g_utf16_offset_to_pointer(" + sample + "," + offset + ")",
+						OS.g_utf16_offset_to_pointer(pointer, offset) - pointer, FFMUtf16.g_utf16_offset_to_pointer(pointer, offset) - pointer);
+					check("g_utf16_offset_to_utf8_offset(" + sample + "," + offset + ")",
+						OS.g_utf16_offset_to_utf8_offset(pointer, offset), FFMUtf16.g_utf16_offset_to_utf8_offset(pointer, offset));
+					check("g_utf8_offset_to_utf16_offset(" + sample + "," + offset + ")",
+						OS.g_utf8_offset_to_utf16_offset(pointer, offset), FFMUtf16.g_utf8_offset_to_utf16_offset(pointer, offset));
+				}
+				for (long position = 0; position <= bytes.length; position++) {
+					check("g_utf16_pointer_to_offset(" + sample + "," + position + ")",
+						OS.g_utf16_pointer_to_offset(pointer, pointer + position), FFMUtf16.g_utf16_pointer_to_offset(pointer, pointer + position));
+				}
+			} finally {
+				C.free(pointer);
+			}
+		}
+
 		// dynamic function present in GTK 3
 		check("gtk_accel_group_new available", GTK.gtk_accel_group_new() != 0, GTK_FFM.gtk_accel_group_new() != 0);
 
