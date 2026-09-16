@@ -6,11 +6,21 @@ package org.eclipse.swt.internal.gtk;
 /** Sizes and field offsets of C types that have no Java struct class. */
 public final class Extra_FFM {
 
+	public static final long GPOLLFD = 8L;
+	public static final long GVALUE = 24L;
+	public static final long GTKCELLRENDERERPIXBUF = 40L;
+	public static final long GTKCELLRENDERERPIXBUFCLASS = 296L;
+	public static final long GTKCELLRENDERERTEXT = 40L;
+	public static final long GTKCELLRENDERERTEXTCLASS = 304L;
+	public static final long GTKCELLRENDERERTOGGLE = 40L;
+	public static final long GTKCELLRENDERERTOGGLECLASS = 304L;
 	public static final long GTKCONTAINER = 40L;
 	public static final long GTKCONTAINERCLASS = 976L;
 	public static final long GTKCONTAINERCLASS_ADD = 824L;
 	public static final long GTKCONTAINERCLASS_FORALL = 848L;
 	public static final long GTKCONTAINERCLASS_REMOVE = 832L;
+	public static final long GTKTEXTITER = 80L;
+	public static final long GTKTREEITER = 32L;
 	public static final long GTKWIDGETCLASS_GET_ACCESSIBLE = 688L;
 	public static final long GTKWIDGETCLASS_GET_PREFERRED_HEIGHT = 304L;
 	public static final long GTKWIDGETCLASS_GET_PREFERRED_WIDTH = 320L;
