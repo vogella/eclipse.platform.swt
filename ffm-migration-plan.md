@@ -99,7 +99,11 @@ A callback that is still running keeps its stub alive instead, and the remaining
 
 The first pieces of `os_custom.c` are Java now, so the FFM build no longer calls them.
 `FFMUtf16` ports the five UTF-16 offset helpers, which are pure arithmetic over the bytes of a UTF-8 string, and `FFMConstructorProc` ports the six GObject constructor overrides, which call the constructor of the super class through a downcall handle and are installed as upcall stubs.
-That is about 175 of the 2,380 lines of `os_custom.c`; the `SwtFixed` widget and the accessibility bridge are what remain.
+`FFMSwtFixed` ports the GTK3 `SwtFixed` container, the `GtkContainer` every SWT control lives in.
+The type is registered from Java with `g_type_register_static`, the `GtkScrollable` interface is added, and the vtable entries of `GObjectClass`, `GtkWidgetClass` and `GtkContainerClass` are upcall stubs whose offsets come from the layout probe.
+The private data of the C implementation, the child list with its geometry and the scrollable adjustments, lives in a Java map keyed by the instance.
+
+That is about 600 of the 2,380 lines of `os_custom.c`; the accessibility bridge and the GTK4 variant of `SwtFixed` are what remain.
 
 `FFMMacros` implements the macros that have no symbol to link against: the `GTK_IS_*`, `GDK_IS_*` and `ATK_*_GET_IFACE` type checks through `g_type_check_instance_is_a` and `g_type_interface_peek`, the accessors for `GTypeInstance`, `GObjectClass`, `GValue`, `GList`, `GSList`, `GError` and `XAnyEvent` as reads of public struct fields whose offsets the layout probe provides, and the arithmetic of `PANGO_PIXELS` and `CAIRO_VERSION_ENCODE`.
 The Java versions return 0 for a null pointer where the C macros dereference it.
@@ -122,6 +126,8 @@ The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK
 
 ### Findings
 
+* A ported GObject type has to bring its dependants with it: `swt_fixed_accessible_new` asserts `SWT_IS_FIXED`, which only accepts the type the C code registers, so it returned NULL and SWT crashed dereferencing it.
+  Building the accessible in Java the way that function does, without the assertion, avoids changing C for it.
 * `scrollbar.horizontal.scrolled` and `scrollbar.both.scrolled` flip between two faithful renderings under CPU contention, which the harness documents in `DeterminismLint.CATALOG_QUARANTINE` with the same 2,749 changed pixels seen here.
   They are not a JNI versus FFM difference: the same build compared against itself flips as well, so oracle runs that matter have to happen on an idle machine.
 
