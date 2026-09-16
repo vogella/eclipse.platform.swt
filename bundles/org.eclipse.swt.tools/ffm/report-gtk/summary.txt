@@ -1,0 +1,17 @@
+org.eclipse.swt.internal.C                              FFM    23  JNI     1
+org.eclipse.swt.internal.gtk.OS                         FFM   368  JNI    55
+org.eclipse.swt.internal.gtk.GDK                        FFM   175  JNI    35
+org.eclipse.swt.internal.gtk.Graphene                   FFM     0  JNI     3
+org.eclipse.swt.internal.gtk.GTK                        FFM   519  JNI    30
+org.eclipse.swt.internal.gtk3.GTK3                      FFM   228  JNI     2
+org.eclipse.swt.internal.cairo.Cairo                    FFM   119  JNI     1
+org.eclipse.swt.internal.accessibility.gtk.ATK          FFM    24  JNI    20
+
+Total FFM 1456, JNI 147
+
+Kept on JNI by reason:
+     1  JNI caller context
+    34  const
+     9  function pointer call
+    93  no C function declaration (macro or custom C)
+    10  no_gen
