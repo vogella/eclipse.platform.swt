@@ -61,7 +61,8 @@ public final class ChildProcessLauncher {
 
 	/** Backends a child can be launched for; each needs its own classpath. */
 	private static final java.util.Set<String> SUPPORTED_BACKENDS = java.util.Set.of(
-			NativeBackend.ID, NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID);
+			NativeBackend.ID, NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID,
+			SkiaCanvasBackend.ID, SkijaProtoBackend.ID);
 
 	private final Config config;
 
@@ -244,6 +245,7 @@ public final class ChildProcessLauncher {
 
 	private List<String> buildCommand(ChildRequest request, Path dir) {
 		LaunchConfig launch = SwtRenderEnvs.launch(request.env());
+		boolean canvasBackend = SkiaCanvasBackend.ID.equals(request.backendId());
 		// every backend but the parent's own native build needs its own classes and natives
 		boolean isolated = !NativeBackend.ID.equals(request.backendId());
 		List<String> command = new ArrayList<>();
@@ -266,6 +268,9 @@ public final class ChildProcessLauncher {
 				command.add("-Djava.library.path=" + libPath);
 		}
 		command.add("-Doracle.repoRoot=" + repoRoot());
+		if (canvasBackend)
+			for (String property : SkiaCanvasBackend.activationJvmProperties())
+				command.add(property);
 		command.addAll(launch.jvmProperties());
 		command.add("-cp");
 		// One backend's SWT classes per process (ADR-002): a non-native child

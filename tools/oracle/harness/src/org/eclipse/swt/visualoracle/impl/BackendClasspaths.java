@@ -22,7 +22,9 @@ import java.util.concurrent.TimeUnit;
  * Resolves per-backend classpaths and native library paths by delegating to
  * {@code tools/oracle/build.sh}, the single source of truth for backend
  * builds (ADR-002). Each backend links its own SWT classes and natives, so a
- * child process for one backend must never see another backend's classpath.
+ * child process for one backend must never see another backend's classpath;
+ * the harness/native split produced here is what keeps the fork's Skija
+ * 0.116.3 jars and PR 3231's 0.143.17 jars apart.
  */
 public final class BackendClasspaths {
 
@@ -36,6 +38,7 @@ public final class BackendClasspaths {
 	public static String backendClasspath(String backendId) {
 		return switch (backendId) {
 			case NativeBackend.ID -> nativeClasspath();
+			case SkiaCanvasBackend.ID, SkijaProtoBackend.ID -> runBuild(backendId);
 			case NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID ->
 				// memoized so every child of a run sees the same build, even if the source changes meanwhile
 				builtFromSource.computeIfAbsent(backendId, BackendClasspaths::runBuild);
@@ -45,15 +48,17 @@ public final class BackendClasspaths {
 
 	/**
 	 * The directory whose natives a backend child must load: the worktree's
-	 * GTK binaries for the stock native backend, the built checkout's own
-	 * natives for a backend compiled from another SWT source.
+	 * GTK binaries for native and skia-canvas (the fragment runs on the host
+	 * bundle's natives), the fork checkout's binaries for skija-proto.
 	 */
 	public static Path libraryPathFor(String backendId) {
 		return switch (backendId) {
-			case NativeBackend.ID ->
+			case NativeBackend.ID, SkiaCanvasBackend.ID ->
 				repoRoot().resolve("binaries/org.eclipse.swt.gtk.linux.x86_64");
 			case NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID ->
 				Path.of(backendClasspath(backendId).split(java.io.File.pathSeparator)[0]).resolveSibling("lib");
+			case SkijaProtoBackend.ID -> cacheRoot().resolve(
+					"checkouts/prototype-skija/binaries/org.eclipse.swt.gtk.linux.x86_64");
 			default -> throw new IllegalArgumentException("no library path known for backend '" + backendId + "'");
 		};
 	}

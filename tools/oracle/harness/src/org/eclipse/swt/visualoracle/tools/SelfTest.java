@@ -165,6 +165,14 @@ public class SelfTest {
 			check(index++, "diff-size-mismatch-whole-area", () ->
 					DiffCheck.checkSizeMismatchWholeArea(firstCapture));
 			check(index++, "diff-throughput-measured", () -> DiffCheck.checkThroughput(out));
+			check(index++, "skijaproto-backend-genuinely-activates", () ->
+					SkijaProtoCheck.checkActivation(out));
+			check(index++, "skijaproto-supported-specimen-captures", () ->
+					SkijaProtoCheck.checkSupportedCapture(out));
+			check(index++, "skijaproto-unsupported-specimen-reported-as-data", () ->
+					SkijaProtoCheck.checkUnsupportedReported(out));
+			check(index++, "skijaproto-catalog-coverage-counted", () ->
+					SkijaProtoCheck.checkCatalogCoverage(out));
 			check(index++, "result-roundtrip-empty-run", () -> ResultCheck.checkRoundTripEmptyRun(env));
 			check(index++, "result-roundtrip-failed-and-unsupported-captures", () ->
 					ResultCheck.checkRoundTripFailureStatuses(env));
@@ -198,6 +206,18 @@ public class SelfTest {
 					NativeCheck.checkUnsupportedAsData(display, nativeBackend, env, out));
 			check(index++, "native-versus-native-sweep-equal-over-catalog", () ->
 					NativeCheck.checkNativeVsNativeSweep(display, nativeBackend, env, out));
+			check(index++, "skiacanvas-backend-genuinely-activates", () ->
+					SkiaCanvasCheck.checkActivation(out));
+			check(index++, "skiacanvas-supported-specimen-captures", () ->
+					SkiaCanvasCheck.checkSupportedCapture(out));
+			check(index++, "skiacanvas-unsupported-specimen-reported-as-data", () ->
+					SkiaCanvasCheck.checkUnsupportedReported(out));
+			check(index++, "skiacanvas-catalog-coverage-counted", () ->
+					SkiaCanvasCheck.checkCatalogCoverage(out));
+			check(index++, "skiacanvas-flat-skia-style-collision-reported", () ->
+					SkiaCanvasCheck.checkFlatSkiaCollision(display, out));
+			check(index++, "skiacanvas-zoom200-size-discrepancy-measured", () ->
+					SkiaCanvasCheck.checkZoom200DiscrepancyMeasured(out));
 			check(index++, "run-filters-select-what-they-claim", () ->
 					RunCheck.checkFiltersSelectWhatTheyClaim(out));
 			check(index++, "run-clean-exits-zero-and-schema-valid", () -> {

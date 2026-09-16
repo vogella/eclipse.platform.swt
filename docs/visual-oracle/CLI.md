@@ -108,6 +108,8 @@ States live inside specimen ids, so select them with `--prefix`, e.g.
 
 One invocation pins **one** environment; comparing across DPI scales or themes
 means several invocations.
+`skija-proto` and `skia-canvas` compare native SWT against an alternative
+rendering stack instead of against another SWT version.
 Tolerance defaults come from `ClusterDiffer.DEFAULT_TOLERANCE`; verdict
 semantics are defined in `RESULT-SCHEMA.md`.
 

@@ -20,6 +20,8 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.SkiaCanvasBackend;
+import org.eclipse.swt.visualoracle.impl.SkijaProtoBackend;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
 import org.eclipse.swt.visualoracle.result.CaptureEntry;
 import org.eclipse.swt.visualoracle.result.CaptureStatus;
@@ -54,7 +56,11 @@ import org.eclipse.swt.visualoracle.spi.UnsupportedSpecimenException;
  *
  * After backend activation it prints one evidence line carrying the
  * activation proof that crossed the process boundary, so a parent can assert
- * genuine activation like tools/oracle/verify-backend.sh does.
+ * genuine activation like tools/oracle/verify-backend.sh does:
+ * BACKEND-GC=<class> (the GC class the backend observed wrapped by its
+ * drawing stack; org.eclipse.swt.graphics.SkijaGC for skija-proto) and
+ * BACKEND-CANVAS=<class>[ paints=<n> force=<b>] for skia-canvas (the external
+ * canvas handler the SWT.SKIA probe canvas received).
  *
  * Exit codes: 0 all captured or unsupported, 2 usage error (unknown specimen,
  * unknown backend, missing --out), 3 environment mismatch (result still
@@ -100,7 +106,8 @@ public final class CaptureChild {
 		}
 		if (out == null)
 			return usage("--out DIR is required");
-		if (!NativeBackend.isNative(backendId))
+		if (!NativeBackend.isNative(backendId) && !SkijaProtoBackend.ID.equals(backendId)
+				&& !SkiaCanvasBackend.ID.equals(backendId))
 			return usage("backend '" + backendId + "' has no child adapter yet");
 		if (specimenIds.isEmpty())
 			return usage("no specimens requested");
@@ -137,6 +144,12 @@ public final class CaptureChild {
 				System.err.println("CHILD-FAILED: backend unavailable: " + e);
 				return EXIT_BACKEND;
 			}
+			if (backendInstance instanceof SkijaProtoBackend skija)
+				System.out.println("BACKEND-GC=" + skija.observedGcClassName());
+			if (backendInstance instanceof SkiaCanvasBackend canvasBackend)
+				System.out.println("BACKEND-CANVAS=" + canvasBackend.observedHandlerClassName()
+						+ " paints=" + canvasBackend.observedPaintCount()
+						+ " force=" + canvasBackend.isForceEnabled());
 
 			RenderEnv actual = SwtRenderEnvs.current(display);
 			if (!SwtRenderEnvs.matches(requested, actual)) {
@@ -176,6 +189,8 @@ public final class CaptureChild {
 		return switch (backendId) {
 			case NativeBackend.ID, NativeBackend.BASELINE_ID, NativeBackend.CANDIDATE_ID ->
 				new NativeBackend(backendId);
+			case SkijaProtoBackend.ID -> new SkijaProtoBackend();
+			case SkiaCanvasBackend.ID -> new SkiaCanvasBackend();
 			default -> throw new IllegalArgumentException("backend '" + backendId + "' has no child adapter yet");
 		};
 	}
