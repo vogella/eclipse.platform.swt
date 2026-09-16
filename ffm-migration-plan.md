@@ -110,9 +110,12 @@ The Java versions return 0 for a null pointer where the C macros dereference it.
 
 The rewriter learns which natives a hand written class implements from the public static methods of its source, so adding an implementation needs no list to be updated.
 
+`FFMTypes` supplies what the remaining macros gave: the fundamental GTypes as the compile time constants they are, the registered ones through their `get_type` function, the `sizeof` of C types without a Java struct class from the probe, the glib version variables as exported symbols, the `GDK_WINDOWING_*` checks as the presence of the matching display type, and the calls through a function pointer as downcall handles.
+
 ### Coverage
 
 1,515 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
+Only one native on the GTK3 path still goes through JNI, `swt_fixed_accessible_register_accessible`, and it disappears with the accessibility bridge; the other 36 that remain are GTK4 functions the GTK3 headers do not declare.
 The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK3 headers do not declare, the calls through a function pointer, the `sizeof` macros of C types without a Java struct class, the remaining custom C of `os_custom.c` and 1 native that has to be entered through JNI (see below).
 
 ### Verification
