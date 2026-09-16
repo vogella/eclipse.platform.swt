@@ -138,23 +138,28 @@ public class FFMGeneratorApp {
 	static final Map<String, String> HANDWRITTEN = Map.of(
 		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback");
 
-	/** Single natives implemented in Java instead of calling their C counterpart, as class#method. */
-	static final Map<String, String> HANDWRITTEN_METHODS = Map.ofEntries(
-		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_strlen", "org.eclipse.swt.internal.ffm.FFMUtf16"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_pointer_to_offset", "org.eclipse.swt.internal.ffm.FFMUtf16"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_offset_to_pointer", "org.eclipse.swt.internal.ffm.FFMUtf16"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_offset_to_utf8_offset", "org.eclipse.swt.internal.ffm.FFMUtf16"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf8_offset_to_utf16_offset", "org.eclipse.swt.internal.ffm.FFMUtf16"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#imContextNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#imContextLast", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#pangoLayoutNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#pangoFontFamilyNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#pangoFontFaceNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
-		Map.entry("org.eclipse.swt.internal.gtk.OS#printerOptionWidgetNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"));
+	static final Pattern IMPLEMENTATION = Pattern.compile("^\\tpublic static \\S+ (\\w+)\\(", Pattern.MULTILINE);
+
+	/**
+	 * Maps a native name to the hand written FFM class implementing it, read from the public static
+	 * methods of the given Java sources, so that adding an implementation needs no list to be updated.
+	 */
+	static Map<String, String> implementations(String[] files) throws IOException {
+		Map<String, String> result = new HashMap<>();
+		for (String file : files) {
+			String source = Files.readString(Paths.get(file));
+			String name = Paths.get(file).getFileName().toString().replace(".java", "");
+			String packageName = source.replaceAll("(?s).*?package\\s+([\\w.]+);.*", "$1");
+			Matcher m = IMPLEMENTATION.matcher(source);
+			while (m.find()) result.put(m.group(1), packageName + "." + name);
+		}
+		return result;
+	}
 
 	/** Copies the Java sources below <code>sourceRoot</code>, delegating every supported native to its FFM implementation. */
-	static void rewrite(String supportedFile, String sourceRoot, String outputRoot) throws IOException {
+	static void rewrite(String supportedFile, String sourceRoot, String outputRoot, String[] implementationFiles) throws IOException {
 		Set<String> supported = new HashSet<>(Files.readAllLines(Paths.get(supportedFile)));
+		Map<String, String> implementations = implementations(implementationFiles);
 		Path root = Paths.get(sourceRoot);
 		int[] count = new int[1];
 		try (Stream<Path> files = Files.walk(root)) {
@@ -177,7 +182,7 @@ public class FFMGeneratorApp {
 						names.add(pm.group(2));
 					}
 					String target;
-					String handwrittenMethod = HANDWRITTEN_METHODS.get(className + "#" + name);
+					String handwrittenMethod = implementations.get(name);
 					if (handwritten != null) {
 						target = handwritten;
 					} else if (handwrittenMethod != null) {
@@ -216,7 +221,7 @@ public class FFMGeneratorApp {
 				generate(args[1], args[2], units);
 				break;
 			case "rewrite":
-				rewrite(args[1], args[2], args[3]);
+				rewrite(args[1], args[2], args[3], Arrays.copyOfRange(args, 4, args.length));
 				break;
 			default:
 				System.err.println("Usage: probe|generate|rewrite, see Javadoc of " + FFMGeneratorApp.class.getName());

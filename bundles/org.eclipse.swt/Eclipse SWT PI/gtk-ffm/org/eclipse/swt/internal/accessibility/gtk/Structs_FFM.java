@@ -23,6 +23,12 @@ import org.eclipse.swt.internal.ffm.*;
 public final class Structs_FFM {
 
 public static final long AtkActionIface_SIZEOF = 72L;
+public static final long AtkActionIface_DO_ACTION_OFFSET = 16L;
+public static final long AtkActionIface_GET_N_ACTIONS_OFFSET = 24L;
+public static final long AtkActionIface_GET_DESCRIPTION_OFFSET = 32L;
+public static final long AtkActionIface_GET_NAME_OFFSET = 40L;
+public static final long AtkActionIface_GET_KEYBINDING_OFFSET = 48L;
+public static final long AtkActionIface_SET_DESCRIPTION_OFFSET = 56L;
 
 public static void AtkActionIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkActionIface o) {
 	o.do_action = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -43,6 +49,8 @@ public static void AtkActionIface_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long AtkAttribute_SIZEOF = 16L;
+public static final long AtkAttribute_NAME_OFFSET = 0L;
+public static final long AtkAttribute_VALUE_OFFSET = 8L;
 
 public static void AtkAttribute_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkAttribute o) {
 	o.name = s.get(JAVA_LONG_UNALIGNED, 0L);
@@ -55,6 +63,19 @@ public static void AtkAttribute_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long AtkComponentIface_SIZEOF = 152L;
+public static final long AtkComponentIface_ADD_FOCUS_HANDLER_OFFSET = 16L;
+public static final long AtkComponentIface_CONTAINS_OFFSET = 24L;
+public static final long AtkComponentIface_REF_ACCESSIBLE_AT_POINT_OFFSET = 32L;
+public static final long AtkComponentIface_GET_EXTENTS_OFFSET = 40L;
+public static final long AtkComponentIface_GET_POSITION_OFFSET = 48L;
+public static final long AtkComponentIface_GET_SIZE_OFFSET = 56L;
+public static final long AtkComponentIface_GRAB_FOCUS_OFFSET = 64L;
+public static final long AtkComponentIface_REMOVE_FOCUS_HANDLER_OFFSET = 72L;
+public static final long AtkComponentIface_SET_EXTENTS_OFFSET = 80L;
+public static final long AtkComponentIface_SET_POSITION_OFFSET = 88L;
+public static final long AtkComponentIface_SET_SIZE_OFFSET = 96L;
+public static final long AtkComponentIface_GET_LAYER_OFFSET = 104L;
+public static final long AtkComponentIface_GET_MDI_ZORDER_OFFSET = 112L;
 
 public static void AtkComponentIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkComponentIface o) {
 	o.add_focus_handler = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -89,6 +110,13 @@ public static void AtkComponentIface_write(MemorySegment s, org.eclipse.swt.inte
 }
 
 public static final long AtkEditableTextIface_SIZEOF = 72L;
+public static final long AtkEditableTextIface_SET_RUN_ATTRIBUTES_OFFSET = 16L;
+public static final long AtkEditableTextIface_SET_TEXT_CONTENTS_OFFSET = 24L;
+public static final long AtkEditableTextIface_INSERT_TEXT_OFFSET = 32L;
+public static final long AtkEditableTextIface_COPY_TEXT_OFFSET = 40L;
+public static final long AtkEditableTextIface_CUT_TEXT_OFFSET = 48L;
+public static final long AtkEditableTextIface_DELETE_TEXT_OFFSET = 56L;
+public static final long AtkEditableTextIface_PASTE_TEXT_OFFSET = 64L;
 
 public static void AtkEditableTextIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkEditableTextIface o) {
 	o.set_run_attributes = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -111,6 +139,9 @@ public static void AtkEditableTextIface_write(MemorySegment s, org.eclipse.swt.i
 }
 
 public static final long AtkHypertextIface_SIZEOF = 48L;
+public static final long AtkHypertextIface_GET_LINK_OFFSET = 16L;
+public static final long AtkHypertextIface_GET_N_LINKS_OFFSET = 24L;
+public static final long AtkHypertextIface_GET_LINK_INDEX_OFFSET = 32L;
 
 public static void AtkHypertextIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkHypertextIface o) {
 	o.get_link = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -125,6 +156,30 @@ public static void AtkHypertextIface_write(MemorySegment s, org.eclipse.swt.inte
 }
 
 public static final long AtkObjectClass_SIZEOF = 352L;
+public static final long AtkObjectClass_GET_NAME_OFFSET = 136L;
+public static final long AtkObjectClass_GET_DESCRIPTION_OFFSET = 144L;
+public static final long AtkObjectClass_GET_PARENT_OFFSET = 152L;
+public static final long AtkObjectClass_GET_N_CHILDREN_OFFSET = 160L;
+public static final long AtkObjectClass_REF_CHILD_OFFSET = 168L;
+public static final long AtkObjectClass_GET_INDEX_IN_PARENT_OFFSET = 176L;
+public static final long AtkObjectClass_REF_RELATION_SET_OFFSET = 184L;
+public static final long AtkObjectClass_GET_ROLE_OFFSET = 192L;
+public static final long AtkObjectClass_GET_LAYER_OFFSET = 200L;
+public static final long AtkObjectClass_GET_MDI_ZORDER_OFFSET = 208L;
+public static final long AtkObjectClass_REF_STATE_SET_OFFSET = 216L;
+public static final long AtkObjectClass_SET_NAME_OFFSET = 224L;
+public static final long AtkObjectClass_SET_DESCRIPTION_OFFSET = 232L;
+public static final long AtkObjectClass_SET_PARENT_OFFSET = 240L;
+public static final long AtkObjectClass_SET_ROLE_OFFSET = 248L;
+public static final long AtkObjectClass_CONNECT_PROPERTY_CHANGE_HANDLER_OFFSET = 256L;
+public static final long AtkObjectClass_REMOVE_PROPERTY_CHANGE_HANDLER_OFFSET = 264L;
+public static final long AtkObjectClass_INITIALIZE_OFFSET = 272L;
+public static final long AtkObjectClass_CHILDREN_CHANGED_OFFSET = 280L;
+public static final long AtkObjectClass_FOCUS_EVENT_OFFSET = 288L;
+public static final long AtkObjectClass_PROPERTY_CHANGE_OFFSET = 296L;
+public static final long AtkObjectClass_STATE_CHANGE_OFFSET = 304L;
+public static final long AtkObjectClass_VISIBLE_DATA_CHANGED_OFFSET = 312L;
+public static final long AtkObjectClass_GET_ATTRIBUTES_OFFSET = 328L;
 
 public static void AtkObjectClass_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkObjectClass o) {
 	o.get_name = s.get(JAVA_LONG_UNALIGNED, 136L);
@@ -181,6 +236,14 @@ public static void AtkObjectClass_write(MemorySegment s, org.eclipse.swt.interna
 }
 
 public static final long AtkSelectionIface_SIZEOF = 80L;
+public static final long AtkSelectionIface_ADD_SELECTION_OFFSET = 16L;
+public static final long AtkSelectionIface_CLEAR_SELECTION_OFFSET = 24L;
+public static final long AtkSelectionIface_REF_SELECTION_OFFSET = 32L;
+public static final long AtkSelectionIface_GET_SELECTION_COUNT_OFFSET = 40L;
+public static final long AtkSelectionIface_IS_CHILD_SELECTED_OFFSET = 48L;
+public static final long AtkSelectionIface_REMOVE_SELECTION_OFFSET = 56L;
+public static final long AtkSelectionIface_SELECT_ALL_SELECTION_OFFSET = 64L;
+public static final long AtkSelectionIface_SELECTION_CHANGED_OFFSET = 72L;
 
 public static void AtkSelectionIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkSelectionIface o) {
 	o.add_selection = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -205,6 +268,42 @@ public static void AtkSelectionIface_write(MemorySegment s, org.eclipse.swt.inte
 }
 
 public static final long AtkTableIface_SIZEOF = 304L;
+public static final long AtkTableIface_REF_AT_OFFSET = 16L;
+public static final long AtkTableIface_GET_INDEX_AT_OFFSET = 24L;
+public static final long AtkTableIface_GET_COLUMN_AT_INDEX_OFFSET = 32L;
+public static final long AtkTableIface_GET_ROW_AT_INDEX_OFFSET = 40L;
+public static final long AtkTableIface_GET_N_COLUMNS_OFFSET = 48L;
+public static final long AtkTableIface_GET_N_ROWS_OFFSET = 56L;
+public static final long AtkTableIface_GET_COLUMN_EXTENT_AT_OFFSET = 64L;
+public static final long AtkTableIface_GET_ROW_EXTENT_AT_OFFSET = 72L;
+public static final long AtkTableIface_GET_CAPTION_OFFSET = 80L;
+public static final long AtkTableIface_GET_COLUMN_DESCRIPTION_OFFSET = 88L;
+public static final long AtkTableIface_GET_COLUMN_HEADER_OFFSET = 96L;
+public static final long AtkTableIface_GET_ROW_DESCRIPTION_OFFSET = 104L;
+public static final long AtkTableIface_GET_ROW_HEADER_OFFSET = 112L;
+public static final long AtkTableIface_GET_SUMMARY_OFFSET = 120L;
+public static final long AtkTableIface_SET_CAPTION_OFFSET = 128L;
+public static final long AtkTableIface_SET_COLUMN_DESCRIPTION_OFFSET = 136L;
+public static final long AtkTableIface_SET_COLUMN_HEADER_OFFSET = 144L;
+public static final long AtkTableIface_SET_ROW_DESCRIPTION_OFFSET = 152L;
+public static final long AtkTableIface_SET_ROW_HEADER_OFFSET = 160L;
+public static final long AtkTableIface_SET_SUMMARY_OFFSET = 168L;
+public static final long AtkTableIface_GET_SELECTED_COLUMNS_OFFSET = 176L;
+public static final long AtkTableIface_GET_SELECTED_ROWS_OFFSET = 184L;
+public static final long AtkTableIface_IS_COLUMN_SELECTED_OFFSET = 192L;
+public static final long AtkTableIface_IS_ROW_SELECTED_OFFSET = 200L;
+public static final long AtkTableIface_IS_SELECTED_OFFSET = 208L;
+public static final long AtkTableIface_ADD_ROW_SELECTION_OFFSET = 216L;
+public static final long AtkTableIface_REMOVE_ROW_SELECTION_OFFSET = 224L;
+public static final long AtkTableIface_ADD_COLUMN_SELECTION_OFFSET = 232L;
+public static final long AtkTableIface_REMOVE_COLUMN_SELECTION_OFFSET = 240L;
+public static final long AtkTableIface_ROW_INSERTED_OFFSET = 248L;
+public static final long AtkTableIface_COLUMN_INSERTED_OFFSET = 256L;
+public static final long AtkTableIface_ROW_DELETED_OFFSET = 264L;
+public static final long AtkTableIface_COLUMN_DELETED_OFFSET = 272L;
+public static final long AtkTableIface_ROW_REORDERED_OFFSET = 280L;
+public static final long AtkTableIface_COLUMN_REORDERED_OFFSET = 288L;
+public static final long AtkTableIface_MODEL_CHANGED_OFFSET = 296L;
 
 public static void AtkTableIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkTableIface o) {
 	o.ref_at = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -285,6 +384,28 @@ public static void AtkTableIface_write(MemorySegment s, org.eclipse.swt.internal
 }
 
 public static final long AtkTextIface_SIZEOF = 224L;
+public static final long AtkTextIface_GET_TEXT_OFFSET = 16L;
+public static final long AtkTextIface_GET_TEXT_AFTER_OFFSET_OFFSET = 24L;
+public static final long AtkTextIface_GET_TEXT_AT_OFFSET_OFFSET = 32L;
+public static final long AtkTextIface_GET_CHARACTER_AT_OFFSET_OFFSET = 40L;
+public static final long AtkTextIface_GET_TEXT_BEFORE_OFFSET_OFFSET = 48L;
+public static final long AtkTextIface_GET_CARET_OFFSET_OFFSET = 56L;
+public static final long AtkTextIface_GET_RUN_ATTRIBUTES_OFFSET = 64L;
+public static final long AtkTextIface_GET_DEFAULT_ATTRIBUTES_OFFSET = 72L;
+public static final long AtkTextIface_GET_CHARACTER_EXTENTS_OFFSET = 80L;
+public static final long AtkTextIface_GET_CHARACTER_COUNT_OFFSET = 88L;
+public static final long AtkTextIface_GET_OFFSET_AT_POINT_OFFSET = 96L;
+public static final long AtkTextIface_GET_N_SELECTIONS_OFFSET = 104L;
+public static final long AtkTextIface_GET_SELECTION_OFFSET = 112L;
+public static final long AtkTextIface_ADD_SELECTION_OFFSET = 120L;
+public static final long AtkTextIface_REMOVE_SELECTION_OFFSET = 128L;
+public static final long AtkTextIface_SET_SELECTION_OFFSET = 136L;
+public static final long AtkTextIface_SET_CARET_OFFSET_OFFSET = 144L;
+public static final long AtkTextIface_TEXT_CHANGED_OFFSET = 152L;
+public static final long AtkTextIface_TEXT_CARET_MOVED_OFFSET = 160L;
+public static final long AtkTextIface_TEXT_SELECTION_CHANGED_OFFSET = 168L;
+public static final long AtkTextIface_GET_RANGE_EXTENTS_OFFSET = 184L;
+public static final long AtkTextIface_GET_BOUNDED_RANGES_OFFSET = 192L;
 
 public static void AtkTextIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkTextIface o) {
 	o.get_text = s.get(JAVA_LONG_UNALIGNED, 16L);
@@ -337,6 +458,10 @@ public static void AtkTextIface_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long AtkTextRange_SIZEOF = 32L;
+public static final long AtkTextRange_BOUNDS_OFFSET = 0L;
+public static final long AtkTextRange_START_OFFSET_OFFSET = 16L;
+public static final long AtkTextRange_END_OFFSET_OFFSET = 20L;
+public static final long AtkTextRange_CONTENT_OFFSET = 24L;
 
 public static void AtkTextRange_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkTextRange o) {
 	if (o.bounds != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRectangle_read(s.asSlice(0L), o.bounds);
@@ -353,6 +478,10 @@ public static void AtkTextRange_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long AtkTextRectangle_SIZEOF = 16L;
+public static final long AtkTextRectangle_X_OFFSET = 0L;
+public static final long AtkTextRectangle_Y_OFFSET = 4L;
+public static final long AtkTextRectangle_WIDTH_OFFSET = 8L;
+public static final long AtkTextRectangle_HEIGHT_OFFSET = 12L;
 
 public static void AtkTextRectangle_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkTextRectangle o) {
 	o.x = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -369,6 +498,10 @@ public static void AtkTextRectangle_write(MemorySegment s, org.eclipse.swt.inter
 }
 
 public static final long AtkValueIface_SIZEOF = 96L;
+public static final long AtkValueIface_GET_CURRENT_VALUE_OFFSET = 16L;
+public static final long AtkValueIface_GET_MAXIMUM_VALUE_OFFSET = 24L;
+public static final long AtkValueIface_GET_MINIMUM_VALUE_OFFSET = 32L;
+public static final long AtkValueIface_SET_CURRENT_VALUE_OFFSET = 40L;
 
 public static void AtkValueIface_read(MemorySegment s, org.eclipse.swt.internal.accessibility.gtk.AtkValueIface o) {
 	o.get_current_value = s.get(JAVA_LONG_UNALIGNED, 16L);

@@ -23,6 +23,8 @@ import org.eclipse.swt.internal.ffm.*;
 public final class Structs_FFM {
 
 public static final long cairo_path_data_t_SIZEOF = 16L;
+public static final long cairo_path_data_t_TYPE_OFFSET = 0L;
+public static final long cairo_path_data_t_LENGTH_OFFSET = 4L;
 
 public static void cairo_path_data_t_read(MemorySegment s, org.eclipse.swt.internal.cairo.cairo_path_data_t o) {
 	o.type = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -35,6 +37,9 @@ public static void cairo_path_data_t_write(MemorySegment s, org.eclipse.swt.inte
 }
 
 public static final long cairo_path_t_SIZEOF = 24L;
+public static final long cairo_path_t_STATUS_OFFSET = 0L;
+public static final long cairo_path_t_DATA_OFFSET = 8L;
+public static final long cairo_path_t_NUM_DATA_OFFSET = 16L;
 
 public static void cairo_path_t_read(MemorySegment s, org.eclipse.swt.internal.cairo.cairo_path_t o) {
 	o.status = s.get(JAVA_INT_UNALIGNED, 0L);
@@ -49,6 +54,10 @@ public static void cairo_path_t_write(MemorySegment s, org.eclipse.swt.internal.
 }
 
 public static final long cairo_rectangle_int_t_SIZEOF = 16L;
+public static final long cairo_rectangle_int_t_X_OFFSET = 0L;
+public static final long cairo_rectangle_int_t_Y_OFFSET = 4L;
+public static final long cairo_rectangle_int_t_WIDTH_OFFSET = 8L;
+public static final long cairo_rectangle_int_t_HEIGHT_OFFSET = 12L;
 
 public static void cairo_rectangle_int_t_read(MemorySegment s, org.eclipse.swt.internal.cairo.cairo_rectangle_int_t o) {
 	o.x = s.get(JAVA_INT_UNALIGNED, 0L);
