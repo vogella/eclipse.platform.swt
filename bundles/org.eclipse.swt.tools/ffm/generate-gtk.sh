@@ -73,6 +73,7 @@ for unit in "${UNITS[@]}"; do
 	args+=("$main" "$BUILD_DIR/$name.ast" "$BUILD_DIR/${name}_layout.txt")
 done
 
-rm -rf "$OUTPUT"
+# only the generated classes, hand written FFM support classes live in the same folders
 mkdir -p "$OUTPUT"
+find "$OUTPUT" -name '*_FFM.java' -delete
 run_generator generate "$OUTPUT" "$REPORT" "${args[@]}"
