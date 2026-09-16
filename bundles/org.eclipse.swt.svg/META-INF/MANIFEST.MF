@@ -6,7 +6,7 @@ Automatic-Module-Name: org.eclipse.swt.svg
 Bundle-Name: %fragmentName
 Bundle-Vendor: %providerName
 Bundle-Localization: fragment
-Bundle-RequiredExecutionEnvironment: JavaSE-21
+Bundle-RequiredExecutionEnvironment: JavaSE-25
 Fragment-Host: org.eclipse.swt
 Import-Package: com.github.weisj.jsvg;version="[2.1.0,3.0.0)",
  com.github.weisj.jsvg.logging;version="[2.1.0,3.0.0)",
