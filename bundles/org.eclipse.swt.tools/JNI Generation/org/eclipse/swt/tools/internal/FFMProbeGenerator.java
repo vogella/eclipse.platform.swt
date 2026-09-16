@@ -39,6 +39,10 @@ public class FFMProbeGenerator extends JNIGenerator {
 	/** C types whose size the FFM code needs although no Java struct class describes them, per unit. */
 	static final String[][] EXTRA_SIZES = {
 		{"os", "GtkContainer"}, {"os", "GtkContainerClass"},
+		{"os", "GtkTextIter"}, {"os", "GtkTreeIter"}, {"os", "GPollFD"}, {"os", "GValue"},
+		{"os", "GtkCellRendererText"}, {"os", "GtkCellRendererTextClass"},
+		{"os", "GtkCellRendererPixbuf"}, {"os", "GtkCellRendererPixbufClass"},
+		{"os", "GtkCellRendererToggle"}, {"os", "GtkCellRendererToggleClass"},
 	};
 
 	/** Struct fields the FFM code needs the offset of, per unit. */

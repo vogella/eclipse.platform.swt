@@ -446,6 +446,40 @@ public class FFMCrossCheck {
 		OS.g_signal_handler_disconnect(buttonHandle, ffmHandler);
 		button.dispose();
 
+		// GType constants, sizes, versions and calls through a function pointer
+		check("G_TYPE_INVALID", OS.G_TYPE_INVALID(), FFMTypes.G_TYPE_INVALID());
+		check("G_TYPE_BOOLEAN", OS.G_TYPE_BOOLEAN(), FFMTypes.G_TYPE_BOOLEAN());
+		check("G_TYPE_INT", OS.G_TYPE_INT(), FFMTypes.G_TYPE_INT());
+		check("G_TYPE_LONG", OS.G_TYPE_LONG(), FFMTypes.G_TYPE_LONG());
+		check("G_TYPE_INT64", OS.G_TYPE_INT64(), FFMTypes.G_TYPE_INT64());
+		check("G_TYPE_FLOAT", OS.G_TYPE_FLOAT(), FFMTypes.G_TYPE_FLOAT());
+		check("G_TYPE_DOUBLE", OS.G_TYPE_DOUBLE(), FFMTypes.G_TYPE_DOUBLE());
+		check("G_TYPE_STRING", OS.G_TYPE_STRING(), FFMTypes.G_TYPE_STRING());
+		check("GDK_TYPE_RGBA", GDK.GDK_TYPE_RGBA(), FFMTypes.GDK_TYPE_RGBA());
+		check("GDK_TYPE_PIXBUF", GDK.GDK_TYPE_PIXBUF(), FFMTypes.GDK_TYPE_PIXBUF());
+		check("PANGO_TYPE_LAYOUT", OS.PANGO_TYPE_LAYOUT(), FFMTypes.PANGO_TYPE_LAYOUT());
+		check("PANGO_TYPE_FONT_DESCRIPTION", OS.PANGO_TYPE_FONT_DESCRIPTION(), FFMTypes.PANGO_TYPE_FONT_DESCRIPTION());
+		check("GTK_TYPE_WIDGET", GTK.GTK_TYPE_WIDGET(), FFMTypes.GTK_TYPE_WIDGET());
+		check("GTK_TYPE_WINDOW", GTK.GTK_TYPE_WINDOW(), FFMTypes.GTK_TYPE_WINDOW());
+		check("GTK_TYPE_MENU", GTK3.GTK_TYPE_MENU(), FFMTypes.GTK_TYPE_MENU());
+		check("GTK_TYPE_CELL_RENDERER_TEXT", GTK.GTK_TYPE_CELL_RENDERER_TEXT(), FFMTypes.GTK_TYPE_CELL_RENDERER_TEXT());
+		check("ATK_TYPE_TEXT", ATK.ATK_TYPE_TEXT(), FFMTypes.ATK_TYPE_TEXT());
+		check("ATK_TYPE_COMPONENT", ATK.ATK_TYPE_COMPONENT(), FFMTypes.ATK_TYPE_COMPONENT());
+		check("GValue_sizeof", OS.GValue_sizeof(), FFMTypes.GValue_sizeof());
+		check("GPollFD_sizeof", OS.GPollFD_sizeof(), FFMTypes.GPollFD_sizeof());
+		check("GtkTextIter_sizeof", GTK.GtkTextIter_sizeof(), FFMTypes.GtkTextIter_sizeof());
+		check("GtkTreeIter_sizeof", GTK.GtkTreeIter_sizeof(), FFMTypes.GtkTreeIter_sizeof());
+		check("GtkCellRendererTextClass_sizeof", GTK.GtkCellRendererTextClass_sizeof(), FFMTypes.GtkCellRendererTextClass_sizeof());
+		check("glib_major_version", OS.glib_major_version(), FFMTypes.glib_major_version());
+		check("glib_minor_version", OS.glib_minor_version(), FFMTypes.glib_minor_version());
+		check("glib_micro_version", OS.glib_micro_version(), FFMTypes.glib_micro_version());
+		check("GDK_WINDOWING_X11", OS.GDK_WINDOWING_X11(), FFMTypes.GDK_WINDOWING_X11());
+		check("GDK_WINDOWING_WAYLAND", OS.GDK_WINDOWING_WAYLAND(), FFMTypes.GDK_WINDOWING_WAYLAND());
+		long gtkFalse = GTK.GET_FUNCTION_POINTER_gtk_false();
+		check("call through a function pointer", OS.call(gtkFalse, 0, 0, 0, 0), FFMTypes.call(gtkFalse, 0, 0, 0, 0));
+		check("ATK call through a function pointer", ATK.call(gtkFalse, 0), FFMTypes.call(gtkFalse, 0));
+		check("Call through a function pointer", OS.Call(gtkFalse, 0, 0), FFMTypes.Call(gtkFalse, 0, 0));
+
 		// dynamic function present in GTK 3
 		check("gtk_accel_group_new available", GTK.gtk_accel_group_new() != 0, GTK_FFM.gtk_accel_group_new() != 0);
 

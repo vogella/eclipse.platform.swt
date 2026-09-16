@@ -43,7 +43,8 @@ if [ "$MODE" = ffm ]; then
 	mapfile -t implementations < <(ls "$SWT/Eclipse SWT PI/common-ffm/org/eclipse/swt/internal/ffm/FFMUtf16.java" \
 		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMConstructorProc.java" \
 		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMMacros.java" \
-		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMSwtFixed.java")
+		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMSwtFixed.java" \
+		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMTypes.java")
 	for root in "${roots[@]}"; do
 		(cd "$TOOLS" && java -cp "$generator_classes" org.eclipse.swt.tools.internal.FFMGeneratorApp rewrite \
 			"$TOOLS/ffm/report-gtk/supported.txt" "$root" "$OUT/overlay" "${implementations[@]}") | grep -v ' 0 natives' || true
