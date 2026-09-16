@@ -83,6 +83,18 @@ All scripts live in `bundles/org.eclipse.swt.tools/ffm` and need clang, gcc, the
 * `test-gtk.sh` runs `FFMCrossCheck` and then the SWT JUnit tests on both builds and diffs the outcomes; `SWT_NATIVES` points it at other native libraries.
 * `test/.../FFMBench.java` compares the per-call cost of both implementations.
 
+### Callbacks
+
+`Callback` no longer needs `callback.c`: `FFMCallback` binds the target method to an upcall stub whose descriptor comes from the same JVM signature string that the JNI code used.
+The stub never throws into native code, returns 0 while callbacks are disabled and the error result of the callback when the Java side fails, and maintains the entry count, which is what the trampolines of `callback.c` did.
+
+Two limitations of the C implementation disappear.
+It has a fixed pool of trampolines per argument count, which is what `ERROR_NO_MORE_CALLBACKS` reports when it runs out, and it supports exactly two signatures containing doubles, `(JDDJ)` and `(JIDDJ)`, because each one needs its own hand written trampoline.
+Upcall stubs have neither limit.
+
+One difference is deliberate: closing the arena of a stub in `unbind` invalidates the function pointer, while a stale pointer into `callback.c` lands in an empty slot and returns harmlessly.
+A callback that is still running keeps its stub alive instead, and the remaining risk is native code holding a pointer to a disposed callback, which SWT's dispose discipline rules out.
+
 ### Coverage
 
 1,456 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
@@ -93,6 +105,7 @@ The 147 that stay JNI are 93 macros or custom C functions without a declaration,
 * `FFMCrossCheck` compares 35 struct sizes, 720 struct reads and 240 struct writes of random data through every JNI `memmove` of a struct, and 58 call results covering scalars, unsigned results, doubles, critical and copied arrays, aliased arrays, struct out-parameters, bit-fields, variadic calls with a sentinel, dynamic functions and symbol addresses: 0 mismatches.
 * The Visual Oracle harness renders all 169 specimens through stock SWT and through the FFM build and compares them at zero tolerance: every specimen is bit-identical at 100% and at 200% zoom.
   At 150% every specimen fails on both sides with `IllegalArgumentException: Argument not valid`, which is a pre-existing limitation of the harness at fractional zoom and unrelated to FFM.
+* The same cross check, JUnit and Visual Oracle runs pass unchanged with the callbacks routed through upcall stubs.
 * 127 SWT JUnit test classes (widgets, graphics, custom, accessibility, dnd, layout, events, program, printing; 4,150 tests) produce identical outcomes on the JNI build and on the FFM build: 4,059 passed, 78 failed and 11 aborted on both, the failures coming from the headless environment.
 
 ### Findings
@@ -117,7 +130,9 @@ Best of five runs of two million calls on Linux x86_64, JDK 25:
 | two copied `int[]`, `pango_layout_get_pixel_size` | 56.6 ns | 53.8 ns |
 | three copied `double[]`, `cairo_matrix_transform_point` | 76.7 ns | 88.8 ns |
 | struct out-parameter, `gdk_cairo_get_clip_rectangle` | 45.4 ns | 31.0 ns |
+| callback with three long arguments | 153.6 ns | 86.0 ns |
 
+The callback row is from a later run on a busier machine, where the JNI numbers of the other rows are about twice as high as shown, so compare it only with its own JNI value.
 Copied arrays pay for a confined arena per call; a reusable per-thread allocator is the obvious next optimisation.
 
 ## Open questions
