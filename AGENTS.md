@@ -42,7 +42,7 @@ Instead, rely on the GitHub PR workflows created for each platform to test the c
 
 ### Technology Stack
 - **Build Tool**: Maven with Tycho plugin
-- **Java Version**: Java 21
+- **Java Version**: Java 25
 - **Supported Architectures**: x86_64, aarch64, loongarch64, ppc64le, riscv64
 
 ### Build Commands
@@ -136,7 +136,7 @@ mvn verify -pl :THE_BUNDLE_WITH_THE_ACTUAL_TEST -am -DskipNativeTests=false -Dsu
 
 ### CI/CD
 - GitHub Actions runs builds on Linux, Windows, and macOS
-- Matrix builds test with Java 21 on all platforms
+- Matrix builds test with Java 25 on all platforms
 - All tests must pass before merge
 
 ## Important Files and Patterns
