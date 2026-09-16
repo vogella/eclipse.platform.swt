@@ -138,6 +138,20 @@ public class FFMGeneratorApp {
 	static final Map<String, String> HANDWRITTEN = Map.of(
 		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback");
 
+	/** Single natives implemented in Java instead of calling their C counterpart, as class#method. */
+	static final Map<String, String> HANDWRITTEN_METHODS = Map.ofEntries(
+		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_strlen", "org.eclipse.swt.internal.ffm.FFMUtf16"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_pointer_to_offset", "org.eclipse.swt.internal.ffm.FFMUtf16"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_offset_to_pointer", "org.eclipse.swt.internal.ffm.FFMUtf16"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf16_offset_to_utf8_offset", "org.eclipse.swt.internal.ffm.FFMUtf16"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#g_utf8_offset_to_utf16_offset", "org.eclipse.swt.internal.ffm.FFMUtf16"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#imContextNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#imContextLast", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#pangoLayoutNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#pangoFontFamilyNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#pangoFontFaceNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"),
+		Map.entry("org.eclipse.swt.internal.gtk.OS#printerOptionWidgetNewProc_CALLBACK", "org.eclipse.swt.internal.ffm.FFMConstructorProc"));
+
 	/** Copies the Java sources below <code>sourceRoot</code>, delegating every supported native to its FFM implementation. */
 	static void rewrite(String supportedFile, String sourceRoot, String outputRoot) throws IOException {
 		Set<String> supported = new HashSet<>(Files.readAllLines(Paths.get(supportedFile)));
@@ -163,8 +177,11 @@ public class FFMGeneratorApp {
 						names.add(pm.group(2));
 					}
 					String target;
+					String handwrittenMethod = HANDWRITTEN_METHODS.get(className + "#" + name);
 					if (handwritten != null) {
 						target = handwritten;
+					} else if (handwrittenMethod != null) {
+						target = handwrittenMethod;
 					} else if (supported.contains(FFMGenerator.key(className, name, types))) {
 						target = FFMGenerator.simpleName(className) + FFMGenerator.SUFFIX;
 					} else {
