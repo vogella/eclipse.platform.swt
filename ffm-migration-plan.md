@@ -101,10 +101,15 @@ The first pieces of `os_custom.c` are Java now, so the FFM build no longer calls
 `FFMUtf16` ports the five UTF-16 offset helpers, which are pure arithmetic over the bytes of a UTF-8 string, and `FFMConstructorProc` ports the six GObject constructor overrides, which call the constructor of the super class through a downcall handle and are installed as upcall stubs.
 That is about 175 of the 2,380 lines of `os_custom.c`; the `SwtFixed` widget and the accessibility bridge are what remain.
 
+`FFMMacros` implements the macros that have no symbol to link against: the `GTK_IS_*`, `GDK_IS_*` and `ATK_*_GET_IFACE` type checks through `g_type_check_instance_is_a` and `g_type_interface_peek`, the accessors for `GTypeInstance`, `GObjectClass`, `GValue`, `GList`, `GSList`, `GError` and `XAnyEvent` as reads of public struct fields whose offsets the layout probe provides, and the arithmetic of `PANGO_PIXELS` and `CAIRO_VERSION_ENCODE`.
+The Java versions return 0 for a null pointer where the C macros dereference it.
+
+The rewriter learns which natives a hand written class implements from the public static methods of its source, so adding an implementation needs no list to be updated.
+
 ### Coverage
 
-1,456 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
-The 147 that stay JNI are 93 macros or custom C functions without a declaration, 34 `flags=const` constants, 10 `no_gen` hand written natives, 9 calls through function pointers and 1 native that has to be entered through JNI (see below).
+1,515 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
+The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK3 headers do not declare, the calls through a function pointer, the `sizeof` macros of C types without a Java struct class, the remaining custom C of `os_custom.c` and 1 native that has to be entered through JNI (see below).
 
 ### Verification
 

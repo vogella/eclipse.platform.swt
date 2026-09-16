@@ -560,6 +560,12 @@ public class FFMGenerator extends JNIGenerator {
 			String name = info.clazz.getSimpleName();
 			String type = info.clazz.getName();
 			outputln("public static final long " + name + "_SIZEOF = " + info.size + "L;");
+			for (JNIField field : info.clazz.getDeclaredFields()) {
+				if (ignoreField(field)) continue;
+				String layout = info.fields.get(field.getName());
+				if (layout == null || layout.startsWith("bit")) continue;
+				outputln("public static final long " + name + "_" + field.getName().toUpperCase(java.util.Locale.ROOT) + "_OFFSET = " + layout.split(",")[0] + "L;");
+			}
 			outputln();
 			for (boolean read : new boolean[] {true, false}) {
 				outputln("public static void " + name + (read ? "_read" : "_write") + "(MemorySegment s, " + type + " o) {");
