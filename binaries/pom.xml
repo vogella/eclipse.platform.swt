@@ -27,7 +27,7 @@
 
 	<properties>
 		<buildid>${buildId}</buildid>
-		<maven.compiler.release>21</maven.compiler.release>
+		<maven.compiler.release>25</maven.compiler.release>
 		<swtMainProject>${project.basedir}/../../bundles/org.eclipse.swt</swtMainProject>
 	</properties>
 
