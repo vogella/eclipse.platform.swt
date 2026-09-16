@@ -39,9 +39,13 @@ roots+=("$SWT/Eclipse SWT PI/common-ffm" "$SWT/Eclipse SWT PI/gtk-ffm")
 
 if [ "$MODE" = ffm ]; then
 	generator_classes="$BUILD_DIR/classes"
+	# hand written FFM classes whose public static methods replace natives
+	mapfile -t implementations < <(ls "$SWT/Eclipse SWT PI/common-ffm/org/eclipse/swt/internal/ffm/FFMUtf16.java" \
+		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMConstructorProc.java" \
+		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMMacros.java")
 	for root in "${roots[@]}"; do
 		(cd "$TOOLS" && java -cp "$generator_classes" org.eclipse.swt.tools.internal.FFMGeneratorApp rewrite \
-			"$TOOLS/ffm/report-gtk/supported.txt" "$root" "$OUT/overlay") | grep -v ' 0 natives' || true
+			"$TOOLS/ffm/report-gtk/supported.txt" "$root" "$OUT/overlay" "${implementations[@]}") | grep -v ' 0 natives' || true
 	done
 fi
 
