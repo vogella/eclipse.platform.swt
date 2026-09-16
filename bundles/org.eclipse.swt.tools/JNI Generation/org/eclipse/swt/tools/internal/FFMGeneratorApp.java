@@ -131,7 +131,12 @@ public class FFMGeneratorApp {
 	}
 
 	static final Pattern PARAM = Pattern.compile("(.+?)\\s*\\b(\\w+)\\s*((?:\\[\\s*\\])*)", Pattern.DOTALL);
-	static final Pattern NATIVE = Pattern.compile("((?:public|protected|private)?\\s*static\\s+final\\s+)native\\s+([\\w\\[\\]]+)\\s*(?:/\\*[^*]*\\*/\\s*)?(\\w+)\\s*\\(([^)]*)\\)\\s*;");
+	static final String MODIFIERS = "(?:public|protected|private|static|final|synchronized|strictfp)";
+	static final Pattern NATIVE = Pattern.compile("((?:" + MODIFIERS + "\\s+)*)native\\s+((?:" + MODIFIERS + "\\s+)*)([\\w\\[\\]]+)\\s*(?:/\\*[^*]*\\*/\\s*)?(\\w+)\\s*\\(([^)]*)\\)\\s*;");
+
+	/** Classes whose natives are implemented by a hand written FFM class instead of generated code. */
+	static final Map<String, String> HANDWRITTEN = Map.of(
+		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback");
 
 	/** Copies the Java sources below <code>sourceRoot</code>, delegating every supported native to its FFM implementation. */
 	static void rewrite(String supportedFile, String sourceRoot, String outputRoot) throws IOException {
@@ -144,21 +149,31 @@ public class FFMGeneratorApp {
 				if (!source.contains(" native ")) continue;
 				String relative = root.relativize(file).toString();
 				String className = relative.substring(0, relative.length() - ".java".length()).replace(File.separatorChar, '.');
+				String handwritten = HANDWRITTEN.get(className);
 				Matcher m = NATIVE.matcher(source);
 				StringBuilder result = new StringBuilder();
 				boolean changed = false;
 				while (m.find()) {
+					String returnType = m.group(3), name = m.group(4), parameters = m.group(5);
 					List<String> types = new ArrayList<>(), names = new ArrayList<>();
-					for (String param : m.group(4).split(",")) {
+					for (String param : parameters.split(",")) {
 						Matcher pm = PARAM.matcher(param.trim());
 						if (!pm.matches()) continue;
 						types.add(pm.group(1) + pm.group(3).replaceAll("\\s", ""));
 						names.add(pm.group(2));
 					}
-					if (!supported.contains(FFMGenerator.key(className, m.group(3), types))) continue;
-					String call = FFMGenerator.simpleName(className) + FFMGenerator.SUFFIX + "." + m.group(3) + "(" + String.join(", ", names) + ")";
-					String body = m.group(2).equals("void") ? call + ";" : "return " + call + ";";
-					m.appendReplacement(result, Matcher.quoteReplacement(m.group(1) + m.group(2) + " " + m.group(3) + "(" + m.group(4) + ") { " + body + " }"));
+					String target;
+					if (handwritten != null) {
+						target = handwritten;
+					} else if (supported.contains(FFMGenerator.key(className, name, types))) {
+						target = FFMGenerator.simpleName(className) + FFMGenerator.SUFFIX;
+					} else {
+						continue;
+					}
+					String call = target + "." + name + "(" + String.join(", ", names) + ")";
+					String body = returnType.equals("void") ? call + ";" : "return " + call + ";";
+					String modifiers = (m.group(1) + m.group(2)).replaceAll("\\s+", " ").trim();
+					m.appendReplacement(result, Matcher.quoteReplacement(modifiers + " " + returnType + " " + name + "(" + parameters + ") { " + body + " }"));
 					changed = true;
 					count[0]++;
 				}

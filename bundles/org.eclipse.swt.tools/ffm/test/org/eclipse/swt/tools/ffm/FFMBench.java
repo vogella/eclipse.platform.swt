@@ -12,6 +12,7 @@ package org.eclipse.swt.tools.ffm;
 
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
+import org.eclipse.swt.internal.ffm.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
@@ -48,6 +49,10 @@ public class FFMBench {
 		System.out.printf("%-55s JNI %7.1f ns  FFM %7.1f ns%n", name, bestJni, bestFfm);
 	}
 
+	public static long callbackTarget(long a, long b, long c) {
+		return a + b + c;
+	}
+
 	public static void main(String[] args) {
 		Display display = new Display();
 		Shell shell = new Shell(display);
@@ -71,6 +76,12 @@ public class FFMBench {
 		compare("copied int[] x2: pango_layout_get_pixel_size", () -> OS.pango_layout_get_pixel_size(layout, w, h), () -> OS_FFM.pango_layout_get_pixel_size(layout, w, h));
 		compare("copied double[] x3: cairo_matrix_transform_point", () -> Cairo.cairo_matrix_transform_point(matrix, x, y), () -> Cairo_FFM.cairo_matrix_transform_point(matrix, x, y));
 		compare("struct out: gdk_cairo_get_clip_rectangle", () -> GDK.gdk_cairo_get_clip_rectangle(cairo, rect), () -> GDK_FFM.gdk_cairo_get_clip_rectangle(cairo, rect));
+
+		// callbacks: the same Java method reached through a JNI trampoline and through an upcall stub
+		Callback jniCallback = new Callback(FFMBench.class, "callbackTarget", 3);
+		long jniProc = jniCallback.getAddress();
+		long ffmProc = FFMCallback.bind(new Object(), FFMBench.class, "callbackTarget", "(JJJ)J", 3, true, false, 0);
+		compare("callback: 3 long arguments through OS.call", () -> sink = OS.call(jniProc, 1, 2, 3, 0), () -> sink = OS.call(ffmProc, 1, 2, 3, 0));
 
 		C.free(buffer);
 		Cairo.cairo_destroy(cairo);
