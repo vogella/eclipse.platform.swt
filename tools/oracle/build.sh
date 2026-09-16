@@ -1,0 +1,312 @@
+#!/usr/bin/env bash
+# Build recipe for the SWT Visual Oracle.
+#
+# Builds one SWT rendering backend with plain javac and prints its runtime
+# classpath on stdout (nothing else on stdout; diagnostics go to stderr).
+#
+# Usage:
+#   build.sh <backend-id>    build one backend, print its classpath
+#   build.sh --all           build every backend declared available
+#
+# Backends: native | native-baseline | native-candidate
+#
+# native-baseline and native-candidate build stock SWT from another source,
+# given by ORACLE_BASELINE (default master) and ORACLE_CANDIDATE: either a git
+# ref of this repository or a directory holding an SWT checkout (uncommitted
+# changes included). Their classpath has a sibling lib/ with that source's
+# natives.
+#
+# Idempotent: unchanged sources make a run a no-op. All outputs live in a
+# cache directory outside the worktree:
+#   ${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}
+set -euo pipefail
+
+CACHE_ROOT="${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}"
+MAVEN_DIR="$CACHE_ROOT/maven"
+CHECKOUT_DIR="$CACHE_ROOT/checkouts"
+BUILD_DIR="$CACHE_ROOT/build"
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+WORKTREE_ID="$(printf '%s' "$(realpath "$REPO_ROOT")" | sha256sum | cut -c1-12)"
+OUT_BASE="$BUILD_DIR/$WORKTREE_ID"
+
+GTK_BIN_DIR="$REPO_ROOT/binaries/org.eclipse.swt.gtk.linux.x86_64"
+
+
+die() { printf 'build.sh: %s\n' "$*" >&2; exit 1; }
+info() { printf 'build.sh: %s\n' "$*" >&2; }
+
+need_java() {
+	command -v java >/dev/null 2>&1 || die "java not found in PATH"
+	command -v javac >/dev/null 2>&1 || die "javac not found in PATH, install a JDK (21 or newer recommended)"
+}
+
+require_gtk_linux_x86_64() {
+	local what="${1:-this backend}"
+	if [ "$(uname -s)-$(uname -m)" != "Linux-x86_64" ]; then
+		die "$what needs Linux on x86_64 (prebuilt GTK binaries), found $(uname -s)-$(uname -m)"
+	fi
+}
+
+# Emit the source folders of an Eclipse bundle build.properties, one per line.
+# Accepts either the build.properties file or its bundle directory.
+parse_source_folders() {
+	local bp="$1"
+	[ -d "$bp" ] && bp="$bp/build.properties"
+	[ -f "$bp" ] || die "missing $bp"
+	local folder
+	while IFS= read -r folder; do
+		folder="${folder%%$'\r'}"
+		[ -n "$folder" ] || continue
+		printf '%s\n' "${folder%/}"
+	done < <(sed -n '/^source\.\./,/^output/p' "$bp" \
+		| tr -d '\\' \
+		| sed 's/^source\.\.[[:space:]]*=//;s/^output\..*//' \
+		| sed 's/,[[:space:]]*$//' \
+		| sed 's/^[[:space:]]*//;s/[[:space:]]*$//' \
+		| grep -v '^$')
+}
+
+# Compile every .java below the source folders of $1 into $2, using $3 as the
+# extra javac classpath ("" for none).
+compile_bundle() {
+	local bp_dir="$1" out_dir="$2" extra_cp="$3"
+	local bp="$bp_dir/build.properties"
+	[ -f "$bp" ] || die "missing $bp"
+	mkdir -p "$out_dir"
+	local args_file="$out_dir/javac.args"
+	: > "$args_file"
+	local folder
+	while IFS= read -r folder; do
+		find "$bp_dir/$folder" -name '*.java' -print0
+	done < <(parse_source_folders "$bp") \
+		| while IFS= read -r -d '' f; do printf '"%s"\n' "$f"; done >> "$args_file"
+	if [ ! -s "$args_file" ]; then
+		die "no java sources found via $bp"
+	fi
+	javac -nowarn -encoding UTF-8 ${extra_cp:+-cp "$extra_cp"} -d "$out_dir" @"$args_file" 1>&2
+}
+
+# Copy non-java resources of every source folder into the class output dir,
+# stripping the source folder prefix (what Tycho does for bin.includes).
+copy_resources() {
+	local bp_dir="$1" out_dir="$2"
+	local folder f rel dest
+	while IFS= read -r folder; do
+		while IFS= read -r -d '' f; do
+			rel="${f#"$bp_dir/$folder"/}"
+			dest="$out_dir/$rel"
+			mkdir -p "$(dirname "$dest")"
+			cp "$f" "$dest"
+		done < <(find "$bp_dir/$folder" -type f ! -name '*.java' -print0)
+	done < <(parse_source_folders "$bp_dir")
+}
+
+# Fingerprint over every file below the source folders plus caller-supplied
+# extra strings (jar checksums, git sha). Cheap enough to run per invocation.
+compute_fingerprint() {
+	local bp_dir="$1"
+	shift
+	local fp
+	fp="$(while IFS= read -r folder; do
+			find "$bp_dir/$folder" -type f -printf '%P %s %T@\n'
+		done < <(parse_source_folders "$bp_dir") | LC_ALL=C sort | sha256sum | cut -d' ' -f1)"
+	for extra in "$@"; do
+		fp="$(printf '%s\n%s\n' "$fp" "$extra" | sha256sum | cut -d' ' -f1)"
+	done
+	printf '%s' "$fp"
+}
+
+up_to_date() {
+	local out_dir="$1" fp_file="$2" fp="$3"
+	[ -f "$fp_file" ] || return 1
+	[ -d "$out_dir" ] && [ -n "$(ls -A "$out_dir" 2>/dev/null)" ] || return 1
+	[ "$(cat "$fp_file" 2>/dev/null)" = "$fp" ]
+}
+
+# Resolve the JSVG jar the fragment in $1 was built for, from the lower bound
+# of its Import-Package range, downloading the pinned jar once.
+jsvg_jar_for() {
+	local manifest="$1/META-INF/MANIFEST.MF" lower version sum file
+	lower="$(grep -oE 'com\.github\.weisj\.jsvg;version="\[[0-9.]+' "$manifest" | head -1 | sed 's/.*\[//')"
+	case "$lower" in
+		1.7.*) version=1.7.2 sum=5591409ef245e48004f0524790b7042cd239acc01327326cfd4edfa57f475f99 ;;
+		2.0.*) version=2.0.0 sum=81fc9ada579fc3f4924ec35f904c043de13ee8fba280322e638c7092006f1b52 ;;
+		2.1.*) version=2.1.0 sum=a538142d27c57c55066da02a535cc8eee3afd0d37b3daff8eba6344bd0ffc1b6 ;;
+		*) die "no pinned JSVG jar for the range starting at '$lower' in $manifest; add one to build.sh" ;;
+	esac
+	file="$MAVEN_DIR/com/github/weisj/jsvg/$version/jsvg-$version.jar"
+	mkdir -p "$(dirname "$file")"
+	if [ ! -f "$file" ]; then
+		info "downloading $(basename "$file") to cache"
+		curl -fsSL -o "$file" "https://repo1.maven.org/maven2/com/github/weisj/jsvg/$version/jsvg-$version.jar" \
+			|| die "failed to download JSVG $version (offline? SVG support needs network once)"
+	fi
+	echo "$sum  $file" | sha256sum -c --quiet >/dev/null 2>&1 \
+		|| die "JSVG jar $file does not match pinned checksum, delete it and retry"
+	printf '%s' "$file"
+}
+
+# Append the org.eclipse.swt.svg fragment of SWT checkout $1, compiled against
+# SWT classes $2 into $3, as ":<classes>:<jsvg jar>"; prints nothing when that
+# checkout predates the fragment, so its SVG specimens report UNSUPPORTED.
+svg_classpath() {
+	local src="$1" swt_classes="$2" out="$3" svg_dir fp jar
+	svg_dir="$src/bundles/org.eclipse.swt.svg"
+	[ -f "$svg_dir/build.properties" ] || return 0
+	jar="$(jsvg_jar_for "$svg_dir")" || exit 1
+	fp="$(compute_fingerprint "$svg_dir" "svg-recipe-v3" "$(sha256sum "$jar")" "$(cat "$swt_classes/../.fingerprint"* 2>/dev/null | sha256sum)")"
+	if ! up_to_date "$out" "$out.fingerprint" "$fp"; then
+		info "compiling org.eclipse.swt.svg from $src against $(basename "$jar")"
+		rm -rf "$out"
+		compile_bundle "$svg_dir" "$out" "$swt_classes:$jar" || die "compiling org.eclipse.swt.svg from $src failed"
+		copy_resources "$svg_dir" "$out"
+		# older fragments register the rasterizer from the bundle root instead of a source folder
+		if [ -d "$svg_dir/META-INF/services" ]; then
+			mkdir -p "$out/META-INF"
+			cp -r "$svg_dir/META-INF/services" "$out/META-INF/"
+		fi
+		printf '%s' "$fp" > "$out.fingerprint"
+	fi
+	printf ':%s:%s' "$out" "$jar"
+}
+
+check_natives_present() {
+	local bin_dir="$1" so
+	so="$(ls "$bin_dir"/libswt-pi3-gtk-*.so 2>/dev/null | head -1 || true)"
+	[ -n "$so" ] || die "no libswt-pi3-gtk-*.so in $bin_dir; install git-lfs and restore binaries (git lfs pull)"
+	if grep -q '^version https://git-lfs' "$so" 2>/dev/null; then
+		die "$so is an unresolved git-lfs pointer; run: git lfs install && git lfs pull"
+	fi
+}
+
+build_native() {
+	require_gtk_linux_x86_64 "native"
+	check_natives_present "$GTK_BIN_DIR"
+	need_java
+	local out="$OUT_BASE/native/classes"
+	local fp
+	fp="$(compute_fingerprint "$GTK_BIN_DIR" "recipe-v2")"
+	if ! up_to_date "$out" "$out/../.fingerprint-native" "$fp"; then
+		info "compiling native backend (stock SWT GTK bundle)"
+		rm -rf "$out"
+		compile_bundle "$GTK_BIN_DIR" "$out" ""
+		copy_resources "$GTK_BIN_DIR" "$out"
+		printf '%s' "$fp" > "$out/../.fingerprint-native"
+	else
+		info "native backend up to date"
+	fi
+	local svg
+	svg="$(svg_classpath "$REPO_ROOT" "$out" "$OUT_BASE/native/svg-classes")" || exit 1
+	printf '%s%s' "$out" "$svg"
+}
+
+# Resolve an SWT source spec (directory or git ref) to a checkout directory,
+# extracting a ref once per commit into the cache.
+resolve_swt_source() {
+	local spec="$1" sha dir tmp
+	if [ -d "$spec" ]; then
+		realpath "$spec"
+		return
+	fi
+	sha="$(git -C "$REPO_ROOT" rev-parse --verify --quiet "$spec^{commit}")" \
+		|| die "'$spec' is neither a directory nor a git ref of $REPO_ROOT"
+	dir="$CHECKOUT_DIR/swt-v2/$sha"
+	if [ ! -d "$dir" ]; then
+		info "extracting SWT at $spec ($sha) into cache"
+		mkdir -p "$CHECKOUT_DIR/swt-v2"
+		tmp="$(mktemp -d "$CHECKOUT_DIR/swt-v2/.extract-XXXXXX")"
+		local paths=(bundles/org.eclipse.swt binaries/legal_files binaries/org.eclipse.swt.gtk.linux.x86_64)
+		git -C "$REPO_ROOT" cat-file -e "$sha:bundles/org.eclipse.swt.svg" 2>/dev/null \
+			&& paths+=(bundles/org.eclipse.swt.svg)
+		# git archive applies the LFS smudge filter, so natives arrive as real binaries
+		git -C "$REPO_ROOT" archive "$sha" "${paths[@]}" | tar -x -C "$tmp" \
+			|| { rm -rf "$tmp"; die "git archive of $sha failed"; }
+		mv -T "$tmp" "$dir" 2>/dev/null || rm -rf "$tmp"
+	fi
+	printf '%s' "$dir"
+}
+
+# Build stock SWT from the source named by $2 under backend id $1.
+build_native_from() {
+	local id="$1" spec="$2"
+	require_gtk_linux_x86_64 "$id"
+	need_java
+	local src bin_dir key out_base out fp
+	src="$(resolve_swt_source "$spec")" || exit 1
+	bin_dir="$src/binaries/org.eclipse.swt.gtk.linux.x86_64"
+	[ -f "$bin_dir/build.properties" ] || die "$src is not an SWT checkout (no $bin_dir/build.properties)"
+	check_natives_present "$bin_dir"
+	key="$(printf '%s' "$src" | sha256sum | cut -c1-12)"
+	out_base="$BUILD_DIR/$id/$key"
+	out="$out_base/classes"
+	fp="$(compute_fingerprint "$bin_dir" "recipe-v2" "$(cd "$bin_dir" && sha256sum libswt-*.so | sha256sum)")"
+	if ! up_to_date "$out" "$out_base/.fingerprint" "$fp"; then
+		info "compiling $id backend (stock SWT from $spec)"
+		rm -rf "$out"
+		compile_bundle "$bin_dir" "$out" ""
+		copy_resources "$bin_dir" "$out"
+		printf '%s' "$fp" > "$out_base/.fingerprint"
+	else
+		info "$id backend up to date ($spec)"
+	fi
+	ln -sfn "$bin_dir" "$out_base/lib"
+	local svg
+	svg="$(svg_classpath "$src" "$out" "$out_base/svg-classes")" || exit 1
+	printf '%s%s' "$out" "$svg"
+}
+
+usage() {
+	cat >&2 <<'USAGE'
+usage: build.sh <backend-id>   build one backend, print its classpath on stdout
+       build.sh --all          build all backends, print "<id> <classpath>" lines
+
+backends: native, native-baseline, native-candidate
+environment:
+  ORACLE_BASELINE   git ref or SWT directory for native-baseline (default master)
+  ORACLE_CANDIDATE  git ref or SWT directory for native-candidate (required)
+  ORACLE_CACHE_DIR  override cache location (default ~/.cache/swt-visual-oracle)
+USAGE
+	exit 2
+}
+
+main() {
+	local target="${1:-}"
+	[ -n "$target" ] || usage
+	case "$target" in
+		native|native-baseline|native-candidate)
+			local cp
+			case "$target" in
+				native-baseline) cp="$(build_native_from native-baseline "${ORACLE_BASELINE:-master}")" ;;
+				native-candidate)
+					[ -n "${ORACLE_CANDIDATE:-}" ] || die "native-candidate needs ORACLE_CANDIDATE (git ref or SWT directory)"
+					cp="$(build_native_from native-candidate "$ORACLE_CANDIDATE")" ;;
+				native) cp="$(build_native)" ;;
+			esac
+			printf '%s\n' "$cp"
+			;;
+		--all)
+			local failed=0 id cp fn
+			for id in native; do
+				case "$id" in
+					native) fn=build_native ;;
+				esac
+				local log
+				log="$CACHE_ROOT/all-last-error.log"
+				if ! cp="$($fn 2>"$log")"; then
+					info "--all: backend '$id' is not available here, skipping:"
+					sed 's/^/    /' "$log" >&2 || true
+					failed=1
+				else
+					printf '%s %s\n' "$id" "$cp"
+				fi
+			done
+			exit "$failed"
+			;;
+		-h|--help) usage ;;
+		*) usage ;;
+	esac
+}
+
+mkdir -p "$CACHE_ROOT" "$MAVEN_DIR" "$BUILD_DIR"
+main "$@"
