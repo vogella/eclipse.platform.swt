@@ -36,9 +36,31 @@ public class FFMProbeGenerator extends JNIGenerator {
 		outputln("int main(void) {");
 	}
 
+	/** C types whose size the FFM code needs although no Java struct class describes them, per unit. */
+	static final String[][] EXTRA_SIZES = {
+		{"os", "GtkContainer"}, {"os", "GtkContainerClass"},
+	};
+
+	/** Struct fields the FFM code needs the offset of, per unit. */
+	static final String[][] EXTRA_OFFSETS = {
+		{"os", "GtkWidgetClass", "realize"}, {"os", "GtkWidgetClass", "map"},
+		{"os", "GtkWidgetClass", "get_preferred_width"}, {"os", "GtkWidgetClass", "get_preferred_height"},
+		{"os", "GtkWidgetClass", "size_allocate"}, {"os", "GtkWidgetClass", "get_accessible"},
+		{"os", "GtkContainerClass", "add"}, {"os", "GtkContainerClass", "remove"}, {"os", "GtkContainerClass", "forall"},
+	};
+
 	@Override
 	public void generate() {
 		super.generate();
+		String unit = getOutputName();
+		for (String[] extra : EXTRA_SIZES) {
+			if (!extra[0].equals(unit)) continue;
+			outputln("\tprintf(\"EXTRA." + extra[1] + "=%zu\\n\", sizeof(" + extra[1] + "));");
+		}
+		for (String[] extra : EXTRA_OFFSETS) {
+			if (!extra[0].equals(unit)) continue;
+			outputln("\tprintf(\"EXTRA." + extra[1] + "." + extra[2] + "=%zu\\n\", (size_t)__builtin_offsetof(" + extra[1] + ", " + extra[2] + "));");
+		}
 		outputln("\treturn 0;");
 		outputln("}");
 	}
