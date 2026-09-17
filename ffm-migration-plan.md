@@ -103,7 +103,10 @@ The first pieces of `os_custom.c` are Java now, so the FFM build no longer calls
 The type is registered from Java with `g_type_register_static`, the `GtkScrollable` interface is added, and the vtable entries of `GObjectClass`, `GtkWidgetClass` and `GtkContainerClass` are upcall stubs whose offsets come from the layout probe.
 The private data of the C implementation, the child list with its geometry and the scrollable adjustments, lives in a Java map keyed by the instance.
 
-That is about 600 of the 2,380 lines of `os_custom.c`; the accessibility bridge and the GTK4 variant of `SwtFixed` are what remain.
+`FFMAccessible` ports the accessibility bridge, the largest part of the file.
+Its 72 ATK functions were uniform C stubs that forwarded to a static method of `AccessibleObject`, so the vtable slots are derived from the C and installed as upcall stubs built from one dispatch handle; only `initialize` and `get_extents` needed to be written out, and nine slots fall back to the implementation of the parent class when a widget has no Java `Accessible`.
+
+What remains of `os_custom.c` is the GTK4 code, so no GTK3 native is left on JNI.
 
 `FFMMacros` implements the macros that have no symbol to link against: the `GTK_IS_*`, `GDK_IS_*` and `ATK_*_GET_IFACE` type checks through `g_type_check_instance_is_a` and `g_type_interface_peek`, the accessors for `GTypeInstance`, `GObjectClass`, `GValue`, `GList`, `GSList`, `GError` and `XAnyEvent` as reads of public struct fields whose offsets the layout probe provides, and the arithmetic of `PANGO_PIXELS` and `CAIRO_VERSION_ENCODE`.
 The Java versions return 0 for a null pointer where the C macros dereference it.
@@ -115,7 +118,7 @@ The rewriter learns which natives a hand written class implements from the publi
 ### Coverage
 
 1,515 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
-Only one native on the GTK3 path still goes through JNI, `swt_fixed_accessible_register_accessible`, and it disappears with the accessibility bridge; the other 36 that remain are GTK4 functions the GTK3 headers do not declare.
+No native on the GTK3 path goes through JNI any more: the 36 that remain are GTK4 functions the GTK3 headers do not declare.
 The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK3 headers do not declare, the calls through a function pointer, the `sizeof` macros of C types without a Java struct class, the remaining custom C of `os_custom.c` and 1 native that has to be entered through JNI (see below).
 
 ### Verification
