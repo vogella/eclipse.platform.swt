@@ -106,7 +106,11 @@ The private data of the C implementation, the child list with its geometry and t
 `FFMAccessible` ports the accessibility bridge, the largest part of the file.
 Its 72 ATK functions were uniform C stubs that forwarded to a static method of `AccessibleObject`, so the vtable slots are derived from the C and installed as upcall stubs built from one dispatch handle; only `initialize` and `get_extents` needed to be written out, and nine slots fall back to the implementation of the parent class when a widget has no Java `Accessible`.
 
+`FFMRuntime` ports the last two helpers, the GDK lock functions, whose `GRecMutex` becomes a `ReentrantLock`, and the debug flag that makes GTK abort on a warning.
+
 What remains of `os_custom.c` is the GTK4 code, so no GTK3 native is left on JNI.
+The rewrite therefore also drops the `Library.loadLibrary` calls of the rewritten classes, and the FFM build runs without any SWT native library: the whole JUnit suite produces the same outcomes with `java.library.path` pointing at a directory that does not exist.
+That is what finishes the GTK3 port, because symbols resolve through the GTK libraries themselves rather than through the dependency tree of the SWT library.
 
 `FFMMacros` implements the macros that have no symbol to link against: the `GTK_IS_*`, `GDK_IS_*` and `ATK_*_GET_IFACE` type checks through `g_type_check_instance_is_a` and `g_type_interface_peek`, the accessors for `GTypeInstance`, `GObjectClass`, `GValue`, `GList`, `GSList`, `GError` and `XAnyEvent` as reads of public struct fields whose offsets the layout probe provides, and the arithmetic of `PANGO_PIXELS` and `CAIRO_VERSION_ENCODE`.
 The Java versions return 0 for a null pointer where the C macros dereference it.
@@ -163,6 +167,8 @@ The callback row is from a later run on a busier machine, where the JNI numbers 
 Copied arrays pay for a confined arena per call; a reusable per-thread allocator is the obvious next optimisation.
 
 ## Open questions
+
+* WebKit, GLX, the AWT bridge and GTK4 are not generated yet; a GTK3 application does not load them, but they still need their JNI libraries when used.
 
 * Java baseline: FFM is final from Java 22, SWT requires Java 21, so shipping needs a Java 25 baseline, which is an Eclipse Platform wide decision.
 * Native access: OSGi bundles live in the unnamed module, so launchers need `--enable-native-access=ALL-UNNAMED`, which becomes mandatory in a future Java release.

@@ -45,7 +45,8 @@ if [ "$MODE" = ffm ]; then
 		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMMacros.java" \
 		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMSwtFixed.java" \
 		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMTypes.java" \
-		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMAccessible.java")
+		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMAccessible.java" \
+		"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMRuntime.java")
 	for root in "${roots[@]}"; do
 		(cd "$TOOLS" && java -cp "$generator_classes" org.eclipse.swt.tools.internal.FFMGeneratorApp rewrite \
 			"$TOOLS/ffm/report-gtk/supported.txt" "$root" "$OUT/overlay" "${implementations[@]}") | grep -v ' 0 natives' || true
