@@ -154,6 +154,8 @@ public class FFMGeneratorApp {
 	static final Pattern NATIVE = Pattern.compile("((?:" + MODIFIERS + "\\s+)*)native\\s+((?:" + MODIFIERS + "\\s+)*)([\\w\\[\\]]+)\\s*(?:/\\*[^*]*\\*/\\s*)?(\\w+)\\s*\\(([^)]*)\\)\\s*;");
 
 	/** Classes whose natives are implemented by a hand written FFM class instead of generated code. */
+	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"swt[\\w-]*\"\\s*\\)\\s*;");
+
 	static final Map<String, String> HANDWRITTEN = Map.of(
 		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback");
 
@@ -220,6 +222,9 @@ public class FFMGeneratorApp {
 				}
 				if (!changed) continue;
 				m.appendTail(result);
+				// nothing in this class reaches the JNI library any more
+				String rewritten = LOAD_LIBRARY.matcher(result.toString()).replaceAll("/* FFM: no JNI library needed */");
+				result = new StringBuilder(rewritten);
 				Path out = Paths.get(outputRoot).resolve(relative);
 				Files.createDirectories(out.getParent());
 				Files.writeString(out, result.toString());
