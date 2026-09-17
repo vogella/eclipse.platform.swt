@@ -43,6 +43,7 @@ public class FFMProbeGenerator extends JNIGenerator {
 		{"os", "GtkCellRendererText"}, {"os", "GtkCellRendererTextClass"},
 		{"os", "GtkCellRendererPixbuf"}, {"os", "GtkCellRendererPixbufClass"},
 		{"os", "GtkCellRendererToggle"}, {"os", "GtkCellRendererToggleClass"},
+		{"os", "GtkContainerAccessible"}, {"os", "GtkContainerAccessibleClass"},
 	};
 
 	/** Struct fields the FFM code needs the offset of, per unit. */
