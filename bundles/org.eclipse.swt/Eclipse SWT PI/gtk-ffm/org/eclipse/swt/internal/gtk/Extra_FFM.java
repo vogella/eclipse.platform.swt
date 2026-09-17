@@ -15,6 +15,8 @@ public final class Extra_FFM {
 	public static final long GTKCELLRENDERERTOGGLE = 40L;
 	public static final long GTKCELLRENDERERTOGGLECLASS = 304L;
 	public static final long GTKCONTAINER = 40L;
+	public static final long GTKCONTAINERACCESSIBLE = 96L;
+	public static final long GTKCONTAINERACCESSIBLECLASS = 416L;
 	public static final long GTKCONTAINERCLASS = 976L;
 	public static final long GTKCONTAINERCLASS_ADD = 824L;
 	public static final long GTKCONTAINERCLASS_FORALL = 848L;
