@@ -1428,6 +1428,19 @@ public static void g_menu_item_set_attribute(long arg0, byte[] arg1, byte[] arg2
 	}
 }
 
+private static final class MH_g_1menu_1item_1set_1attribute_1value {
+	static final MethodHandle MH = FFM.downcall("g_menu_item_set_attribute_value", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG));
+}
+public static void g_menu_item_set_attribute_value(long arg0, byte[] arg1, long arg2) {
+	try (Arena arena = Arena.ofConfined()) {
+		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
+		MH_g_1menu_1item_1set_1attribute_1value.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.copyOut(lparg1, arg1);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1menu_1item_1set_1label {
 	static final MethodHandle MH = FFM.downcall("g_menu_item_set_label", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
 }
@@ -1515,12 +1528,26 @@ public static long g_object_get_qdata(long arg0, int arg1) {
 	}
 }
 
-private static final class MH_g_1object_1new {
+private static final class MH_g_1object_1new__JJ {
 	static final MethodHandle MH = FFM.downcall("g_object_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG), Linker.Option.firstVariadicArg(2));
 }
 public static long g_object_new(long arg0, long arg1) {
 	try {
-		long rc = (long) MH_g_1object_1new.MH.invokeExact(arg0, arg1);
+		long rc = (long) MH_g_1object_1new__JJ.MH.invokeExact(arg0, arg1);
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1object_1new__J_3B_3BJ {
+	static final MethodHandle MH = FFM.downcall("g_object_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2));
+}
+public static long g_object_new(long arg0, byte[] arg1, byte[] arg2, long arg3) {
+	try (Arena arena = Arena.ofConfined()) {
+		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
+		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
+		long rc = (long) MH_g_1object_1new__J_3B_3BJ.MH.invokeExact(arg0, lparg1, lparg2, 0L);
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);

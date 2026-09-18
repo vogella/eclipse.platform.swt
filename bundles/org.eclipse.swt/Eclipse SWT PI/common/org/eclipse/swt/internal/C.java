@@ -17,129 +17,129 @@ public class C extends Platform {
 
 	static {
 		exitIfNotLoadable();
-		Library.loadLibrary ("swt"); //$NON-NLS-1$
+		/* FFM: no JNI library needed */ //$NON-NLS-1$
 	}
 
 	public static final int PTR_SIZEOF = PTR_sizeof ();
 
 /** @param ptr cast=(void *) */
-public static final native void free (long ptr);
+public static final void free(long ptr) { C_FFM.free(ptr); }
 /** @param env cast=(const char *) */
-public static final native long getenv (byte[] env);
+public static final long getenv(byte[] env) { return C_FFM.getenv(env); }
 /**
  * @param env cast=(const char *)
  * @param value cast=(const char *)
  */
-public static final native int setenv (byte[] env, byte[] value, int overwrite);
-public static final native long malloc (long size);
+public static final int setenv(byte[] env, byte[] value, int overwrite) { return C_FFM.setenv(env, value, overwrite); }
+public static final long malloc(long size) { return C_FFM.malloc(size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, byte[] src, long size);
+public static final void memmove(long dest, byte[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, char[] src, long size);
+public static final void memmove(long dest, char[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, double[] src, long size);
+public static final void memmove(long dest, double[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, float[] src, long size);
+public static final void memmove(long dest, float[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, int[] src, long size);
+public static final void memmove(long dest, int[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, long[] src, long size);
+public static final void memmove(long dest, long[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, short[] src, long size);
+public static final void memmove(long dest, short[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *),flags=no_out critical
  * @param size cast=(size_t)
  */
-public static final native void memmove (byte[] dest, char[] src, long size);
+public static final void memmove(byte[] dest, char[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (byte[] dest, long src, long size);
+public static final void memmove(byte[] dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (long dest, long src, long size);
+public static final void memmove(long dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (char[] dest, long src, long size);
+public static final void memmove(char[] dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (double[] dest, long src, long size);
+public static final void memmove(double[] dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (float[] dest, long src, long size);
+public static final void memmove(float[] dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (int[] dest, byte[] src, long size);
+public static final void memmove(int[] dest, byte[] src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (short[] dest, long src, long size);
+public static final void memmove(short[] dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (int[] dest, long src, long size);
+public static final void memmove(int[] dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param dest cast=(void *),flags=no_in critical
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final native void memmove (long[] dest, long src, long size);
+public static final void memmove(long[] dest, long src, long size) { C_FFM.memmove(dest, src, size); }
 /**
  * @param buffer cast=(void *),flags=critical
  * @param num cast=(size_t)
  */
-public static final native long memset (long buffer, int c, long num);
-public static final native int PTR_sizeof ();
+public static final long memset(long buffer, int c, long num) { return C_FFM.memset(buffer, c, num); }
+public static final int PTR_sizeof() { return org.eclipse.swt.internal.ffm.FFMMacros.PTR_sizeof(); }
 /** @param s cast=(char *) */
-public static final native int strlen (long s);
+public static final int strlen(long s) { return C_FFM.strlen(s); }
 }
