@@ -136,6 +136,9 @@ The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK
 
 ### Findings
 
+* `MethodHandle.invokeExact` in the arm of an arrow switch is a value producing expression, so ECJ inferred `Object` as its return type where javac inferred `void`, and the Tycho built jar failed with a `WrongMethodTypeException` that no javac build showed.
+  Such calls need a block body.
+
 * A ported GObject type has to bring its dependants with it: `swt_fixed_accessible_new` asserts `SWT_IS_FIXED`, which only accepts the type the C code registers, so it returned NULL and SWT crashed dereferencing it.
   Building the accessible in Java the way that function does, without the assertion, avoids changing C for it.
 * `scrollbar.horizontal.scrolled` and `scrollbar.both.scrolled` flip between two faithful renderings under CPU contention, which the harness documents in `DeterminismLint.CATALOG_QUARANTINE` with the same 2,749 changed pixels seen here.
@@ -166,6 +169,14 @@ Best of five runs of two million calls on Linux x86_64, JDK 25:
 The callback row is from a later run on a busier machine, where the JNI numbers of the other rows are about twice as high as shown, so compare it only with its own JNI value.
 Copied arrays pay for a confined arena per call; a reusable per-thread allocator is the obvious next optimisation.
 
+### Building it
+
+The delegations are committed into the sources and the two FFM source folders are listed in the `build.properties` of the GTK fragment, so Tycho produces an SWT that needs no native library: the whole JUnit suite passes against the built jar with `java.library.path` pointing at a directory that does not exist.
+That makes the branch usable as a patch in a product build, for example through the `PATCHES` list of the Speed Eclipse tooling.
+
+Two consequences of committing the switch.
+The JNI generator reads the `native` declarations, so regenerating either backend now needs the commit before the switch, and `build-gtk.sh jni` no longer builds a JNI SWT, which is what the comparison harness used as its reference.
+
 ## Open questions
 
 * WebKit, GLX, the AWT bridge and GTK4 are not generated yet; a GTK3 application does not load them, but they still need their JNI libraries when used.
@@ -175,3 +186,4 @@ Copied arrays pay for a confined arena per call; a reusable per-thread allocator
 * Where the declarations live once JNI is gone: `native` declarations cannot keep a body, so the final shape is either generated delegating bodies in `OS.java` or a non-compiled declaration file.
 * Start-up cost of linking method handles, to be measured with IDE start-up.
 * Modified UTF-8 (JNI `GetStringUTFChars`) versus standard UTF-8 (FFM) differs for embedded NUL and supplementary characters.
+* Where the native declarations live once they are no longer `native`, since the generator needs them as its input.
