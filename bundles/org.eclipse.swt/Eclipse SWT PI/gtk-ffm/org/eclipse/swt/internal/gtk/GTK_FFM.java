@@ -278,6 +278,18 @@ public static void gtk_box_set_spacing(long arg0, int arg1) {
 	}
 }
 
+private static final class MH_gtk_1button_1get_1type {
+	static final MethodHandle MH = FFM.downcall("gtk_button_get_type", FunctionDescriptor.of(JAVA_LONG));
+}
+public static long gtk_button_get_type() {
+	try {
+		long rc = (long) MH_gtk_1button_1get_1type.MH.invokeExact();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1button_1new {
 	static final MethodHandle MH = FFM.downcall("gtk_button_new", FunctionDescriptor.of(JAVA_LONG));
 }
@@ -4293,6 +4305,18 @@ public static boolean gtk_tree_model_iter_nth_child(long arg0, long arg1, long a
 	}
 }
 
+private static final class MH_gtk_1tree_1model_1iter_1parent {
+	static final MethodHandle MH = FFM.downcall("gtk_tree_model_iter_parent", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static boolean gtk_tree_model_iter_parent(long arg0, long arg1, long arg2) {
+	try {
+		int rc = (int) MH_gtk_1tree_1model_1iter_1parent.MH.invokeExact(arg0, arg1, arg2);
+		return ((byte) rc != 0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1tree_1path_1append_1index {
 	static final MethodHandle MH = FFM.downcall("gtk_tree_path_append_index", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
 }
@@ -6006,6 +6030,17 @@ public static void gtk_widget_set_size_request(long arg0, int arg1, int arg2) {
 	}
 }
 
+private static final class MH_gtk_1widget_1set_1state_1flags {
+	static final MethodHandle MH = FFM.downcall("gtk_widget_set_state_flags", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT));
+}
+public static void gtk_widget_set_state_flags(long arg0, int arg1, boolean arg2) {
+	try {
+		MH_gtk_1widget_1set_1state_1flags.MH.invokeExact(arg0, arg1, (int) (arg2 ? 1 : 0));
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1widget_1set_1tooltip_1text {
 	static final MethodHandle MH = FFM.downcall("gtk_widget_set_tooltip_text", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
 }
@@ -6058,6 +6093,17 @@ private static final class MH_gtk_1widget_1unparent {
 public static void gtk_widget_unparent(long arg0) {
 	try {
 		MH_gtk_1widget_1unparent.MH.invokeExact(arg0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1widget_1unset_1state_1flags {
+	static final MethodHandle MH = FFM.downcall("gtk_widget_unset_state_flags", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+}
+public static void gtk_widget_unset_state_flags(long arg0, int arg1) {
+	try {
+		MH_gtk_1widget_1unset_1state_1flags.MH.invokeExact(arg0, arg1);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
