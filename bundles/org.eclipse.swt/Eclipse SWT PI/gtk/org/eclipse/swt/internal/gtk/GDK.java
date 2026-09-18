@@ -224,39 +224,39 @@ public class GDK extends OS {
 	public static final int GDK_WINDOW_TYPE_HINT_TOOLTIP = 10;
 
 	/** sizeof(TYPE) for 32/64 bit support */
-	public static final native int GdkKeymapKey_sizeof();
-	public static final native int GdkRGBA_sizeof();
-	public static final native int GdkRectangle_sizeof();
+	public static final int GdkKeymapKey_sizeof() { return GDK_FFM.GdkKeymapKey_sizeof(); }
+	public static final int GdkRGBA_sizeof() { return GDK_FFM.GdkRGBA_sizeof(); }
+	public static final int GdkRectangle_sizeof() { return GDK_FFM.GdkRectangle_sizeof(); }
 
 	/** Macros */
 	/** @param display cast=(GdkDisplay *) */
-	public static final native boolean GDK_IS_WAYLAND_DISPLAY(long display);
+	public static final boolean GDK_IS_WAYLAND_DISPLAY(long display) { return org.eclipse.swt.internal.ffm.FFMMacros.GDK_IS_WAYLAND_DISPLAY(display); }
 	/** @param display cast=(GdkDisplay *) */
-	public static final native boolean GDK_IS_X11_DISPLAY(long display);
+	public static final boolean GDK_IS_X11_DISPLAY(long display) { return org.eclipse.swt.internal.ffm.FFMMacros.GDK_IS_X11_DISPLAY(display); }
 	/** @method flags=const */
-	public static final native long GDK_TYPE_RGBA();
+	public static final long GDK_TYPE_RGBA() { return org.eclipse.swt.internal.ffm.FFMTypes.GDK_TYPE_RGBA(); }
 	/** @method flags=const */
-	public static final native long GDK_TYPE_PIXBUF();
+	public static final long GDK_TYPE_PIXBUF() { return org.eclipse.swt.internal.ffm.FFMTypes.GDK_TYPE_PIXBUF(); }
 
 	/** @param gdkdisplay cast=(GdkDisplay *) */
-	public static final native long gdk_x11_display_get_xdisplay(long gdkdisplay);
-	public static final native long gdk_x11_get_default_xdisplay();
+	public static final long gdk_x11_display_get_xdisplay(long gdkdisplay) { return GDK_FFM.gdk_x11_display_get_xdisplay(gdkdisplay); }
+	public static final long gdk_x11_get_default_xdisplay() { return GDK_FFM.gdk_x11_get_default_xdisplay(); }
 	/**
 	 * @method flags=dynamic
 	 * @param xvisualid cast=(VisualID)
 	 */
 	/* [GTK3/GTK4, GTK3 uses GdkScreen but GTK4 uses GdkX11Screen -- method signature otherwise identical] */
-	public static final native long gdk_x11_screen_lookup_visual(long screen, int xvisualid);
+	public static final long gdk_x11_screen_lookup_visual(long screen, int xvisualid) { return GDK_FFM.gdk_x11_screen_lookup_visual(screen, xvisualid); }
 	/**
 	 * @method flags=dynamic
 	 */
 	/* [GTK3/GTK4, GTK3 uses GdkScreen but GTK4 uses GdkX11Screen -- method signature otherwise identical] */
-	public static final native long gdk_x11_screen_get_window_manager_name(long screen);
+	public static final long gdk_x11_screen_get_window_manager_name(long screen) { return GDK_FFM.gdk_x11_screen_get_window_manager_name(screen); }
 	/**
 	* @param gdkwindow cast=(GdkWindow *)
 	*/
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_x11_window_get_xid(long gdkwindow);
+	public static final long gdk_x11_window_get_xid(long gdkwindow) { return GDK_FFM.gdk_x11_window_get_xid(gdkwindow); }
 	/**
 	* @param surface cast=(GdkSurface *)
 	*/
@@ -267,48 +267,48 @@ public class GDK extends OS {
 	 * @param xid cast=(Window)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_x11_window_lookup_for_display(long gdkdisplay, long xid);
+	public static final long gdk_x11_window_lookup_for_display(long gdkdisplay, long xid) { return GDK_FFM.gdk_x11_window_lookup_for_display(gdkdisplay, xid); }
 	/**
 	 * @method flags=dynamic
 	 * @param atom_name cast=(const gchar *),flags=no_out critical
 	 */
 	/* [GTK3 only] */
-	public static final native long gdk_atom_intern(byte[] atom_name, boolean only_if_exists);
+	public static final long gdk_atom_intern(byte[] atom_name, boolean only_if_exists) { return GDK_FFM.gdk_atom_intern(atom_name, only_if_exists); }
 	/** @param atom cast=(GdkAtom) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_atom_name(long atom);
+	public static final long gdk_atom_name(long atom) { return GDK_FFM.gdk_atom_name(atom); }
 	/**
 	 * @method flags=dynamic
 	 * @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h; 3.22 deprecated, replaced] */
-	public static final native long gdk_cairo_create(long window);
+	public static final long gdk_cairo_create(long window) { return GDK_FFM.gdk_cairo_create(window); }
 	/**
 	 * @method flags=dynamic
 	 * @param cr cast=(cairo_t *)
 	 * @param rect cast=(GdkRectangle *),flags=no_in
 	 */
-	public static final native boolean gdk_cairo_get_clip_rectangle(long cr, GdkRectangle rect);
+	public static final boolean gdk_cairo_get_clip_rectangle(long cr, GdkRectangle rect) { return GDK_FFM.gdk_cairo_get_clip_rectangle(cr, rect); }
 	/**
 	 * @param cairo cast=(cairo_t *)
 	 * @param region cast=(cairo_region_t *)
 	 */
-	public static final native void gdk_cairo_region(long cairo, long region);
+	public static final void gdk_cairo_region(long cairo, long region) { GDK_FFM.gdk_cairo_region(cairo, region); }
 	/**
 	 * @param cairo cast=(cairo_t *)
 	 * @param rgba cast=(const GdkRGBA *)
 	 */
-	public static final native void gdk_cairo_set_source_rgba(long cairo, GdkRGBA rgba);
+	public static final void gdk_cairo_set_source_rgba(long cairo, GdkRGBA rgba) { GDK_FFM.gdk_cairo_set_source_rgba(cairo, rgba); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_window_get_state(long window);
+	public static final int gdk_window_get_state(long window) { return GDK_FFM.gdk_window_get_state(window); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_window_get_width(long window);
+	public static final int gdk_window_get_width(long window) { return GDK_FFM.gdk_window_get_width(window); }
 	/**
 	 * @param surface cast=(GdkSurface *)
 	 */
@@ -318,12 +318,12 @@ public class GDK extends OS {
 	 * @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_window_get_visible_region(long window);
+	public static final long gdk_window_get_visible_region(long window) { return GDK_FFM.gdk_window_get_visible_region(window); }
 	/**
 	 *  @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_window_get_height(long window);
+	public static final int gdk_window_get_height(long window) { return GDK_FFM.gdk_window_get_height(window); }
 	/**
 	 *  @param surface cast=(GdkSurface *)
 	 */
@@ -335,7 +335,7 @@ public class GDK extends OS {
 	 * @param pixbuf_x cast=(gdouble)
 	 * @param pixbuf_y cast=(gdouble)
 	 */
-	public static final native void gdk_cairo_set_source_pixbuf(long cairo, long pixbuf, double pixbuf_x, double pixbuf_y);
+	public static final void gdk_cairo_set_source_pixbuf(long cairo, long pixbuf, double pixbuf_x, double pixbuf_y) { GDK_FFM.gdk_cairo_set_source_pixbuf(cairo, pixbuf, pixbuf_x, pixbuf_y); }
 	/**
 	 * @param cairo cast=(cairo_t *)
 	 * @param window cast=(GdkWindow *)
@@ -343,7 +343,7 @@ public class GDK extends OS {
 	 * @param y cast=(gdouble)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_cairo_set_source_window(long cairo, long window, int x, int y);
+	public static final void gdk_cairo_set_source_window(long cairo, long window, int x, int y) { GDK_FFM.gdk_cairo_set_source_window(cairo, window, x, y); }
 
 
 	/* GdkCursor [GTK3 only] */
@@ -351,21 +351,21 @@ public class GDK extends OS {
 	 * @param display cast=(GdkDisplay *)
 	 * @param cursor_name cast=(const gchar *)
 	 */
-	public static final native long gdk_cursor_new_from_name(long display, String cursor_name);
+	public static final long gdk_cursor_new_from_name(long display, String cursor_name) { return GDK_FFM.gdk_cursor_new_from_name(display, cursor_name); }
 	/**
 	 * @param display cast=(GdkDisplay *)
 	 * @param pixbuf cast=(GdkPixbuf *)
 	 * @param x cast=(gint)
 	 * @param y cast=(gint)
 	 */
-	public static final native long gdk_cursor_new_from_pixbuf(long display, long pixbuf, int x, int y);
+	public static final long gdk_cursor_new_from_pixbuf(long display, long pixbuf, int x, int y) { return GDK_FFM.gdk_cursor_new_from_pixbuf(display, pixbuf, x, y); }
 
 	/* GdkCursor [GTK4 only] */
 	/**
 	 * @param cursor_name cast=(const gchar *)
 	 * @param fallback cast=(GdkCursor *)
 	 */
-	public static final native long gdk_cursor_new_from_name(String cursor_name, long fallback);
+	public static final long gdk_cursor_new_from_name(String cursor_name, long fallback) { return GDK_FFM.gdk_cursor_new_from_name(cursor_name, fallback); }
 	/**
 	 * @param texture cast=(GdkTexture *)
 	 * @param x cast=(gint)
@@ -377,12 +377,12 @@ public class GDK extends OS {
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_x11_display_get_default_group(long display);
+	public static final long gdk_x11_display_get_default_group(long display) { return GDK_FFM.gdk_x11_display_get_default_group(display); }
 	/**
 	 *  @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_window_get_display(long window);
+	public static final long gdk_window_get_display(long window) { return GDK_FFM.gdk_window_get_display(window); }
 	/**
 	 *  @param surface cast=(GdkSurface *)
 	 */
@@ -393,79 +393,79 @@ public class GDK extends OS {
 	 * @method flags=dynamic
 	 */
 	// TODO GTK4 function removed
-	public static final native int gdk_drag_context_get_actions(long context);
+	public static final int gdk_drag_context_get_actions(long context) { return GDK_FFM.gdk_drag_context_get_actions(context); }
 	/**
 	 * @param context cast=(GdkDragContext *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_drag_context_get_dest_window(long context);
+	public static final long gdk_drag_context_get_dest_window(long context) { return GDK_FFM.gdk_drag_context_get_dest_window(context); }
 	/**
 	 * @method flags=dynamic
 	 */
 	// TODO GTK4 function removed
-	public static final native int gdk_drag_context_get_selected_action(long context);
+	public static final int gdk_drag_context_get_selected_action(long context) { return GDK_FFM.gdk_drag_context_get_selected_action(context); }
 	/**
 	 * @param context cast=(GdkDragContext *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_drag_context_list_targets(long context);
+	public static final long gdk_drag_context_list_targets(long context) { return GDK_FFM.gdk_drag_context_list_targets(context); }
 	/**
 	 * @param context cast=(GdkDragContext *)
 	 * @param action cast=(GdkDragAction)
 	 * @param time cast=(guint32)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_drag_status(long context, int action, int time);
+	public static final void gdk_drag_status(long context, int action, int time) { GDK_FFM.gdk_drag_status(context, action, time); }
 
 	/* GDK Events [GTK3 only, if-def'd in os.h] */
 	/** @param event cast=(GdkEvent *) */
-	public static final native long gdk_event_copy(long event);
+	public static final long gdk_event_copy(long event) { return GDK_FFM.gdk_event_copy(event); }
 	/** @param event cast=(GdkEvent *) */
-	public static final native void gdk_event_free(long event);
-	public static final native long gdk_event_get();
+	public static final void gdk_event_free(long event) { GDK_FFM.gdk_event_free(event); }
+	public static final long gdk_event_get() { return GDK_FFM.gdk_event_get(); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 * @param px cast=(gdouble *)
 	 * @param py cast=(gdouble *)
 	 */
-	public static final native boolean gdk_event_get_coords(long event, double[] px, double[] py);
+	public static final boolean gdk_event_get_coords(long event, double[] px, double[] py) { return GDK_FFM.gdk_event_get_coords(event, px, py); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 * @param button cast=(guint *)
 	 */
-	public static final native boolean gdk_event_get_button(long event, int[] button);
+	public static final boolean gdk_event_get_button(long event, int[] button) { return GDK_FFM.gdk_event_get_button(event, button); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 * @param keyval cast=(guint *)
 	 */
-	public static final native boolean gdk_event_get_keyval(long event,int [] keyval);
+	public static final boolean gdk_event_get_keyval(long event,int [] keyval) { return GDK_FFM.gdk_event_get_keyval(event, keyval); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 * @param keycode cast=(guint16 *)
 	 */
-	public static final native boolean gdk_event_get_keycode(long event, short [] keycode);
+	public static final boolean gdk_event_get_keycode(long event, short [] keycode) { return GDK_FFM.gdk_event_get_keycode(event, keycode); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 * @param x cast=(gdouble *)
 	 * @param y cast=(gdouble *)
 	 */
-	public static final native boolean gdk_event_get_root_coords(long event, double[] x, double[] y);
+	public static final boolean gdk_event_get_root_coords(long event, double[] x, double[] y) { return GDK_FFM.gdk_event_get_root_coords(event, x, y); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 * @param pmod cast=(GdkModifierType *)
 	 */
-	public static final native boolean gdk_event_get_state(long event, int[] pmod);
+	public static final boolean gdk_event_get_state(long event, int[] pmod) { return GDK_FFM.gdk_event_get_state(event, pmod); }
 	/**
 	 * @param event cast=(const GdkEvent *)
 	 * @param delta_x cast=(gdouble *)
 	 * @param delta_y cast=(gdouble *)
 	 */
-	public static final native boolean gdk_event_get_scroll_deltas(long event, double[] delta_x, double[] delta_y);
+	public static final boolean gdk_event_get_scroll_deltas(long event, double[] delta_x, double[] delta_y) { return GDK_FFM.gdk_event_get_scroll_deltas(event, delta_x, delta_y); }
 	/**
 	 * @param event cast=(const GdkEvent *)
 	 * @param direction cast=(GdkScrollDirection *)
 	 */
-	public static final native boolean gdk_event_get_scroll_direction(long event, int [] direction);
+	public static final boolean gdk_event_get_scroll_direction(long event, int [] direction) { return GDK_FFM.gdk_event_get_scroll_direction(event, direction); }
 
 
 	/* GDK Events (GTK4 only, if-def'd in os.h) */
@@ -501,7 +501,7 @@ public class GDK extends OS {
 	/**
 	 * @method flags=dynamic
 	 */
-	public static final native long gdk_event_get_seat(long event);
+	public static final long gdk_event_get_seat(long event) { return GDK_FFM.gdk_event_get_seat(event); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 */
@@ -511,49 +511,49 @@ public class GDK extends OS {
 	 * @param event cast=(GdkEvent *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] **/
-	public static final native long gdk_event_get_window(long event);
+	public static final long gdk_event_get_window(long event) { return GDK_FFM.gdk_event_get_window(event); }
 	/** @param event cast=(GdkEvent *) */
-	public static final native int gdk_event_get_time(long event);
+	public static final int gdk_event_get_time(long event) { return GDK_FFM.gdk_event_get_time(event); }
 	/**
 	 * @method flags=dynamic
 	 * @param event cast=(GdkEvent *)
 	 */
 	/* [GTK3.10+] */
-	public static final native int gdk_event_get_event_type(long event);
+	public static final int gdk_event_get_event_type(long event) { return GDK_FFM.gdk_event_get_event_type(event); }
 	/**
 	 * @method flags=dynamic
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_event_handler_set(long func, long data, long notify);
+	public static final void gdk_event_handler_set(long func, long data, long notify) { GDK_FFM.gdk_event_handler_set(func, data, notify); }
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_event_new(int type);
+	public static final long gdk_event_new(int type) { return GDK_FFM.gdk_event_new(type); }
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_event_peek();
+	public static final long gdk_event_peek() { return GDK_FFM.gdk_event_peek(); }
 	/**
 	 * @param event cast=(GdkEvent *)
 	 * @param device cast=(GdkDevice *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_event_set_device(long event, long device);
+	public static final void gdk_event_set_device(long event, long device) { GDK_FFM.gdk_event_set_device(event, device); }
 	/** @param event cast=(GdkEvent *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_event_put(long event);
+	public static final void gdk_event_put(long event) { GDK_FFM.gdk_event_put(event); }
 	/**
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native void gdk_x11_display_error_trap_push(long display);
+	public static final void gdk_x11_display_error_trap_push(long display) { GDK_FFM.gdk_x11_display_error_trap_push(display); }
 	/**
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native void gdk_x11_display_error_trap_pop_ignored(long display);
+	public static final void gdk_x11_display_error_trap_pop_ignored(long display) { GDK_FFM.gdk_x11_display_error_trap_pop_ignored(display); }
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_get_default_root_window();
+	public static final long gdk_get_default_root_window() { return GDK_FFM.gdk_get_default_root_window(); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
 	/* [GTK3 only] */
-	public static final native long gdk_keymap_get_for_display(long display);
+	public static final long gdk_keymap_get_for_display(long display) { return GDK_FFM.gdk_keymap_get_for_display(display); }
 
 	/**
 	 * @method flags=dynamic
@@ -567,7 +567,7 @@ public class GDK extends OS {
 	 * @param consumed_modifiers cast=(GdkModifierType *)
 	 */
 	/* [GTK3 only] */
-	public static final native boolean gdk_keymap_translate_keyboard_state(long keymap, int hardware_keycode, int state, int group, int[] keyval, int[] effective_group, int[] level,  int[] consumed_modifiers);
+	public static final boolean gdk_keymap_translate_keyboard_state(long keymap, int hardware_keycode, int state, int group, int[] keyval, int[] effective_group, int[] level,  int[] consumed_modifiers) { return GDK_FFM.gdk_keymap_translate_keyboard_state(keymap, hardware_keycode, state, group, keyval, effective_group, level, consumed_modifiers); }
 	/**
 	 * @method flags=dynamic
 	 * @param keymap cast=(GdkKeymap*)
@@ -576,84 +576,84 @@ public class GDK extends OS {
 	 * @param n_keys cast=(gint*)
 	 */
 	/* [GTK3 only] */
-	public static final native boolean gdk_keymap_get_entries_for_keyval(long keymap, int keyval, long [] keys, int[] n_keys);
-	public static final native long gdk_keyval_to_lower(long keyval);
-	public static final native long gdk_keyval_to_unicode(long keyval);
+	public static final boolean gdk_keymap_get_entries_for_keyval(long keymap, int keyval, long [] keys, int[] n_keys) { return GDK_FFM.gdk_keymap_get_entries_for_keyval(keymap, keyval, keys, n_keys); }
+	public static final long gdk_keyval_to_lower(long keyval) { return GDK_FFM.gdk_keyval_to_lower(keyval); }
+	public static final long gdk_keyval_to_unicode(long keyval) { return GDK_FFM.gdk_keyval_to_unicode(keyval); }
 	/** @param keyval cast=(guint) */
-	public static final native long gdk_keyval_name(int keyval);
+	public static final long gdk_keyval_name(int keyval) { return GDK_FFM.gdk_keyval_name(keyval); }
 	/**
 	 * @method flags=dynamic
 	 */
 	/* [GTK3 only] */
-	public static final native long gdk_pango_context_get();
+	public static final long gdk_pango_context_get() { return GDK_FFM.gdk_pango_context_get(); }
 	/**
 	 * @param layout cast=(PangoLayout *)
 	 * @param index_ranges cast=(gint *)
 	 */
-	public static final native long gdk_pango_layout_get_clip_region(long layout, int x_origin, int y_origin, int[] index_ranges, int n_ranges);
+	public static final long gdk_pango_layout_get_clip_region(long layout, int x_origin, int y_origin, int[] index_ranges, int n_ranges) { return GDK_FFM.gdk_pango_layout_get_clip_region(layout, x_origin, y_origin, index_ranges, n_ranges); }
 
 	/**
 	 * @param animation cast=(GdkPixbufAnimation *)
 	 * @method flags=ignore_deprecations
 	 */
-	public static final native boolean gdk_pixbuf_animation_is_static_image(long animation);
+	public static final boolean gdk_pixbuf_animation_is_static_image(long animation) { return GDK_FFM.gdk_pixbuf_animation_is_static_image(animation); }
 	/**
 	 * @param iter cast=(GdkPixbufAnimationIter *)
 	 * @method flags=ignore_deprecations
 	 */
-	public static final native int gdk_pixbuf_animation_iter_get_delay_time(long iter);
+	public static final int gdk_pixbuf_animation_iter_get_delay_time(long iter) { return GDK_FFM.gdk_pixbuf_animation_iter_get_delay_time(iter); }
 	/**
 	 * @param iter cast=(GdkPixbufAnimationIter *)
 	 * @method flags=ignore_deprecations
 	 */
-	public static final native long gdk_pixbuf_animation_iter_get_pixbuf(long iter);
+	public static final long gdk_pixbuf_animation_iter_get_pixbuf(long iter) { return GDK_FFM.gdk_pixbuf_animation_iter_get_pixbuf(iter); }
 	/**
 	 * @method flags=ignore_deprecations
 	 * @param iter cast=(GdkPixbufAnimationIter *)
 	 * @param current_time cast=(const GTimeVal *)
 	 */
-	public static final native boolean gdk_pixbuf_animation_iter_advance(long iter, long current_time);
+	public static final boolean gdk_pixbuf_animation_iter_advance(long iter, long current_time) { return GDK_FFM.gdk_pixbuf_animation_iter_advance(iter, current_time); }
 	/**
 	 * @method flags=ignore_deprecations
 	 * @param animation cast=(GdkPixbufAnimation *)
 	 * @param start_time cast=(const GTimeVal *)
 	 */
-	public static final native long gdk_pixbuf_animation_get_iter(long animation, long start_time);
+	public static final long gdk_pixbuf_animation_get_iter(long animation, long start_time) { return GDK_FFM.gdk_pixbuf_animation_get_iter(animation, start_time); }
 	/**
 	 * @param animation cast=(GdkPixbufAnimation *)
 	 * @method flags=ignore_deprecations
 	 */
-	public static final native long gdk_pixbuf_animation_get_static_image(long animation);
+	public static final long gdk_pixbuf_animation_get_static_image(long animation) { return GDK_FFM.gdk_pixbuf_animation_get_static_image(animation); }
 	/**
 	 * @param src_pixbuf cast=(GdkPixbuf *)
 	 * @param dest_pixbuf cast=(GdkPixbuf *)
 	 */
-	public static final native void gdk_pixbuf_copy_area(long src_pixbuf, int src_x, int src_y, int width, int height, long dest_pixbuf, int dest_x, int dest_y);
+	public static final void gdk_pixbuf_copy_area(long src_pixbuf, int src_x, int src_y, int width, int height, long dest_pixbuf, int dest_x, int dest_y) { GDK_FFM.gdk_pixbuf_copy_area(src_pixbuf, src_x, src_y, width, height, dest_pixbuf, dest_x, dest_y); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native boolean gdk_pixbuf_get_has_alpha(long pixbuf);
+	public static final boolean gdk_pixbuf_get_has_alpha(long pixbuf) { return GDK_FFM.gdk_pixbuf_get_has_alpha(pixbuf); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native int gdk_pixbuf_get_height(long pixbuf);
+	public static final int gdk_pixbuf_get_height(long pixbuf) { return GDK_FFM.gdk_pixbuf_get_height(pixbuf); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native long gdk_pixbuf_get_pixels(long pixbuf);
+	public static final long gdk_pixbuf_get_pixels(long pixbuf) { return GDK_FFM.gdk_pixbuf_get_pixels(pixbuf); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native int gdk_pixbuf_get_rowstride(long pixbuf);
+	public static final int gdk_pixbuf_get_rowstride(long pixbuf) { return GDK_FFM.gdk_pixbuf_get_rowstride(pixbuf); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native int gdk_pixbuf_get_width(long pixbuf);
+	public static final int gdk_pixbuf_get_width(long pixbuf) { return GDK_FFM.gdk_pixbuf_get_width(pixbuf); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native int gdk_pixbuf_get_n_channels(long pixbuf);
+	public static final int gdk_pixbuf_get_n_channels(long pixbuf) { return GDK_FFM.gdk_pixbuf_get_n_channels(pixbuf); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native int gdk_pixbuf_get_bits_per_sample(long pixbuf);
+	public static final int gdk_pixbuf_get_bits_per_sample(long pixbuf) { return GDK_FFM.gdk_pixbuf_get_bits_per_sample(pixbuf); }
 	/** @param pixbuf cast=(const GdkPixbuf *) */
-	public static final native long gdk_pixbuf_copy(long pixbuf);
+	public static final long gdk_pixbuf_copy(long pixbuf) { return GDK_FFM.gdk_pixbuf_copy(pixbuf); }
 	/** @param loader cast=(GdkPixbufLoader *) */
-	public static final native long gdk_pixbuf_loader_get_format(long loader);
+	public static final long gdk_pixbuf_loader_get_format(long loader) { return GDK_FFM.gdk_pixbuf_loader_get_format(loader); }
 	/** @param format cast=(GdkPixbufFormat *) */
-	public static final native long gdk_pixbuf_format_get_name(long format);
+	public static final long gdk_pixbuf_format_get_name(long format) { return GDK_FFM.gdk_pixbuf_format_get_name(format); }
 	/**
 	 * @param loader cast=(GdkPixbufLoader *)
 	 * @method flags=ignore_deprecations
 	 */
-	public static final native long gdk_pixbuf_loader_get_animation(long loader);
+	public static final long gdk_pixbuf_loader_get_animation(long loader) { return GDK_FFM.gdk_pixbuf_loader_get_animation(loader); }
 	/**
 	 * @param data cast=(const guchar *)
 	 * @param colorspace cast=(GdkColorspace)
@@ -661,32 +661,32 @@ public class GDK extends OS {
 	 * @param destroy_fn cast=(GdkPixbufDestroyNotify)
 	 * @param destroy_fn_data cast=(gpointer)
 	 */
-	public static final native long gdk_pixbuf_new_from_data(long data, int colorspace, boolean has_alpha, int bits_per_sample, int width, int height, int rowstride, long destroy_fn, long destroy_fn_data);
-	public static final native long gdk_pixbuf_loader_new();
+	public static final long gdk_pixbuf_new_from_data(long data, int colorspace, boolean has_alpha, int bits_per_sample, int width, int height, int rowstride, long destroy_fn, long destroy_fn_data) { return GDK_FFM.gdk_pixbuf_new_from_data(data, colorspace, has_alpha, bits_per_sample, width, height, rowstride, destroy_fn, destroy_fn_data); }
+	public static final long gdk_pixbuf_loader_new() { return GDK_FFM.gdk_pixbuf_loader_new(); }
 	/**
 	 * @param loader cast=(GdkPixbufLoader *)
 	 * @param error cast=(GError **)
 	 */
-	public static final native boolean gdk_pixbuf_loader_close(long loader, long [] error);
+	public static final boolean gdk_pixbuf_loader_close(long loader, long [] error) { return GDK_FFM.gdk_pixbuf_loader_close(loader, error); }
 	/** @param loader cast=(GdkPixbufLoader *) */
-	public static final native long gdk_pixbuf_loader_get_pixbuf(long loader);
+	public static final long gdk_pixbuf_loader_get_pixbuf(long loader) { return GDK_FFM.gdk_pixbuf_loader_get_pixbuf(loader); }
 	/**
 	 * @param loader cast=(GdkPixbufLoader *)
 	 * @param buffer cast=(const guchar *)
 	 * @param count cast=(gsize)
 	 * @param error cast=(GError **)
 	 */
-	public static final native boolean gdk_pixbuf_loader_write(long loader, long buffer, int count, long [] error);
+	public static final boolean gdk_pixbuf_loader_write(long loader, long buffer, int count, long [] error) { return GDK_FFM.gdk_pixbuf_loader_write(loader, buffer, count, error); }
 	/**
 	 * @param colorspace cast=(GdkColorspace)
 	 * @param has_alpha cast=(gboolean)
 	 */
-	public static final native long gdk_pixbuf_new(int colorspace, boolean has_alpha, int bits_per_sample, int width, int height);
+	public static final long gdk_pixbuf_new(int colorspace, boolean has_alpha, int bits_per_sample, int width, int height) { return GDK_FFM.gdk_pixbuf_new(colorspace, has_alpha, bits_per_sample, width, height); }
 	/**
 	 * @param filename cast=(const char *)
 	 * @param error cast=(GError**)
 	 */
-	public static final native long gdk_pixbuf_new_from_file(byte[] filename, long [] error);
+	public static final long gdk_pixbuf_new_from_file(byte[] filename, long [] error) { return GDK_FFM.gdk_pixbuf_new_from_file(filename, error); }
 	/**
 	 * @param pixbuf cast=(GdkPixbuf *)
 	 * @param buffer cast=(gchar **)
@@ -696,43 +696,43 @@ public class GDK extends OS {
 	 * @param option_values cast=(char **)
 	 * @param error cast=(GError **)
 	 */
-	public static final native boolean gdk_pixbuf_save_to_bufferv(long pixbuf, long [] buffer, long [] buffer_size, byte [] type, long [] option_keys, long [] option_values, long [] error);
+	public static final boolean gdk_pixbuf_save_to_bufferv(long pixbuf, long [] buffer, long [] buffer_size, byte [] type, long [] option_keys, long [] option_values, long [] error) { return GDK_FFM.gdk_pixbuf_save_to_bufferv(pixbuf, buffer, buffer_size, type, option_keys, option_values, error); }
 	/**
 	 * @param src cast=(const GdkPixbuf *)
 	 * @param interp_type cast=(GdkInterpType)
 	 */
-	public static final native long gdk_pixbuf_scale_simple(long src, int dest_width, int dest_height, int interp_type);
+	public static final long gdk_pixbuf_scale_simple(long src, int dest_width, int dest_height, int interp_type) { return GDK_FFM.gdk_pixbuf_scale_simple(src, dest_width, dest_height, interp_type); }
 
 	/* GdkPixbuf Interaction [GTK3 only] */
 	/**
 	 * @method flags=dynamic
 	 * @param window cast=(GdkWindow *)
 	 */
-	public static final native long gdk_pixbuf_get_from_window(long window, int x, int y, int width, int height);
+	public static final long gdk_pixbuf_get_from_window(long window, int x, int y, int width, int height) { return GDK_FFM.gdk_pixbuf_get_from_window(window, x, y, width, height); }
 
 	/* GdkPixbuf Interaction [GTK4 only] */
 	/**
 	 * @method flags=dynamic
 	 * @param texture cast=(GdkTexture *)
 	 */
-	public static final native long gdk_pixbuf_get_from_texture(long texture);
+	public static final long gdk_pixbuf_get_from_texture(long texture) { return GDK_FFM.gdk_pixbuf_get_from_texture(texture); }
 	/**
 	 * @method flags=dynamic
 	 * @param surface cast=(cairo_surface_t *)
 	 */
-	public static final native long gdk_pixbuf_get_from_surface(long surface, int src_x, int src_y, int width, int height);
+	public static final long gdk_pixbuf_get_from_surface(long surface, int src_x, int src_y, int width, int height) { return GDK_FFM.gdk_pixbuf_get_from_surface(surface, src_x, src_y, width, height); }
 
 
 	/* GdkDevice */
 	/**@param device cast=(GdkDevice *) */
-	public static final native long gdk_device_get_seat(long device);
+	public static final long gdk_device_get_seat(long device) { return GDK_FFM.gdk_device_get_seat(device); }
 
 	/* GdkDevice [GTK3 only] */
 	/**
 	 * @method flags=dynamic
 	 * @param device cast=(GdkDevice *)
 	 */
-	public static final native long gdk_device_get_associated_device(long device);
+	public static final long gdk_device_get_associated_device(long device) { return GDK_FFM.gdk_device_get_associated_device(device); }
 	/**
 	 * @method flags=dynamic
 	 * @param device cast=(GdkDevice *)
@@ -740,14 +740,14 @@ public class GDK extends OS {
 	 * @param x cast=(gint)
 	 * @param y cast=(gint)
 	 */
-	public static final native void gdk_device_warp(long device, long screen, int x, int y);
+	public static final void gdk_device_warp(long device, long screen, int x, int y) { GDK_FFM.gdk_device_warp(device, screen, x, y); }
 	/**
 	 * @method flags=dynamic
 	 * @param device cast=(GdkDevice *)
 	 * @param win_x cast=(gint *)
 	 * @param win_y cast=(gint *)
 	 */
-	public static final native long gdk_device_get_window_at_position(long device, int[] win_x, int[] win_y);
+	public static final long gdk_device_get_window_at_position(long device, int[] win_x, int[] win_y) { return GDK_FFM.gdk_device_get_window_at_position(device, win_x, win_y); }
 
 	/* GdkDevice [GTK4 only] */
 	/**
@@ -756,7 +756,7 @@ public class GDK extends OS {
 	 * @param win_x cast=(double *)
 	 * @param win_y cast=(double *)
 	 */
-	public static final native long gdk_device_get_surface_at_position(long device, double[] win_x, double[] win_y);
+	public static final long gdk_device_get_surface_at_position(long device, double[] win_x, double[] win_y) { return GDK_FFM.gdk_device_get_surface_at_position(device, win_x, win_y); }
 
 
 	/**
@@ -769,24 +769,24 @@ public class GDK extends OS {
 	 * @param data cast=(guchar **)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native boolean gdk_property_get(long window, long property, long type, long offset, long length, int pdelete, long [] actual_property_type, int[] actual_format, int[] actual_length, long [] data);
+	public static final boolean gdk_property_get(long window, long property, long type, long offset, long length, int pdelete, long [] actual_property_type, int[] actual_format, int[] actual_length, long [] data) { return GDK_FFM.gdk_property_get(window, property, type, offset, length, pdelete, actual_property_type, actual_format, actual_length, data); }
 	/**
 	 * @param surface cast=(cairo_surface_t *)
 	 */
-	public static final native long gdk_cairo_region_create_from_surface(long surface);
+	public static final long gdk_cairo_region_create_from_surface(long surface) { return GDK_FFM.gdk_cairo_region_create_from_surface(surface); }
 	/**
 	 * @param rgba cast=(GdkRGBA *)
 	 */
-	public static final native long gdk_rgba_to_string(GdkRGBA rgba);
+	public static final long gdk_rgba_to_string(GdkRGBA rgba) { return GDK_FFM.gdk_rgba_to_string(rgba); }
 	/**
 	 * @param rgba cast=(GdkRGBA *)
 	 */
-	public static final native void gdk_rgba_free(long rgba);
+	public static final void gdk_rgba_free(long rgba) { GDK_FFM.gdk_rgba_free(rgba); }
 	/**
 	 * @param rgba cast=(GdkRGBA *)
 	 * @param property cast=(const gchar *)
 	 */
-	public static final native long gdk_rgba_parse(GdkRGBA rgba, byte[] property);
+	public static final long gdk_rgba_parse(GdkRGBA rgba, byte[] property) { return GDK_FFM.gdk_rgba_parse(rgba, property); }
 	/**
 	 * @param clipboard cast=(GdkClipboard *)
 	 * @param provider cast=(GdkContentProvider *)
@@ -797,61 +797,61 @@ public class GDK extends OS {
 
 	/* GdkDisplay */
 	/** @param display cast=(GdkDisplay *) */
-	public static final native void gdk_display_beep(long display);
+	public static final void gdk_display_beep(long display) { GDK_FFM.gdk_display_beep(display); }
 	/**
 	 * @param display cast=(GdkDisplay *)
 	 * @param event cast=(GdkEvent *)
 	 */
-	public static final native void gdk_display_put_event(long display, long event);
-	public static final native long gdk_display_get_default();
+	public static final void gdk_display_put_event(long display, long event) { GDK_FFM.gdk_display_put_event(display, event); }
+	public static final long gdk_display_get_default() { return GDK_FFM.gdk_display_get_default(); }
 	/** @method flags=dynamic */
-	public static final native long gdk_display_get_default_seat(long display);
+	public static final long gdk_display_get_default_seat(long display) { return GDK_FFM.gdk_display_get_default_seat(display); }
 
 	/* GdkDisplay [GTK3 only] */
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native int gdk_display_get_n_monitors(long display);
+	public static final int gdk_display_get_n_monitors(long display) { return GDK_FFM.gdk_display_get_n_monitors(display); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_display_get_primary_monitor(long display);
+	public static final long gdk_display_get_primary_monitor(long display) { return GDK_FFM.gdk_display_get_primary_monitor(display); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_display_get_monitor_at_point(long display, int x, int y);
+	public static final long gdk_display_get_monitor_at_point(long display, int x, int y) { return GDK_FFM.gdk_display_get_monitor_at_point(display, x, y); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_display_get_monitor(long display, int monitor_num);
+	public static final long gdk_display_get_monitor(long display, int monitor_num) { return GDK_FFM.gdk_display_get_monitor(display, monitor_num); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native boolean gdk_display_supports_cursor_color(long display);
+	public static final boolean gdk_display_supports_cursor_color(long display) { return GDK_FFM.gdk_display_supports_cursor_color(display); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_display_get_default_group(long display);
+	public static final long gdk_display_get_default_group(long display) { return GDK_FFM.gdk_display_get_default_group(display); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 * @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_display_get_monitor_at_window(long display, long window);
+	public static final long gdk_display_get_monitor_at_window(long display, long window) { return GDK_FFM.gdk_display_get_monitor_at_window(display, window); }
 
 	/* GdkDisplay [GTK4 only] */
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_display_get_monitors(long display);
+	public static final long gdk_display_get_monitors(long display) { return GDK_FFM.gdk_display_get_monitors(display); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
@@ -859,22 +859,22 @@ public class GDK extends OS {
 	 * @param keys cast=(GdkKeymapKey**)
 	 * @param n_keys cast=(gint*)
 	 */
-	public static final native boolean gdk_display_map_keyval(long display, int keyval, long[] keys, int[] n_keys);
+	public static final boolean gdk_display_map_keyval(long display, int keyval, long[] keys, int[] n_keys) { return GDK_FFM.gdk_display_map_keyval(display, keyval, keys, n_keys); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native boolean gdk_display_is_composited(long display);
+	public static final boolean gdk_display_is_composited(long display) { return GDK_FFM.gdk_display_is_composited(display); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_display_get_clipboard(long display);
+	public static final long gdk_display_get_clipboard(long display) { return GDK_FFM.gdk_display_get_clipboard(display); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
-	public static final native long gdk_display_get_primary_clipboard(long display);
+	public static final long gdk_display_get_primary_clipboard(long display) { return GDK_FFM.gdk_display_get_primary_clipboard(display); }
 	/**
 	 * @param display cast=(GdkDisplay *)
 	 * @param surface cast=(GdkSurface *)
@@ -885,68 +885,68 @@ public class GDK extends OS {
 
 	/* GdkMonitor */
 	/** @method flags=dynamic */
-	public static final native int gdk_monitor_get_scale_factor(long window);
+	public static final int gdk_monitor_get_scale_factor(long window) { return GDK_FFM.gdk_monitor_get_scale_factor(window); }
 	/**
 	 * @method flags=dynamic
 	 * @param dest flags=no_in
 	 */
-	public static final native void gdk_monitor_get_geometry(long monitor, GdkRectangle dest);
+	public static final void gdk_monitor_get_geometry(long monitor, GdkRectangle dest) { GDK_FFM.gdk_monitor_get_geometry(monitor, dest); }
 
 	/* GdkMonitor [GTK3 only] */
 	/**
 	 * @method flags=dynamic
 	 * @param dest flags=no_in
 	 */
-	public static final native void gdk_monitor_get_workarea(long monitor, GdkRectangle dest);
+	public static final void gdk_monitor_get_workarea(long monitor, GdkRectangle dest) { GDK_FFM.gdk_monitor_get_workarea(monitor, dest); }
 
 
 	/* GdkScreen [GTK3 only] */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_screen_get_default();
+	public static final long gdk_screen_get_default() { return GDK_FFM.gdk_screen_get_default(); }
 	/** @param screen cast=(GdkScreen *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native double gdk_screen_get_resolution(long screen);
+	public static final double gdk_screen_get_resolution(long screen) { return GDK_FFM.gdk_screen_get_resolution(screen); }
 	/** @param screen cast=(GdkScreen *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native boolean gdk_screen_is_composited(long screen);
+	public static final boolean gdk_screen_is_composited(long screen) { return GDK_FFM.gdk_screen_is_composited(screen); }
 	/** @param screen cast=(GdkScreen *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_screen_get_system_visual(long screen);
+	public static final long gdk_screen_get_system_visual(long screen) { return GDK_FFM.gdk_screen_get_system_visual(screen); }
 
 	/* GdkScreen [GTK3 only, if-def'd in os.h; 3.22 deprecated, replaced] */
 	/**
 	 * @method flags=dynamic
 	 */
-	public static final native int gdk_screen_height();
+	public static final int gdk_screen_height() { return GDK_FFM.gdk_screen_height(); }
 	/**
 	 * @method flags=dynamic
 	 */
-	public static final native int gdk_screen_width();
+	public static final int gdk_screen_width() { return GDK_FFM.gdk_screen_width(); }
 	/**
 	 * @method flags=dynamic
 	 */
-	public static final native int gdk_seat_grab(long seat, long window, int capabilities, boolean owner_events, long cursor, long event, long func, long func_data);
+	public static final int gdk_seat_grab(long seat, long window, int capabilities, boolean owner_events, long cursor, long event, long func, long func_data) { return GDK_FFM.gdk_seat_grab(seat, window, capabilities, owner_events, cursor, event, func, func_data); }
 	/**
 	 * @method flags=dynamic
 	 */
-	public static final native void gdk_seat_ungrab(long seat);
+	public static final void gdk_seat_ungrab(long seat) { GDK_FFM.gdk_seat_ungrab(seat); }
 	/**
 	 * @method flags=dynamic
 	 */
-	public static final native long gdk_seat_get_pointer(long seat);
+	public static final long gdk_seat_get_pointer(long seat) { return GDK_FFM.gdk_seat_get_pointer(seat); }
 	/**
 	 * @method flags=dynamic
 	 */
-	public static final native long gdk_seat_get_keyboard(long seat);
+	public static final long gdk_seat_get_keyboard(long seat) { return GDK_FFM.gdk_seat_get_keyboard(seat); }
 	/**
 	 * @method flags=dynamic
 	 * @param program_class cast=(const char *)
 	 */
 	/* [GTK3 only] */
-	public static final native void gdk_set_program_class(byte[] program_class);
+	public static final void gdk_set_program_class(byte[] program_class) { GDK_FFM.gdk_set_program_class(program_class); }
 	/** @param atom cast=(GdkAtom) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_selection_owner_get(long atom);
+	public static final void gdk_selection_owner_get(long atom) { GDK_FFM.gdk_selection_owner_get(atom); }
 	/**
 	 * @param owner cast=(GdkWindow *)
 	 * @param atom cast=(GdkAtom)
@@ -954,7 +954,7 @@ public class GDK extends OS {
 	 * @param send_event cast=(gboolean)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_selection_owner_set(long owner, long atom, int time, boolean send_event);
+	public static final void gdk_selection_owner_set(long owner, long atom, int time, boolean send_event) { GDK_FFM.gdk_selection_owner_set(owner, atom, time, send_event); }
 	/**
 	 * @param display cast=(GdkDisplay *)
 	 * @param str cast=(const gchar*)
@@ -963,20 +963,20 @@ public class GDK extends OS {
 	 * @param ctext cast=(guchar **)
 	 * @param length cast=(gint *)
 	 */
-	public static final native boolean gdk_x11_display_utf8_to_compound_text(long display, byte[] str, long [] encoding, int[] format, long [] ctext, int[] length);
+	public static final boolean gdk_x11_display_utf8_to_compound_text(long display, byte[] str, long [] encoding, int[] format, long [] ctext, int[] length) { return GDK_FFM.gdk_x11_display_utf8_to_compound_text(display, str, encoding, format, ctext, length); }
 	/**
 	 * @method flags=dynamic
 	 * @param str cast=(const gchar *)
 	 */
 	/* [GTK3 only] */
-	public static final native long gdk_utf8_to_string_target(byte[] str);
+	public static final long gdk_utf8_to_string_target(byte[] str) { return GDK_FFM.gdk_utf8_to_string_target(str); }
 	/**
 	 * @param display cast=(GdkDisplay *)
 	 * @param encoding cast=(GdkAtom)
 	 * @param text cast=(guchar *)
 	 * @param list cast=(gchar ***)
 	 */
-	public static final native int gdk_text_property_to_utf8_list_for_display(long display, long encoding, int format, long text, int length,  long [] list);
+	public static final int gdk_text_property_to_utf8_list_for_display(long display, long encoding, int format, long text, int length,  long [] list) { return GDK_FFM.gdk_text_property_to_utf8_list_for_display(display, encoding, format, text, length, list); }
 
 
 	/* GdkTexture [GTK4 only] */
@@ -993,35 +993,35 @@ public class GDK extends OS {
 	 * @param data cast=(gpointer)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_threads_add_idle(long function, long data);
+	public static final int gdk_threads_add_idle(long function, long data) { return GDK_FFM.gdk_threads_add_idle(function, data); }
 	/**
 	 * @method flags=ignore_deprecations
 	 * @param function cast=(GSourceFunc)
 	 * @param data cast=(gpointer)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_threads_add_timeout (int interval, long function, long data);
+	public static final int gdk_threads_add_timeout(int interval, long function, long data) { return GDK_FFM.gdk_threads_add_timeout(interval, function, data); }
 	/** @method flags=ignore_deprecations */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_threads_enter ();
+	public static final void gdk_threads_enter() { GDK_FFM.gdk_threads_enter(); }
 	/** @method flags=ignore_deprecations */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_threads_init ();
+	public static final void gdk_threads_init() { GDK_FFM.gdk_threads_init(); }
 	/** @method flags=ignore_deprecations */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_threads_leave ();
-	public static final native  int gdk_unicode_to_keyval(int wc);
+	public static final void gdk_threads_leave() { GDK_FFM.gdk_threads_leave(); }
+	public static final int gdk_unicode_to_keyval(int wc) { return GDK_FFM.gdk_unicode_to_keyval(wc); }
 	/**
 	 * @param visual cast=(GdkVisual *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_visual_get_depth(long visual);
+	public static final int gdk_visual_get_depth(long visual) { return GDK_FFM.gdk_visual_get_depth(visual); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param content cast=(cairo_content_t)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_window_create_similar_surface(long window, int content, int width, int height);
+	public static final long gdk_window_create_similar_surface(long window, int content, int width, int height) { return GDK_FFM.gdk_window_create_similar_surface(window, content, width, height); }
 	/**
 	 * @param window cast=(GdkSurface *)
 	 * @param content cast=(cairo_content_t)
@@ -1030,32 +1030,32 @@ public class GDK extends OS {
 	public static final native long gdk_surface_create_similar_surface(long window, int content, int width, int height);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_destroy(long window);
+	public static final void gdk_window_destroy(long window) { GDK_FFM.gdk_window_destroy(window); }
 	/** @param window cast=(GdkSurface *) */
 	/* [GTK4 only, if-def'd in os.h] */
 	public static final native void gdk_surface_destroy(long window);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_window_get_children(long window);
+	public static final long gdk_window_get_children(long window) { return GDK_FFM.gdk_window_get_children(window); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_window_get_events(long window);
+	public static final int gdk_window_get_events(long window) { return GDK_FFM.gdk_window_get_events(window); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_focus(long window, int timestamp);
+	public static final void gdk_window_focus(long window, int timestamp) { GDK_FFM.gdk_window_focus(window, timestamp); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param rect cast=(GdkRectangle *),flags=no_in
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_get_frame_extents(long window, GdkRectangle rect);
+	public static final void gdk_window_get_frame_extents(long window, GdkRectangle rect) { GDK_FFM.gdk_window_get_frame_extents(window, rect); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param x cast=(gint *)
 	 * @param y cast=(gint *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native int gdk_window_get_origin(long window, int[] x, int[] y);
+	public static final int gdk_window_get_origin(long window, int[] x, int[] y) { return GDK_FFM.gdk_window_get_origin(window, x, y); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param device cast=(GdkDevice *)
@@ -1064,7 +1064,7 @@ public class GDK extends OS {
 	 * @param mask cast=(GdkModifierType *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_window_get_device_position(long window, long device, int[] x, int[] y, int[] mask);
+	public static final long gdk_window_get_device_position(long window, long device, int[] x, int[] y, int[] mask) { return GDK_FFM.gdk_window_get_device_position(window, device, x, y, mask); }
 	/**
 	 * @param surface cast=(GdkSurface *)
 	 * @param device cast=(GdkDevice *)
@@ -1076,23 +1076,23 @@ public class GDK extends OS {
 	public static final native void gdk_surface_get_device_position(long surface, long device, double[] x, double[] y, int[] mask);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native long gdk_window_get_parent(long window);
+	public static final long gdk_window_get_parent(long window) { return GDK_FFM.gdk_window_get_parent(window); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param x cast=(gint *)
 	 * @param y cast=(gint *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_get_root_origin(long window, int[] x, int[] y);
+	public static final void gdk_window_get_root_origin(long window, int[] x, int[] y) { GDK_FFM.gdk_window_get_root_origin(window, x, y); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param data cast=(gpointer *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_get_user_data(long window, long [] data);
+	public static final void gdk_window_get_user_data(long window, long [] data) { GDK_FFM.gdk_window_get_user_data(window, data); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_hide(long window);
+	public static final void gdk_window_hide(long window) { GDK_FFM.gdk_window_hide(window); }
 	/** @param surface cast=(GdkSurface *) */
 	/* [GTK4 only, if-def'd in os.h] */
 	public static final native void gdk_surface_hide(long surface);
@@ -1102,58 +1102,58 @@ public class GDK extends OS {
 	 * @param invalidate_children cast=(gboolean)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_invalidate_rect(long window, GdkRectangle rectangle, boolean invalidate_children);
+	public static final void gdk_window_invalidate_rect(long window, GdkRectangle rectangle, boolean invalidate_children) { GDK_FFM.gdk_window_invalidate_rect(window, rectangle, invalidate_children); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param region cast=(const cairo_region_t *)
 	 * @param invalidate_children cast=(gboolean)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_invalidate_region(long window, long region, boolean invalidate_children);
+	public static final void gdk_window_invalidate_region(long window, long region, boolean invalidate_children) { GDK_FFM.gdk_window_invalidate_region(window, region, invalidate_children); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_move(long window, int x, int y);
+	public static final void gdk_window_move(long window, int x, int y) { GDK_FFM.gdk_window_move(window, x, y); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_move_resize(long window, int x, int y, int width, int height);
+	public static final void gdk_window_move_resize(long window, int x, int y, int width, int height) { GDK_FFM.gdk_window_move_resize(window, x, y, width, height); }
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
 	 */
 	/* [GTK4 only, if-def'd in os.h] */
-	public static final native long gdk_surface_new_toplevel(long display);
+	public static final long gdk_surface_new_toplevel(long display) { return GDK_FFM.gdk_surface_new_toplevel(display); }
 	/** @param parent cast=(GdkSurface *) */
 	/* [GTK4 only, if-def'd in os.h] */
 	public static final native long gdk_surface_new_popup(long parent, boolean autohide);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_lower(long window);
+	public static final void gdk_window_lower(long window) { GDK_FFM.gdk_window_lower(window); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_raise(long window);
+	public static final void gdk_window_raise(long window) { GDK_FFM.gdk_window_raise(window); }
 	/**
 	 * @method flags=dynamic
 	 * @param toplevel cast=(GdkToplevel *)
 	 * @param layout cast=(GdkToplevelLayout *)
 	 * */
 	/* [GTK4 only] */
-	public static final native boolean gdk_toplevel_present(long toplevel, int width, int height, long layout);
+	public static final boolean gdk_toplevel_present(long toplevel, int width, int height, long layout) { return GDK_FFM.gdk_toplevel_present(toplevel, width, height, layout); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_resize(long window, int width, int height);
+	public static final void gdk_window_resize(long window, int width, int height) { GDK_FFM.gdk_window_resize(window, width, height); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param sibling cast=(GdkWindow *)
 	 * @param above cast=(gboolean)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_restack(long window, long sibling, boolean above);
+	public static final void gdk_window_restack(long window, long sibling, boolean above) { GDK_FFM.gdk_window_restack(window, sibling, above); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param cursor cast=(GdkCursor *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_set_cursor(long window, long cursor);
+	public static final void gdk_window_set_cursor(long window, long cursor) { GDK_FFM.gdk_window_set_cursor(window, cursor); }
 	/**
 	 * @param surface cast=(GdkSurface *)
 	 * @param cursor cast=(GdkCursor *)
@@ -1165,39 +1165,39 @@ public class GDK extends OS {
 	 * @param decorations cast=(GdkWMDecoration)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_set_decorations(long window, int decorations);
+	public static final void gdk_window_set_decorations(long window, int decorations) { GDK_FFM.gdk_window_set_decorations(window, decorations); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param functions cast=(GdkWMFunction)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_set_functions(long window, int functions);
+	public static final void gdk_window_set_functions(long window, int functions) { GDK_FFM.gdk_window_set_functions(window, functions); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_set_events(long window, int event_mask);
+	public static final void gdk_window_set_events(long window, int event_mask) { GDK_FFM.gdk_window_set_events(window, event_mask); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param override_redirect cast=(gboolean)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_set_override_redirect(long window, boolean override_redirect);
+	public static final void gdk_window_set_override_redirect(long window, boolean override_redirect) { GDK_FFM.gdk_window_set_override_redirect(window, override_redirect); }
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param user_data cast=(gpointer)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_set_user_data(long window, long user_data);
+	public static final void gdk_window_set_user_data(long window, long user_data) { GDK_FFM.gdk_window_set_user_data(window, user_data); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_show(long window);
+	public static final void gdk_window_show(long window) { GDK_FFM.gdk_window_show(window); }
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
-	public static final native void gdk_window_show_unraised(long window);
+	public static final void gdk_window_show_unraised(long window) { GDK_FFM.gdk_window_show_unraised(window); }
 
 
 	/* GdkToplevelLayout [GTK4 only] */
 	/** @method flags=dynamic */
-	public static final native long gdk_toplevel_layout_new(int min_width, int min_height);
+	public static final long gdk_toplevel_layout_new(int min_width, int min_height) { return GDK_FFM.gdk_toplevel_layout_new(min_width, min_height); }
 
 	/* GdkPopup [GTK4 only] */
 	/** @param popup cast=(GdkPopup *) */
