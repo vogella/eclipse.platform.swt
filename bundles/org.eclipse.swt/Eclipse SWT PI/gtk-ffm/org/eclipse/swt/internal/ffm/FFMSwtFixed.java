@@ -173,10 +173,11 @@ public final class FFMSwtFixed {
 		State state = state(object);
 		try {
 			switch (property) {
-				case PROP_HADJUSTMENT -> VALUE_SET_OBJECT.invokeExact(value, state.hadjustment);
-				case PROP_VADJUSTMENT -> VALUE_SET_OBJECT.invokeExact(value, state.vadjustment);
-				case PROP_HSCROLL_POLICY -> VALUE_SET_ENUM.invokeExact(value, state.hscrollPolicy);
-				case PROP_VSCROLL_POLICY -> VALUE_SET_ENUM.invokeExact(value, state.vscrollPolicy);
+				// braces keep invokeExact a statement, so its type stays void whatever the compiler
+				case PROP_HADJUSTMENT -> { VALUE_SET_OBJECT.invokeExact(value, state.hadjustment); }
+				case PROP_VADJUSTMENT -> { VALUE_SET_OBJECT.invokeExact(value, state.vadjustment); }
+				case PROP_HSCROLL_POLICY -> { VALUE_SET_ENUM.invokeExact(value, state.hscrollPolicy); }
+				case PROP_VSCROLL_POLICY -> { VALUE_SET_ENUM.invokeExact(value, state.vscrollPolicy); }
 				default -> { /* GTK warns about the property id, which is not worth reproducing */ }
 			}
 		} catch (Throwable t) {
@@ -199,8 +200,8 @@ public final class FFMSwtFixed {
 					if (horizontal) state.hadjustment = adjustment; else state.vadjustment = adjustment;
 					OS.g_object_notify(object, name(horizontal ? "hadjustment" : "vadjustment"));
 				}
-				case PROP_HSCROLL_POLICY -> state.hscrollPolicy = (int) VALUE_GET_ENUM.invokeExact(value);
-				case PROP_VSCROLL_POLICY -> state.vscrollPolicy = (int) VALUE_GET_ENUM.invokeExact(value);
+				case PROP_HSCROLL_POLICY -> { state.hscrollPolicy = (int) VALUE_GET_ENUM.invokeExact(value); }
+				case PROP_VSCROLL_POLICY -> { state.vscrollPolicy = (int) VALUE_GET_ENUM.invokeExact(value); }
 				default -> { /* as in getProperty */ }
 			}
 		} catch (Throwable t) {

@@ -4293,6 +4293,18 @@ public static boolean gtk_tree_model_iter_nth_child(long arg0, long arg1, long a
 	}
 }
 
+private static final class MH_gtk_1tree_1model_1iter_1parent {
+	static final MethodHandle MH = FFM.downcall("gtk_tree_model_iter_parent", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static boolean gtk_tree_model_iter_parent(long arg0, long arg1, long arg2) {
+	try {
+		int rc = (int) MH_gtk_1tree_1model_1iter_1parent.MH.invokeExact(arg0, arg1, arg2);
+		return ((byte) rc != 0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1tree_1path_1append_1index {
 	static final MethodHandle MH = FFM.downcall("gtk_tree_path_append_index", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
 }
