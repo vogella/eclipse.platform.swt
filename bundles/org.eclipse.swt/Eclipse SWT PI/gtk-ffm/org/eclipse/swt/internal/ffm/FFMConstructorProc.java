@@ -74,7 +74,7 @@ public final class FFMConstructorProc {
 			try {
 				SET_AUTO_DIR.invokeExact(layout, 0);
 			} catch (Throwable t) {
-				throw FFM.rethrow(t);
+				FFM.callbackFailed(t);
 			}
 		}
 		return layout;
@@ -100,11 +100,13 @@ public final class FFMConstructorProc {
 		return FFM.LINKER.downcallHandle(MemorySegment.ofAddress(proc), DESCRIPTOR);
 	}
 
+	/** Runs inside an upcall, so a failure is left pending for the calling downcall instead of thrown into GTK. */
 	static long call(MethodHandle superProc, long type, int count, long properties) {
 		try {
 			return (long) superProc.invokeExact(type, count, properties);
 		} catch (Throwable t) {
-			throw FFM.rethrow(t);
+			FFM.callbackFailed(t);
+			return 0;
 		}
 	}
 

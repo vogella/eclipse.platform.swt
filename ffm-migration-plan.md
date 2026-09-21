@@ -82,6 +82,7 @@ All scripts live in `bundles/org.eclipse.swt.tools/ffm` and need clang, gcc, the
 * `build-gtk.sh jni|ffm` compiles the GTK bundle with plain javac, either stock plus the FFM classes or with the supported natives delegated to FFM.
 * `test-gtk.sh` runs `FFMCrossCheck` and then the SWT JUnit tests on both builds and diffs the outcomes; `SWT_NATIVES` points it at other native libraries.
 * `test/.../FFMBench.java` compares the per-call cost of both implementations.
+* `bench-gtk.sh <swt-gtk jar> <checkout apply-ffm.sh ran in>` runs `FFMWorkloadBench` on a product jar and on its JNI twin, alternating fresh JVMs, and prints the cold and warm medians per phase.
 
 ### Callbacks
 
@@ -109,7 +110,7 @@ Its 72 ATK functions were uniform C stubs that forwarded to a static method of `
 `FFMRuntime` ports the last two helpers, the GDK lock functions, whose `GRecMutex` becomes a `ReentrantLock`, and the debug flag that makes GTK abort on a warning.
 
 What remains of `os_custom.c` is the GTK4 code, so no GTK3 native is left on JNI.
-The rewrite therefore also drops the `Library.loadLibrary` calls of the rewritten classes, and the FFM build runs without any SWT native library: the whole JUnit suite produces the same outcomes with `java.library.path` pointing at a directory that does not exist.
+The harness build (`build-gtk.sh ffm`) therefore also drops the `Library.loadLibrary` calls of the rewritten classes and runs without any SWT native library: the whole JUnit suite produces the same outcomes with `java.library.path` pointing at a directory that does not exist.
 That is what finishes the GTK3 port, because symbols resolve through the GTK libraries themselves rather than through the dependency tree of the SWT library.
 
 `FFMMacros` implements the macros that have no symbol to link against: the `GTK_IS_*`, `GDK_IS_*` and `ATK_*_GET_IFACE` type checks through `g_type_check_instance_is_a` and `g_type_interface_peek`, the accessors for `GTypeInstance`, `GObjectClass`, `GValue`, `GList`, `GSList`, `GError` and `XAnyEvent` as reads of public struct fields whose offsets the layout probe provides, and the arithmetic of `PANGO_PIXELS` and `CAIRO_VERSION_ENCODE`.
@@ -170,6 +171,9 @@ Two findings were deliberately not acted on: the entry count is incremented even
 * The shipped `libswt-pi3-gtk` was compiled against Pango headers without the three offset fields of `PangoGlyphItem`, so its `PangoLayoutRun_sizeof()` is 16 while current headers give 32.
   Generated layouts therefore have to come from the same headers as the native build.
 * Functions returning function pointers (`XSynchronize`) have a different prototype shape in the AST and were a parser trap.
+* GTK releases the GDK lock from nested main loops without holding it, for example when WebKit opens a window from a signal handler.
+  `g_rec_mutex_unlock` ignores that, while `ReentrantLock.unlock` throws, and an exception leaving an upcall terminates the VM; `FFMRuntime` now ignores it as well.
+  The harness runs had missed it because the browser tests were not part of them; the product build suite, 4,366 tests including the browser, passes.
 
 ### Performance
 
@@ -188,22 +192,63 @@ Best of five runs of two million calls on Linux x86_64, JDK 25:
 The callback row is from a later run on a busier machine, where the JNI numbers of the other rows are about twice as high as shown, so compare it only with its own JNI value.
 Copied arrays pay for a confined arena per call; a reusable per-thread allocator is the obvious next optimisation.
 
+A widget workload (a shell with 16 composites of labels, texts, checks, combos, a tree, a table and a `StyledText`, opened, relaid out 20 times, 2,000 GC operations, disposed) compares the product jar with a twin whose six rewritten PI classes are compiled from the unrewritten sources (`bench-gtk.sh`).
+Median main thread CPU time of 10 alternating fresh JVMs on 4 pinned cores:
+
+| Phase | cold JNI | cold FFM | warm JNI | warm FFM |
+| --- | --- | --- | --- | --- |
+| `new Display()` | 130 ms | 468 ms | | |
+| create widgets | 322 ms | 935 ms | 179 ms | 221 ms |
+| open | 321 ms | 465 ms | 312 ms | 315 ms |
+| relayout | 426 ms | 662 ms | 333 ms | 338 ms |
+| GC drawing | 50 ms | 87 ms | 38 ms | 37 ms |
+| dispose | 69 ms | 94 ms | 60 ms | 66 ms |
+
+Once warm the two are within noise, except widget creation (+23%) and dispose (+11%).
+The first use costs about 1.3 s more CPU time, most of it in `java.lang.invoke` and `jdk.internal.foreign` building downcall handles and in the class initialisers of the holder classes.
+Full IDE start-up to the workbench window did not show a stable difference: two batches of 10 and 15 alternating pairs gave +430 ms and -749 ms, so machine noise dominates there.
+A cold FFM run loads about 3,900 classes against 1,400 for JNI, most of them `LambdaForm` classes the JDK spins while linking and first invoking the downcall handles.
+
+Two remedies were measured on the first iteration of the workload (main thread CPU, median of 5):
+
+* One shared handle per call shape, 202 shapes for 1,390 functions, with the function address passed as the first argument, removed only 200 of the spun classes and made no measurable difference, because the JDK already caches the downcall stub per shape.
+  It was not kept.
+* An AOT cache from a training run (`-XX:AOTCacheOutput`, JEP 483 and 514) cut the cold FFM cost from 2,633 ms to 1,932 ms, against 1,152 ms for JNI with a cache.
+  An AOT cache is not an option for Eclipse, so the cold cost has to come down in the bindings themselves.
+
 ### Building it
 
-The delegations are committed into the sources and the two FFM source folders are listed in the `build.properties` of the GTK fragment, so Tycho produces an SWT that needs no native library: the whole JUnit suite passes against the built jar with `java.library.path` pointing at a directory that does not exist.
-That makes the branch usable as a patch in a product build, for example through the `PATCHES` list of the Speed Eclipse tooling.
+The committed sources keep their `native` declarations: `bundles/org.eclipse.swt.tools/ffm/apply-ffm.sh` turns them into calls of their FFM implementation in the checkout, and a product build runs it before Maven.
+`FFMRewriter.java` runs as a source file, so that step needs no compiled tooling.
+The step rewrites `Eclipse SWT PI/gtk` and `Eclipse SWT PI/cairo` in place.
+`C.java` and `Callback.java` sit in folders the win32 and cocoa fragments compile too, which have no FFM implementation, so the step moves them out: a rewritten copy goes to `Eclipse SWT PI/gtk-ffm-shared`, which only the GTK fragments list, and the original to `Eclipse SWT PI/jni-shared`, which only the win32 and cocoa fragments list.
+The step also keeps every `Library.loadLibrary` call: a product build merges pull requests on top, and a native one of them adds is not in `report-gtk` yet, so it has to keep working through JNI; the rewriter names such natives in its output.
+On GTK3 the libraries are therefore loaded but no call goes through them; the GTK4 natives still need them.
+All five GTK fragments list the FFM source folders, since they all compile the rewritten GTK sources.
+Rewriting the files in the branch instead made every change to `OS.java`, `GTK.java` or `GDK.java` collide with it, which upstream does several times a week.
+Because the declarations stay, the generator keeps its input and the comparison harness keeps its JNI reference.
 
-Two consequences of committing the switch.
-The JNI generator reads the `native` declarations, so regenerating either backend now needs the commit before the switch, and `build-gtk.sh jni` no longer builds a JNI SWT, which is what the comparison harness used as its reference.
+The Speed Eclipse tooling (`eclipse-speed`) applies the branch through its `PATCHES` list, runs `apply-ffm.sh` before Maven and adds `--enable-native-access=ALL-UNNAMED` to `eclipse.ini`.
+
+### Running in a product
+
+A Speed Eclipse IDE built that way (Java 25, GTK 3.24.52, Wayland, two monitors at 200%) is in daily use.
+Its loaded classes show 665 generated functions linked after normal use and `FFMSwtFixed` and `FFMAccessible` serving every control; the JNI libraries stay mapped, as described above; at that time `C` and `Callback` still went through them.
+Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks are the event loop and PNG encoding, as expected.
+
+## Next steps
+
+1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
+   The build time rewrite is fine for a fork, but upstream needs one committed shape.
+2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance), without an AOT cache: profile the first iteration at a finer sampling interval to split handle linking, `LambdaForm` spinning and interpreted execution, then attack the largest part.
+   Replace the confined arena per copied array with a per-thread allocator for the warm cost.
+3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
+4. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
 
 ## Open questions
 
 * WebKit, GLX, the AWT bridge and GTK4 are not generated yet; a GTK3 application does not load them, but they still need their JNI libraries when used.
-
-* Raising the BREE of SWT alone is fine: a bundle with a JavaSE-21 BREE resolves against one that requires JavaSE-25, because the execution environment capability comes from the running JVM rather than from the consuming bundle.
-* Java baseline: FFM is final from Java 22, SWT requires Java 21, so shipping needs a Java 25 baseline, which is an Eclipse Platform wide decision.
+* Java baseline: FFM is final from Java 22 and SWT requires Java 21, so shipping needs a Java 25 baseline; the `java25-bree` branch is ready and lands when something needs it.
+  Raising the BREE of SWT alone is fine: a bundle with a JavaSE-21 BREE resolves against one that requires JavaSE-25, because the execution environment capability comes from the running JVM rather than from the consuming bundle.
 * Native access: OSGi bundles live in the unnamed module, so launchers need `--enable-native-access=ALL-UNNAMED`, which becomes mandatory in a future Java release.
-* Where the declarations live once JNI is gone: `native` declarations cannot keep a body, so the final shape is either generated delegating bodies in `OS.java` or a non-compiled declaration file.
-* Start-up cost of linking method handles, to be measured with IDE start-up.
 * Modified UTF-8 (JNI `GetStringUTFChars`) versus standard UTF-8 (FFM) differs for embedded NUL and supplementary characters.
-* Where the native declarations live once they are no longer `native`, since the generator needs them as its input.
