@@ -34,11 +34,20 @@ public final class FFMRuntime {
 	}
 
 	static void enter() {
-		GDK_LOCK.lock();
+		try {
+			GDK_LOCK.lock();
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
 	}
 
+	/** Like g_rec_mutex_unlock, ignores a thread that does not hold the lock, which GTK does from nested main loops. */
 	static void leave() {
-		GDK_LOCK.unlock();
+		try {
+			if (GDK_LOCK.isHeldByCurrentThread()) GDK_LOCK.unlock();
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
 	}
 
 	public static void swt_set_lock_functions() {
