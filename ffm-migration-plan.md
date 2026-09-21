@@ -190,11 +190,15 @@ Copied arrays pay for a confined arena per call; a reusable per-thread allocator
 
 ### Building it
 
+The committed sources keep their `native` declarations: `bundles/org.eclipse.swt.tools/ffm/apply-ffm.sh` turns them into calls of their FFM implementation in the checkout, and a product build runs it before Maven.
+`FFMRewriter.java` runs as a source file, so that step needs no compiled tooling.
+Rewriting the files in the branch instead made every change to `OS.java`, `GTK.java` or `GDK.java` collide with it, which upstream does several times a week.
+
+
 The delegations are committed into the sources and the two FFM source folders are listed in the `build.properties` of the GTK fragment, so Tycho produces an SWT that needs no native library: the whole JUnit suite passes against the built jar with `java.library.path` pointing at a directory that does not exist.
 That makes the branch usable as a patch in a product build, for example through the `PATCHES` list of the Speed Eclipse tooling.
 
-Two consequences of committing the switch.
-The JNI generator reads the `native` declarations, so regenerating either backend now needs the commit before the switch, and `build-gtk.sh jni` no longer builds a JNI SWT, which is what the comparison harness used as its reference.
+Because the declarations stay, the generator keeps its input and the comparison harness keeps its JNI reference.
 
 ## Open questions
 

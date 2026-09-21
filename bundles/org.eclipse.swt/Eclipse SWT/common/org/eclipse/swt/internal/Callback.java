@@ -251,7 +251,7 @@ public Callback (Object object, String method, Type returnType, Type [] argument
  * @param isArrayBased whether the callback's method is array based
  * @param errorResult the callback's error result
  */
-static synchronized long bind(Callback callback, Object object, String method, String signature, int argCount, boolean isStatic, boolean isArrayBased, long errorResult) { return org.eclipse.swt.internal.ffm.FFMCallback.bind(callback, object, method, signature, argCount, isStatic, isArrayBased, errorResult); }
+static native synchronized long bind (Callback callback, Object object, String method, String signature, int argCount, boolean isStatic, boolean isArrayBased, long errorResult);
 
 /**
  * Releases the native level resources associated with the callback,
@@ -281,7 +281,7 @@ public long getAddress () {
  *
  * @return the platform name of the currently running SWT
  */
-public static String getPlatform() { return org.eclipse.swt.internal.ffm.FFMCallback.getPlatform(); }
+public static native String getPlatform ();
 
 /**
  * Returns the number of times the system has been recursively entered
@@ -294,7 +294,7 @@ public static String getPlatform() { return org.eclipse.swt.internal.ffm.FFMCall
  *
  * @since 2.1
  */
-public static int getEntryCount() { return org.eclipse.swt.internal.ffm.FFMCallback.getEntryCount(); }
+public static native int getEntryCount ();
 
 static String getSignature(int argCount) {
 	String signature = "("; //$NON-NLS-1$
@@ -315,7 +315,7 @@ static String getSignature(int argCount) {
  *
  * @param enable true if callbacks should be invoked
  */
-public static final synchronized void setEnabled(boolean enable) { org.eclipse.swt.internal.ffm.FFMCallback.setEnabled(enable); }
+public static final native synchronized void setEnabled (boolean enable);
 
 /**
  * Returns whether or not callbacks which are triggered at the
@@ -329,7 +329,7 @@ public static final synchronized void setEnabled(boolean enable) { org.eclipse.s
  *
  * @return true if callbacks should not be invoked
  */
-public static final synchronized boolean getEnabled() { return org.eclipse.swt.internal.ffm.FFMCallback.getEnabled(); }
+public static final native synchronized boolean getEnabled ();
 
 /**
  * This might be called directly from native code in environments
@@ -352,13 +352,13 @@ static final void ignoreCallbacks (boolean ignore) {
  * and should never be performed by application code.
  * </p>
  */
-public static final synchronized void reset() { org.eclipse.swt.internal.ffm.FFMCallback.reset(); }
+public static final native synchronized void reset ();
 
 /**
  * Releases the native level resources associated with the callback.
  *
  * @see #dispose
  */
-static final synchronized void unbind(Callback callback) { org.eclipse.swt.internal.ffm.FFMCallback.unbind(callback); }
+static final native synchronized void unbind (Callback callback);
 
 }
