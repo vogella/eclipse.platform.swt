@@ -28,6 +28,7 @@ private static final class MH_free {
 public static void free(long arg0) {
 	try {
 		MH_free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -41,6 +42,7 @@ public static long getenv(byte[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_getenv.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -53,6 +55,7 @@ private static final class MH_malloc {
 public static long malloc(long arg0) {
 	try {
 		long rc = (long) MH_malloc.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -65,6 +68,7 @@ private static final class MH_memmove__JJJ {
 public static void memmove(long arg0, long arg1, long arg2) {
 	try {
 		MH_memmove__JJJ.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -76,6 +80,7 @@ private static final class MH_memmove__J_3BJ {
 public static void memmove(long arg0, byte[] arg1, long arg2) {
 	try {
 		MH_memmove__J_3BJ.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -87,6 +92,7 @@ private static final class MH_memmove__J_3CJ {
 public static void memmove(long arg0, char[] arg1, long arg2) {
 	try {
 		MH_memmove__J_3CJ.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -98,6 +104,7 @@ private static final class MH_memmove__J_3DJ {
 public static void memmove(long arg0, double[] arg1, long arg2) {
 	try {
 		MH_memmove__J_3DJ.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -109,6 +116,7 @@ private static final class MH_memmove__J_3FJ {
 public static void memmove(long arg0, float[] arg1, long arg2) {
 	try {
 		MH_memmove__J_3FJ.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -120,6 +128,7 @@ private static final class MH_memmove__J_3IJ {
 public static void memmove(long arg0, int[] arg1, long arg2) {
 	try {
 		MH_memmove__J_3IJ.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -131,6 +140,7 @@ private static final class MH_memmove__J_3JJ {
 public static void memmove(long arg0, long[] arg1, long arg2) {
 	try {
 		MH_memmove__J_3JJ.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -142,6 +152,7 @@ private static final class MH_memmove__J_3SJ {
 public static void memmove(long arg0, short[] arg1, long arg2) {
 	try {
 		MH_memmove__J_3SJ.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -153,6 +164,7 @@ private static final class MH_memmove___3BJJ {
 public static void memmove(byte[] arg0, long arg1, long arg2) {
 	try {
 		MH_memmove___3BJJ.MH.invokeExact(FFM.heap(arg0), arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -164,6 +176,7 @@ private static final class MH_memmove___3B_3CJ {
 public static void memmove(byte[] arg0, char[] arg1, long arg2) {
 	try {
 		MH_memmove___3B_3CJ.MH.invokeExact(FFM.heap(arg0), FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -175,6 +188,7 @@ private static final class MH_memmove___3CJJ {
 public static void memmove(char[] arg0, long arg1, long arg2) {
 	try {
 		MH_memmove___3CJJ.MH.invokeExact(FFM.heap(arg0), arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -186,6 +200,7 @@ private static final class MH_memmove___3DJJ {
 public static void memmove(double[] arg0, long arg1, long arg2) {
 	try {
 		MH_memmove___3DJJ.MH.invokeExact(FFM.heap(arg0), arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -197,6 +212,7 @@ private static final class MH_memmove___3FJJ {
 public static void memmove(float[] arg0, long arg1, long arg2) {
 	try {
 		MH_memmove___3FJJ.MH.invokeExact(FFM.heap(arg0), arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -208,6 +224,7 @@ private static final class MH_memmove___3IJJ {
 public static void memmove(int[] arg0, long arg1, long arg2) {
 	try {
 		MH_memmove___3IJJ.MH.invokeExact(FFM.heap(arg0), arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -221,6 +238,7 @@ public static void memmove(int[] arg0, byte[] arg1, long arg2) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_memmove___3I_3BJ.MH.invokeExact(FFM.heap(arg0), lparg1, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -232,6 +250,7 @@ private static final class MH_memmove___3JJJ {
 public static void memmove(long[] arg0, long arg1, long arg2) {
 	try {
 		MH_memmove___3JJJ.MH.invokeExact(FFM.heap(arg0), arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -243,6 +262,7 @@ private static final class MH_memmove___3SJJ {
 public static void memmove(short[] arg0, long arg1, long arg2) {
 	try {
 		MH_memmove___3SJJ.MH.invokeExact(FFM.heap(arg0), arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -254,6 +274,7 @@ private static final class MH_memset {
 public static long memset(long arg0, int arg1, long arg2) {
 	try {
 		long rc = (long) MH_memset.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -270,6 +291,7 @@ public static int setenv(byte[] arg0, byte[] arg1, int arg2) {
 		int rc = (int) MH_setenv.MH.invokeExact(lparg0, lparg1, arg2);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -282,6 +304,7 @@ private static final class MH_strlen {
 public static int strlen(long arg0) {
 	try {
 		long rc = (long) MH_strlen.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return (int) rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);

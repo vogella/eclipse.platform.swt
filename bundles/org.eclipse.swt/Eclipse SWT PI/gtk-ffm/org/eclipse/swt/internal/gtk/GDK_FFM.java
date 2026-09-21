@@ -43,6 +43,7 @@ public static long gdk_atom_intern(byte[] arg0, boolean arg1) {
 		if (MH_gdk_1atom_1intern.MH != null) {
 			rc = (long) MH_gdk_1atom_1intern.MH.invokeExact(FFM.heap(arg0), (byte) (arg1 ? 1 : 0));
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -55,6 +56,7 @@ private static final class MH_gdk_1atom_1name {
 public static long gdk_atom_name(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1atom_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -70,6 +72,7 @@ public static long gdk_cairo_create(long arg0) {
 		if (MH_gdk_1cairo_1create.MH != null) {
 			rc = (long) MH_gdk_1cairo_1create.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -87,6 +90,7 @@ public static boolean gdk_cairo_get_clip_rectangle(long arg0, org.eclipse.swt.in
 			rc = (byte) MH_gdk_1cairo_1get_1clip_1rectangle.MH.invokeExact(arg0, lparg1);
 		}
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg1, arg1);
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -99,6 +103,7 @@ private static final class MH_gdk_1cairo_1region {
 public static void gdk_cairo_region(long arg0, long arg1) {
 	try {
 		MH_gdk_1cairo_1region.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -110,6 +115,7 @@ private static final class MH_gdk_1cairo_1region_1create_1from_1surface {
 public static long gdk_cairo_region_create_from_surface(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1cairo_1region_1create_1from_1surface.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -122,6 +128,7 @@ private static final class MH_gdk_1cairo_1set_1source_1pixbuf {
 public static void gdk_cairo_set_source_pixbuf(long arg0, long arg1, double arg2, double arg3) {
 	try {
 		MH_gdk_1cairo_1set_1source_1pixbuf.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -136,6 +143,7 @@ public static void gdk_cairo_set_source_rgba(long arg0, org.eclipse.swt.internal
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_write(lparg1, arg1);
 		MH_gdk_1cairo_1set_1source_1rgba.MH.invokeExact(arg0, lparg1);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -147,6 +155,7 @@ private static final class MH_gdk_1cairo_1set_1source_1window {
 public static void gdk_cairo_set_source_window(long arg0, long arg1, int arg2, int arg3) {
 	try {
 		MH_gdk_1cairo_1set_1source_1window.MH.invokeExact(arg0, arg1, (double) arg2, (double) arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -159,6 +168,7 @@ public static long gdk_cursor_new_from_name(long arg0, String arg1) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.string(arena, arg1);
 		long rc = (long) MH_gdk_1cursor_1new_1from_1name__JLjava_lang_String_2.MH.invokeExact(arg0, lparg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -172,6 +182,7 @@ public static long gdk_cursor_new_from_name(String arg0, long arg1) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.string(arena, arg0);
 		long rc = (long) MH_gdk_1cursor_1new_1from_1name__Ljava_lang_String_2J.MH.invokeExact(lparg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -184,6 +195,7 @@ private static final class MH_gdk_1cursor_1new_1from_1pixbuf {
 public static long gdk_cursor_new_from_pixbuf(long arg0, long arg1, int arg2, int arg3) {
 	try {
 		long rc = (long) MH_gdk_1cursor_1new_1from_1pixbuf.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -199,6 +211,7 @@ public static long gdk_device_get_associated_device(long arg0) {
 		if (MH_gdk_1device_1get_1associated_1device.MH != null) {
 			rc = (long) MH_gdk_1device_1get_1associated_1device.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -211,6 +224,7 @@ private static final class MH_gdk_1device_1get_1seat {
 public static long gdk_device_get_seat(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1device_1get_1seat.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -230,6 +244,7 @@ public static long gdk_device_get_surface_at_position(long arg0, double[] arg1, 
 		}
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -249,6 +264,7 @@ public static long gdk_device_get_window_at_position(long arg0, int[] arg1, int[
 		}
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -263,6 +279,7 @@ public static void gdk_device_warp(long arg0, long arg1, int arg2, int arg3) {
 		if (MH_gdk_1device_1warp.MH != null) {
 			MH_gdk_1device_1warp.MH.invokeExact(arg0, arg1, arg2, arg3);
 		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -274,6 +291,7 @@ private static final class MH_gdk_1display_1beep {
 public static void gdk_display_beep(long arg0) {
 	try {
 		MH_gdk_1display_1beep.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -288,6 +306,7 @@ public static long gdk_display_get_clipboard(long arg0) {
 		if (MH_gdk_1display_1get_1clipboard.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1clipboard.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -300,6 +319,7 @@ private static final class MH_gdk_1display_1get_1default {
 public static long gdk_display_get_default() {
 	try {
 		long rc = (long) MH_gdk_1display_1get_1default.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -315,6 +335,7 @@ public static long gdk_display_get_default_group(long arg0) {
 		if (MH_gdk_1display_1get_1default_1group.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1default_1group.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -330,6 +351,7 @@ public static long gdk_display_get_default_seat(long arg0) {
 		if (MH_gdk_1display_1get_1default_1seat.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1default_1seat.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -345,6 +367,7 @@ public static long gdk_display_get_monitor(long arg0, int arg1) {
 		if (MH_gdk_1display_1get_1monitor.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1monitor.MH.invokeExact(arg0, arg1);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -360,6 +383,7 @@ public static long gdk_display_get_monitor_at_point(long arg0, int arg1, int arg
 		if (MH_gdk_1display_1get_1monitor_1at_1point.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1monitor_1at_1point.MH.invokeExact(arg0, arg1, arg2);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -375,6 +399,7 @@ public static long gdk_display_get_monitor_at_window(long arg0, long arg1) {
 		if (MH_gdk_1display_1get_1monitor_1at_1window.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1monitor_1at_1window.MH.invokeExact(arg0, arg1);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -390,6 +415,7 @@ public static long gdk_display_get_monitors(long arg0) {
 		if (MH_gdk_1display_1get_1monitors.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1monitors.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -405,6 +431,7 @@ public static int gdk_display_get_n_monitors(long arg0) {
 		if (MH_gdk_1display_1get_1n_1monitors.MH != null) {
 			rc = (int) MH_gdk_1display_1get_1n_1monitors.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -420,6 +447,7 @@ public static long gdk_display_get_primary_clipboard(long arg0) {
 		if (MH_gdk_1display_1get_1primary_1clipboard.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1primary_1clipboard.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -435,6 +463,7 @@ public static long gdk_display_get_primary_monitor(long arg0) {
 		if (MH_gdk_1display_1get_1primary_1monitor.MH != null) {
 			rc = (long) MH_gdk_1display_1get_1primary_1monitor.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -450,6 +479,7 @@ public static boolean gdk_display_is_composited(long arg0) {
 		if (MH_gdk_1display_1is_1composited.MH != null) {
 			rc = (byte) MH_gdk_1display_1is_1composited.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -469,6 +499,7 @@ public static boolean gdk_display_map_keyval(long arg0, int arg1, long[] arg2, i
 		}
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -481,6 +512,7 @@ private static final class MH_gdk_1display_1put_1event {
 public static void gdk_display_put_event(long arg0, long arg1) {
 	try {
 		MH_gdk_1display_1put_1event.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -495,6 +527,7 @@ public static boolean gdk_display_supports_cursor_color(long arg0) {
 		if (MH_gdk_1display_1supports_1cursor_1color.MH != null) {
 			rc = (byte) MH_gdk_1display_1supports_1cursor_1color.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -510,6 +543,7 @@ public static int gdk_drag_context_get_actions(long arg0) {
 		if (MH_gdk_1drag_1context_1get_1actions.MH != null) {
 			rc = (int) MH_gdk_1drag_1context_1get_1actions.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -522,6 +556,7 @@ private static final class MH_gdk_1drag_1context_1get_1dest_1window {
 public static long gdk_drag_context_get_dest_window(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1drag_1context_1get_1dest_1window.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -537,6 +572,7 @@ public static int gdk_drag_context_get_selected_action(long arg0) {
 		if (MH_gdk_1drag_1context_1get_1selected_1action.MH != null) {
 			rc = (int) MH_gdk_1drag_1context_1get_1selected_1action.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -549,6 +585,7 @@ private static final class MH_gdk_1drag_1context_1list_1targets {
 public static long gdk_drag_context_list_targets(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1drag_1context_1list_1targets.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -561,6 +598,7 @@ private static final class MH_gdk_1drag_1status {
 public static void gdk_drag_status(long arg0, int arg1, int arg2) {
 	try {
 		MH_gdk_1drag_1status.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -572,6 +610,7 @@ private static final class MH_gdk_1event_1copy {
 public static long gdk_event_copy(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1event_1copy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -584,6 +623,7 @@ private static final class MH_gdk_1event_1free {
 public static void gdk_event_free(long arg0) {
 	try {
 		MH_gdk_1event_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -595,6 +635,7 @@ private static final class MH_gdk_1event_1get {
 public static long gdk_event_get() {
 	try {
 		long rc = (long) MH_gdk_1event_1get.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -609,6 +650,7 @@ public static boolean gdk_event_get_button(long arg0, int[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_gdk_1event_1get_1button.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -625,6 +667,7 @@ public static boolean gdk_event_get_coords(long arg0, double[] arg1, double[] ar
 		int rc = (int) MH_gdk_1event_1get_1coords.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -640,6 +683,7 @@ public static int gdk_event_get_event_type(long arg0) {
 		if (MH_gdk_1event_1get_1event_1type.MH != null) {
 			rc = (int) MH_gdk_1event_1get_1event_1type.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -654,6 +698,7 @@ public static boolean gdk_event_get_keycode(long arg0, short[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_gdk_1event_1get_1keycode.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -668,6 +713,7 @@ public static boolean gdk_event_get_keyval(long arg0, int[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_gdk_1event_1get_1keyval.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -684,6 +730,7 @@ public static boolean gdk_event_get_root_coords(long arg0, double[] arg1, double
 		int rc = (int) MH_gdk_1event_1get_1root_1coords.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -700,6 +747,7 @@ public static boolean gdk_event_get_scroll_deltas(long arg0, double[] arg1, doub
 		int rc = (int) MH_gdk_1event_1get_1scroll_1deltas.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -714,6 +762,7 @@ public static boolean gdk_event_get_scroll_direction(long arg0, int[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_gdk_1event_1get_1scroll_1direction.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -729,6 +778,7 @@ public static long gdk_event_get_seat(long arg0) {
 		if (MH_gdk_1event_1get_1seat.MH != null) {
 			rc = (long) MH_gdk_1event_1get_1seat.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -743,6 +793,7 @@ public static boolean gdk_event_get_state(long arg0, int[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_gdk_1event_1get_1state.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -755,6 +806,7 @@ private static final class MH_gdk_1event_1get_1time {
 public static int gdk_event_get_time(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1event_1get_1time.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -767,6 +819,7 @@ private static final class MH_gdk_1event_1get_1window {
 public static long gdk_event_get_window(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1event_1get_1window.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -781,6 +834,7 @@ public static void gdk_event_handler_set(long arg0, long arg1, long arg2) {
 		if (MH_gdk_1event_1handler_1set.MH != null) {
 			MH_gdk_1event_1handler_1set.MH.invokeExact(arg0, arg1, arg2);
 		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -792,6 +846,7 @@ private static final class MH_gdk_1event_1new {
 public static long gdk_event_new(int arg0) {
 	try {
 		long rc = (long) MH_gdk_1event_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -804,6 +859,7 @@ private static final class MH_gdk_1event_1peek {
 public static long gdk_event_peek() {
 	try {
 		long rc = (long) MH_gdk_1event_1peek.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -816,6 +872,7 @@ private static final class MH_gdk_1event_1put {
 public static void gdk_event_put(long arg0) {
 	try {
 		MH_gdk_1event_1put.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -827,6 +884,7 @@ private static final class MH_gdk_1event_1set_1device {
 public static void gdk_event_set_device(long arg0, long arg1) {
 	try {
 		MH_gdk_1event_1set_1device.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -838,6 +896,7 @@ private static final class MH_gdk_1get_1default_1root_1window {
 public static long gdk_get_default_root_window() {
 	try {
 		long rc = (long) MH_gdk_1get_1default_1root_1window.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -857,6 +916,7 @@ public static boolean gdk_keymap_get_entries_for_keyval(long arg0, int arg1, lon
 		}
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -872,6 +932,7 @@ public static long gdk_keymap_get_for_display(long arg0) {
 		if (MH_gdk_1keymap_1get_1for_1display.MH != null) {
 			rc = (long) MH_gdk_1keymap_1get_1for_1display.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -895,6 +956,7 @@ public static boolean gdk_keymap_translate_keyboard_state(long arg0, int arg1, i
 		FFM.copyOut(lparg6, arg6);
 		FFM.copyOut(lparg5, arg5);
 		FFM.copyOut(lparg4, arg4);
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -907,6 +969,7 @@ private static final class MH_gdk_1keyval_1name {
 public static long gdk_keyval_name(int arg0) {
 	try {
 		long rc = (long) MH_gdk_1keyval_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -919,6 +982,7 @@ private static final class MH_gdk_1keyval_1to_1lower {
 public static long gdk_keyval_to_lower(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1keyval_1to_1lower.MH.invokeExact((int) arg0);
+		FFM.checkCallbackException();
 		return Integer.toUnsignedLong(rc);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -931,6 +995,7 @@ private static final class MH_gdk_1keyval_1to_1unicode {
 public static long gdk_keyval_to_unicode(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1keyval_1to_1unicode.MH.invokeExact((int) arg0);
+		FFM.checkCallbackException();
 		return Integer.toUnsignedLong(rc);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -947,6 +1012,7 @@ public static void gdk_monitor_get_geometry(long arg0, org.eclipse.swt.internal.
 			MH_gdk_1monitor_1get_1geometry.MH.invokeExact(arg0, lparg1);
 		}
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -961,6 +1027,7 @@ public static int gdk_monitor_get_scale_factor(long arg0) {
 		if (MH_gdk_1monitor_1get_1scale_1factor.MH != null) {
 			rc = (int) MH_gdk_1monitor_1get_1scale_1factor.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -977,6 +1044,7 @@ public static void gdk_monitor_get_workarea(long arg0, org.eclipse.swt.internal.
 			MH_gdk_1monitor_1get_1workarea.MH.invokeExact(arg0, lparg1);
 		}
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -991,6 +1059,7 @@ public static long gdk_pango_context_get() {
 		if (MH_gdk_1pango_1context_1get.MH != null) {
 			rc = (long) MH_gdk_1pango_1context_1get.MH.invokeExact();
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1005,6 +1074,7 @@ public static long gdk_pango_layout_get_clip_region(long arg0, int arg1, int arg
 		MemorySegment lparg3 = FFM.copyIn(arena, arg3);
 		long rc = (long) MH_gdk_1pango_1layout_1get_1clip_1region.MH.invokeExact(arg0, arg1, arg2, lparg3, arg4);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1017,6 +1087,7 @@ private static final class MH_gdk_1pixbuf_1animation_1get_1iter {
 public static long gdk_pixbuf_animation_get_iter(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1animation_1get_1iter.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1029,6 +1100,7 @@ private static final class MH_gdk_1pixbuf_1animation_1get_1static_1image {
 public static long gdk_pixbuf_animation_get_static_image(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1animation_1get_1static_1image.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1041,6 +1113,7 @@ private static final class MH_gdk_1pixbuf_1animation_1is_1static_1image {
 public static boolean gdk_pixbuf_animation_is_static_image(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1animation_1is_1static_1image.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1053,6 +1126,7 @@ private static final class MH_gdk_1pixbuf_1animation_1iter_1advance {
 public static boolean gdk_pixbuf_animation_iter_advance(long arg0, long arg1) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1animation_1iter_1advance.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1065,6 +1139,7 @@ private static final class MH_gdk_1pixbuf_1animation_1iter_1get_1delay_1time {
 public static int gdk_pixbuf_animation_iter_get_delay_time(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1animation_1iter_1get_1delay_1time.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1077,6 +1152,7 @@ private static final class MH_gdk_1pixbuf_1animation_1iter_1get_1pixbuf {
 public static long gdk_pixbuf_animation_iter_get_pixbuf(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1animation_1iter_1get_1pixbuf.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1089,6 +1165,7 @@ private static final class MH_gdk_1pixbuf_1copy {
 public static long gdk_pixbuf_copy(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1copy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1101,6 +1178,7 @@ private static final class MH_gdk_1pixbuf_1copy_1area {
 public static void gdk_pixbuf_copy_area(long arg0, int arg1, int arg2, int arg3, int arg4, long arg5, int arg6, int arg7) {
 	try {
 		MH_gdk_1pixbuf_1copy_1area.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1112,6 +1190,7 @@ private static final class MH_gdk_1pixbuf_1format_1get_1name {
 public static long gdk_pixbuf_format_get_name(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1format_1get_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1124,6 +1203,7 @@ private static final class MH_gdk_1pixbuf_1get_1bits_1per_1sample {
 public static int gdk_pixbuf_get_bits_per_sample(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1get_1bits_1per_1sample.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1139,6 +1219,7 @@ public static long gdk_pixbuf_get_from_surface(long arg0, int arg1, int arg2, in
 		if (MH_gdk_1pixbuf_1get_1from_1surface.MH != null) {
 			rc = (long) MH_gdk_1pixbuf_1get_1from_1surface.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1154,6 +1235,7 @@ public static long gdk_pixbuf_get_from_texture(long arg0) {
 		if (MH_gdk_1pixbuf_1get_1from_1texture.MH != null) {
 			rc = (long) MH_gdk_1pixbuf_1get_1from_1texture.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1169,6 +1251,7 @@ public static long gdk_pixbuf_get_from_window(long arg0, int arg1, int arg2, int
 		if (MH_gdk_1pixbuf_1get_1from_1window.MH != null) {
 			rc = (long) MH_gdk_1pixbuf_1get_1from_1window.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1181,6 +1264,7 @@ private static final class MH_gdk_1pixbuf_1get_1has_1alpha {
 public static boolean gdk_pixbuf_get_has_alpha(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1get_1has_1alpha.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1193,6 +1277,7 @@ private static final class MH_gdk_1pixbuf_1get_1height {
 public static int gdk_pixbuf_get_height(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1get_1height.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1205,6 +1290,7 @@ private static final class MH_gdk_1pixbuf_1get_1n_1channels {
 public static int gdk_pixbuf_get_n_channels(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1get_1n_1channels.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1217,6 +1303,7 @@ private static final class MH_gdk_1pixbuf_1get_1pixels {
 public static long gdk_pixbuf_get_pixels(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1get_1pixels.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1229,6 +1316,7 @@ private static final class MH_gdk_1pixbuf_1get_1rowstride {
 public static int gdk_pixbuf_get_rowstride(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1get_1rowstride.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1241,6 +1329,7 @@ private static final class MH_gdk_1pixbuf_1get_1width {
 public static int gdk_pixbuf_get_width(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1pixbuf_1get_1width.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1255,6 +1344,7 @@ public static boolean gdk_pixbuf_loader_close(long arg0, long[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_gdk_1pixbuf_1loader_1close.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1267,6 +1357,7 @@ private static final class MH_gdk_1pixbuf_1loader_1get_1animation {
 public static long gdk_pixbuf_loader_get_animation(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1loader_1get_1animation.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1279,6 +1370,7 @@ private static final class MH_gdk_1pixbuf_1loader_1get_1format {
 public static long gdk_pixbuf_loader_get_format(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1loader_1get_1format.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1291,6 +1383,7 @@ private static final class MH_gdk_1pixbuf_1loader_1get_1pixbuf {
 public static long gdk_pixbuf_loader_get_pixbuf(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1loader_1get_1pixbuf.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1303,6 +1396,7 @@ private static final class MH_gdk_1pixbuf_1loader_1new {
 public static long gdk_pixbuf_loader_new() {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1loader_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1317,6 +1411,7 @@ public static boolean gdk_pixbuf_loader_write(long arg0, long arg1, int arg2, lo
 		MemorySegment lparg3 = FFM.copyIn(arena, arg3);
 		int rc = (int) MH_gdk_1pixbuf_1loader_1write.MH.invokeExact(arg0, arg1, (long) arg2, lparg3);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1329,6 +1424,7 @@ private static final class MH_gdk_1pixbuf_1new {
 public static long gdk_pixbuf_new(int arg0, boolean arg1, int arg2, int arg3, int arg4) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1new.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0), arg2, arg3, arg4);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1341,6 +1437,7 @@ private static final class MH_gdk_1pixbuf_1new_1from_1data {
 public static long gdk_pixbuf_new_from_data(long arg0, int arg1, boolean arg2, int arg3, int arg4, int arg5, int arg6, long arg7, long arg8) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1new_1from_1data.MH.invokeExact(arg0, arg1, (int) (arg2 ? 1 : 0), arg3, arg4, arg5, arg6, arg7, arg8);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1357,6 +1454,7 @@ public static long gdk_pixbuf_new_from_file(byte[] arg0, long[] arg1) {
 		long rc = (long) MH_gdk_1pixbuf_1new_1from_1file.MH.invokeExact(lparg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1381,6 +1479,7 @@ public static boolean gdk_pixbuf_save_to_bufferv(long arg0, long[] arg1, long[] 
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1393,6 +1492,7 @@ private static final class MH_gdk_1pixbuf_1scale_1simple {
 public static long gdk_pixbuf_scale_simple(long arg0, int arg1, int arg2, int arg3) {
 	try {
 		long rc = (long) MH_gdk_1pixbuf_1scale_1simple.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1413,6 +1513,7 @@ public static boolean gdk_property_get(long arg0, long arg1, long arg2, long arg
 		FFM.copyOut(lparg8, arg8);
 		FFM.copyOut(lparg7, arg7);
 		FFM.copyOut(lparg6, arg6);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1425,6 +1526,7 @@ private static final class MH_gdk_1rgba_1free {
 public static void gdk_rgba_free(long arg0) {
 	try {
 		MH_gdk_1rgba_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1441,6 +1543,7 @@ public static long gdk_rgba_parse(org.eclipse.swt.internal.gtk.GdkRGBA arg0, byt
 		int rc = (int) MH_gdk_1rgba_1parse.MH.invokeExact(lparg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_read(lparg0, arg0);
+		FFM.checkCallbackException();
 		return (long) rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1456,6 +1559,7 @@ public static long gdk_rgba_to_string(org.eclipse.swt.internal.gtk.GdkRGBA arg0)
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_write(lparg0, arg0);
 		long rc = (long) MH_gdk_1rgba_1to_1string.MH.invokeExact(lparg0);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_read(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1468,6 +1572,7 @@ private static final class MH_gdk_1screen_1get_1default {
 public static long gdk_screen_get_default() {
 	try {
 		long rc = (long) MH_gdk_1screen_1get_1default.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1480,6 +1585,7 @@ private static final class MH_gdk_1screen_1get_1resolution {
 public static double gdk_screen_get_resolution(long arg0) {
 	try {
 		double rc = (double) MH_gdk_1screen_1get_1resolution.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1492,6 +1598,7 @@ private static final class MH_gdk_1screen_1get_1system_1visual {
 public static long gdk_screen_get_system_visual(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1screen_1get_1system_1visual.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1507,6 +1614,7 @@ public static int gdk_screen_height() {
 		if (MH_gdk_1screen_1height.MH != null) {
 			rc = (int) MH_gdk_1screen_1height.MH.invokeExact();
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1519,6 +1627,7 @@ private static final class MH_gdk_1screen_1is_1composited {
 public static boolean gdk_screen_is_composited(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1screen_1is_1composited.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1534,6 +1643,7 @@ public static int gdk_screen_width() {
 		if (MH_gdk_1screen_1width.MH != null) {
 			rc = (int) MH_gdk_1screen_1width.MH.invokeExact();
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1549,6 +1659,7 @@ public static long gdk_seat_get_keyboard(long arg0) {
 		if (MH_gdk_1seat_1get_1keyboard.MH != null) {
 			rc = (long) MH_gdk_1seat_1get_1keyboard.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1564,6 +1675,7 @@ public static long gdk_seat_get_pointer(long arg0) {
 		if (MH_gdk_1seat_1get_1pointer.MH != null) {
 			rc = (long) MH_gdk_1seat_1get_1pointer.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1579,6 +1691,7 @@ public static int gdk_seat_grab(long arg0, long arg1, int arg2, boolean arg3, lo
 		if (MH_gdk_1seat_1grab.MH != null) {
 			rc = (int) MH_gdk_1seat_1grab.MH.invokeExact(arg0, arg1, arg2, (byte) (arg3 ? 1 : 0), arg4, arg5, arg6, arg7);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1593,6 +1706,7 @@ public static void gdk_seat_ungrab(long arg0) {
 		if (MH_gdk_1seat_1ungrab.MH != null) {
 			MH_gdk_1seat_1ungrab.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1604,6 +1718,7 @@ private static final class MH_gdk_1selection_1owner_1get {
 public static void gdk_selection_owner_get(long arg0) {
 	try {
 		MH_gdk_1selection_1owner_1get.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1615,6 +1730,7 @@ private static final class MH_gdk_1selection_1owner_1set {
 public static void gdk_selection_owner_set(long arg0, long arg1, int arg2, boolean arg3) {
 	try {
 		MH_gdk_1selection_1owner_1set.MH.invokeExact(arg0, arg1, arg2, (int) (arg3 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1630,6 +1746,7 @@ public static void gdk_set_program_class(byte[] arg0) {
 			MH_gdk_1set_1program_1class.MH.invokeExact(lparg0);
 		}
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1644,6 +1761,7 @@ public static long gdk_surface_new_toplevel(long arg0) {
 		if (MH_gdk_1surface_1new_1toplevel.MH != null) {
 			rc = (long) MH_gdk_1surface_1new_1toplevel.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1658,6 +1776,7 @@ public static int gdk_text_property_to_utf8_list_for_display(long arg0, long arg
 		MemorySegment lparg5 = FFM.copyIn(arena, arg5);
 		int rc = (int) MH_gdk_1text_1property_1to_1utf8_1list_1for_1display.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, lparg5);
 		FFM.copyOut(lparg5, arg5);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1670,6 +1789,7 @@ private static final class MH_gdk_1threads_1add_1idle {
 public static int gdk_threads_add_idle(long arg0, long arg1) {
 	try {
 		int rc = (int) MH_gdk_1threads_1add_1idle.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1682,6 +1802,7 @@ private static final class MH_gdk_1threads_1add_1timeout {
 public static int gdk_threads_add_timeout(int arg0, long arg1, long arg2) {
 	try {
 		int rc = (int) MH_gdk_1threads_1add_1timeout.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1694,6 +1815,7 @@ private static final class MH_gdk_1threads_1enter {
 public static void gdk_threads_enter() {
 	try {
 		MH_gdk_1threads_1enter.MH.invokeExact();
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1705,6 +1827,7 @@ private static final class MH_gdk_1threads_1init {
 public static void gdk_threads_init() {
 	try {
 		MH_gdk_1threads_1init.MH.invokeExact();
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1716,6 +1839,7 @@ private static final class MH_gdk_1threads_1leave {
 public static void gdk_threads_leave() {
 	try {
 		MH_gdk_1threads_1leave.MH.invokeExact();
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1730,6 +1854,7 @@ public static long gdk_toplevel_layout_new(int arg0, int arg1) {
 		if (MH_gdk_1toplevel_1layout_1new.MH != null) {
 			rc = (long) MH_gdk_1toplevel_1layout_1new.MH.invokeExact(arg0, arg1);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1745,6 +1870,7 @@ public static boolean gdk_toplevel_present(long arg0, int arg1, int arg2, long a
 		if (MH_gdk_1toplevel_1present.MH != null) {
 			rc = (byte) MH_gdk_1toplevel_1present.MH.invokeExact(arg0, arg1, arg2, arg3);
 		}
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1757,6 +1883,7 @@ private static final class MH_gdk_1unicode_1to_1keyval {
 public static int gdk_unicode_to_keyval(int arg0) {
 	try {
 		int rc = (int) MH_gdk_1unicode_1to_1keyval.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1774,6 +1901,7 @@ public static long gdk_utf8_to_string_target(byte[] arg0) {
 			rc = (long) MH_gdk_1utf8_1to_1string_1target.MH.invokeExact(lparg0);
 		}
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1786,6 +1914,7 @@ private static final class MH_gdk_1visual_1get_1depth {
 public static int gdk_visual_get_depth(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1visual_1get_1depth.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1798,6 +1927,7 @@ private static final class MH_gdk_1window_1create_1similar_1surface {
 public static long gdk_window_create_similar_surface(long arg0, int arg1, int arg2, int arg3) {
 	try {
 		long rc = (long) MH_gdk_1window_1create_1similar_1surface.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1810,6 +1940,7 @@ private static final class MH_gdk_1window_1destroy {
 public static void gdk_window_destroy(long arg0) {
 	try {
 		MH_gdk_1window_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1821,6 +1952,7 @@ private static final class MH_gdk_1window_1focus {
 public static void gdk_window_focus(long arg0, int arg1) {
 	try {
 		MH_gdk_1window_1focus.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1832,6 +1964,7 @@ private static final class MH_gdk_1window_1get_1children {
 public static long gdk_window_get_children(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1window_1get_1children.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1850,6 +1983,7 @@ public static long gdk_window_get_device_position(long arg0, long arg1, int[] ar
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1862,6 +1996,7 @@ private static final class MH_gdk_1window_1get_1display {
 public static long gdk_window_get_display(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1window_1get_1display.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1874,6 +2009,7 @@ private static final class MH_gdk_1window_1get_1events {
 public static int gdk_window_get_events(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1window_1get_1events.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1888,6 +2024,7 @@ public static void gdk_window_get_frame_extents(long arg0, org.eclipse.swt.inter
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_SIZEOF, 16);
 		MH_gdk_1window_1get_1frame_1extents.MH.invokeExact(arg0, lparg1);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1899,6 +2036,7 @@ private static final class MH_gdk_1window_1get_1height {
 public static int gdk_window_get_height(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1window_1get_1height.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1915,6 +2053,7 @@ public static int gdk_window_get_origin(long arg0, int[] arg1, int[] arg2) {
 		int rc = (int) MH_gdk_1window_1get_1origin.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1927,6 +2066,7 @@ private static final class MH_gdk_1window_1get_1parent {
 public static long gdk_window_get_parent(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1window_1get_1parent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1943,6 +2083,7 @@ public static void gdk_window_get_root_origin(long arg0, int[] arg1, int[] arg2)
 		MH_gdk_1window_1get_1root_1origin.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1954,6 +2095,7 @@ private static final class MH_gdk_1window_1get_1state {
 public static int gdk_window_get_state(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1window_1get_1state.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1968,6 +2110,7 @@ public static void gdk_window_get_user_data(long arg0, long[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gdk_1window_1get_1user_1data.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1979,6 +2122,7 @@ private static final class MH_gdk_1window_1get_1visible_1region {
 public static long gdk_window_get_visible_region(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1window_1get_1visible_1region.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1991,6 +2135,7 @@ private static final class MH_gdk_1window_1get_1width {
 public static int gdk_window_get_width(long arg0) {
 	try {
 		int rc = (int) MH_gdk_1window_1get_1width.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2003,6 +2148,7 @@ private static final class MH_gdk_1window_1hide {
 public static void gdk_window_hide(long arg0) {
 	try {
 		MH_gdk_1window_1hide.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2016,6 +2162,7 @@ public static void gdk_window_invalidate_rect(long arg0, org.eclipse.swt.interna
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_write(lparg1, arg1);
 		MH_gdk_1window_1invalidate_1rect.MH.invokeExact(arg0, lparg1, (int) (arg2 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2027,6 +2174,7 @@ private static final class MH_gdk_1window_1invalidate_1region {
 public static void gdk_window_invalidate_region(long arg0, long arg1, boolean arg2) {
 	try {
 		MH_gdk_1window_1invalidate_1region.MH.invokeExact(arg0, arg1, (int) (arg2 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2038,6 +2186,7 @@ private static final class MH_gdk_1window_1lower {
 public static void gdk_window_lower(long arg0) {
 	try {
 		MH_gdk_1window_1lower.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2049,6 +2198,7 @@ private static final class MH_gdk_1window_1move {
 public static void gdk_window_move(long arg0, int arg1, int arg2) {
 	try {
 		MH_gdk_1window_1move.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2060,6 +2210,7 @@ private static final class MH_gdk_1window_1move_1resize {
 public static void gdk_window_move_resize(long arg0, int arg1, int arg2, int arg3, int arg4) {
 	try {
 		MH_gdk_1window_1move_1resize.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2071,6 +2222,7 @@ private static final class MH_gdk_1window_1raise {
 public static void gdk_window_raise(long arg0) {
 	try {
 		MH_gdk_1window_1raise.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2082,6 +2234,7 @@ private static final class MH_gdk_1window_1resize {
 public static void gdk_window_resize(long arg0, int arg1, int arg2) {
 	try {
 		MH_gdk_1window_1resize.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2093,6 +2246,7 @@ private static final class MH_gdk_1window_1restack {
 public static void gdk_window_restack(long arg0, long arg1, boolean arg2) {
 	try {
 		MH_gdk_1window_1restack.MH.invokeExact(arg0, arg1, (int) (arg2 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2104,6 +2258,7 @@ private static final class MH_gdk_1window_1set_1cursor {
 public static void gdk_window_set_cursor(long arg0, long arg1) {
 	try {
 		MH_gdk_1window_1set_1cursor.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2115,6 +2270,7 @@ private static final class MH_gdk_1window_1set_1decorations {
 public static void gdk_window_set_decorations(long arg0, int arg1) {
 	try {
 		MH_gdk_1window_1set_1decorations.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2126,6 +2282,7 @@ private static final class MH_gdk_1window_1set_1events {
 public static void gdk_window_set_events(long arg0, int arg1) {
 	try {
 		MH_gdk_1window_1set_1events.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2137,6 +2294,7 @@ private static final class MH_gdk_1window_1set_1functions {
 public static void gdk_window_set_functions(long arg0, int arg1) {
 	try {
 		MH_gdk_1window_1set_1functions.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2148,6 +2306,7 @@ private static final class MH_gdk_1window_1set_1override_1redirect {
 public static void gdk_window_set_override_redirect(long arg0, boolean arg1) {
 	try {
 		MH_gdk_1window_1set_1override_1redirect.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2159,6 +2318,7 @@ private static final class MH_gdk_1window_1set_1user_1data {
 public static void gdk_window_set_user_data(long arg0, long arg1) {
 	try {
 		MH_gdk_1window_1set_1user_1data.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2170,6 +2330,7 @@ private static final class MH_gdk_1window_1show {
 public static void gdk_window_show(long arg0) {
 	try {
 		MH_gdk_1window_1show.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2181,6 +2342,7 @@ private static final class MH_gdk_1window_1show_1unraised {
 public static void gdk_window_show_unraised(long arg0) {
 	try {
 		MH_gdk_1window_1show_1unraised.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2192,6 +2354,7 @@ private static final class MH_gdk_1x11_1display_1error_1trap_1pop_1ignored {
 public static void gdk_x11_display_error_trap_pop_ignored(long arg0) {
 	try {
 		MH_gdk_1x11_1display_1error_1trap_1pop_1ignored.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2203,6 +2366,7 @@ private static final class MH_gdk_1x11_1display_1error_1trap_1push {
 public static void gdk_x11_display_error_trap_push(long arg0) {
 	try {
 		MH_gdk_1x11_1display_1error_1trap_1push.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2217,6 +2381,7 @@ public static long gdk_x11_display_get_default_group(long arg0) {
 		if (MH_gdk_1x11_1display_1get_1default_1group.MH != null) {
 			rc = (long) MH_gdk_1x11_1display_1get_1default_1group.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2229,6 +2394,7 @@ private static final class MH_gdk_1x11_1display_1get_1xdisplay {
 public static long gdk_x11_display_get_xdisplay(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1x11_1display_1get_1xdisplay.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2251,6 +2417,7 @@ public static boolean gdk_x11_display_utf8_to_compound_text(long arg0, byte[] ar
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2263,6 +2430,7 @@ private static final class MH_gdk_1x11_1get_1default_1xdisplay {
 public static long gdk_x11_get_default_xdisplay() {
 	try {
 		long rc = (long) MH_gdk_1x11_1get_1default_1xdisplay.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2278,6 +2446,7 @@ public static long gdk_x11_screen_get_window_manager_name(long arg0) {
 		if (MH_gdk_1x11_1screen_1get_1window_1manager_1name.MH != null) {
 			rc = (long) MH_gdk_1x11_1screen_1get_1window_1manager_1name.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2293,6 +2462,7 @@ public static long gdk_x11_screen_lookup_visual(long arg0, int arg1) {
 		if (MH_gdk_1x11_1screen_1lookup_1visual.MH != null) {
 			rc = (long) MH_gdk_1x11_1screen_1lookup_1visual.MH.invokeExact(arg0, (long) arg1);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2305,6 +2475,7 @@ private static final class MH_gdk_1x11_1window_1get_1xid {
 public static long gdk_x11_window_get_xid(long arg0) {
 	try {
 		long rc = (long) MH_gdk_1x11_1window_1get_1xid.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2317,6 +2488,7 @@ private static final class MH_gdk_1x11_1window_1lookup_1for_1display {
 public static long gdk_x11_window_lookup_for_display(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_gdk_1x11_1window_1lookup_1for_1display.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
