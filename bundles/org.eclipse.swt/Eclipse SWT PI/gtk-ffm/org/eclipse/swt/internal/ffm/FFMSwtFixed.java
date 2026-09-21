@@ -47,6 +47,9 @@ public final class FFMSwtFixed {
 	static final MethodHandle CONTAINER_GET_TYPE = FFM.downcall("gtk_container_get_type", FunctionDescriptor.of(JAVA_LONG));
 	static final MethodHandle SCROLLABLE_GET_TYPE = FFM.downcall("gtk_scrollable_get_type", FunctionDescriptor.of(JAVA_LONG));
 	static final MethodHandle ATK_OBJECT_INITIALIZE = FFM.downcall("atk_object_initialize", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	/** The GtkCallback of forall, taking the function pointer as its first argument. */
+	static final MethodHandle GTK_CALLBACK = FFM.LINKER.downcallHandle(FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+
 	static final MethodHandle ACCESSIBLE_SET_WIDGET = FFM.downcall("gtk_accessible_set_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
 
 	/** A child of the container with the geometry SWT assigned to it. */
@@ -111,6 +114,14 @@ public final class FFMSwtFixed {
 
 	static void classInit(long klass, long data) {
 		try {
+			classInit0(klass, data);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void classInit0(long klass, long data) {
+		try {
 			parentClass = OS.g_type_class_peek_parent(klass);
 			setSlot(klass, org.eclipse.swt.internal.gtk.Structs_FFM.GObjectClass_SET_PROPERTY_OFFSET, "setProperty", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_LONG));
 			setSlot(klass, org.eclipse.swt.internal.gtk.Structs_FFM.GObjectClass_GET_PROPERTY_OFFSET, "getProperty", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_LONG));
@@ -154,6 +165,14 @@ public final class FFMSwtFixed {
 	/* ---------------------------------------------------------------- GObject */
 
 	static void finalizeInstance(long object) {
+		try {
+			finalizeInstance0(object);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void finalizeInstance0(long object) {
 		State state = STATE.remove(object);
 		if (state != null) {
 			if (state.hadjustment != 0) OS.g_object_unref(state.hadjustment);
@@ -170,6 +189,14 @@ public final class FFMSwtFixed {
 	}
 
 	static void getProperty(long object, int property, long value, long pspec) {
+		try {
+			getProperty0(object, property, value, pspec);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void getProperty0(long object, int property, long value, long pspec) {
 		State state = state(object);
 		try {
 			switch (property) {
@@ -186,6 +213,14 @@ public final class FFMSwtFixed {
 	}
 
 	static void setProperty(long object, int property, long value, long pspec) {
+		try {
+			setProperty0(object, property, value, pspec);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void setProperty0(long object, int property, long value, long pspec) {
 		State state = state(object);
 		try {
 			switch (property) {
@@ -212,6 +247,14 @@ public final class FFMSwtFixed {
 	/* ---------------------------------------------------------------- GtkWidget */
 
 	static void realize(long widget) {
+		try {
+			realize0(widget);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void realize0(long widget) {
 		try {
 			if (!GTK3.gtk_widget_get_has_window(widget)) {
 				long parentRealize = MemorySegment.ofAddress(parentClass + Extra_FFM.GTKWIDGETCLASS_REALIZE)
@@ -245,8 +288,17 @@ public final class FFMSwtFixed {
 
 	static void map(long widget) {
 		try {
+			map0(widget);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void map0(long widget) {
+		try {
 			SET_MAPPED.invokeExact(widget, 1);
-			for (Child child : children(widget)) {
+			// a snapshot, because mapping a child can add or remove children of this container
+			for (Child child : new ArrayList<>(children(widget))) {
 				if (GTK.gtk_widget_get_visible(child.widget) && !GTK.gtk_widget_get_mapped(child.widget)) {
 					WIDGET_MAP.invokeExact(child.widget);
 				}
@@ -266,6 +318,15 @@ public final class FFMSwtFixed {
 	 * SWT_IS_FIXED assertion, which only accepts the type registered by the C code.
 	 */
 	static long getAccessible(long widget) {
+		try {
+			return getAccessible0(widget);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+			return 0;
+		}
+	}
+
+	static long getAccessible0(long widget) {
 		State state = state(widget);
 		if (state.accessible == 0) {
 			try {
@@ -287,6 +348,14 @@ public final class FFMSwtFixed {
 	}
 
 	static void sizeAllocate(long widget, long allocationPointer) {
+		try {
+			sizeAllocate0(widget, allocationPointer);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void sizeAllocate0(long widget, long allocationPointer) {
 		GtkAllocation allocation = new GtkAllocation();
 		org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_read(FFM.segment(allocationPointer, org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_SIZEOF), allocation);
 		GTK3.gtk_widget_set_allocation(widget, allocation);
@@ -295,7 +364,8 @@ public final class FFMSwtFixed {
 			GDK.gdk_window_move_resize(GTK3.gtk_widget_get_window(widget), allocation.x, allocation.y, allocation.width, allocation.height);
 		}
 		GtkRequisition requisition = new GtkRequisition();
-		for (Child child : children(widget)) {
+		// a snapshot: allocating a child sends SWT.Resize, which may add or remove children
+		for (Child child : new ArrayList<>(children(widget))) {
 			GtkAllocation childAllocation = new GtkAllocation();
 			childAllocation.x = child.x;
 			childAllocation.y = child.y;
@@ -324,11 +394,27 @@ public final class FFMSwtFixed {
 	}
 
 	static void add(long container, long widget) {
+		try {
+			add0(container, widget);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void add0(long container, long widget) {
 		children(container).add(new Child(widget));
 		GTK.gtk_widget_set_parent(widget, container);
 	}
 
 	static void remove(long container, long widget) {
+		try {
+			remove0(container, widget);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void remove0(long container, long widget) {
 		List<Child> children = children(container);
 		for (Iterator<Child> it = children.iterator(); it.hasNext();) {
 			if (it.next().widget == widget) {
@@ -340,14 +426,21 @@ public final class FFMSwtFixed {
 	}
 
 	static void forall(long container, int includeInternals, long callback, long data) {
+		try {
+			forall0(container, includeInternals, callback, data);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void forall0(long container, int includeInternals, long callback, long data) {
 		// a foreach traversal goes front to back so that layouts place children in order, while an
 		// internal traversal goes back to front because map() does not raise the windows
 		List<Child> children = new ArrayList<>(children(container));
 		if (includeInternals != 0) Collections.reverse(children);
 		try {
-			MethodHandle handle = FFM.LINKER.downcallHandle(MemorySegment.ofAddress(callback), FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
 			for (Child child : children) {
-				handle.invokeExact(child.widget, data);
+				GTK_CALLBACK.invokeExact(MemorySegment.ofAddress(callback), child.widget, data);
 			}
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);

@@ -78,6 +78,8 @@ public class CTypes {
 					typedefs.put(name, sugared.startsWith("enum ") ? "enum " + name : sugared);
 					continue;
 				}
+				// an implicitly declared function has no real prototype, so binding it would guess
+				if (rest.contains("implicit")) continue;
 				int close = sugared.lastIndexOf(')');
 				int open = matchingOpen(sugared, close);
 				if (open == -1) continue;

@@ -28,6 +28,7 @@ private static final class MH_cairo_1append_1path {
 public static void cairo_append_path(long arg0, long arg1) {
 	try {
 		MH_cairo_1append_1path.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -39,6 +40,7 @@ private static final class MH_cairo_1arc {
 public static void cairo_arc(long arg0, double arg1, double arg2, double arg3, double arg4, double arg5) {
 	try {
 		MH_cairo_1arc.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -50,6 +52,7 @@ private static final class MH_cairo_1arc_1negative {
 public static void cairo_arc_negative(long arg0, double arg1, double arg2, double arg3, double arg4, double arg5) {
 	try {
 		MH_cairo_1arc_1negative.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -61,6 +64,7 @@ private static final class MH_cairo_1clip {
 public static void cairo_clip(long arg0) {
 	try {
 		MH_cairo_1clip.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -72,6 +76,7 @@ private static final class MH_cairo_1close_1path {
 public static void cairo_close_path(long arg0) {
 	try {
 		MH_cairo_1close_1path.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -83,6 +88,7 @@ private static final class MH_cairo_1copy_1path {
 public static long cairo_copy_path(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1copy_1path.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -95,6 +101,7 @@ private static final class MH_cairo_1copy_1path_1flat {
 public static long cairo_copy_path_flat(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1copy_1path_1flat.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -107,6 +114,7 @@ private static final class MH_cairo_1create {
 public static long cairo_create(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1create.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -119,6 +127,7 @@ private static final class MH_cairo_1curve_1to {
 public static void cairo_curve_to(long arg0, double arg1, double arg2, double arg3, double arg4, double arg5, double arg6) {
 	try {
 		MH_cairo_1curve_1to.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -130,6 +139,7 @@ private static final class MH_cairo_1destroy {
 public static void cairo_destroy(long arg0) {
 	try {
 		MH_cairo_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -141,6 +151,7 @@ private static final class MH_cairo_1fill {
 public static void cairo_fill(long arg0) {
 	try {
 		MH_cairo_1fill.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -152,6 +163,7 @@ private static final class MH_cairo_1font_1options_1create {
 public static long cairo_font_options_create() {
 	try {
 		long rc = (long) MH_cairo_1font_1options_1create.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -164,6 +176,7 @@ private static final class MH_cairo_1font_1options_1destroy {
 public static void cairo_font_options_destroy(long arg0) {
 	try {
 		MH_cairo_1font_1options_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -175,6 +188,7 @@ private static final class MH_cairo_1font_1options_1get_1antialias {
 public static int cairo_font_options_get_antialias(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1font_1options_1get_1antialias.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -187,6 +201,7 @@ private static final class MH_cairo_1font_1options_1set_1antialias {
 public static void cairo_font_options_set_antialias(long arg0, int arg1) {
 	try {
 		MH_cairo_1font_1options_1set_1antialias.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -198,6 +213,7 @@ private static final class MH_cairo_1get_1antialias {
 public static int cairo_get_antialias(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1get_1antialias.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -214,6 +230,7 @@ public static void cairo_get_current_point(long arg0, double[] arg1, double[] ar
 		MH_cairo_1get_1current_1point.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -225,6 +242,7 @@ private static final class MH_cairo_1get_1fill_1rule {
 public static int cairo_get_fill_rule(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1get_1fill_1rule.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -237,6 +255,7 @@ private static final class MH_cairo_1get_1font_1face {
 public static long cairo_get_font_face(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1get_1font_1face.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -251,6 +270,7 @@ public static void cairo_get_matrix(long arg0, double[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_cairo_1get_1matrix.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -262,6 +282,7 @@ private static final class MH_cairo_1get_1source {
 public static long cairo_get_source(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1get_1source.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -274,6 +295,7 @@ private static final class MH_cairo_1get_1target {
 public static long cairo_get_target(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1get_1target.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -286,6 +308,7 @@ private static final class MH_cairo_1get_1tolerance {
 public static double cairo_get_tolerance(long arg0) {
 	try {
 		double rc = (double) MH_cairo_1get_1tolerance.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -298,6 +321,7 @@ private static final class MH_cairo_1identity_1matrix {
 public static void cairo_identity_matrix(long arg0) {
 	try {
 		MH_cairo_1identity_1matrix.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -309,6 +333,7 @@ private static final class MH_cairo_1image_1surface_1create {
 public static long cairo_image_surface_create(int arg0, int arg1, int arg2) {
 	try {
 		long rc = (long) MH_cairo_1image_1surface_1create.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -321,6 +346,7 @@ private static final class MH_cairo_1image_1surface_1get_1data {
 public static long cairo_image_surface_get_data(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1image_1surface_1get_1data.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -333,6 +359,7 @@ private static final class MH_cairo_1image_1surface_1get_1format {
 public static int cairo_image_surface_get_format(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1image_1surface_1get_1format.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -345,6 +372,7 @@ private static final class MH_cairo_1image_1surface_1get_1height {
 public static int cairo_image_surface_get_height(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1image_1surface_1get_1height.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -357,6 +385,7 @@ private static final class MH_cairo_1image_1surface_1get_1stride {
 public static int cairo_image_surface_get_stride(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1image_1surface_1get_1stride.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -369,6 +398,7 @@ private static final class MH_cairo_1image_1surface_1get_1width {
 public static int cairo_image_surface_get_width(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1image_1surface_1get_1width.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -381,6 +411,7 @@ private static final class MH_cairo_1in_1fill {
 public static int cairo_in_fill(long arg0, double arg1, double arg2) {
 	try {
 		int rc = (int) MH_cairo_1in_1fill.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -393,6 +424,7 @@ private static final class MH_cairo_1in_1stroke {
 public static int cairo_in_stroke(long arg0, double arg1, double arg2) {
 	try {
 		int rc = (int) MH_cairo_1in_1stroke.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -405,6 +437,7 @@ private static final class MH_cairo_1line_1to {
 public static void cairo_line_to(long arg0, double arg1, double arg2) {
 	try {
 		MH_cairo_1line_1to.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -418,6 +451,7 @@ public static void cairo_matrix_init(double[] arg0, double arg1, double arg2, do
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_cairo_1matrix_1init.MH.invokeExact(lparg0, arg1, arg2, arg3, arg4, arg5, arg6);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -431,6 +465,7 @@ public static void cairo_matrix_init_identity(double[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_cairo_1matrix_1init_1identity.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -444,6 +479,7 @@ public static int cairo_matrix_invert(double[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		int rc = (int) MH_cairo_1matrix_1invert.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -462,6 +498,7 @@ public static void cairo_matrix_multiply(double[] arg0, double[] arg1, double[] 
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -475,6 +512,7 @@ public static void cairo_matrix_rotate(double[] arg0, double arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_cairo_1matrix_1rotate.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -488,6 +526,7 @@ public static void cairo_matrix_scale(double[] arg0, double arg1, double arg2) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_cairo_1matrix_1scale.MH.invokeExact(lparg0, arg1, arg2);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -505,6 +544,7 @@ public static void cairo_matrix_transform_point(double[] arg0, double[] arg1, do
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -518,6 +558,7 @@ public static void cairo_matrix_translate(double[] arg0, double arg1, double arg
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_cairo_1matrix_1translate.MH.invokeExact(lparg0, arg1, arg2);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -529,6 +570,7 @@ private static final class MH_cairo_1move_1to {
 public static void cairo_move_to(long arg0, double arg1, double arg2) {
 	try {
 		MH_cairo_1move_1to.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -540,6 +582,7 @@ private static final class MH_cairo_1new_1path {
 public static void cairo_new_path(long arg0) {
 	try {
 		MH_cairo_1new_1path.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -551,6 +594,7 @@ private static final class MH_cairo_1paint {
 public static void cairo_paint(long arg0) {
 	try {
 		MH_cairo_1paint.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -562,6 +606,7 @@ private static final class MH_cairo_1paint_1with_1alpha {
 public static void cairo_paint_with_alpha(long arg0, double arg1) {
 	try {
 		MH_cairo_1paint_1with_1alpha.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -577,6 +622,7 @@ private static final class MH_cairo_1path_1destroy {
 public static void cairo_path_destroy(long arg0) {
 	try {
 		MH_cairo_1path_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -592,6 +638,7 @@ private static final class MH_cairo_1pattern_1add_1color_1stop_1rgba {
 public static void cairo_pattern_add_color_stop_rgba(long arg0, double arg1, double arg2, double arg3, double arg4, double arg5) {
 	try {
 		MH_cairo_1pattern_1add_1color_1stop_1rgba.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -603,6 +650,7 @@ private static final class MH_cairo_1pattern_1create_1for_1surface {
 public static long cairo_pattern_create_for_surface(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1pattern_1create_1for_1surface.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -615,6 +663,7 @@ private static final class MH_cairo_1pattern_1create_1linear {
 public static long cairo_pattern_create_linear(double arg0, double arg1, double arg2, double arg3) {
 	try {
 		long rc = (long) MH_cairo_1pattern_1create_1linear.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -627,6 +676,7 @@ private static final class MH_cairo_1pattern_1destroy {
 public static void cairo_pattern_destroy(long arg0) {
 	try {
 		MH_cairo_1pattern_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -638,6 +688,7 @@ private static final class MH_cairo_1pattern_1set_1extend {
 public static void cairo_pattern_set_extend(long arg0, int arg1) {
 	try {
 		MH_cairo_1pattern_1set_1extend.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -649,6 +700,7 @@ private static final class MH_cairo_1pattern_1set_1filter {
 public static void cairo_pattern_set_filter(long arg0, int arg1) {
 	try {
 		MH_cairo_1pattern_1set_1filter.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -662,6 +714,7 @@ public static void cairo_pattern_set_matrix(long arg0, double[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_cairo_1pattern_1set_1matrix.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -678,6 +731,7 @@ public static long cairo_pdf_surface_create(byte[] arg0, double arg1, double arg
 			rc = (long) MH_cairo_1pdf_1surface_1create.MH.invokeExact(lparg0, arg1, arg2);
 		}
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -692,6 +746,7 @@ public static void cairo_pdf_surface_set_size(long arg0, double arg1, double arg
 		if (MH_cairo_1pdf_1surface_1set_1size.MH != null) {
 			MH_cairo_1pdf_1surface_1set_1size.MH.invokeExact(arg0, arg1, arg2);
 		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -703,6 +758,7 @@ private static final class MH_cairo_1pop_1group_1to_1source {
 public static void cairo_pop_group_to_source(long arg0) {
 	try {
 		MH_cairo_1pop_1group_1to_1source.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -716,6 +772,7 @@ public static void cairo_ps_surface_set_size(long arg0, double arg1, double arg2
 		if (MH_cairo_1ps_1surface_1set_1size.MH != null) {
 			MH_cairo_1ps_1surface_1set_1size.MH.invokeExact(arg0, arg1, arg2);
 		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -727,6 +784,7 @@ private static final class MH_cairo_1push_1group {
 public static void cairo_push_group(long arg0) {
 	try {
 		MH_cairo_1push_1group.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -738,6 +796,7 @@ private static final class MH_cairo_1rectangle {
 public static void cairo_rectangle(long arg0, double arg1, double arg2, double arg3, double arg4) {
 	try {
 		MH_cairo_1rectangle.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -753,6 +812,7 @@ private static final class MH_cairo_1reference {
 public static long cairo_reference(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1reference.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -765,6 +825,7 @@ private static final class MH_cairo_1region_1contains_1point {
 public static boolean cairo_region_contains_point(long arg0, int arg1, int arg2) {
 	try {
 		int rc = (int) MH_cairo_1region_1contains_1point.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -780,6 +841,7 @@ public static long cairo_region_contains_rectangle(long arg0, org.eclipse.swt.in
 		if (arg1 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_write(lparg1, arg1);
 		int rc = (int) MH_cairo_1region_1contains_1rectangle.MH.invokeExact(arg0, lparg1);
 		if (arg1 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_read(lparg1, arg1);
+		FFM.checkCallbackException();
 		return (long) rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -792,6 +854,7 @@ private static final class MH_cairo_1region_1copy {
 public static long cairo_region_copy(long arg0) {
 	try {
 		long rc = (long) MH_cairo_1region_1copy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -804,6 +867,7 @@ private static final class MH_cairo_1region_1create {
 public static long cairo_region_create() {
 	try {
 		long rc = (long) MH_cairo_1region_1create.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -819,6 +883,7 @@ public static long cairo_region_create_rectangle(org.eclipse.swt.internal.cairo.
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_write(lparg0, arg0);
 		long rc = (long) MH_cairo_1region_1create_1rectangle.MH.invokeExact(lparg0);
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_read(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -831,6 +896,7 @@ private static final class MH_cairo_1region_1destroy {
 public static void cairo_region_destroy(long arg0) {
 	try {
 		MH_cairo_1region_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -844,6 +910,7 @@ public static void cairo_region_get_extents(long arg0, org.eclipse.swt.internal.
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_SIZEOF, 16);
 		MH_cairo_1region_1get_1extents.MH.invokeExact(arg0, lparg1);
 		if (arg1 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -855,6 +922,7 @@ private static final class MH_cairo_1region_1get_1rectangle {
 public static void cairo_region_get_rectangle(long arg0, int arg1, long arg2) {
 	try {
 		MH_cairo_1region_1get_1rectangle.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -866,6 +934,7 @@ private static final class MH_cairo_1region_1intersect {
 public static void cairo_region_intersect(long arg0, long arg1) {
 	try {
 		MH_cairo_1region_1intersect.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -877,6 +946,7 @@ private static final class MH_cairo_1region_1is_1empty {
 public static boolean cairo_region_is_empty(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1region_1is_1empty.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -889,6 +959,7 @@ private static final class MH_cairo_1region_1num_1rectangles {
 public static int cairo_region_num_rectangles(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1region_1num_1rectangles.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -901,6 +972,7 @@ private static final class MH_cairo_1region_1subtract {
 public static void cairo_region_subtract(long arg0, long arg1) {
 	try {
 		MH_cairo_1region_1subtract.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -912,6 +984,7 @@ private static final class MH_cairo_1region_1translate {
 public static void cairo_region_translate(long arg0, int arg1, int arg2) {
 	try {
 		MH_cairo_1region_1translate.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -923,6 +996,7 @@ private static final class MH_cairo_1region_1union {
 public static void cairo_region_union(long arg0, long arg1) {
 	try {
 		MH_cairo_1region_1union.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -936,6 +1010,7 @@ public static void cairo_region_union_rectangle(long arg0, org.eclipse.swt.inter
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_write(lparg1, arg1);
 		MH_cairo_1region_1union_1rectangle.MH.invokeExact(arg0, lparg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -947,6 +1022,7 @@ private static final class MH_cairo_1reset_1clip {
 public static void cairo_reset_clip(long arg0) {
 	try {
 		MH_cairo_1reset_1clip.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -958,6 +1034,7 @@ private static final class MH_cairo_1restore {
 public static void cairo_restore(long arg0) {
 	try {
 		MH_cairo_1restore.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -969,6 +1046,7 @@ private static final class MH_cairo_1save {
 public static void cairo_save(long arg0) {
 	try {
 		MH_cairo_1save.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -980,6 +1058,7 @@ private static final class MH_cairo_1scale {
 public static void cairo_scale(long arg0, double arg1, double arg2) {
 	try {
 		MH_cairo_1scale.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -993,6 +1072,7 @@ public static void cairo_select_font_face(long arg0, byte[] arg1, int arg2, int 
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_cairo_1select_1font_1face.MH.invokeExact(arg0, lparg1, arg2, arg3);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1004,6 +1084,7 @@ private static final class MH_cairo_1set_1antialias {
 public static void cairo_set_antialias(long arg0, int arg1) {
 	try {
 		MH_cairo_1set_1antialias.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1017,6 +1098,7 @@ public static void cairo_set_dash(long arg0, double[] arg1, int arg2, double arg
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_cairo_1set_1dash.MH.invokeExact(arg0, lparg1, arg2, arg3);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1028,6 +1110,7 @@ private static final class MH_cairo_1set_1fill_1rule {
 public static void cairo_set_fill_rule(long arg0, int arg1) {
 	try {
 		MH_cairo_1set_1fill_1rule.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1039,6 +1122,7 @@ private static final class MH_cairo_1set_1font_1size {
 public static void cairo_set_font_size(long arg0, double arg1) {
 	try {
 		MH_cairo_1set_1font_1size.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1050,6 +1134,7 @@ private static final class MH_cairo_1set_1line_1cap {
 public static void cairo_set_line_cap(long arg0, int arg1) {
 	try {
 		MH_cairo_1set_1line_1cap.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1061,6 +1146,7 @@ private static final class MH_cairo_1set_1line_1join {
 public static void cairo_set_line_join(long arg0, int arg1) {
 	try {
 		MH_cairo_1set_1line_1join.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1072,6 +1158,7 @@ private static final class MH_cairo_1set_1line_1width {
 public static void cairo_set_line_width(long arg0, double arg1) {
 	try {
 		MH_cairo_1set_1line_1width.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1085,6 +1172,7 @@ public static void cairo_set_matrix(long arg0, double[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_cairo_1set_1matrix.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1096,6 +1184,7 @@ private static final class MH_cairo_1set_1miter_1limit {
 public static void cairo_set_miter_limit(long arg0, double arg1) {
 	try {
 		MH_cairo_1set_1miter_1limit.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1107,6 +1196,7 @@ private static final class MH_cairo_1set_1operator {
 public static void cairo_set_operator(long arg0, int arg1) {
 	try {
 		MH_cairo_1set_1operator.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1118,6 +1208,7 @@ private static final class MH_cairo_1set_1source {
 public static void cairo_set_source(long arg0, long arg1) {
 	try {
 		MH_cairo_1set_1source.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1129,6 +1220,7 @@ private static final class MH_cairo_1set_1source_1rgb {
 public static void cairo_set_source_rgb(long arg0, double arg1, double arg2, double arg3) {
 	try {
 		MH_cairo_1set_1source_1rgb.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1140,6 +1232,7 @@ private static final class MH_cairo_1set_1source_1rgba {
 public static void cairo_set_source_rgba(long arg0, double arg1, double arg2, double arg3, double arg4) {
 	try {
 		MH_cairo_1set_1source_1rgba.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1151,6 +1244,7 @@ private static final class MH_cairo_1set_1source_1surface {
 public static void cairo_set_source_surface(long arg0, long arg1, double arg2, double arg3) {
 	try {
 		MH_cairo_1set_1source_1surface.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1162,6 +1256,7 @@ private static final class MH_cairo_1set_1tolerance {
 public static void cairo_set_tolerance(long arg0, double arg1) {
 	try {
 		MH_cairo_1set_1tolerance.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1173,6 +1268,7 @@ private static final class MH_cairo_1show_1page {
 public static void cairo_show_page(long arg0) {
 	try {
 		MH_cairo_1show_1page.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1184,6 +1280,7 @@ private static final class MH_cairo_1stroke {
 public static void cairo_stroke(long arg0) {
 	try {
 		MH_cairo_1stroke.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1195,6 +1292,7 @@ private static final class MH_cairo_1surface_1destroy {
 public static void cairo_surface_destroy(long arg0) {
 	try {
 		MH_cairo_1surface_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1206,6 +1304,7 @@ private static final class MH_cairo_1surface_1finish {
 public static void cairo_surface_finish(long arg0) {
 	try {
 		MH_cairo_1surface_1finish.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1217,6 +1316,7 @@ private static final class MH_cairo_1surface_1flush {
 public static void cairo_surface_flush(long arg0) {
 	try {
 		MH_cairo_1surface_1flush.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1228,6 +1328,7 @@ private static final class MH_cairo_1surface_1get_1content {
 public static int cairo_surface_get_content(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1surface_1get_1content.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1246,6 +1347,7 @@ public static void cairo_surface_get_device_scale(long arg0, double[] arg1, doub
 		}
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1257,6 +1359,7 @@ private static final class MH_cairo_1surface_1get_1type {
 public static int cairo_surface_get_type(long arg0) {
 	try {
 		int rc = (int) MH_cairo_1surface_1get_1type.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1269,6 +1372,7 @@ private static final class MH_cairo_1surface_1mark_1dirty {
 public static void cairo_surface_mark_dirty(long arg0) {
 	try {
 		MH_cairo_1surface_1mark_1dirty.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1280,6 +1384,7 @@ private static final class MH_cairo_1surface_1reference {
 public static void cairo_surface_reference(long arg0) {
 	try {
 		MH_cairo_1surface_1reference.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1293,6 +1398,7 @@ public static void cairo_surface_set_device_scale(long arg0, double arg1, double
 		if (MH_cairo_1surface_1set_1device_1scale.MH != null) {
 			MH_cairo_1surface_1set_1device_1scale.MH.invokeExact(arg0, arg1, arg2);
 		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1306,6 +1412,7 @@ public static void cairo_transform(long arg0, double[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_cairo_1transform.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1317,6 +1424,7 @@ private static final class MH_cairo_1translate {
 public static void cairo_translate(long arg0, double arg1, double arg2) {
 	try {
 		MH_cairo_1translate.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1332,6 +1440,7 @@ public static void cairo_user_to_device_distance(long arg0, double[] arg1, doubl
 		MH_cairo_1user_1to_1device_1distance.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1343,6 +1452,7 @@ private static final class MH_cairo_1version {
 public static int cairo_version() {
 	try {
 		int rc = (int) MH_cairo_1version.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1358,6 +1468,7 @@ public static int cairo_xlib_surface_get_height(long arg0) {
 		if (MH_cairo_1xlib_1surface_1get_1height.MH != null) {
 			rc = (int) MH_cairo_1xlib_1surface_1get_1height.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1373,6 +1484,7 @@ public static int cairo_xlib_surface_get_width(long arg0) {
 		if (MH_cairo_1xlib_1surface_1get_1width.MH != null) {
 			rc = (int) MH_cairo_1xlib_1surface_1get_1width.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1388,6 +1500,7 @@ public static void memmove(org.eclipse.swt.internal.cairo.cairo_path_data_t arg0
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_path_data_t_write(lparg0, arg0);
 		MH_memmove__Lorg_eclipse_swt_internal_cairo_cairo_1path_1data_1t_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_path_data_t_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1402,6 +1515,7 @@ public static void memmove(org.eclipse.swt.internal.cairo.cairo_path_t arg0, lon
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_path_t_write(lparg0, arg0);
 		MH_memmove__Lorg_eclipse_swt_internal_cairo_cairo_1path_1t_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_path_t_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1416,6 +1530,7 @@ public static void memmove(org.eclipse.swt.internal.cairo.cairo_rectangle_int_t 
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_write(lparg0, arg0);
 		MH_memmove__Lorg_eclipse_swt_internal_cairo_cairo_1rectangle_1int_1t_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.cairo.Structs_FFM.cairo_rectangle_int_t_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1429,6 +1544,7 @@ public static void memmove(double[] arg0, long arg1, long arg2) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_memmove___3DJJ.MH.invokeExact(lparg0, arg1, arg2);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
