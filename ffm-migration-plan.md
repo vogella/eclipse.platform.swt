@@ -219,9 +219,10 @@ What remains is running the bindings interpreted until the JIT compiles them, wh
 
 The committed sources keep their `native` declarations: `bundles/org.eclipse.swt.tools/ffm/apply-ffm.sh` turns them into calls of their FFM implementation in the checkout, and a product build runs it before Maven.
 `FFMRewriter.java` runs as a source file, so that step needs no compiled tooling.
-The step rewrites only `Eclipse SWT PI/gtk` and `Eclipse SWT PI/cairo`: `C.java` and `Callback.java` sit in folders the win32 and cocoa fragments compile too, which have no FFM implementation, so in a product build they stay on JNI.
+The step rewrites `Eclipse SWT PI/gtk` and `Eclipse SWT PI/cairo` in place.
+`C.java` and `Callback.java` sit in folders the win32 and cocoa fragments compile too, which have no FFM implementation, so the step moves them out: a rewritten copy goes to `Eclipse SWT PI/gtk-ffm-shared`, which only the GTK fragments list, and the original to `Eclipse SWT PI/jni-shared`, which only the win32 and cocoa fragments list.
 The step also keeps every `Library.loadLibrary` call: a product build merges pull requests on top, and a native one of them adds is not in `report-gtk` yet, so it has to keep working through JNI; the rewriter names such natives in its output.
-Running without any native library, as the test harness does, needs those two classes split per platform first.
+On GTK3 the libraries are therefore loaded but no call goes through them; the GTK4 natives still need them.
 All five GTK fragments list the FFM source folders, since they all compile the rewritten GTK sources.
 Rewriting the files in the branch instead made every change to `OS.java`, `GTK.java` or `GDK.java` collide with it, which upstream does several times a week.
 Because the declarations stay, the generator keeps its input and the comparison harness keeps its JNI reference.
@@ -231,18 +232,16 @@ The Speed Eclipse tooling (`eclipse-speed`) applies the branch through its `PATC
 ### Running in a product
 
 A Speed Eclipse IDE built that way (Java 25, GTK 3.24.52, Wayland, two monitors at 200%) is in daily use.
-Its loaded classes show 665 generated functions linked after normal use and `FFMSwtFixed` and `FFMAccessible` serving every control; the JNI libraries stay mapped, as described above, but only `C` and `Callback` go through them.
+Its loaded classes show 665 generated functions linked after normal use and `FFMSwtFixed` and `FFMAccessible` serving every control; the JNI libraries stay mapped, as described above; at that time `C` and `Callback` still went through them.
 Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks are the event loop and PNG encoding, as expected.
 
 ## Next steps
 
-1. Split `C.java` and `Callback.java` per platform, or give them a GTK specific implementation class, so that a product build can drop `Library.loadLibrary` and run with no SWT native library, as the harness already does.
-   This is what makes the GTK3 product build JNI free, and it is the last piece before an upstream proposal.
-2. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
+1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
    The build time rewrite is fine for a fork, but upstream needs one committed shape.
-3. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance): try an AOT cache for the whole IDE, and replace the confined arena per copied array with a per-thread allocator.
-4. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
-5. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
+2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance): try an AOT cache for the whole IDE, and replace the confined arena per copied array with a per-thread allocator.
+3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
+4. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
 
 ## Open questions
 
