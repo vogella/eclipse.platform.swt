@@ -70,6 +70,7 @@ public static long gdk_window_new(long arg0, org.eclipse.swt.internal.gtk3.GdkWi
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkWindowAttr_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkWindowAttr_write(lparg1, arg1);
 		long rc = (long) MH_gdk_1window_1new.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -84,6 +85,7 @@ public static long gtk_accel_label_new(byte[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_gtk_1accel_1label_1new.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -96,6 +98,7 @@ private static final class MH_gtk_1accel_1label_1set_1accel {
 public static void gtk_accel_label_set_accel(long arg0, int arg1, int arg2) {
 	try {
 		MH_gtk_1accel_1label_1set_1accel.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -107,6 +110,7 @@ private static final class MH_gtk_1accel_1label_1set_1accel_1widget {
 public static void gtk_accel_label_set_accel_widget(long arg0, long arg1) {
 	try {
 		MH_gtk_1accel_1label_1set_1accel_1widget.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -118,6 +122,7 @@ private static final class MH_gtk_1accessible_1get_1widget {
 public static long gtk_accessible_get_widget(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1accessible_1get_1widget.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -130,6 +135,7 @@ private static final class MH_gtk_1bin_1get_1child {
 public static long gtk_bin_get_child(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1bin_1get_1child.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -142,6 +148,7 @@ private static final class MH_gtk_1box_1pack_1end {
 public static void gtk_box_pack_end(long arg0, long arg1, boolean arg2, boolean arg3, int arg4) {
 	try {
 		MH_gtk_1box_1pack_1end.MH.invokeExact(arg0, arg1, (int) (arg2 ? 1 : 0), (int) (arg3 ? 1 : 0), arg4);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -153,6 +160,7 @@ private static final class MH_gtk_1box_1reorder_1child {
 public static void gtk_box_reorder_child(long arg0, long arg1, int arg2) {
 	try {
 		MH_gtk_1box_1reorder_1child.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -164,6 +172,7 @@ private static final class MH_gtk_1box_1set_1child_1packing {
 public static void gtk_box_set_child_packing(long arg0, long arg1, boolean arg2, boolean arg3, int arg4, int arg5) {
 	try {
 		MH_gtk_1box_1set_1child_1packing.MH.invokeExact(arg0, arg1, (int) (arg2 ? 1 : 0), (int) (arg3 ? 1 : 0), arg4, arg5);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -175,6 +184,7 @@ private static final class MH_gtk_1button_1set_1image {
 public static void gtk_button_set_image(long arg0, long arg1) {
 	try {
 		MH_gtk_1button_1set_1image.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -192,6 +202,7 @@ public static void gtk_calendar_get_date(long arg0, int[] arg1, int[] arg2, int[
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -203,6 +214,7 @@ private static final class MH_gtk_1calendar_1select_1day {
 public static void gtk_calendar_select_day(long arg0, int arg1) {
 	try {
 		MH_gtk_1calendar_1select_1day.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -214,6 +226,7 @@ private static final class MH_gtk_1calendar_1select_1month {
 public static void gtk_calendar_select_month(long arg0, int arg1, int arg2) {
 	try {
 		MH_gtk_1calendar_1select_1month.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -225,6 +238,7 @@ private static final class MH_gtk_1calendar_1set_1display_1options {
 public static void gtk_calendar_set_display_options(long arg0, int arg1) {
 	try {
 		MH_gtk_1calendar_1set_1display_1options.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -236,6 +250,7 @@ private static final class MH_gtk_1check_1menu_1item_1get_1active {
 public static boolean gtk_check_menu_item_get_active(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1check_1menu_1item_1get_1active.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -248,6 +263,7 @@ private static final class MH_gtk_1check_1menu_1item_1new {
 public static long gtk_check_menu_item_new() {
 	try {
 		long rc = (long) MH_gtk_1check_1menu_1item_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -260,6 +276,7 @@ private static final class MH_gtk_1check_1menu_1item_1set_1active {
 public static void gtk_check_menu_item_set_active(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1check_1menu_1item_1set_1active.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -271,6 +288,7 @@ private static final class MH_gtk_1clipboard_1clear {
 public static void gtk_clipboard_clear(long arg0) {
 	try {
 		MH_gtk_1clipboard_1clear.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -282,6 +300,7 @@ private static final class MH_gtk_1clipboard_1get {
 public static long gtk_clipboard_get(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1clipboard_1get.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -294,6 +313,7 @@ private static final class MH_gtk_1clipboard_1set_1can_1store {
 public static void gtk_clipboard_set_can_store(long arg0, long arg1, int arg2) {
 	try {
 		MH_gtk_1clipboard_1set_1can_1store.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -305,6 +325,7 @@ private static final class MH_gtk_1clipboard_1set_1with_1owner {
 public static boolean gtk_clipboard_set_with_owner(long arg0, long arg1, int arg2, long arg3, long arg4, long arg5) {
 	try {
 		int rc = (int) MH_gtk_1clipboard_1set_1with_1owner.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -317,6 +338,7 @@ private static final class MH_gtk_1clipboard_1store {
 public static void gtk_clipboard_store(long arg0) {
 	try {
 		MH_gtk_1clipboard_1store.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -328,6 +350,7 @@ private static final class MH_gtk_1clipboard_1wait_1for_1contents {
 public static long gtk_clipboard_wait_for_contents(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_gtk_1clipboard_1wait_1for_1contents.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -340,6 +363,7 @@ private static final class MH_gtk_1combo_1box_1get_1wrap_1width {
 public static int gtk_combo_box_get_wrap_width(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1combo_1box_1get_1wrap_1width.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -352,6 +376,7 @@ private static final class MH_gtk_1combo_1box_1set_1wrap_1width {
 public static void gtk_combo_box_set_wrap_width(long arg0, int arg1) {
 	try {
 		MH_gtk_1combo_1box_1set_1wrap_1width.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -363,6 +388,7 @@ private static final class MH_gtk_1container_1add {
 public static void gtk_container_add(long arg0, long arg1) {
 	try {
 		MH_gtk_1container_1add.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -374,6 +400,7 @@ private static final class MH_gtk_1container_1forall {
 public static void gtk_container_forall(long arg0, long arg1, long arg2) {
 	try {
 		MH_gtk_1container_1forall.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -385,6 +412,7 @@ private static final class MH_gtk_1container_1get_1border_1width {
 public static int gtk_container_get_border_width(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1container_1get_1border_1width.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -397,6 +425,7 @@ private static final class MH_gtk_1container_1get_1children {
 public static long gtk_container_get_children(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1container_1get_1children.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -409,6 +438,7 @@ private static final class MH_gtk_1container_1propagate_1draw {
 public static void gtk_container_propagate_draw(long arg0, long arg1, long arg2) {
 	try {
 		MH_gtk_1container_1propagate_1draw.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -420,6 +450,7 @@ private static final class MH_gtk_1container_1remove {
 public static void gtk_container_remove(long arg0, long arg1) {
 	try {
 		MH_gtk_1container_1remove.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -431,6 +462,7 @@ private static final class MH_gtk_1container_1set_1border_1width {
 public static void gtk_container_set_border_width(long arg0, int arg1) {
 	try {
 		MH_gtk_1container_1set_1border_1width.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -446,6 +478,7 @@ public static boolean gtk_css_provider_load_from_data(long arg0, byte[] arg1, lo
 		int rc = (int) MH_gtk_1css_1provider_1load_1from_1data.MH.invokeExact(arg0, lparg1, arg2, lparg3);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -458,6 +491,7 @@ private static final class MH_gtk_1dialog_1run {
 public static int gtk_dialog_run(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1dialog_1run.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -470,6 +504,7 @@ private static final class MH_gtk_1drag_1begin_1with_1coordinates {
 public static long gtk_drag_begin_with_coordinates(long arg0, long arg1, int arg2, int arg3, long arg4, int arg5, int arg6) {
 	try {
 		long rc = (long) MH_gtk_1drag_1begin_1with_1coordinates.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -482,6 +517,7 @@ private static final class MH_gtk_1drag_1check_1threshold {
 public static boolean gtk_drag_check_threshold(long arg0, int arg1, int arg2, int arg3, int arg4) {
 	try {
 		int rc = (int) MH_gtk_1drag_1check_1threshold.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -494,6 +530,7 @@ private static final class MH_gtk_1drag_1dest_1set {
 public static void gtk_drag_dest_set(long arg0, int arg1, long arg2, int arg3, int arg4) {
 	try {
 		MH_gtk_1drag_1dest_1set.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -505,6 +542,7 @@ private static final class MH_gtk_1drag_1dest_1unset {
 public static void gtk_drag_dest_unset(long arg0) {
 	try {
 		MH_gtk_1drag_1dest_1unset.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -516,6 +554,7 @@ private static final class MH_gtk_1drag_1finish {
 public static void gtk_drag_finish(long arg0, boolean arg1, boolean arg2, int arg3) {
 	try {
 		MH_gtk_1drag_1finish.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0), (int) (arg2 ? 1 : 0), arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -527,6 +566,7 @@ private static final class MH_gtk_1drag_1get_1data {
 public static void gtk_drag_get_data(long arg0, long arg1, long arg2, int arg3) {
 	try {
 		MH_gtk_1drag_1get_1data.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -538,6 +578,7 @@ private static final class MH_gtk_1drag_1set_1icon_1surface {
 public static void gtk_drag_set_icon_surface(long arg0, long arg1) {
 	try {
 		MH_gtk_1drag_1set_1icon_1surface.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -549,6 +590,7 @@ private static final class MH_gtk_1editable_1copy_1clipboard {
 public static void gtk_editable_copy_clipboard(long arg0) {
 	try {
 		MH_gtk_1editable_1copy_1clipboard.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -560,6 +602,7 @@ private static final class MH_gtk_1editable_1cut_1clipboard {
 public static void gtk_editable_cut_clipboard(long arg0) {
 	try {
 		MH_gtk_1editable_1cut_1clipboard.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -571,6 +614,7 @@ private static final class MH_gtk_1editable_1paste_1clipboard {
 public static void gtk_editable_paste_clipboard(long arg0) {
 	try {
 		MH_gtk_1editable_1paste_1clipboard.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -582,6 +626,7 @@ private static final class MH_gtk_1entry_1get_1layout {
 public static long gtk_entry_get_layout(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1entry_1get_1layout.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -598,6 +643,7 @@ public static void gtk_entry_get_layout_offsets(long arg0, int[] arg1, int[] arg
 		MH_gtk_1entry_1get_1layout_1offsets.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -609,6 +655,7 @@ private static final class MH_gtk_1entry_1get_1text {
 public static long gtk_entry_get_text(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1entry_1get_1text.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -623,6 +670,7 @@ public static void gtk_entry_set_text(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gtk_1entry_1set_1text.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -634,6 +682,7 @@ private static final class MH_gtk_1entry_1set_1width_1chars {
 public static void gtk_entry_set_width_chars(long arg0, int arg1) {
 	try {
 		MH_gtk_1entry_1set_1width_1chars.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -645,6 +694,7 @@ private static final class MH_gtk_1entry_1text_1index_1to_1layout_1index {
 public static int gtk_entry_text_index_to_layout_index(long arg0, int arg1) {
 	try {
 		int rc = (int) MH_gtk_1entry_1text_1index_1to_1layout_1index.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -657,6 +707,7 @@ private static final class MH_gtk_1event_1box_1new {
 public static long gtk_event_box_new() {
 	try {
 		long rc = (long) MH_gtk_1event_1box_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -669,6 +720,7 @@ private static final class MH_gtk_1event_1controller_1handle_1event {
 public static void gtk_event_controller_handle_event(long arg0, long arg1) {
 	try {
 		MH_gtk_1event_1controller_1handle_1event.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -680,6 +732,7 @@ private static final class MH_gtk_1events_1pending {
 public static boolean gtk_events_pending() {
 	try {
 		int rc = (int) MH_gtk_1events_1pending.MH.invokeExact();
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -692,6 +745,7 @@ private static final class MH_gtk_1file_1chooser_1get_1filename {
 public static long gtk_file_chooser_get_filename(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1file_1chooser_1get_1filename.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -704,6 +758,7 @@ private static final class MH_gtk_1file_1chooser_1get_1filenames {
 public static long gtk_file_chooser_get_filenames(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1file_1chooser_1get_1filenames.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -716,6 +771,7 @@ private static final class MH_gtk_1file_1chooser_1get_1uri {
 public static long gtk_file_chooser_get_uri(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1file_1chooser_1get_1uri.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -728,6 +784,7 @@ private static final class MH_gtk_1file_1chooser_1get_1uris {
 public static long gtk_file_chooser_get_uris(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1file_1chooser_1get_1uris.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -740,6 +797,7 @@ private static final class MH_gtk_1file_1chooser_1set_1current_1folder {
 public static void gtk_file_chooser_set_current_folder(long arg0, long arg1) {
 	try {
 		MH_gtk_1file_1chooser_1set_1current_1folder.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -753,6 +811,7 @@ public static void gtk_file_chooser_set_current_folder_uri(long arg0, byte[] arg
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gtk_1file_1chooser_1set_1current_1folder_1uri.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -764,6 +823,7 @@ private static final class MH_gtk_1file_1chooser_1set_1do_1overwrite_1confirmati
 public static void gtk_file_chooser_set_do_overwrite_confirmation(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1file_1chooser_1set_1do_1overwrite_1confirmation.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -775,6 +835,7 @@ private static final class MH_gtk_1file_1chooser_1set_1extra_1widget {
 public static void gtk_file_chooser_set_extra_widget(long arg0, long arg1) {
 	try {
 		MH_gtk_1file_1chooser_1set_1extra_1widget.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -786,6 +847,7 @@ private static final class MH_gtk_1file_1chooser_1set_1filename {
 public static void gtk_file_chooser_set_filename(long arg0, long arg1) {
 	try {
 		MH_gtk_1file_1chooser_1set_1filename.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -797,6 +859,7 @@ private static final class MH_gtk_1file_1chooser_1set_1local_1only {
 public static void gtk_file_chooser_set_local_only(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1file_1chooser_1set_1local_1only.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -810,6 +873,7 @@ public static void gtk_file_chooser_set_uri(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gtk_1file_1chooser_1set_1uri.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -821,6 +885,7 @@ private static final class MH_gtk_1frame_1set_1shadow_1type {
 public static void gtk_frame_set_shadow_type(long arg0, int arg1) {
 	try {
 		MH_gtk_1frame_1set_1shadow_1type.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -832,6 +897,7 @@ private static final class MH_gtk_1gesture_1drag_1new {
 public static long gtk_gesture_drag_new(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1gesture_1drag_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -844,6 +910,7 @@ private static final class MH_gtk_1gesture_1rotate_1new {
 public static long gtk_gesture_rotate_new(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1gesture_1rotate_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -856,6 +923,7 @@ private static final class MH_gtk_1gesture_1zoom_1new {
 public static long gtk_gesture_zoom_new(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1gesture_1zoom_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -868,6 +936,7 @@ private static final class MH_gtk_1get_1current_1event {
 public static long gtk_get_current_event() {
 	try {
 		long rc = (long) MH_gtk_1get_1current_1event.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -882,6 +951,7 @@ public static boolean gtk_get_current_event_state(int[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		int rc = (int) MH_gtk_1get_1current_1event_1state.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -894,6 +964,7 @@ private static final class MH_gtk_1get_1event_1widget {
 public static long gtk_get_event_widget(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1get_1event_1widget.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -906,6 +977,7 @@ private static final class MH_gtk_1grab_1add {
 public static void gtk_grab_add(long arg0) {
 	try {
 		MH_gtk_1grab_1add.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -917,6 +989,7 @@ private static final class MH_gtk_1grab_1get_1current {
 public static long gtk_grab_get_current() {
 	try {
 		long rc = (long) MH_gtk_1grab_1get_1current.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -929,6 +1002,7 @@ private static final class MH_gtk_1grab_1remove {
 public static void gtk_grab_remove(long arg0) {
 	try {
 		MH_gtk_1grab_1remove.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -946,6 +1020,7 @@ public static void gtk_hsv_to_rgb(double arg0, double arg1, double arg2, double[
 		FFM.copyOut(lparg5, arg5);
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -959,6 +1034,7 @@ public static long gtk_icon_info_load_icon(long arg0, long[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_gtk_1icon_1info_1load_1icon.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -971,6 +1047,7 @@ private static final class MH_gtk_1icon_1theme_1get_1default {
 public static long gtk_icon_theme_get_default() {
 	try {
 		long rc = (long) MH_gtk_1icon_1theme_1get_1default.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -985,6 +1062,7 @@ public static long gtk_icon_theme_load_icon(long arg0, byte[] arg1, int arg2, in
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_gtk_1icon_1theme_1load_1icon.MH.invokeExact(arg0, lparg1, arg2, arg3, arg4);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -997,6 +1075,7 @@ private static final class MH_gtk_1icon_1theme_1lookup_1by_1gicon {
 public static long gtk_icon_theme_lookup_by_gicon(long arg0, long arg1, int arg2, int arg3) {
 	try {
 		long rc = (long) MH_gtk_1icon_1theme_1lookup_1by_1gicon.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1009,6 +1088,7 @@ private static final class MH_gtk_1im_1context_1filter_1keypress {
 public static boolean gtk_im_context_filter_keypress(long arg0, long arg1) {
 	try {
 		int rc = (int) MH_gtk_1im_1context_1filter_1keypress.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1023,6 +1103,7 @@ public static long gtk_image_new_from_icon_name(byte[] arg0, int arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_gtk_1image_1new_1from_1icon_1name.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1035,6 +1116,7 @@ private static final class MH_gtk_1image_1new_1from_1surface {
 public static long gtk_image_new_from_surface(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1image_1new_1from_1surface.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1049,6 +1131,7 @@ public static void gtk_image_set_from_icon_name(long arg0, byte[] arg1, int arg2
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gtk_1image_1set_1from_1icon_1name.MH.invokeExact(arg0, lparg1, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1060,6 +1143,7 @@ private static final class MH_gtk_1image_1set_1from_1surface {
 public static void gtk_image_set_from_surface(long arg0, long arg1) {
 	try {
 		MH_gtk_1image_1set_1from_1surface.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1075,6 +1159,7 @@ public static boolean gtk_init_check(long[] arg0, long[] arg1) {
 		int rc = (int) MH_gtk_1init_1check.MH.invokeExact(lparg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1087,6 +1172,7 @@ private static final class MH_gtk_1label_1set_1line_1wrap {
 public static void gtk_label_set_line_wrap(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1label_1set_1line_1wrap.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1098,6 +1184,7 @@ private static final class MH_gtk_1label_1set_1line_1wrap_1mode {
 public static void gtk_label_set_line_wrap_mode(long arg0, int arg1) {
 	try {
 		MH_gtk_1label_1set_1line_1wrap_1mode.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1109,6 +1196,7 @@ private static final class MH_gtk_1main_1do_1event {
 public static void gtk_main_do_event(long arg0) {
 	try {
 		MH_gtk_1main_1do_1event.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1120,6 +1208,7 @@ private static final class MH_gtk_1main_1iteration_1do {
 public static boolean gtk_main_iteration_do(boolean arg0) {
 	try {
 		int rc = (int) MH_gtk_1main_1iteration_1do.MH.invokeExact((int) (arg0 ? 1 : 0));
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1132,6 +1221,7 @@ private static final class MH_gtk_1menu_1bar_1new {
 public static long gtk_menu_bar_new() {
 	try {
 		long rc = (long) MH_gtk_1menu_1bar_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1144,6 +1234,7 @@ private static final class MH_gtk_1menu_1item_1get_1submenu {
 public static long gtk_menu_item_get_submenu(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1menu_1item_1get_1submenu.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1156,6 +1247,7 @@ private static final class MH_gtk_1menu_1item_1new {
 public static long gtk_menu_item_new() {
 	try {
 		long rc = (long) MH_gtk_1menu_1item_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1168,6 +1260,7 @@ private static final class MH_gtk_1menu_1item_1set_1submenu {
 public static void gtk_menu_item_set_submenu(long arg0, long arg1) {
 	try {
 		MH_gtk_1menu_1item_1set_1submenu.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1179,6 +1272,7 @@ private static final class MH_gtk_1menu_1new {
 public static long gtk_menu_new() {
 	try {
 		long rc = (long) MH_gtk_1menu_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1191,6 +1285,7 @@ private static final class MH_gtk_1menu_1popdown {
 public static void gtk_menu_popdown(long arg0) {
 	try {
 		MH_gtk_1menu_1popdown.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1202,6 +1297,7 @@ private static final class MH_gtk_1menu_1popup_1at_1pointer {
 public static void gtk_menu_popup_at_pointer(long arg0, long arg1) {
 	try {
 		MH_gtk_1menu_1popup_1at_1pointer.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1216,6 +1312,7 @@ public static void gtk_menu_popup_at_rect(long arg0, long arg1, org.eclipse.swt.
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_write(lparg2, arg2);
 		MH_gtk_1menu_1popup_1at_1rect.MH.invokeExact(arg0, arg1, lparg2, arg3, arg4, arg5);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1227,6 +1324,7 @@ private static final class MH_gtk_1menu_1shell_1deactivate {
 public static void gtk_menu_shell_deactivate(long arg0) {
 	try {
 		MH_gtk_1menu_1shell_1deactivate.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1238,6 +1336,7 @@ private static final class MH_gtk_1menu_1shell_1insert {
 public static void gtk_menu_shell_insert(long arg0, long arg1, int arg2) {
 	try {
 		MH_gtk_1menu_1shell_1insert.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1249,6 +1348,7 @@ private static final class MH_gtk_1menu_1shell_1set_1take_1focus {
 public static void gtk_menu_shell_set_take_focus(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1menu_1shell_1set_1take_1focus.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1262,6 +1362,7 @@ public static long gtk_menu_tool_button_new(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_gtk_1menu_1tool_1button_1new.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1274,6 +1375,7 @@ private static final class MH_gtk_1native_1dialog_1run {
 public static int gtk_native_dialog_run(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1native_1dialog_1run.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1286,6 +1388,7 @@ private static final class MH_gtk_1radio_1button_1get_1group {
 public static long gtk_radio_button_get_group(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1radio_1button_1get_1group.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1298,6 +1401,7 @@ private static final class MH_gtk_1radio_1button_1new {
 public static long gtk_radio_button_new(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1radio_1button_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1310,6 +1414,7 @@ private static final class MH_gtk_1radio_1menu_1item_1get_1group {
 public static long gtk_radio_menu_item_get_group(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1radio_1menu_1item_1get_1group.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1322,6 +1427,7 @@ private static final class MH_gtk_1radio_1menu_1item_1new {
 public static long gtk_radio_menu_item_new(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1radio_1menu_1item_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1340,6 +1446,7 @@ public static void gtk_rgb_to_hsv(double arg0, double arg1, double arg2, double[
 		FFM.copyOut(lparg5, arg5);
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1351,6 +1458,7 @@ private static final class MH_gtk_1scrolled_1window_1get_1shadow_1type {
 public static int gtk_scrolled_window_get_shadow_type(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1scrolled_1window_1get_1shadow_1type.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1363,6 +1471,7 @@ private static final class MH_gtk_1scrolled_1window_1new {
 public static long gtk_scrolled_window_new(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_gtk_1scrolled_1window_1new.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1375,6 +1484,7 @@ private static final class MH_gtk_1scrolled_1window_1set_1shadow_1type {
 public static void gtk_scrolled_window_set_shadow_type(long arg0, int arg1) {
 	try {
 		MH_gtk_1scrolled_1window_1set_1shadow_1type.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1386,6 +1496,7 @@ private static final class MH_gtk_1selection_1data_1free {
 public static void gtk_selection_data_free(long arg0) {
 	try {
 		MH_gtk_1selection_1data_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1397,6 +1508,7 @@ private static final class MH_gtk_1selection_1data_1get_1data {
 public static long gtk_selection_data_get_data(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1selection_1data_1get_1data.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1409,6 +1521,7 @@ private static final class MH_gtk_1selection_1data_1get_1data_1type {
 public static long gtk_selection_data_get_data_type(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1selection_1data_1get_1data_1type.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1421,6 +1534,7 @@ private static final class MH_gtk_1selection_1data_1get_1format {
 public static int gtk_selection_data_get_format(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1selection_1data_1get_1format.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1433,6 +1547,7 @@ private static final class MH_gtk_1selection_1data_1get_1length {
 public static int gtk_selection_data_get_length(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1selection_1data_1get_1length.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1445,6 +1560,7 @@ private static final class MH_gtk_1selection_1data_1get_1target {
 public static long gtk_selection_data_get_target(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1selection_1data_1get_1target.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1457,6 +1573,7 @@ private static final class MH_gtk_1selection_1data_1set {
 public static void gtk_selection_data_set(long arg0, long arg1, int arg2, long arg3, int arg4) {
 	try {
 		MH_gtk_1selection_1data_1set.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1468,6 +1585,7 @@ private static final class MH_gtk_1separator_1menu_1item_1new {
 public static long gtk_separator_menu_item_new() {
 	try {
 		long rc = (long) MH_gtk_1separator_1menu_1item_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1480,6 +1598,7 @@ private static final class MH_gtk_1separator_1tool_1item_1new {
 public static long gtk_separator_tool_item_new() {
 	try {
 		long rc = (long) MH_gtk_1separator_1tool_1item_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1492,6 +1611,7 @@ private static final class MH_gtk_1separator_1tool_1item_1set_1draw {
 public static void gtk_separator_tool_item_set_draw(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1separator_1tool_1item_1set_1draw.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1506,6 +1626,7 @@ public static boolean gtk_status_icon_get_geometry(long arg0, long arg1, org.ecl
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_write(lparg2, arg2);
 		int rc = (int) MH_gtk_1status_1icon_1get_1geometry.MH.invokeExact(arg0, arg1, lparg2, arg3);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg2, arg2);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1518,6 +1639,7 @@ private static final class MH_gtk_1status_1icon_1get_1visible {
 public static boolean gtk_status_icon_get_visible(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1status_1icon_1get_1visible.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1530,6 +1652,7 @@ private static final class MH_gtk_1status_1icon_1new {
 public static long gtk_status_icon_new() {
 	try {
 		long rc = (long) MH_gtk_1status_1icon_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1542,6 +1665,7 @@ private static final class MH_gtk_1status_1icon_1set_1from_1pixbuf {
 public static void gtk_status_icon_set_from_pixbuf(long arg0, long arg1) {
 	try {
 		MH_gtk_1status_1icon_1set_1from_1pixbuf.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1555,6 +1679,7 @@ public static void gtk_status_icon_set_tooltip_text(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gtk_1status_1icon_1set_1tooltip_1text.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1566,6 +1691,7 @@ private static final class MH_gtk_1status_1icon_1set_1visible {
 public static void gtk_status_icon_set_visible(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1status_1icon_1set_1visible.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1577,6 +1703,7 @@ private static final class MH_gtk_1style_1context_1add_1provider_1for_1screen {
 public static void gtk_style_context_add_provider_for_screen(long arg0, long arg1, int arg2) {
 	try {
 		MH_gtk_1style_1context_1add_1provider_1for_1screen.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1591,6 +1718,7 @@ public static void gtk_style_context_get(long arg0, int arg1, byte[] arg2, long[
 		MemorySegment lparg3 = FFM.copyIn(arena, arg3);
 		MH_gtk_1style_1context_1get.MH.invokeExact(arg0, arg1, lparg2, lparg3, 0L);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1604,6 +1732,7 @@ public static void gtk_style_context_get_border(long arg0, int arg1, org.eclipse
 		MemorySegment lparg2 = arg2 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GtkBorder_SIZEOF, 16);
 		MH_gtk_1style_1context_1get_1border.MH.invokeExact(arg0, arg1, lparg2);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkBorder_read(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1618,6 +1747,7 @@ public static void gtk_style_context_get_color(long arg0, int arg1, org.eclipse.
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_write(lparg2, arg2);
 		MH_gtk_1style_1context_1get_1color.MH.invokeExact(arg0, arg1, lparg2);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_read(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1629,6 +1759,7 @@ private static final class MH_gtk_1style_1context_1get_1font {
 public static long gtk_style_context_get_font(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_gtk_1style_1context_1get_1font.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1643,6 +1774,7 @@ public static void gtk_style_context_get_padding(long arg0, int arg1, org.eclips
 		MemorySegment lparg2 = arg2 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GtkBorder_SIZEOF, 16);
 		MH_gtk_1style_1context_1get_1padding.MH.invokeExact(arg0, arg1, lparg2);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkBorder_read(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1654,6 +1786,7 @@ private static final class MH_gtk_1style_1context_1get_1parent {
 public static long gtk_style_context_get_parent(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1style_1context_1get_1parent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1666,6 +1799,7 @@ private static final class MH_gtk_1target_1list_1new {
 public static long gtk_target_list_new(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_gtk_1target_1list_1new.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1678,6 +1812,7 @@ private static final class MH_gtk_1target_1list_1unref {
 public static void gtk_target_list_unref(long arg0) {
 	try {
 		MH_gtk_1target_1list_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1689,6 +1824,7 @@ private static final class MH_gtk_1text_1view_1get_1window {
 public static long gtk_text_view_get_window(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_gtk_1text_1view_1get_1window.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1701,6 +1837,7 @@ private static final class MH_gtk_1toggle_1button_1set_1inconsistent {
 public static void gtk_toggle_button_set_inconsistent(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1toggle_1button_1set_1inconsistent.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1712,6 +1849,7 @@ private static final class MH_gtk_1toggle_1tool_1button_1get_1active {
 public static boolean gtk_toggle_tool_button_get_active(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1toggle_1tool_1button_1get_1active.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1724,6 +1862,7 @@ private static final class MH_gtk_1toggle_1tool_1button_1new {
 public static long gtk_toggle_tool_button_new() {
 	try {
 		long rc = (long) MH_gtk_1toggle_1tool_1button_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1736,6 +1875,7 @@ private static final class MH_gtk_1toggle_1tool_1button_1set_1active {
 public static void gtk_toggle_tool_button_set_active(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1toggle_1tool_1button_1set_1active.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1749,6 +1889,7 @@ public static long gtk_tool_button_new(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_gtk_1tool_1button_1new.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1761,6 +1902,7 @@ private static final class MH_gtk_1tool_1button_1set_1icon_1widget {
 public static void gtk_tool_button_set_icon_widget(long arg0, long arg1) {
 	try {
 		MH_gtk_1tool_1button_1set_1icon_1widget.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1772,6 +1914,7 @@ private static final class MH_gtk_1tool_1button_1set_1label_1widget {
 public static void gtk_tool_button_set_label_widget(long arg0, long arg1) {
 	try {
 		MH_gtk_1tool_1button_1set_1label_1widget.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1783,6 +1926,7 @@ private static final class MH_gtk_1tool_1button_1set_1use_1underline {
 public static void gtk_tool_button_set_use_underline(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1tool_1button_1set_1use_1underline.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1796,6 +1940,7 @@ public static long gtk_tool_item_get_proxy_menu_item(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_gtk_1tool_1item_1get_1proxy_1menu_1item.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1808,6 +1953,7 @@ private static final class MH_gtk_1tool_1item_1retrieve_1proxy_1menu_1item {
 public static long gtk_tool_item_retrieve_proxy_menu_item(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1tool_1item_1retrieve_1proxy_1menu_1item.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1820,6 +1966,7 @@ private static final class MH_gtk_1tool_1item_1set_1homogeneous {
 public static void gtk_tool_item_set_homogeneous(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1tool_1item_1set_1homogeneous.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1831,6 +1978,7 @@ private static final class MH_gtk_1tool_1item_1set_1is_1important {
 public static void gtk_tool_item_set_is_important(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1tool_1item_1set_1is_1important.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1844,6 +1992,7 @@ public static void gtk_tool_item_set_proxy_menu_item(long arg0, byte[] arg1, lon
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gtk_1tool_1item_1set_1proxy_1menu_1item.MH.invokeExact(arg0, lparg1, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1855,6 +2004,7 @@ private static final class MH_gtk_1toolbar_1insert {
 public static void gtk_toolbar_insert(long arg0, long arg1, int arg2) {
 	try {
 		MH_gtk_1toolbar_1insert.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1866,6 +2016,7 @@ private static final class MH_gtk_1toolbar_1new {
 public static long gtk_toolbar_new() {
 	try {
 		long rc = (long) MH_gtk_1toolbar_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1878,6 +2029,7 @@ private static final class MH_gtk_1toolbar_1set_1icon_1size {
 public static void gtk_toolbar_set_icon_size(long arg0, int arg1) {
 	try {
 		MH_gtk_1toolbar_1set_1icon_1size.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1889,6 +2041,7 @@ private static final class MH_gtk_1toolbar_1set_1style {
 public static void gtk_toolbar_set_style(long arg0, int arg1) {
 	try {
 		MH_gtk_1toolbar_1set_1style.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1910,6 +2063,7 @@ public static void gtk_tree_view_column_cell_get_size(long arg0, org.eclipse.swt
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1921,6 +2075,7 @@ private static final class MH_gtk_1tree_1view_1get_1bin_1window {
 public static long gtk_tree_view_get_bin_window(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1tree_1view_1get_1bin_1window.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1933,6 +2088,7 @@ private static final class MH_gtk_1viewport_1set_1shadow_1type {
 public static void gtk_viewport_set_shadow_type(long arg0, int arg1) {
 	try {
 		MH_gtk_1viewport_1set_1shadow_1type.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1946,6 +2102,7 @@ public static void gtk_widget_add_accelerator(long arg0, byte[] arg1, long arg2,
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_gtk_1widget_1add_1accelerator.MH.invokeExact(arg0, lparg1, arg2, arg3, arg4, arg5);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1957,6 +2114,7 @@ private static final class MH_gtk_1widget_1add_1events {
 public static void gtk_widget_add_events(long arg0, int arg1) {
 	try {
 		MH_gtk_1widget_1add_1events.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1968,6 +2126,7 @@ private static final class MH_gtk_1widget_1destroy {
 public static void gtk_widget_destroy(long arg0) {
 	try {
 		MH_gtk_1widget_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1979,6 +2138,7 @@ private static final class MH_gtk_1widget_1draw {
 public static void gtk_widget_draw(long arg0, long arg1) {
 	try {
 		MH_gtk_1widget_1draw.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1990,6 +2150,7 @@ private static final class MH_gtk_1widget_1event {
 public static boolean gtk_widget_event(long arg0, long arg1) {
 	try {
 		int rc = (int) MH_gtk_1widget_1event.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2002,6 +2163,7 @@ private static final class MH_gtk_1widget_1get_1accessible {
 public static long gtk_widget_get_accessible(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1widget_1get_1accessible.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2014,6 +2176,7 @@ private static final class MH_gtk_1widget_1get_1can_1default {
 public static boolean gtk_widget_get_can_default(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1widget_1get_1can_1default.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2029,6 +2192,7 @@ public static void gtk_widget_get_clip(long arg0, org.eclipse.swt.internal.gtk.G
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_write(lparg1, arg1);
 		MH_gtk_1widget_1get_1clip.MH.invokeExact(arg0, lparg1);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2040,6 +2204,7 @@ private static final class MH_gtk_1widget_1get_1events {
 public static int gtk_widget_get_events(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1widget_1get_1events.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2052,6 +2217,7 @@ private static final class MH_gtk_1widget_1get_1has_1window {
 public static boolean gtk_widget_get_has_window(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1widget_1get_1has_1window.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2068,6 +2234,7 @@ public static void gtk_widget_get_preferred_height(long arg0, int[] arg1, int[] 
 		MH_gtk_1widget_1get_1preferred_1height.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2083,6 +2250,7 @@ public static void gtk_widget_get_preferred_height_for_width(long arg0, int arg1
 		MH_gtk_1widget_1get_1preferred_1height_1for_1width.MH.invokeExact(arg0, arg1, lparg2, lparg3);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2098,6 +2266,7 @@ public static void gtk_widget_get_preferred_width_for_height(long arg0, int arg1
 		MH_gtk_1widget_1get_1preferred_1width_1for_1height.MH.invokeExact(arg0, arg1, lparg2, lparg3);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2109,6 +2278,7 @@ private static final class MH_gtk_1widget_1get_1screen {
 public static long gtk_widget_get_screen(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1widget_1get_1screen.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2121,6 +2291,7 @@ private static final class MH_gtk_1widget_1get_1toplevel {
 public static long gtk_widget_get_toplevel(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1widget_1get_1toplevel.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2133,6 +2304,7 @@ private static final class MH_gtk_1widget_1get_1window {
 public static long gtk_widget_get_window(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1widget_1get_1window.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2145,6 +2317,7 @@ private static final class MH_gtk_1widget_1hide {
 public static void gtk_widget_hide(long arg0) {
 	try {
 		MH_gtk_1widget_1hide.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2156,6 +2329,7 @@ private static final class MH_gtk_1widget_1input_1shape_1combine_1region {
 public static void gtk_widget_input_shape_combine_region(long arg0, long arg1) {
 	try {
 		MH_gtk_1widget_1input_1shape_1combine_1region.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2167,6 +2341,7 @@ private static final class MH_gtk_1widget_1override_1font {
 public static void gtk_widget_override_font(long arg0, long arg1) {
 	try {
 		MH_gtk_1widget_1override_1font.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2178,6 +2353,7 @@ private static final class MH_gtk_1widget_1remove_1accelerator {
 public static void gtk_widget_remove_accelerator(long arg0, long arg1, int arg2, int arg3) {
 	try {
 		MH_gtk_1widget_1remove_1accelerator.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2189,6 +2365,7 @@ private static final class MH_gtk_1widget_1reparent {
 public static void gtk_widget_reparent(long arg0, long arg1) {
 	try {
 		MH_gtk_1widget_1reparent.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2202,6 +2379,7 @@ public static void gtk_widget_set_allocation(long arg0, org.eclipse.swt.internal
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_write(lparg1, arg1);
 		MH_gtk_1widget_1set_1allocation.MH.invokeExact(arg0, lparg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2213,6 +2391,7 @@ private static final class MH_gtk_1widget_1set_1can_1default {
 public static void gtk_widget_set_can_default(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1widget_1set_1can_1default.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2227,6 +2406,7 @@ public static void gtk_widget_set_clip(long arg0, org.eclipse.swt.internal.gtk.G
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_write(lparg1, arg1);
 		MH_gtk_1widget_1set_1clip.MH.invokeExact(arg0, lparg1);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2238,6 +2418,7 @@ private static final class MH_gtk_1widget_1set_1double_1buffered {
 public static void gtk_widget_set_double_buffered(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1widget_1set_1double_1buffered.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2249,6 +2430,7 @@ private static final class MH_gtk_1widget_1set_1has_1window {
 public static void gtk_widget_set_has_window(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1widget_1set_1has_1window.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2260,6 +2442,7 @@ private static final class MH_gtk_1widget_1set_1parent_1window {
 public static void gtk_widget_set_parent_window(long arg0, long arg1) {
 	try {
 		MH_gtk_1widget_1set_1parent_1window.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2271,6 +2454,7 @@ private static final class MH_gtk_1widget_1set_1redraw_1on_1allocate {
 public static void gtk_widget_set_redraw_on_allocate(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1widget_1set_1redraw_1on_1allocate.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2282,6 +2466,7 @@ private static final class MH_gtk_1widget_1shape_1combine_1region {
 public static void gtk_widget_shape_combine_region(long arg0, long arg1) {
 	try {
 		MH_gtk_1widget_1shape_1combine_1region.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2293,6 +2478,7 @@ private static final class MH_gtk_1widget_1show {
 public static void gtk_widget_show(long arg0) {
 	try {
 		MH_gtk_1widget_1show.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2306,6 +2492,7 @@ public static void gtk_widget_size_allocate(long arg0, org.eclipse.swt.internal.
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkAllocation_write(lparg1, arg1);
 		MH_gtk_1widget_1size_1allocate.MH.invokeExact(arg0, lparg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2321,6 +2508,7 @@ public static void gtk_widget_style_get(long arg0, byte[] arg1, int[] arg2, long
 		MH_gtk_1widget_1style_1get__J_3B_3IJ.MH.invokeExact(arg0, lparg1, lparg2, 0L);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2336,6 +2524,7 @@ public static void gtk_widget_style_get(long arg0, byte[] arg1, long[] arg2, lon
 		MH_gtk_1widget_1style_1get__J_3B_3JJ.MH.invokeExact(arg0, lparg1, lparg2, 0L);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2351,6 +2540,7 @@ public static boolean gtk_widget_translate_coordinates(long arg0, long arg1, int
 		int rc = (int) MH_gtk_1widget_1translate_1coordinates.MH.invokeExact(arg0, arg1, arg2, arg3, lparg4, lparg5);
 		FFM.copyOut(lparg5, arg5);
 		FFM.copyOut(lparg4, arg4);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2363,6 +2553,7 @@ private static final class MH_gtk_1window_1activate_1default {
 public static boolean gtk_window_activate_default(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1window_1activate_1default.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2375,6 +2566,7 @@ private static final class MH_gtk_1window_1add_1accel_1group {
 public static void gtk_window_add_accel_group(long arg0, long arg1) {
 	try {
 		MH_gtk_1window_1add_1accel_1group.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2386,6 +2578,7 @@ private static final class MH_gtk_1window_1deiconify {
 public static void gtk_window_deiconify(long arg0) {
 	try {
 		MH_gtk_1window_1deiconify.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2397,6 +2590,7 @@ private static final class MH_gtk_1window_1get_1icon_1list {
 public static long gtk_window_get_icon_list(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1window_1get_1icon_1list.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2409,6 +2603,7 @@ private static final class MH_gtk_1window_1get_1mnemonic_1modifier {
 public static int gtk_window_get_mnemonic_modifier(long arg0) {
 	try {
 		int rc = (int) MH_gtk_1window_1get_1mnemonic_1modifier.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2425,6 +2620,7 @@ public static void gtk_window_get_position(long arg0, int[] arg1, int[] arg2) {
 		MH_gtk_1window_1get_1position.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2440,6 +2636,7 @@ public static void gtk_window_get_size(long arg0, int[] arg1, int[] arg2) {
 		MH_gtk_1window_1get_1size.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2451,6 +2648,7 @@ private static final class MH_gtk_1window_1iconify {
 public static void gtk_window_iconify(long arg0) {
 	try {
 		MH_gtk_1window_1iconify.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2462,6 +2660,7 @@ private static final class MH_gtk_1window_1move {
 public static void gtk_window_move(long arg0, int arg1, int arg2) {
 	try {
 		MH_gtk_1window_1move.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2473,6 +2672,7 @@ private static final class MH_gtk_1window_1new {
 public static long gtk_window_new(int arg0) {
 	try {
 		long rc = (long) MH_gtk_1window_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2485,6 +2685,7 @@ private static final class MH_gtk_1window_1remove_1accel_1group {
 public static void gtk_window_remove_accel_group(long arg0, long arg1) {
 	try {
 		MH_gtk_1window_1remove_1accel_1group.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2496,6 +2697,7 @@ private static final class MH_gtk_1window_1resize {
 public static void gtk_window_resize(long arg0, int arg1, int arg2) {
 	try {
 		MH_gtk_1window_1resize.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2507,6 +2709,7 @@ private static final class MH_gtk_1window_1set_1attached_1to {
 public static void gtk_window_set_attached_to(long arg0, long arg1) {
 	try {
 		MH_gtk_1window_1set_1attached_1to.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2518,6 +2721,7 @@ private static final class MH_gtk_1window_1set_1default {
 public static void gtk_window_set_default(long arg0, long arg1) {
 	try {
 		MH_gtk_1window_1set_1default.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2531,6 +2735,7 @@ public static void gtk_window_set_geometry_hints(long arg0, long arg1, org.eclip
 		MemorySegment lparg2 = arg2 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkGeometry_SIZEOF, 16);
 		if (arg2 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkGeometry_write(lparg2, arg2);
 		MH_gtk_1window_1set_1geometry_1hints.MH.invokeExact(arg0, arg1, lparg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2542,6 +2747,7 @@ private static final class MH_gtk_1window_1set_1icon_1list {
 public static void gtk_window_set_icon_list(long arg0, long arg1) {
 	try {
 		MH_gtk_1window_1set_1icon_1list.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2553,6 +2759,7 @@ private static final class MH_gtk_1window_1set_1keep_1above {
 public static void gtk_window_set_keep_above(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1window_1set_1keep_1above.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2564,6 +2771,7 @@ private static final class MH_gtk_1window_1set_1skip_1taskbar_1hint {
 public static void gtk_window_set_skip_taskbar_hint(long arg0, boolean arg1) {
 	try {
 		MH_gtk_1window_1set_1skip_1taskbar_1hint.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2575,6 +2783,7 @@ private static final class MH_gtk_1window_1set_1type_1hint {
 public static void gtk_window_set_type_hint(long arg0, int arg1) {
 	try {
 		MH_gtk_1window_1set_1type_1hint.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2588,6 +2797,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GdkEventButt
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventButton_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventButton_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_gtk3_GdkEventButton_2J.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2601,6 +2811,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GdkEventKey 
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventKey_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventKey_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_gtk3_GdkEventKey_2J.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2614,6 +2825,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GtkTargetEnt
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GtkTargetEntry_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GtkTargetEntry_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_gtk3_GtkTargetEntry_2J.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2627,6 +2839,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventButton arg0, lo
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventButton_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventButton_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventButton_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2640,6 +2853,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventCrossing arg0, 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventCrossing_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventCrossing_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventCrossing_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2653,6 +2867,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventFocus arg0, lon
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventFocus_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventFocus_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventFocus_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2666,6 +2881,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventKey arg0, long 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventKey_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventKey_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventKey_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2679,6 +2895,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventMotion arg0, lo
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventMotion_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventMotion_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventMotion_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2692,6 +2909,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventWindowState arg
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventWindowState_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventWindowState_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk3.Structs_FFM.GdkEventWindowState_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
