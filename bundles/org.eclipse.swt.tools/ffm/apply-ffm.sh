@@ -33,8 +33,29 @@ implementations=(
 	"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMRuntime.java"
 )
 
-# Only sources that no other platform compiles: C.java and Callback.java sit in folders the
-# win32 and cocoa fragments share, which have no FFM implementation, so they stay on JNI here.
 for root in "Eclipse SWT PI/gtk" "Eclipse SWT PI/cairo"; do
 	java "$REWRITER" "$SUPPORTED" "$SWT/$root" "${implementations[@]}"
+done
+
+# C.java and Callback.java sit in folders the win32 and cocoa fragments compile too, which have no
+# FFM implementation. Move them out: a rewritten copy for the GTK fragments, the original for the others.
+GTK_SHARED="Eclipse SWT PI/gtk-ffm-shared"
+JNI_SHARED="Eclipse SWT PI/jni-shared"
+for file in "Eclipse SWT PI/common/org/eclipse/swt/internal/C.java" "Eclipse SWT/common/org/eclipse/swt/internal/Callback.java"; do
+	name="$(basename "$file")"
+	mkdir -p "$SWT/$GTK_SHARED/org/eclipse/swt/internal" "$SWT/$JNI_SHARED/org/eclipse/swt/internal"
+	cp "$SWT/$file" "$SWT/$GTK_SHARED/org/eclipse/swt/internal/$name"
+	mv "$SWT/$file" "$SWT/$JNI_SHARED/org/eclipse/swt/internal/$name"
+done
+java "$REWRITER" "$SUPPORTED" "$SWT/$GTK_SHARED" "${implementations[@]}"
+for fragment in "$SWT"/../../binaries/org.eclipse.swt.*.*.*/build.properties; do
+	case "$fragment" in
+		*/org.eclipse.swt.gtk.*) folder="$GTK_SHARED" ;;
+		*) folder="$JNI_SHARED" ;;
+	esac
+	awk -v folder="$folder" '{ print }
+		!done && /\/Eclipse SWT PI\/common,\\$/ {
+			match($0, /^[ \t]*/); print substr($0, 1, RLENGTH) "../../bundles/org.eclipse.swt/" folder ",\\"; done = 1
+		}' "$fragment" > "$fragment.tmp" && mv "$fragment.tmp" "$fragment"
+	grep -q "$folder," "$fragment" || { echo "apply-ffm.sh: could not add $folder to $fragment" >&2; exit 1; }
 done
