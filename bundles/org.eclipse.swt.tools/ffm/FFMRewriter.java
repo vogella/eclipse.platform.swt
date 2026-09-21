@@ -32,7 +32,6 @@ public class FFMRewriter {
 	static final Pattern NATIVE = Pattern.compile("((?:" + MODIFIERS + "\\s+)*)native\\s+((?:" + MODIFIERS + "\\s+)*)([\\w\\[\\]]+)\\s*(?:/\\*[^*]*\\*/\\s*)?(\\w+)\\s*\\(([^)]*)\\)\\s*;");
 	static final Pattern PARAM = Pattern.compile("(.+?)\\s*\\b(\\w+)\\s*((?:\\[\\s*\\])*)", Pattern.DOTALL);
 	static final Pattern IMPLEMENTATION = Pattern.compile("^\\tpublic static (?:synchronized |final )*[\\w\\[\\]]+ (\\w+)\\(", Pattern.MULTILINE);
-	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"swt[\\w-]*\"\\s*\\)\\s*;");
 
 	/** Classes whose natives are implemented by a hand written FFM class instead of generated code. */
 	static final Map<String, String> HANDWRITTEN = Map.of(
@@ -47,6 +46,7 @@ public class FFMRewriter {
 		Map<String, String> implementations = implementations(Arrays.copyOfRange(args, 2, args.length));
 		Path root = Paths.get(args[1]);
 		int count = 0, files = 0;
+		List<String> remaining = new ArrayList<>();
 		try (Stream<Path> tree = Files.walk(root)) {
 			for (Path file : tree.filter(p -> p.toString().endsWith(".java")).collect(Collectors.toList())) {
 				String source = Files.readString(file);
@@ -58,9 +58,16 @@ public class FFMRewriter {
 				Files.writeString(file, rewritten);
 				count += countOf(source) - countOf(rewritten);
 				files++;
+				Matcher left = NATIVE.matcher(rewritten);
+				while (left.find()) remaining.add(className.substring(className.lastIndexOf('.') + 1) + "." + left.group(4));
 			}
 		}
 		System.out.println("FFMRewriter: " + count + " natives in " + files + " files below " + root);
+		if (!remaining.isEmpty()) {
+			System.out.println("FFMRewriter: " + remaining.size() + " natives stay on JNI, GTK4 ones and any added since report-gtk was generated");
+			List<String> unknown = remaining.stream().filter(n -> !n.matches(".*\\.(gdk_(surface|event|popup|texture|clipboard|cursor_new_from_texture|display_get_monitor_at_surface|x11_surface|scroll_event|key_event|button_event|crossing_event|focus_event)\\w*|swt_fixed_(add|remove)|swt_scaled_paintable_new|content_providers_\\w+)")).collect(Collectors.toList());
+			if (!unknown.isEmpty()) System.out.println("FFMRewriter: not yet generated, running on JNI: " + String.join(", ", unknown));
+		}
 	}
 
 	static int countOf(String source) {
@@ -103,8 +110,9 @@ public class FFMRewriter {
 		}
 		if (!changed) return null;
 		m.appendTail(result);
-		// nothing in this class reaches the JNI library any more
-		return LOAD_LIBRARY.matcher(result.toString()).replaceAll("/* FFM: no JNI library needed */");
+		// The JNI libraries stay loaded: a native this list does not know yet, for example one a
+		// merged pull request adds, keeps working through JNI instead of failing to link.
+		return result.toString();
 	}
 
 	static String key(String className, String methodName, List<String> parameterTypes) {
