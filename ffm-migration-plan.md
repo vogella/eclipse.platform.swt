@@ -109,7 +109,7 @@ Its 72 ATK functions were uniform C stubs that forwarded to a static method of `
 `FFMRuntime` ports the last two helpers, the GDK lock functions, whose `GRecMutex` becomes a `ReentrantLock`, and the debug flag that makes GTK abort on a warning.
 
 What remains of `os_custom.c` is the GTK4 code, so no GTK3 native is left on JNI.
-The rewrite therefore also drops the `Library.loadLibrary` calls of the rewritten classes, and the FFM build runs without any SWT native library: the whole JUnit suite produces the same outcomes with `java.library.path` pointing at a directory that does not exist.
+The harness build (`build-gtk.sh ffm`) therefore also drops the `Library.loadLibrary` calls of the rewritten classes and runs without any SWT native library: the whole JUnit suite produces the same outcomes with `java.library.path` pointing at a directory that does not exist.
 That is what finishes the GTK3 port, because symbols resolve through the GTK libraries themselves rather than through the dependency tree of the SWT library.
 
 `FFMMacros` implements the macros that have no symbol to link against: the `GTK_IS_*`, `GDK_IS_*` and `ATK_*_GET_IFACE` type checks through `g_type_check_instance_is_a` and `g_type_interface_peek`, the accessors for `GTypeInstance`, `GObjectClass`, `GValue`, `GList`, `GSList`, `GError` and `XAnyEvent` as reads of public struct fields whose offsets the layout probe provides, and the arithmetic of `PANGO_PIXELS` and `CAIRO_VERSION_ENCODE`.
@@ -197,21 +197,30 @@ The step also keeps every `Library.loadLibrary` call: a product build merges pul
 Running without any native library, as the test harness does, needs those two classes split per platform first.
 All five GTK fragments list the FFM source folders, since they all compile the rewritten GTK sources.
 Rewriting the files in the branch instead made every change to `OS.java`, `GTK.java` or `GDK.java` collide with it, which upstream does several times a week.
-
-
-The delegations are committed into the sources and the two FFM source folders are listed in the `build.properties` of the GTK fragment, so Tycho produces an SWT that needs no native library: the whole JUnit suite passes against the built jar with `java.library.path` pointing at a directory that does not exist.
-That makes the branch usable as a patch in a product build, for example through the `PATCHES` list of the Speed Eclipse tooling.
-
 Because the declarations stay, the generator keeps its input and the comparison harness keeps its JNI reference.
+
+The Speed Eclipse tooling (`eclipse-speed`) applies the branch through its `PATCHES` list, runs `apply-ffm.sh` before Maven and adds `--enable-native-access=ALL-UNNAMED` to `eclipse.ini`.
+
+### Running in a product
+
+A Speed Eclipse IDE built that way (Java 25, GTK 3.24.52, Wayland, two monitors at 200%) is in daily use.
+Its loaded classes show 665 generated functions linked after normal use and `FFMSwtFixed` and `FFMAccessible` serving every control; the JNI libraries stay mapped, as described above, but only `C` and `Callback` go through them.
+Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks are the event loop and PNG encoding, as expected.
+
+## Next steps
+
+1. Split `C.java` and `Callback.java` per platform, or give them a GTK specific implementation class, so that a product build can drop `Library.loadLibrary` and run with no SWT native library, as the harness already does.
+   This is what makes the GTK3 product build JNI free, and it is the last piece before an upstream proposal.
+2. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
+   The build time rewrite is fine for a fork, but upstream needs one committed shape.
+3. Measure IDE start-up and replace the confined arena per copied array with a per-thread allocator, the one call shape where FFM is slower than JNI.
+4. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
+5. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
 
 ## Open questions
 
 * WebKit, GLX, the AWT bridge and GTK4 are not generated yet; a GTK3 application does not load them, but they still need their JNI libraries when used.
-
-* Raising the BREE of SWT alone is fine: a bundle with a JavaSE-21 BREE resolves against one that requires JavaSE-25, because the execution environment capability comes from the running JVM rather than from the consuming bundle.
-* Java baseline: FFM is final from Java 22, SWT requires Java 21, so shipping needs a Java 25 baseline, which is an Eclipse Platform wide decision.
+* Java baseline: FFM is final from Java 22 and SWT requires Java 21, so shipping needs a Java 25 baseline; the `java25-bree` branch is ready and lands when something needs it.
+  Raising the BREE of SWT alone is fine: a bundle with a JavaSE-21 BREE resolves against one that requires JavaSE-25, because the execution environment capability comes from the running JVM rather than from the consuming bundle.
 * Native access: OSGi bundles live in the unnamed module, so launchers need `--enable-native-access=ALL-UNNAMED`, which becomes mandatory in a future Java release.
-* Where the declarations live once JNI is gone: `native` declarations cannot keep a body, so the final shape is either generated delegating bodies in `OS.java` or a non-compiled declaration file.
-* Start-up cost of linking method handles, to be measured with IDE start-up.
 * Modified UTF-8 (JNI `GetStringUTFChars`) versus standard UTF-8 (FFM) differs for embedded NUL and supplementary characters.
-* Where the native declarations live once they are no longer `native`, since the generator needs them as its input.
