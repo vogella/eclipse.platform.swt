@@ -171,6 +171,9 @@ Two findings were deliberately not acted on: the entry count is incremented even
 * The shipped `libswt-pi3-gtk` was compiled against Pango headers without the three offset fields of `PangoGlyphItem`, so its `PangoLayoutRun_sizeof()` is 16 while current headers give 32.
   Generated layouts therefore have to come from the same headers as the native build.
 * Functions returning function pointers (`XSynchronize`) have a different prototype shape in the AST and were a parser trap.
+* GTK releases the GDK lock from nested main loops without holding it, for example when WebKit opens a window from a signal handler.
+  `g_rec_mutex_unlock` ignores that, while `ReentrantLock.unlock` throws, and an exception leaving an upcall terminates the VM; `FFMRuntime` now ignores it as well.
+  The harness runs had missed it because the browser tests were not part of them; the product build suite, 4,366 tests including the browser, passes.
 
 ### Performance
 
