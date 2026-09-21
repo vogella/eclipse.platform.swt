@@ -20,7 +20,7 @@ import org.eclipse.swt.internal.gtk.*;
 
 public class ATK extends OS {
 	static {
-		/* FFM: no JNI library needed */
+		Library.loadLibrary("swt-atk");
 	}
 
 	/** Constants */
@@ -196,104 +196,104 @@ public class ATK extends OS {
 	public static final byte[] accessible_table_summary = OS.ascii ("accessible-table-summary");
 
 /** 64 bit */
-public static final int AtkAttribute_sizeof() { return ATK_FFM.AtkAttribute_sizeof(); }
-public static final int AtkTextRange_sizeof() { return ATK_FFM.AtkTextRange_sizeof(); }
-public static final int AtkTextRectangle_sizeof() { return ATK_FFM.AtkTextRectangle_sizeof(); }
+public static final native int AtkAttribute_sizeof ();
+public static final native int AtkTextRange_sizeof ();
+public static final native int AtkTextRectangle_sizeof ();
 
 /** Natives */
 
 /** @method flags=const */
-public static final long ATK_TYPE_ACTION() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_ACTION(); }
+public static final native long ATK_TYPE_ACTION ();
 /** @method flags=const */
-public static final long ATK_TYPE_COMPONENT() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_COMPONENT(); }
+public static final native long ATK_TYPE_COMPONENT ();
 /** @method flags=const */
-public static final long ATK_TYPE_EDITABLE_TEXT() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_EDITABLE_TEXT(); }
+public static final native long ATK_TYPE_EDITABLE_TEXT ();
 /** @method flags=const */
-public static final long ATK_TYPE_HYPERTEXT() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_HYPERTEXT(); }
+public static final native long ATK_TYPE_HYPERTEXT ();
 /** @method flags=const */
-public static final long ATK_TYPE_SELECTION() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_SELECTION(); }
+public static final native long ATK_TYPE_SELECTION ();
 /** @method flags=const */
-public static final long ATK_TYPE_TABLE() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_TABLE(); }
+public static final native long ATK_TYPE_TABLE ();
 /** @method flags=const */
-public static final long ATK_TYPE_TEXT() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_TEXT(); }
+public static final native long ATK_TYPE_TEXT ();
 /** @method flags=const */
-public static final long ATK_TYPE_VALUE() { return org.eclipse.swt.internal.ffm.FFMTypes.ATK_TYPE_VALUE(); }
-public static final long ATK_ACTION_GET_IFACE(long obj) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_ACTION_GET_IFACE(obj); }
-public static final long ATK_COMPONENT_GET_IFACE(long atkHandle) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_COMPONENT_GET_IFACE(atkHandle); }
-public static final long ATK_SELECTION_GET_IFACE(long obj) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_SELECTION_GET_IFACE(obj); }
-public static final long ATK_EDITABLE_TEXT_GET_IFACE(long handle) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_EDITABLE_TEXT_GET_IFACE(handle); }
-public static final long ATK_HYPERTEXT_GET_IFACE(long handle) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_HYPERTEXT_GET_IFACE(handle); }
-public static final long ATK_TABLE_GET_IFACE(long handle) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_TABLE_GET_IFACE(handle); }
-public static final long ATK_TEXT_GET_IFACE(long handle) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_TEXT_GET_IFACE(handle); }
-public static final long ATK_VALUE_GET_IFACE(long handle) { return org.eclipse.swt.internal.ffm.FFMMacros.ATK_VALUE_GET_IFACE(handle); }
+public static final native long ATK_TYPE_VALUE ();
+public static final native long ATK_ACTION_GET_IFACE(long obj);
+public static final native long ATK_COMPONENT_GET_IFACE(long atkHandle);
+public static final native long ATK_SELECTION_GET_IFACE(long obj);
+public static final native long ATK_EDITABLE_TEXT_GET_IFACE(long handle);
+public static final native long ATK_HYPERTEXT_GET_IFACE(long handle);
+public static final native long ATK_TABLE_GET_IFACE(long handle);
+public static final native long ATK_TEXT_GET_IFACE(long handle);
+public static final native long ATK_VALUE_GET_IFACE(long handle);
 /** @param accessible cast=(AtkObject *) */
-public static final void atk_object_notify_state_change(long accessible, int state, boolean value) { ATK_FFM.atk_object_notify_state_change(accessible, state, value); }
+public static final native void atk_object_notify_state_change(long accessible, int state, boolean value);
 /**
  * @param object cast=(AtkObject *)
  * @param relationship cast=(AtkRelationType)
  * @param target cast=(AtkObject *)
  */
-public static final boolean atk_object_add_relationship(long object, int relationship, long target) { return ATK_FFM.atk_object_add_relationship(object, relationship, target); }
+public static final native boolean atk_object_add_relationship(long object, int relationship, long target);
 /**
  * @param object cast=(AtkObject *)
  * @param relationship cast=(AtkRelationType)
  * @param target cast=(AtkObject *)
  */
-public static final boolean atk_object_remove_relationship(long object, int relationship, long target) { return ATK_FFM.atk_object_remove_relationship(object, relationship, target); }
+public static final native boolean atk_object_remove_relationship(long object, int relationship, long target);
 /**
  * @param set cast=(AtkStateSet *)
  * @param type cast=(AtkStateType)
  */
-public static final boolean atk_state_set_add_state(long set, int type) { return ATK_FFM.atk_state_set_add_state(set, type); }
-public static final long atk_text_attribute_get_name(int attr) { return ATK_FFM.atk_text_attribute_get_name(attr); }
-public static final long atk_text_attribute_get_value(int attr, int index) { return ATK_FFM.atk_text_attribute_get_value(attr, index); }
-public static final long call(long function, long arg0) { return org.eclipse.swt.internal.ffm.FFMTypes.call(function, arg0); }
-public static final long call(long function, long arg0, long arg1) { return org.eclipse.swt.internal.ffm.FFMTypes.call(function, arg0, arg1); }
-public static final long call(long function, long arg0, long arg1, long arg2) { return org.eclipse.swt.internal.ffm.FFMTypes.call(function, arg0, arg1, arg2); }
-public static final long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4) { return org.eclipse.swt.internal.ffm.FFMTypes.call(function, arg0, arg1, arg2, arg3, arg4); }
-public static final void memmove(AtkActionIface dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkComponentIface dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkEditableTextIface dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkHypertextIface dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkObjectClass dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkSelectionIface dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkTableIface dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkTextIface dest, long src) { ATK_FFM.memmove(dest, src); }
-public static final void memmove(AtkValueIface dest, long src) { ATK_FFM.memmove(dest, src); }
+public static final native boolean atk_state_set_add_state(long set, int type);
+public static final native long atk_text_attribute_get_name(int attr);
+public static final native long atk_text_attribute_get_value(int attr, int index);
+public static final native long call(long function, long arg0);
+public static final native long call(long function, long arg0, long arg1);
+public static final native long call(long function, long arg0, long arg1, long arg2);
+public static final native long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4);
+public static final native void memmove (AtkActionIface dest, long src);
+public static final native void memmove (AtkComponentIface dest, long src);
+public static final native void memmove (AtkEditableTextIface dest, long src);
+public static final native void memmove (AtkHypertextIface dest, long src);
+public static final native void memmove (AtkObjectClass dest, long src);
+public static final native void memmove (AtkSelectionIface dest, long src);
+public static final native void memmove (AtkTableIface dest, long src);
+public static final native void memmove (AtkTextIface dest, long src);
+public static final native void memmove (AtkValueIface dest, long src);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(long dest, AtkTextRectangle src, int size) { ATK_FFM.memmove(dest, src, size); }
+public static final native void memmove (long dest, AtkTextRectangle src, int size);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(AtkTextRectangle dest, long src, int size) { ATK_FFM.memmove(dest, src, size); }
+public static final native void memmove (AtkTextRectangle dest, long src, int size);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(long dest, AtkTextRange src, int size) { ATK_FFM.memmove(dest, src, size); }
+public static final native void memmove (long dest, AtkTextRange src, int size);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(AtkTextRange dest, long src, int size) { ATK_FFM.memmove(dest, src, size); }
+public static final native void memmove (AtkTextRange dest, long src, int size);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(long dest, AtkAttribute src, int size) { ATK_FFM.memmove(dest, src, size); }
+public static final native void memmove (long dest, AtkAttribute src, int size);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(AtkAttribute dest, long src, int size) { ATK_FFM.memmove(dest, src, size); }
+public static final native void memmove (AtkAttribute dest, long src, int size);
 }

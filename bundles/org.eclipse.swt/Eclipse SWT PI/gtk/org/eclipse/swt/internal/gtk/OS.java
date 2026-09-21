@@ -84,11 +84,11 @@ public class OS extends C {
 		String gtk4 = getEnvironmentalVariable(propertyName);
 		if (gtk4 != null && gtk4.equals("1")) {
 			try {
-				/* FFM: no JNI library needed */
+				Library.loadLibrary("swt-pi4");
 			} catch (Throwable e) {
 				System.err.println("SWT OS.java Error: Failed to load swt-pi4, loading swt-pi3 as fallback.");
 				try {
-					/* FFM: no JNI library needed */
+					Library.loadLibrary("swt-pi3");
 				} catch (Throwable fallback) {
 					e.addSuppressed(fallback);
 					throw e;
@@ -96,11 +96,11 @@ public class OS extends C {
 			}
 		} else {
 			try {
-				/* FFM: no JNI library needed */
+				Library.loadLibrary("swt-pi3");
 			} catch (Throwable e) {
 				System.err.println("SWT OS.java Error: Failed to load swt-pi3, loading swt-pi4 as fallback.");
 				try {
-					/* FFM: no JNI library needed */
+					Library.loadLibrary("swt-pi4");
 				} catch (Throwable fallback) {
 					e.addSuppressed(fallback);
 					throw e;
@@ -541,36 +541,36 @@ public class OS extends C {
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final boolean GDK_WINDOWING_X11() { return org.eclipse.swt.internal.ffm.FFMTypes.GDK_WINDOWING_X11(); }
+	public static final native boolean GDK_WINDOWING_X11();
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final boolean GDK_WINDOWING_WAYLAND() { return org.eclipse.swt.internal.ffm.FFMTypes.GDK_WINDOWING_WAYLAND(); }
+	public static final native boolean GDK_WINDOWING_WAYLAND();
 	/** Custom callbacks */
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final long pangoLayoutNewProc_CALLBACK(long func) { return org.eclipse.swt.internal.ffm.FFMConstructorProc.pangoLayoutNewProc_CALLBACK(func); }
+	public static final native long pangoLayoutNewProc_CALLBACK(long func);
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final long pangoFontFamilyNewProc_CALLBACK(long func) { return org.eclipse.swt.internal.ffm.FFMConstructorProc.pangoFontFamilyNewProc_CALLBACK(func); }
+	public static final native long pangoFontFamilyNewProc_CALLBACK(long func);
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final long pangoFontFaceNewProc_CALLBACK(long func) { return org.eclipse.swt.internal.ffm.FFMConstructorProc.pangoFontFaceNewProc_CALLBACK(func); }
+	public static final native long pangoFontFaceNewProc_CALLBACK(long func);
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final long printerOptionWidgetNewProc_CALLBACK(long func) { return org.eclipse.swt.internal.ffm.FFMConstructorProc.printerOptionWidgetNewProc_CALLBACK(func); }
+	public static final native long printerOptionWidgetNewProc_CALLBACK(long func);
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final long imContextNewProc_CALLBACK(long func) { return org.eclipse.swt.internal.ffm.FFMConstructorProc.imContextNewProc_CALLBACK(func); }
+	public static final native long imContextNewProc_CALLBACK(long func);
 	/** @method flags=no_gen
 	 * @category custom
 	 */
-	public static final long imContextLast() { return org.eclipse.swt.internal.ffm.FFMConstructorProc.imContextLast(); }
+	public static final native long imContextLast();
 	/** @method flags=no_gen
 	 * @category custom
 	 */
@@ -578,10 +578,10 @@ public class OS extends C {
 	/** @category custom */
 	/* Add ability to debug gtk warnings for SWT snippets via SWT_FATAL_WARNINGS=1
 	 * env variable. Please see Eclipse bug 471477 */
-	public static final void swt_debug_on_fatal_warnings() { org.eclipse.swt.internal.ffm.FFMRuntime.swt_debug_on_fatal_warnings(); }
+	public static final native void swt_debug_on_fatal_warnings();
 
 	/** @category custom */
-	public static final long swt_fixed_get_type() { return org.eclipse.swt.internal.ffm.FFMSwtFixed.swt_fixed_get_type(); }
+	public static final native long swt_fixed_get_type();
 
 	/**
 	 * @param texture cast=(GdkTexture*)
@@ -590,33 +590,33 @@ public class OS extends C {
 	public static final native long swt_scaled_paintable_new(long texture, int width, int height);
 
 	/** @category custom */
-	public static final long swt_fixed_accessible_get_type() { return org.eclipse.swt.internal.ffm.FFMAccessible.swt_fixed_accessible_get_type(); }
+	public static final native long swt_fixed_accessible_get_type();
 	/**
 	 * @param obj cast=(AtkObject*)
 	 * @param is_native cast=(gboolean)
 	 * @param to_map cast=(GtkWidget *)
 	 * @category custom
 	 */
-	public static final void swt_fixed_accessible_register_accessible(long obj, boolean is_native, long to_map) { org.eclipse.swt.internal.ffm.FFMAccessible.swt_fixed_accessible_register_accessible(obj, is_native, to_map); }
+	public static final native void swt_fixed_accessible_register_accessible(long obj, boolean is_native, long to_map);
 	/**
 	 * @param fixed cast=(SwtFixed*)
 	 * @param widget cast=(GtkWidget*)
 	 * @param sibling cast=(GtkWidget*)
 	 * @category custom
 	 */
-	public static final void swt_fixed_restack(long fixed, long widget, long sibling, boolean above) { org.eclipse.swt.internal.ffm.FFMSwtFixed.swt_fixed_restack(fixed, widget, sibling, above); }
+	public static final native void swt_fixed_restack(long fixed, long widget, long sibling, boolean above);
 	/**
 	 * @param fixed cast=(SwtFixed*)
 	 * @param widget cast=(GtkWidget*)
 	 * @category custom
 	 */
-	public static final void swt_fixed_move(long fixed, long widget, int x, int y) { org.eclipse.swt.internal.ffm.FFMSwtFixed.swt_fixed_move(fixed, widget, x, y); }
+	public static final native void swt_fixed_move(long fixed, long widget, int x, int y);
 	/**
 	 * @param fixed cast=(SwtFixed*)
 	 * @param widget cast=(GtkWidget*)
 	 * @category custom
 	 */
-	public static final void swt_fixed_resize(long fixed, long widget, int width, int height) { org.eclipse.swt.internal.ffm.FFMSwtFixed.swt_fixed_resize(fixed, widget, width, height); }
+	public static final native void swt_fixed_resize(long fixed, long widget, int width, int height);
 
 	/**
 	 * @param container cast=(SwtFixed*)
@@ -630,12 +630,12 @@ public class OS extends C {
 	 * @category custom
 	 */
 	public static final native void swt_fixed_remove(long container, long widget);
-	public static final void swt_set_lock_functions() { org.eclipse.swt.internal.ffm.FFMRuntime.swt_set_lock_functions(); }
+	public static final native void swt_set_lock_functions();
 	/** @param str cast=(const gchar *)
 	 * @category custom
 	 */
 	/* Custom version of g_utf8_pointer_to_offset */
-	public static final long g_utf16_offset_to_pointer(long str, long offset) { return org.eclipse.swt.internal.ffm.FFMUtf16.g_utf16_offset_to_pointer(str, offset); }
+	public static final native long g_utf16_offset_to_pointer(long str, long offset);
 
 	/**
 	 * @param str cast=(const gchar *)
@@ -643,22 +643,22 @@ public class OS extends C {
 	 * @category custom
 	 */
 	/* Custom version of g_utf8_pointer_to_offset */
-	public static final long g_utf16_pointer_to_offset(long str, long pos) { return org.eclipse.swt.internal.ffm.FFMUtf16.g_utf16_pointer_to_offset(str, pos); }
+	public static final native long g_utf16_pointer_to_offset(long str, long pos);
 	/** @param str cast=(const gchar *)
 	 * @category custom
 	 */
 	/* custom version of g_utf8 for 16 bit */
-	public static final long g_utf16_strlen(long str, long max) { return org.eclipse.swt.internal.ffm.FFMUtf16.g_utf16_strlen(str, max); }
+	public static final native long g_utf16_strlen(long str, long max);
 	/** @param str cast=(const gchar *)
 	 * @category custom
 	 */
 	/* custom version of g_utf8 for 16 bit */
-	public static final long g_utf8_offset_to_utf16_offset(long str, long offset) { return org.eclipse.swt.internal.ffm.FFMUtf16.g_utf8_offset_to_utf16_offset(str, offset); }
+	public static final native long g_utf8_offset_to_utf16_offset(long str, long offset);
 	/** @param str cast=(const gchar *)
 	 * @category custom
 	 */
 	/* custom version of g_utf8 for 16 bit */
-	public static final long g_utf16_offset_to_utf8_offset(long str, long offset) { return org.eclipse.swt.internal.ffm.FFMUtf16.g_utf16_offset_to_utf8_offset(str, offset); }
+	public static final native long g_utf16_offset_to_utf8_offset(long str, long offset);
 
 	/**
 	 * Creates a GType for the given name. The name must be unique for the lifetime
@@ -832,40 +832,40 @@ public static boolean isX11 () {
 }
 
 /** 64 bit */
-public static final int GPollFD_sizeof() { return org.eclipse.swt.internal.ffm.FFMTypes.GPollFD_sizeof(); }
-public static final int GTypeInfo_sizeof() { return OS_FFM.GTypeInfo_sizeof(); }
-public static final int GValue_sizeof() { return org.eclipse.swt.internal.ffm.FFMTypes.GValue_sizeof(); }
-public static final int PangoAttribute_sizeof() { return OS_FFM.PangoAttribute_sizeof(); }
-public static final int PangoAttrColor_sizeof() { return OS_FFM.PangoAttrColor_sizeof(); }
-public static final int PangoAttrInt_sizeof() { return OS_FFM.PangoAttrInt_sizeof(); }
-public static final int PangoItem_sizeof() { return OS_FFM.PangoItem_sizeof(); }
-public static final int PangoLayoutLine_sizeof() { return OS_FFM.PangoLayoutLine_sizeof(); }
-public static final int PangoLayoutRun_sizeof() { return OS_FFM.PangoLayoutRun_sizeof(); }
-public static final int PangoLogAttr_sizeof() { return OS_FFM.PangoLogAttr_sizeof(); }
-public static final int PangoRectangle_sizeof() { return OS_FFM.PangoRectangle_sizeof(); }
-public static final int XAnyEvent_sizeof() { return OS_FFM.XAnyEvent_sizeof(); }
-public static final int XEvent_sizeof() { return OS_FFM.XEvent_sizeof(); }
-public static final int XExposeEvent_sizeof() { return OS_FFM.XExposeEvent_sizeof(); }
-public static final int XFocusChangeEvent_sizeof() { return OS_FFM.XFocusChangeEvent_sizeof(); }
-public static final long localeconv_decimal_point() { return org.eclipse.swt.internal.ffm.FFMMacros.localeconv_decimal_point(); }
+public static final native int GPollFD_sizeof ();
+public static final native int GTypeInfo_sizeof ();
+public static final native int GValue_sizeof();
+public static final native int PangoAttribute_sizeof();
+public static final native int PangoAttrColor_sizeof();
+public static final native int PangoAttrInt_sizeof();
+public static final native int PangoItem_sizeof();
+public static final native int PangoLayoutLine_sizeof();
+public static final native int PangoLayoutRun_sizeof();
+public static final native int PangoLogAttr_sizeof();
+public static final native int PangoRectangle_sizeof();
+public static final native int XAnyEvent_sizeof();
+public static final native int XEvent_sizeof();
+public static final native int XExposeEvent_sizeof();
+public static final native int XFocusChangeEvent_sizeof();
+public static final native long localeconv_decimal_point();
 /**
  * @param path cast=(const char *)
  * @param realPath cast=(char *)
  */
-public static final long realpath(byte[] path, byte[] realPath) { return OS_FFM.realpath(path, realPath); }
+public static final native long realpath(byte[] path, byte[] realPath);
 
 
 /** Object private fields accessors */
 /** @param object_class cast=(GObjectClass *) */
-public static final long G_OBJECT_CLASS_CONSTRUCTOR(long object_class) { return org.eclipse.swt.internal.ffm.FFMMacros.G_OBJECT_CLASS_CONSTRUCTOR(object_class); }
+public static final native long G_OBJECT_CLASS_CONSTRUCTOR(long object_class);
 /**
  * @param object_class cast=(GObjectClass *)
  */
-public static final void G_OBJECT_CLASS_SET_CONSTRUCTOR(long object_class, long constructor) { org.eclipse.swt.internal.ffm.FFMMacros.G_OBJECT_CLASS_SET_CONSTRUCTOR(object_class, constructor); }
+public static final native void G_OBJECT_CLASS_SET_CONSTRUCTOR(long object_class, long constructor);
 /** @param xevent cast=(XEvent *) */
-public static final int X_EVENT_TYPE(long xevent) { return org.eclipse.swt.internal.ffm.FFMMacros.X_EVENT_TYPE(xevent); }
+public static final native int X_EVENT_TYPE(long xevent);
 /** @param xevent cast=(XAnyEvent *) */
-public static final long X_EVENT_WINDOW(long xevent) { return org.eclipse.swt.internal.ffm.FFMMacros.X_EVENT_WINDOW(xevent); }
+public static final native long X_EVENT_WINDOW(long xevent);
 
 /** X11 Native methods and constants */
 public static final int CurrentTime = 0;
@@ -881,23 +881,23 @@ public static final int NotifyVirtual = 1;
 public static final int NotifyNonlinear = 3;
 public static final int NotifyNonlinearVirtual = 4;
 public static final int RevertToParent = 2;
-public static final int Call(long proc, long arg1, long arg2) { return org.eclipse.swt.internal.ffm.FFMTypes.Call(proc, arg1, arg2); }
-public static final long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) { return org.eclipse.swt.internal.ffm.FFMTypes.call(function, arg0, arg1, arg2, arg3, arg4, arg5, arg6); }
-public static final long call(long function, long arg0, long arg1, long arg2, long arg3) { return org.eclipse.swt.internal.ffm.FFMTypes.call(function, arg0, arg1, arg2, arg3); }
-public static final long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) { return org.eclipse.swt.internal.ffm.FFMTypes.call(function, arg0, arg1, arg2, arg3, arg4, arg5); }
+public static final native int Call(long proc, long arg1, long arg2);
+public static final native long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6);
+public static final native long call(long function, long arg0, long arg1, long arg2, long arg3);
+public static final native long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5);
 /**
  * @param display cast=(Display *)
  * @param event_return cast=(XEvent *)
  * @param predicate cast=(Bool (*)())
  * @param arg cast=(XPointer)
  */
-public static final boolean XCheckIfEvent(long display, long event_return, long predicate, long arg) { return OS_FFM.XCheckIfEvent(display, event_return, predicate, arg); }
+public static final native boolean XCheckIfEvent(long display, long event_return, long predicate, long arg);
 /** @param display cast=(Display *) */
-public static final int XDefaultScreen(long display) { return OS_FFM.XDefaultScreen(display); }
+public static final native int XDefaultScreen(long display);
 /** @param display cast=(Display *) */
-public static final long XDefaultRootWindow(long display) { return OS_FFM.XDefaultRootWindow(display); }
+public static final native long XDefaultRootWindow(long display);
 /** @param address cast=(void *) */
-public static final void XFree(long address) { OS_FFM.XFree(address); }
+public static final native void XFree(long address);
 
 /**
  * @param display cast=(Display *)
@@ -910,173 +910,173 @@ public static final void XFree(long address) { OS_FFM.XFree(address); }
  * @param win_y_return cast=(int *)
  * @param mask_return cast=(unsigned int *)
  */
-public static final int XQueryPointer(long display, long w, long [] root_return, long [] child_return, int[] root_x_return, int[] root_y_return, int[] win_x_return, int[] win_y_return, int[] mask_return) { return OS_FFM.XQueryPointer(display, w, root_return, child_return, root_x_return, root_y_return, win_x_return, win_y_return, mask_return); }
+public static final native int XQueryPointer(long display, long w, long [] root_return, long [] child_return, int[] root_x_return, int[] root_y_return, int[] win_x_return, int[] win_y_return, int[] mask_return);
 /** @param handler cast=(XIOErrorHandler) */
-public static final long XSetIOErrorHandler(long handler) { return OS_FFM.XSetIOErrorHandler(handler); }
+public static final native long XSetIOErrorHandler(long handler);
 /** @param handler cast=(XErrorHandler) */
-public static final long XSetErrorHandler(long handler) { return OS_FFM.XSetErrorHandler(handler); }
+public static final native long XSetErrorHandler(long handler);
 /**
  * @param display cast=(Display *)
  * @param window cast=(Window)
  */
-public static final int XSetInputFocus(long display, long window, int revert, int time) { return OS_FFM.XSetInputFocus(display, window, revert, time); }
+public static final native int XSetInputFocus(long display, long window, int revert, int time);
 /**
  * @param display cast=(Display *)
  * @param w cast=(Window)
  * @param prop_window cast=(Window)
  */
-public static final int XSetTransientForHint(long display, long w, long prop_window) { return OS_FFM.XSetTransientForHint(display, w, prop_window); }
+public static final native int XSetTransientForHint(long display, long w, long prop_window);
 /** @param display cast=(Display *) */
-public static final long XSynchronize(long display, boolean onoff) { return OS_FFM.XSynchronize(display, onoff); }
+public static final native long XSynchronize(long display, boolean onoff);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(long dest, XExposeEvent src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(long dest, XExposeEvent src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(XExposeEvent dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(XExposeEvent dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(XFocusChangeEvent dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(XFocusChangeEvent dest, long src, long size);
 
 
 /** Natives */
-public static final int Call(long func, long arg0, int arg1, int arg2) { return org.eclipse.swt.internal.ffm.FFMTypes.Call(func, arg0, arg1, arg2); }
-public static final long G_OBJECT_GET_CLASS(long object) { return org.eclipse.swt.internal.ffm.FFMMacros.G_OBJECT_GET_CLASS(object); }
-public static final long G_OBJECT_TYPE_NAME(long object) { return org.eclipse.swt.internal.ffm.FFMMacros.G_OBJECT_TYPE_NAME(object); }
+public static final native int Call (long func, long arg0, int arg1, int arg2);
+public static final native long G_OBJECT_GET_CLASS(long object);
+public static final native long G_OBJECT_TYPE_NAME(long object);
 /** @method flags=const */
-public static final long G_TYPE_INVALID() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_INVALID(); }
+public static final native long G_TYPE_INVALID();
 /** @method flags=const */
-public static final long G_TYPE_BOOLEAN() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_BOOLEAN(); }
+public static final native long G_TYPE_BOOLEAN();
 /** @method flags=const */
-public static final long G_TYPE_DOUBLE() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_DOUBLE(); }
+public static final native long G_TYPE_DOUBLE();
 /** @method flags=const */
-public static final long G_TYPE_FLOAT() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_FLOAT(); }
+public static final native long G_TYPE_FLOAT();
 /** @method flags=const */
-public static final long G_TYPE_LONG() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_LONG(); }
+public static final native long G_TYPE_LONG();
 /** @method flags=const */
-public static final long G_TYPE_INT() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_INT(); }
+public static final native long G_TYPE_INT();
 /** @method flags=const */
-public static final long G_TYPE_INT64() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_INT64(); }
-public static final long G_VALUE_TYPE(long value) { return org.eclipse.swt.internal.ffm.FFMMacros.G_VALUE_TYPE(value); }
-public static final long G_VALUE_TYPE_NAME(long value) { return org.eclipse.swt.internal.ffm.FFMMacros.G_VALUE_TYPE_NAME(value); }
-public static final boolean G_IS_VALUE(long value) { return org.eclipse.swt.internal.ffm.FFMMacros.G_IS_VALUE(value); }
-public static final long G_OBJECT_TYPE(long instance) { return org.eclipse.swt.internal.ffm.FFMMacros.G_OBJECT_TYPE(instance); }
+public static final native long G_TYPE_INT64();
+public static final native long G_VALUE_TYPE(long value);
+public static final native long G_VALUE_TYPE_NAME(long value);
+public static final native boolean G_IS_VALUE(long value);
+public static final native long G_OBJECT_TYPE(long instance);
 /** @method flags=const */
-public static final long G_TYPE_STRING() { return org.eclipse.swt.internal.ffm.FFMTypes.G_TYPE_STRING(); }
-public static final int PANGO_PIXELS(int dimension) { return org.eclipse.swt.internal.ffm.FFMMacros.PANGO_PIXELS(dimension); }
+public static final native long G_TYPE_STRING();
+public static final native int PANGO_PIXELS(int dimension);
 /** @method flags=const */
-public static final long PANGO_TYPE_FONT_DESCRIPTION() { return org.eclipse.swt.internal.ffm.FFMTypes.PANGO_TYPE_FONT_DESCRIPTION(); }
+public static final native long PANGO_TYPE_FONT_DESCRIPTION();
 /** @method flags=const */
-public static final long PANGO_TYPE_FONT_FAMILY() { return org.eclipse.swt.internal.ffm.FFMTypes.PANGO_TYPE_FONT_FAMILY(); }
+public static final native long PANGO_TYPE_FONT_FAMILY();
 /** @method flags=const */
-public static final long PANGO_TYPE_FONT_FACE() { return org.eclipse.swt.internal.ffm.FFMTypes.PANGO_TYPE_FONT_FACE(); }
+public static final native long PANGO_TYPE_FONT_FACE();
 /** @method flags=const */
-public static final long PANGO_TYPE_LAYOUT() { return org.eclipse.swt.internal.ffm.FFMTypes.PANGO_TYPE_LAYOUT(); }
+public static final native long PANGO_TYPE_LAYOUT();
 /**
  * @param commandline cast=(gchar *)
  * @param applName cast=(gchar *)
  * @param flags cast=(GAppInfoCreateFlags)
  * @param error cast=(GError **)
  */
-public static final long g_app_info_create_from_commandline(byte[] commandline, byte[] applName, long flags, long error) { return OS_FFM.g_app_info_create_from_commandline(commandline, applName, flags, error); }
-public static final long g_app_info_get_all() { return OS_FFM.g_app_info_get_all(); }
+public static final native long g_app_info_create_from_commandline(byte[] commandline, byte[] applName, long flags, long error);
+public static final native long g_app_info_get_all();
 /**
  * @param appInfo cast=(GAppInfo *)
  */
-public static final long g_app_info_get_commandline(long appInfo) { return OS_FFM.g_app_info_get_commandline(appInfo); }
+public static final native long g_app_info_get_commandline(long appInfo);
 /**
  * @param appInfo cast=(GAppInfo *)
  */
-public static final long g_app_info_get_executable(long appInfo) { return OS_FFM.g_app_info_get_executable(appInfo); }
+public static final native long g_app_info_get_executable(long appInfo);
 /**
  * @param appInfo cast=(GAppInfo *)
  */
-public static final long g_app_info_get_icon(long appInfo) { return OS_FFM.g_app_info_get_icon(appInfo); }
+public static final native long g_app_info_get_icon(long appInfo);
 /**
  * @param appInfo cast=(GAppInfo *)
  */
-public static final long g_app_info_get_name(long appInfo) { return OS_FFM.g_app_info_get_name(appInfo); }
+public static final native long g_app_info_get_name(long appInfo);
 /**
  * @param appInfo cast=(GAppInfo *)
  * @param list cast=(GList *)
  * @param launchContext cast=(GAppLaunchContext *)
  * @param error cast=(GError **)
  */
-public static final boolean g_app_info_launch(long appInfo, long list, long launchContext, long error) { return OS_FFM.g_app_info_launch(appInfo, list, launchContext, error); }
+public static final native boolean g_app_info_launch(long appInfo, long list, long launchContext, long error);
 /**
  * @param mimeType cast=(gchar *)
  * @param mustSupportURIs cast=(gboolean)
  */
-public static final long g_app_info_get_default_for_type(byte[] mimeType, boolean mustSupportURIs) { return OS_FFM.g_app_info_get_default_for_type(mimeType, mustSupportURIs); }
+public static final native long g_app_info_get_default_for_type(byte[] mimeType, boolean mustSupportURIs);
 /**
  * @param uri cast=(char *)
  * @param launchContext cast=(GAppLaunchContext *)
  * @param error cast=(GError **)
  */
-public static final boolean g_app_info_launch_default_for_uri(long uri, long launchContext, long error) { return OS_FFM.g_app_info_launch_default_for_uri(uri, launchContext, error); }
+public static final native boolean g_app_info_launch_default_for_uri(long uri, long launchContext, long error);
 /**
  * @param appInfo cast=(GAppInfo *)
  */
-public static final boolean g_app_info_supports_uris(long appInfo) { return OS_FFM.g_app_info_supports_uris(appInfo); }
+public static final native boolean g_app_info_supports_uris(long appInfo);
 /**
  * @param error cast=(GError *)
  */
-public static final long g_error_get_message(long error) { return org.eclipse.swt.internal.ffm.FFMMacros.g_error_get_message(error); }
+public static final native long g_error_get_message(long error);
 /**
  * @param error cast=(const GError *)
  * @param domain cast=(GQuark)
  * @param code cast=(gint)
  */
-public static final boolean g_error_matches(long error, int domain, int code) { return OS_FFM.g_error_matches(error, domain, code); }
+public static final native boolean g_error_matches(long error, int domain, int code);
 
 /**
  * @param gerror cast=(GError *)
  */
-public static final void g_error_free(long gerror) { OS_FFM.g_error_free(gerror); }
+public static final native void g_error_free(long gerror);
 /**
  * @param domain cast=(GQuark)
  * @param code cast=(gint)
  * @param message case=(const gchar*)
  */
-public static final long g_error_new_literal(long domain, int code, String message) { return OS_FFM.g_error_new_literal(domain, code, message); }
+public static final native long g_error_new_literal(long domain, int code, String message);
 
 /**
  * @param type1 cast=(gchar *)
  * @param type2 cast=(gchar *)
  */
-public static final boolean g_content_type_equals(long type1, byte[] type2) { return OS_FFM.g_content_type_equals(type1, type2); }
+public static final native boolean g_content_type_equals(long type1, byte[] type2);
 /**
  * @param type cast=(gchar *)
  * @param supertype cast=(gchar *)
  */
-public static final boolean g_content_type_is_a(long type, byte[] supertype) { return OS_FFM.g_content_type_is_a(type, supertype); }
-public static final int g_file_error_quark() { return OS_FFM.g_file_error_quark(); }
-public static final int g_io_error_quark() { return OS_FFM.g_io_error_quark(); }
+public static final native boolean g_content_type_is_a(long type, byte[] supertype);
+public static final native int g_file_error_quark();
+public static final native int g_io_error_quark();
 /**
  * @param info cast=(GFileInfo *)
  */
-public static final long g_file_info_get_content_type(long info) { return OS_FFM.g_file_info_get_content_type(info); }
+public static final native long g_file_info_get_content_type(long info);
 /**
  * @param file cast=(GFile *)
  */
-public static final long g_file_get_uri(long file) { return OS_FFM.g_file_get_uri(file); }
+public static final native long g_file_get_uri(long file);
 /** @param fileName cast=(const char *) */
-public static final long g_file_new_for_path(byte[] fileName) { return OS_FFM.g_file_new_for_path(fileName); }
+public static final native long g_file_new_for_path(byte[] fileName);
 /**
  * @param fileName cast=(const char *)
  */
-public static final long g_file_new_for_commandline_arg(byte[] fileName) { return OS_FFM.g_file_new_for_commandline_arg(fileName); }
+public static final native long g_file_new_for_commandline_arg(byte[] fileName);
 /** @param fileName cast=(const char *) */
-public static final long g_file_new_for_uri(byte[] fileName) { return OS_FFM.g_file_new_for_uri(fileName); }
+public static final native long g_file_new_for_uri(byte[] fileName);
 /**
  * @param file cast=(GFile *)
  * @param attributes cast=(const char *)
@@ -1084,19 +1084,19 @@ public static final long g_file_new_for_uri(byte[] fileName) { return OS_FFM.g_f
  * @param cancellable cast=(GCancellable *)
  * @param error cast=(GError **)
  */
-public static final long g_file_query_info(long file, byte[] attributes, long flags, long cancellable, long error) { return OS_FFM.g_file_query_info(file, attributes, flags, cancellable, error); }
+public static final native long g_file_query_info(long file, byte[] attributes, long flags, long cancellable, long error);
 /**
  * @param file cast=(const gchar *)
  * @param test cast=(GFileTest)
  */
-public static final boolean g_file_test(byte[] file, int test) { return OS_FFM.g_file_test(file, test); }
+public static final native boolean /*long*/ g_file_test(byte[] file, int test);
 /** @param icon cast=(GIcon *) */
-public static final long g_icon_to_string(long icon) { return OS_FFM.g_icon_to_string(icon); }
+public static final native long g_icon_to_string(long icon);
 /**
  * @param str cast=(const gchar *)
  * @param error cast=(GError **)
  */
-public static final long g_icon_new_for_string(byte[] str, long error[]) { return OS_FFM.g_icon_new_for_string(str, error); }
+public static final native long g_icon_new_for_string(byte[] str, long error[]);
 /**
  * @param signal_id cast=(guint)
  * @param detail cast=(GQuark)
@@ -1104,51 +1104,51 @@ public static final long g_icon_new_for_string(byte[] str, long error[]) { retur
  * @param hook_data cast=(gpointer)
  * @param data_destroy cast=(GDestroyNotify)
  */
-public static final long g_signal_add_emission_hook(int signal_id, int detail, long hook_func, long hook_data, long data_destroy) { return OS_FFM.g_signal_add_emission_hook(signal_id, detail, hook_func, hook_data, data_destroy); }
+public static final native long g_signal_add_emission_hook(int signal_id, int detail, long hook_func, long hook_data, long data_destroy);
 /**
  * @param signal_id cast=(guint)
  * @param hook_id cast=(gulong)
  */
-public static final void g_signal_remove_emission_hook(int signal_id, long hook_id) { OS_FFM.g_signal_remove_emission_hook(signal_id, hook_id); }
+public static final native void g_signal_remove_emission_hook(int signal_id, long hook_id);
 /**
  * @param callback_func cast=(GCallback)
  * @param user_data cast=(gpointer)
  * @param destroy_data cast=(GClosureNotify)
  */
-public static final long g_cclosure_new(long callback_func, long user_data, long destroy_data) { return OS_FFM.g_cclosure_new(callback_func, user_data, destroy_data); }
+public static final native long g_cclosure_new(long callback_func, long user_data, long destroy_data);
 /** @param closure cast=(GClosure *) */
-public static final long g_closure_ref(long closure) { return OS_FFM.g_closure_ref(closure); }
+public static final native long g_closure_ref(long closure);
 /** @param closure cast=(GClosure *) */
-public static final void g_closure_sink(long closure) { OS_FFM.g_closure_sink(closure); }
+public static final native void g_closure_sink(long closure);
 /** @param closure cast=(GClosure *) */
-public static final void g_closure_unref(long closure) { OS_FFM.g_closure_unref(closure); }
+public static final native void g_closure_unref(long closure);
 /** @param context cast=(GMainContext *) */
-public static final boolean g_main_context_acquire(long context) { return OS_FFM.g_main_context_acquire(context); }
+public static final native boolean g_main_context_acquire(long context);
 /**
  * @param context cast=(GMainContext *)
  * @param fds cast=(GPollFD *)
  */
-public static final int g_main_context_check(long context, int max_priority, long fds, int n_fds) { return OS_FFM.g_main_context_check(context, max_priority, fds, n_fds); }
-public static final long g_main_context_default() { return OS_FFM.g_main_context_default(); }
+public static final native int g_main_context_check(long context, int max_priority, long fds, int n_fds);
+public static final native long g_main_context_default();
 /** @param context cast=(GMainContext *) */
-public static final boolean g_main_context_iteration(long context, boolean may_block) { return OS_FFM.g_main_context_iteration(context, may_block); }
+public static final native boolean g_main_context_iteration(long context, boolean may_block);
 /** @param context cast=(GMainContext *) */
-public static final long g_main_context_get_poll_func(long context) { return OS_FFM.g_main_context_get_poll_func(context); }
+public static final native long g_main_context_get_poll_func(long context);
 /**
  * @param context cast=(GMainContext *)
  * @param priority cast=(gint *)
  */
-public static final boolean g_main_context_prepare(long context, int[] priority) { return OS_FFM.g_main_context_prepare(context, priority); }
+public static final native boolean g_main_context_prepare(long context, int[] priority);
 /**
  * @param context cast=(GMainContext *)
  * @param fds cast=(GPollFD *)
  * @param timeout_ cast=(gint *)
  */
-public static final int g_main_context_query(long context, int max_priority, int[] timeout_, long fds, int n_fds) { return OS_FFM.g_main_context_query(context, max_priority, timeout_, fds, n_fds); }
+public static final native int g_main_context_query(long context, int max_priority, int[] timeout_, long fds, int n_fds);
 /** @param context cast=(GMainContext *) */
-public static final void g_main_context_release(long context) { OS_FFM.g_main_context_release(context); }
+public static final native void g_main_context_release(long context);
 /** @param context cast=(GMainContext *) */
-public static final void g_main_context_wakeup(long context) { OS_FFM.g_main_context_wakeup(context); }
+public static final native void g_main_context_wakeup(long context);
 /**
  * @param opsysstring cast=(const gchar *)
  * @param len cast=(gssize)
@@ -1156,15 +1156,15 @@ public static final void g_main_context_wakeup(long context) { OS_FFM.g_main_con
  * @param bytes_written cast=(gsize *)
  * @param error cast=(GError **)
  */
-public static final long g_filename_to_utf8(long opsysstring, long len, long [] bytes_read, long [] bytes_written, long [] error) { return OS_FFM.g_filename_to_utf8(opsysstring, len, bytes_read, bytes_written, error); }
+public static final native long g_filename_to_utf8(long opsysstring, long len, long [] bytes_read, long [] bytes_written, long [] error);
 /** @param filename cast=(const gchar *) */
-public static final long g_filename_display_name(long filename) { return OS_FFM.g_filename_display_name(filename); }
+public static final native long g_filename_display_name(long filename);
 /**
  * @param filename cast=(const char *)
  * @param hostname cast=(const char *)
  * @param error cast=(GError **)
  */
-public static final long g_filename_to_uri(long filename, long hostname, long [] error) { return OS_FFM.g_filename_to_uri(filename, hostname, error); }
+public static final native long g_filename_to_uri(long filename, long hostname, long [] error);
 /**
  * @param opsysstring cast=(const gchar *)
  * @param len cast=(gssize)
@@ -1172,137 +1172,137 @@ public static final long g_filename_to_uri(long filename, long hostname, long []
  * @param bytes_written cast=(gsize *)
  * @param error cast=(GError **)
  */
-public static final long g_filename_from_utf8(long opsysstring, long len,  long [] bytes_read, long [] bytes_written, long [] error) { return OS_FFM.g_filename_from_utf8(opsysstring, len, bytes_read, bytes_written, error); }
+public static final native long g_filename_from_utf8(long opsysstring, long len,  long [] bytes_read, long [] bytes_written, long [] error);
 /**
  * @param uri cast=(const char *)
  * @param hostname cast=(char **)
  * @param error cast=(GError **)
  */
-public static final long g_filename_from_uri(long uri, long [] hostname, long [] error) { return OS_FFM.g_filename_from_uri(uri, hostname, error); }
+public static final native long g_filename_from_uri(long uri, long [] hostname, long [] error);
 /** @param mem cast=(gpointer) */
-public static final void g_free(long mem) { OS_FFM.g_free(mem); }
+public static final native void g_free(long mem);
 /** @method accessor=g_free,flags=const address */
-public static final long addressof_g_free() { return OS_FFM.addressof_g_free(); }
+public static final native long addressof_g_free();
 /**
  * @param variable cast=(const gchar *),flags=no_out
  */
-public static final long g_getenv(byte [] variable) { return OS_FFM.g_getenv(variable); }
+public static final native long g_getenv(byte [] variable);
 /**
  * @method flags=ignore_deprecations
  * @param result cast=(GTimeVal *)
  */
-public static final void g_get_current_time(long result) { OS_FFM.g_get_current_time(result); }
+public static final native void g_get_current_time(long result);
 /**
  * @method flags=ignore_deprecations
  * @param result cast=(GTimeVal *)
  * @param microseconds cast=(glong)
  */
-public static final void g_time_val_add(long result, long microseconds) { OS_FFM.g_time_val_add(result, microseconds); }
+public static final native void g_time_val_add(long result, long microseconds);
 /**
  * @param function cast=(GSourceFunc)
  * @param data cast=(gpointer)
  */
-public static final int g_idle_add(long function, long data) { return OS_FFM.g_idle_add(function, data); }
+public static final native int g_idle_add(long function, long data);
 /**
  * @param list cast=(GList *)
  * @param data cast=(gpointer)
  */
-public static final long g_list_append(long list, long data) { return OS_FFM.g_list_append(list, data); }
+public static final native long g_list_append(long list, long data);
 /** @param list cast=(GList *) */
-public static final long g_list_data(long list) { return org.eclipse.swt.internal.ffm.FFMMacros.g_list_data(list); }
+public static final native long g_list_data(long list);
 /** @param list cast=(GList *) */
-public static final void g_list_free(long list) { OS_FFM.g_list_free(list); }
+public static final native void g_list_free(long list);
 /**
  * @param list cast=(GList *)
  */
-public static final long g_list_last(long list) { return OS_FFM.g_list_last(list); }
+public static final native long g_list_last(long list);
 /** @param list cast=(GList *) */
-public static final int g_list_length(long list) { return OS_FFM.g_list_length(list); }
-public static final long g_list_next(long list) { return org.eclipse.swt.internal.ffm.FFMMacros.g_list_next(list); }
+public static final native int g_list_length(long list);
+public static final native long g_list_next(long list);
 /**
  * @param list cast=(GList *)
  * @param n cast=(guint)
  */
-public static final long g_list_nth_data(long list, int n) { return OS_FFM.g_list_nth_data(list, n); }
-public static final long g_list_previous(long list) { return org.eclipse.swt.internal.ffm.FFMMacros.g_list_previous(list); }
+public static final native long g_list_nth_data(long list, int n);
+public static final native long g_list_previous(long list);
 /**
  * @param item_type cast=(GType)
  */
-public static final long g_list_store_new(long item_type) { return OS_FFM.g_list_store_new(item_type); }
+public static final native long g_list_store_new(long item_type);
 /**
  * @param store cast=(GListStore *)
  * @param item cast=(GObject *)
  */
-public static final void g_list_store_append(long store, long item) { OS_FFM.g_list_store_append(store, item); }
+public static final native void g_list_store_append(long store, long item);
 /**
  * @param log_domain cast=(gchar *)
  * @param log_levels cast=(GLogLevelFlags)
  * @param message cast=(gchar *)
  * @param unused_data cast=(gpointer)
  */
-public static final void g_log_default_handler(long log_domain, int log_levels, long message, long unused_data) { OS_FFM.g_log_default_handler(log_domain, log_levels, message, unused_data); }
+public static final native void g_log_default_handler(long log_domain, int log_levels, long message, long unused_data);
 /**
  * @param log_domain cast=(gchar *),flags=no_out
  * @param handler_id cast=(gint)
  */
-public static final void g_log_remove_handler(byte[] log_domain, int handler_id) { OS_FFM.g_log_remove_handler(log_domain, handler_id); }
+public static final native void g_log_remove_handler(byte[] log_domain, int handler_id);
 /**
  * @param log_domain cast=(gchar *),flags=no_out
  * @param log_levels cast=(GLogLevelFlags)
  * @param log_func cast=(GLogFunc)
  * @param user_data cast=(gpointer)
  */
-public static final int g_log_set_handler(byte[] log_domain, int log_levels, long log_func, long user_data) { return OS_FFM.g_log_set_handler(log_domain, log_levels, log_func, user_data); }
+public static final native int g_log_set_handler(byte[] log_domain, int log_levels, long log_func, long user_data);
 /** @param size cast=(gulong) */
-public static final long g_malloc(long size) { return OS_FFM.g_malloc(size); }
+public static final native long g_malloc(long size);
 /**
  * @param object cast=(GObject *)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_get(long object, byte[] first_property_name, int[] value, long terminator) { OS_FFM.g_object_get(object, first_property_name, value, terminator); }
+public static final native void g_object_get(long object, byte[] first_property_name, int[] value, long terminator);
 /**
  * @param object cast=(GObject *)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_get(long object, byte[] first_property_name, long[] value, long terminator) { OS_FFM.g_object_get(object, first_property_name, value, terminator); }
+public static final native void g_object_get(long object, byte[] first_property_name, long[] value, long terminator);
 /**
  * @param object cast=(GObject *)
  * @param quark cast=(GQuark)
  */
-public static final long g_object_get_qdata(long object, int quark) { return OS_FFM.g_object_get_qdata(object, quark); }
+public static final native long g_object_get_qdata(long object, int quark);
 /**
  * @param type cast=(GType)
  * @param first_property_name cast=(const gchar *)
  */
-public static final long g_object_new(long type, long first_property_name) { return OS_FFM.g_object_new(type, first_property_name); }
+public static final native long g_object_new(long type, long first_property_name);
 /**
  * @param type cast=(GType)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param value cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final long g_object_new(long type, byte[] first_property_name, byte[] value, long terminator) { return OS_FFM.g_object_new(type, first_property_name, value, terminator); }
+public static final native long g_object_new(long type, byte[] first_property_name, byte[] value, long terminator);
 /**
  * @param object cast=(GObject *)
  * @param property_name cast=(const gchar *)
  */
-public static final void g_object_notify(long object, byte[] property_name) { OS_FFM.g_object_notify(object, property_name); }
+public static final native void g_object_notify(long object, byte[] property_name);
 /** @param object cast=(gpointer) */
-public static final long g_object_ref(long object) { return OS_FFM.g_object_ref(object); }
+public static final native long g_object_ref(long object);
 /**
  * @param object cast=(gpointer)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_set(long object, byte[] first_property_name, boolean data, long terminator) { OS_FFM.g_object_set(object, first_property_name, data, terminator); }
+public static final native void g_object_set(long object, byte[] first_property_name, boolean data, long terminator);
 /**
  * @param object cast=(gpointer)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_set(long object, byte[] first_property_name, byte[] data, long terminator) { OS_FFM.g_object_set(object, first_property_name, data, terminator); }
+public static final native void g_object_set(long object, byte[] first_property_name, byte[] data, long terminator);
 
 //Note, the function below is handled in a special way in os.h because of the GdkRGBA (gtk3 only) struct. See os.h
 //So although it is not marked as dynamic, it is only build on gtk3.
@@ -1311,64 +1311,64 @@ public static final void g_object_set(long object, byte[] first_property_name, b
  * @param first_property_name cast=(const gchar *)
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_set(long object, byte[] first_property_name, GdkRGBA data, long terminator) { OS_FFM.g_object_set(object, first_property_name, data, terminator); }
+public static final native void g_object_set(long object, byte[] first_property_name, GdkRGBA data, long terminator);
 
 /**
  * @param object cast=(gpointer)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_set(long object, byte[] first_property_name, int data, long terminator) { OS_FFM.g_object_set(object, first_property_name, data, terminator); }
+public static final native void g_object_set(long object, byte[] first_property_name, int data, long terminator);
 /**
  * @param object cast=(gpointer)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_set(long object, byte[] first_property_name, float data, long terminator) { OS_FFM.g_object_set(object, first_property_name, data, terminator); }
+public static final native void g_object_set(long object, byte[] first_property_name, float data, long terminator);
 /**
  * @param object cast=(gpointer)
  * @param first_property_name cast=(const gchar *),flags=no_out
  * @param terminator cast=(const gchar *),flags=sentinel
  */
-public static final void g_object_set(long object, byte[] first_property_name, long data, long terminator) { OS_FFM.g_object_set(object, first_property_name, data, terminator); }
+public static final native void g_object_set(long object, byte[] first_property_name, long data, long terminator);
 /**
  * @param object cast=(GObject *)
  * @param quark cast=(GQuark)
  * @param data cast=(gpointer)
  */
-public static final void g_object_set_qdata(long object, int quark, long data) { OS_FFM.g_object_set_qdata(object, quark, data); }
+public static final native void g_object_set_qdata(long object, int quark, long data);
 /** @param object cast=(gpointer) */
-public static final void g_object_unref(long object) { OS_FFM.g_object_unref(object); }
+public static final native void g_object_unref(long object);
 
 /**
  * @param data cast=(gconstpointer)
  * @param size cast=(gsize)
  */
-public static final long g_bytes_new(byte [] data, long size) { return OS_FFM.g_bytes_new(data, size); }
+public static final native long g_bytes_new(byte [] data, long size);
 
 /**
  * @param gBytes cast=(GBytes *)
  */
-public static final void g_bytes_unref(long gBytes) { OS_FFM.g_bytes_unref(gBytes); }
+public static final native void g_bytes_unref(long gBytes);
 
 /** @param string cast=(const gchar *),flags=no_out */
-public static final int g_quark_from_string(byte[] string) { return OS_FFM.g_quark_from_string(string); }
+public static final native int g_quark_from_string(byte[] string);
 /** @param prgname cast=(const gchar *),flags=no_out */
-public static final void g_set_prgname(byte[] prgname) { OS_FFM.g_set_prgname(prgname); }
+public static final native void g_set_prgname(byte[] prgname);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *),flags=no_out
  * @param proc cast=(GCallback)
  * @param data cast=(gpointer)
  */
-public static final int g_signal_connect(long instance, byte[] detailed_signal, long proc, long data) { return org.eclipse.swt.internal.ffm.FFMMacros.g_signal_connect(instance, detailed_signal, proc, data); }
+public static final native int g_signal_connect(long instance, byte[] detailed_signal, long proc, long data);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *)
  * @param closure cast=(GClosure *)
  * @param after cast=(gboolean)
  */
-public static final int g_signal_connect_closure(long instance, byte[] detailed_signal, long closure, boolean after) { return OS_FFM.g_signal_connect_closure(instance, detailed_signal, closure, after); }
+public static final native int g_signal_connect_closure(long instance, byte[] detailed_signal, long closure, boolean after);
 /**
  * @param instance cast=(gpointer)
  * @param signal_id cast=(guint)
@@ -1376,37 +1376,37 @@ public static final int g_signal_connect_closure(long instance, byte[] detailed_
  * @param closure cast=(GClosure *)
  * @param after cast=(gboolean)
  */
-public static final int g_signal_connect_closure_by_id(long instance, int signal_id, int detail, long closure, boolean after) { return OS_FFM.g_signal_connect_closure_by_id(instance, signal_id, detail, closure, after); }
+public static final native int g_signal_connect_closure_by_id(long instance, int signal_id, int detail, long closure, boolean after);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *),flags=no_out
  */
-public static final void g_signal_emit_by_name(long instance, byte[] detailed_signal) { OS_FFM.g_signal_emit_by_name(instance, detailed_signal); }
+public static final native void g_signal_emit_by_name(long instance, byte[] detailed_signal);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *),flags=no_out
  */
-public static final void g_signal_emit_by_name(long instance, byte[] detailed_signal, long data) { OS_FFM.g_signal_emit_by_name(instance, detailed_signal, data); }
+public static final native void g_signal_emit_by_name(long instance, byte[] detailed_signal, long data);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *),flags=no_out
  */
-public static final void g_signal_emit_by_name(long instance, byte[] detailed_signal, GdkRectangle data) { OS_FFM.g_signal_emit_by_name(instance, detailed_signal, data); }
+public static final native void g_signal_emit_by_name(long instance, byte[] detailed_signal, GdkRectangle data);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *),flags=no_out
  */
-public static final void g_signal_emit_by_name(long instance, byte[] detailed_signal, long data1, long data2) { OS_FFM.g_signal_emit_by_name(instance, detailed_signal, data1, data2); }
+public static final native void g_signal_emit_by_name(long instance, byte[] detailed_signal, long data1, long data2);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *),flags=no_out
  */
-public static final void g_signal_emit_by_name(long instance, byte[] detailed_signal, byte [] data) { OS_FFM.g_signal_emit_by_name(instance, detailed_signal, data); }
+public static final native void g_signal_emit_by_name(long instance, byte[] detailed_signal, byte [] data);
 /**
  * @param instance cast=(gpointer)
  * @param handler_id cast=(gulong)
  */
-public static final void g_signal_handler_disconnect(long instance, long handler_id) { OS_FFM.g_signal_handler_disconnect(instance, handler_id); }
+public static final native void g_signal_handler_disconnect(long instance, long handler_id);
 /**
  * @param instance cast=(gpointer)
  * @param mask cast=(GSignalMatchType)
@@ -1416,7 +1416,7 @@ public static final void g_signal_handler_disconnect(long instance, long handler
  * @param func cast=(gpointer)
  * @param data cast=(gpointer)
  */
-public static final int g_signal_handlers_block_matched(long instance, int mask, int signal_id, int detail, long closure, long func, long data) { return OS_FFM.g_signal_handlers_block_matched(instance, mask, signal_id, detail, closure, func, data); }
+public static final native int g_signal_handlers_block_matched(long instance, int mask, int signal_id, int detail, long closure, long func, long data);
 /**
  * @param instance cast=(gpointer)
  * @param mask cast=(GSignalMatchType)
@@ -1426,64 +1426,64 @@ public static final int g_signal_handlers_block_matched(long instance, int mask,
  * @param func cast=(gpointer)
  * @param data cast=(gpointer)
  */
-public static final int g_signal_handlers_unblock_matched(long instance, int mask, int signal_id, int detail, long closure, long func, long data) { return OS_FFM.g_signal_handlers_unblock_matched(instance, mask, signal_id, detail, closure, func, data); }
+public static final native int g_signal_handlers_unblock_matched(long instance, int mask, int signal_id, int detail, long closure, long func, long data);
 /** @param name cast=(const gchar *),flags=no_out */
-public static final int g_signal_lookup(byte[] name, long itype) { return OS_FFM.g_signal_lookup(name, itype); }
+public static final native int g_signal_lookup(byte[] name, long itype);
 /**
  * @param instance cast=(gpointer)
  * @param detailed_signal cast=(const gchar *),flags=no_out
  */
-public static final void g_signal_stop_emission_by_name(long instance, byte[] detailed_signal) { OS_FFM.g_signal_stop_emission_by_name(instance, detailed_signal); }
+public static final native void g_signal_stop_emission_by_name(long instance, byte[] detailed_signal);
 /** @param tag cast=(guint) */
-public static final boolean g_source_remove(long tag) { return OS_FFM.g_source_remove(tag); }
+public static final native boolean /*long*/ g_source_remove(long tag);
 /**
  * @param list cast=(GSList *)
  * @param data cast=(gpointer)
  */
-public static final long g_slist_append(long list, long data) { return OS_FFM.g_slist_append(list, data); }
+public static final native long g_slist_append(long list, long data);
 /** @param list cast=(GSList *) */
-public static final long g_slist_data(long list) { return org.eclipse.swt.internal.ffm.FFMMacros.g_slist_data(list); }
+public static final native long g_slist_data(long list);
 /** @param list cast=(GSList *) */
-public static final void g_slist_free(long list) { OS_FFM.g_slist_free(list); }
+public static final native void g_slist_free(long list);
 /** @param list cast=(GSList *) */
-public static final long g_slist_next(long list) { return org.eclipse.swt.internal.ffm.FFMMacros.g_slist_next(list); }
+public static final native long g_slist_next(long list);
 /** @param list cast=(GSList *) */
-public static final int g_slist_length(long list) { return OS_FFM.g_slist_length(list); }
+public static final native int g_slist_length(long list);
 /** @param string_array cast=(gchar **) */
-public static final void g_strfreev(long string_array) { OS_FFM.g_strfreev(string_array); }
+public static final native void g_strfreev(long string_array);
 /**
  * @param str cast=(const gchar *)
  * @param endptr cast=(gchar **)
  */
-public static final double g_strtod(long str, long [] endptr) { return OS_FFM.g_strtod(str, endptr); }
+public static final native double g_strtod(long str, long [] endptr);
 /** @param str cast=(char *) */
-public static final long g_strdup(long str) { return OS_FFM.g_strdup(str); }
+public static final native long g_strdup (long str);
 /** @param g_class cast=(GType) */
-public static final long g_type_class_peek(long g_class) { return OS_FFM.g_type_class_peek(g_class); }
+public static final native long g_type_class_peek(long g_class);
 /** @param g_class cast=(gpointer) */
-public static final long g_type_class_peek_parent(long g_class) { return OS_FFM.g_type_class_peek_parent(g_class); }
+public static final native long g_type_class_peek_parent(long g_class);
 /** @param g_class cast=(GType) */
-public static final long g_type_class_ref(long g_class) { return OS_FFM.g_type_class_ref(g_class); }
+public static final native long g_type_class_ref(long g_class);
 /** @param g_class cast=(gpointer) */
-public static final void g_type_class_unref(long g_class) { OS_FFM.g_type_class_unref(g_class); }
+public static final native void g_type_class_unref(long g_class);
 /** @param iface cast=(gpointer) */
-public static final long g_type_interface_peek_parent(long iface) { return OS_FFM.g_type_interface_peek_parent(iface); }
+public static final native long g_type_interface_peek_parent(long iface);
 /** @param g_type cast=(GType) */
-public static final long g_type_name(long g_type) { return OS_FFM.g_type_name(g_type); }
+public static final native long g_type_name(long g_type);
 /**
  * @param type cast=(GType)
  * @param is_a_type cast=(GType)
  */
-public static final boolean g_type_is_a(long type, long is_a_type) { return OS_FFM.g_type_is_a(type, is_a_type); }
+public static final native boolean g_type_is_a(long type, long is_a_type);
 /** @param type cast=(GType) */
-public static final long g_type_parent(long type) { return OS_FFM.g_type_parent(type); }
+public static final native long g_type_parent(long type);
 /**
  * @param parent_type cast=(GType)
  * @param type_name cast=(const gchar *)
  * @param info cast=(const GTypeInfo *)
  * @param flags cast=(GTypeFlags)
  */
-public static final long g_type_register_static(long parent_type, byte[] type_name, long info, int flags) { return OS_FFM.g_type_register_static(parent_type, type_name, info, flags); }
+public static final native long g_type_register_static(long parent_type, byte[] type_name, long info, int flags);
 /**
  * @param str cast=(const gunichar2 *),flags=no_out critical
  * @param len cast=(glong)
@@ -1491,14 +1491,14 @@ public static final long g_type_register_static(long parent_type, byte[] type_na
  * @param items_written cast=(glong *),flags=critical
  * @param error cast=(GError **),flags=critical
  */
-public static final long g_utf16_to_utf8(char[] str, long len, long [] items_read, long [] items_written, long [] error) { return OS_FFM.g_utf16_to_utf8(str, len, items_read, items_written, error); }
+public static final native long g_utf16_to_utf8(char[] str, long len, long [] items_read, long [] items_written, long [] error);
 /**
  * @param str cast=(const gchar *)
  * @param pos cast=(const gchar *)
  */
-public static final long g_utf8_pointer_to_offset(long str, long pos) { return OS_FFM.g_utf8_pointer_to_offset(str, pos); }
+public static final native long g_utf8_pointer_to_offset(long str, long pos);
 /** @param str cast=(const gchar *) */
-public static final long g_utf8_strlen(long str, long max) { return OS_FFM.g_utf8_strlen(str, max); }
+public static final native long g_utf8_strlen(long str, long max);
 /**
  * @param str cast=(const gchar *),flags=no_out critical
  * @param len cast=(glong)
@@ -1506,7 +1506,7 @@ public static final long g_utf8_strlen(long str, long max) { return OS_FFM.g_utf
  * @param items_written cast=(glong *),flags=critical
  * @param error cast=(GError **),flags=critical
  */
-public static final long g_utf8_to_utf16(byte[] str, long len, long [] items_read, long [] items_written, long [] error) { return OS_FFM.g_utf8_to_utf16(str, len, items_read, items_written, error); }
+public static final native long g_utf8_to_utf16(byte[] str, long len, long [] items_read, long [] items_written, long [] error);
 /**
  * @param str cast=(const gchar *)
  * @param len cast=(glong)
@@ -1514,54 +1514,54 @@ public static final long g_utf8_to_utf16(byte[] str, long len, long [] items_rea
  * @param items_written cast=(glong *),flags=critical
  * @param error cast=(GError **),flags=critical
  */
-public static final long g_utf8_to_utf16(long str, long len, long [] items_read, long [] items_written, long [] error) { return OS_FFM.g_utf8_to_utf16(str, len, items_read, items_written, error); }
+public static final native long g_utf8_to_utf16(long str, long len, long [] items_read, long [] items_written, long [] error);
 /**
  * @param value cast=(GValue *)
  * @param type cast=(GType)
  */
-public static final long g_value_init(long value, long type) { return OS_FFM.g_value_init(value, type); }
+public static final native long g_value_init (long value, long type);
 /** @param value cast=(GValue *) */
-public static final int g_value_get_int(long value) { return OS_FFM.g_value_get_int(value); }
+public static final native int g_value_get_int (long value);
 /** @param value cast=(GValue *) */
-public static final void g_value_set_int(long value, int v) { OS_FFM.g_value_set_int(value, v); }
+public static final native void g_value_set_int (long value, int v);
 /** @param value cast=(GValue *) */
-public static final double g_value_get_double(long value) { return OS_FFM.g_value_get_double(value); }
+public static final native double g_value_get_double (long value);
 /** @param value cast=(GValue *) */
-public static final void g_value_set_double(long value, double v) { OS_FFM.g_value_set_double(value, v); }
+public static final native void g_value_set_double (long value, double v);
 /** @param value cast=(GValue *) */
-public static final float g_value_get_float(long value) { return OS_FFM.g_value_get_float(value); }
+public static final native float g_value_get_float (long value);
 /** @param value cast=(GValue *) */
-public static final void g_value_set_float(long value, float v) { OS_FFM.g_value_set_float(value, v); }
+public static final native void g_value_set_float (long value, float v);
 /** @param value cast=(GValue *) */
-public static final long g_value_get_int64(long value) { return OS_FFM.g_value_get_int64(value); }
+public static final native long g_value_get_int64 (long value);
 /** @param value cast=(GValue *) */
-public static final void g_value_set_int64(long value, long v) { OS_FFM.g_value_set_int64(value, v); }
+public static final native void g_value_set_int64 (long value, long v);
 /** @param value cast=(GValue *)
  *  @param v_string cast =(const gchar *)
  * */
-public static final void g_value_set_string(long value, byte[] v_string) { OS_FFM.g_value_set_string(value, v_string); }
+public static final native void g_value_set_string (long value, byte[] v_string);
 /** @param value cast=(GValue *) */
-public static final long g_value_get_string(long value) { return OS_FFM.g_value_get_string(value); }
+public static final native long g_value_get_string (long value);
 /** @param value cast=(GValue *) */
-public static final long g_value_get_object(long value) { return OS_FFM.g_value_get_object(value); }
+public static final native long g_value_get_object (long value);
 /** @param value cast=(GValue *) */
-public static final void g_value_unset(long value) { OS_FFM.g_value_unset(value); }
+public static final native void g_value_unset (long value);
 /** @param value cast=(const GValue *) */
-public static final long g_value_peek_pointer(long value) { return OS_FFM.g_value_peek_pointer(value); }
+public static final native long g_value_peek_pointer(long value);
 /** @param value cast=(const GValue *) */
-public static final long g_value_get_boxed(long value) { return OS_FFM.g_value_get_boxed(value); }
+public static final native long g_value_get_boxed(long value);
 /**
  * @param value cast=(GValue *)
  * @param boxed cast=(gconstpointer)
  */
-public static final void g_value_take_boxed(long value, long boxed) { OS_FFM.g_value_take_boxed(value, boxed); }
+public static final native void g_value_take_boxed(long value, long boxed);
 /** @param value cast=(const GValue *) */
-public static final long g_value_get_gtype(long value) { return OS_FFM.g_value_get_gtype(value); }
+public static final native long g_value_get_gtype(long value);
 
 /**
  * @param variable cast=(const gchar *),flags=no_out
  */
-public static final void g_unsetenv(byte [] variable) { OS_FFM.g_unsetenv(variable); }
+public static final native void g_unsetenv(byte [] variable);
 
 /**
  * @method flags=dynamic
@@ -1569,441 +1569,441 @@ public static final void g_unsetenv(byte [] variable) { OS_FFM.g_unsetenv(variab
  * @param flags
  * @param error cast=(GError **)
  */
-public static final long g_uri_parse(byte[] uri_string,  long flags, long[] error) { return OS_FFM.g_uri_parse(uri_string, flags, error); }
+public static final native long g_uri_parse (byte[] uri_string,  long flags, long[] error);
 /**
  * @method flags=dynamic
  */
-public static final void g_uri_unref(long uri) { OS_FFM.g_uri_unref(uri); }
+public static final native void g_uri_unref (long uri);
 /** @method flags=const */
-public static final int glib_major_version() { return org.eclipse.swt.internal.ffm.FFMTypes.glib_major_version(); }
+public static final native int glib_major_version();
 /** @method flags=const */
-public static final int glib_minor_version() { return org.eclipse.swt.internal.ffm.FFMTypes.glib_minor_version(); }
+public static final native int glib_minor_version();
 /** @method flags=const */
-public static final int glib_micro_version() { return org.eclipse.swt.internal.ffm.FFMTypes.glib_micro_version(); }
+public static final native int glib_micro_version();
 /**
  * @param interval cast=(guint32)
  * @param function cast=(GSourceFunc)
  * @param data cast=(gpointer)
  */
-public static final int g_timeout_add(int interval, long function, long data) { return OS_FFM.g_timeout_add(interval, function, data); }
+public static final native int g_timeout_add(int interval, long function, long data);
 
 /** @method flags=dynamic */
-public static final boolean FcConfigAppFontAddFile(long config, byte[] file) { return OS_FFM.FcConfigAppFontAddFile(config, file); }
+public static final native boolean FcConfigAppFontAddFile(long config, byte[] file);
 
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(long dest, GTypeInfo src, int size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(long dest, GTypeInfo src, int size);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(long dest, GdkRGBA src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(long dest, GdkRGBA src, long size);
 /** @param src flags=no_out */
-public static final void memmove(long dest, GtkWidgetClass src) { OS_FFM.memmove(dest, src); }
+public static final native void memmove(long dest, GtkWidgetClass src);
 /**
  * @param dest cast=(void *)
  * @param src cast=(const void *),flags=no_out
  * @param size cast=(size_t)
  */
-public static final void memmove(long dest, PangoAttribute src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(long dest, PangoAttribute src, long size);
 /** @param dest flags=no_in */
-public static final void memmove(GtkWidgetClass dest, long src) { OS_FFM.memmove(dest, src); }
+public static final native void memmove(GtkWidgetClass dest, long src);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(GtkBorder dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(GtkBorder dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(GdkKeymapKey dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(GdkKeymapKey dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(GdkRGBA dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
-public static final void memmove(long dest, GtkCellRendererClass src) { OS_FFM.memmove(dest, src); }
-public static final void memmove(GtkCellRendererClass dest, long src) { OS_FFM.memmove(dest, src); }
+public static final native void memmove(GdkRGBA dest, long src, long size);
+public static final native void memmove(long dest, GtkCellRendererClass src);
+public static final native void memmove(GtkCellRendererClass dest, long src);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(GdkRectangle dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(GdkRectangle dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(PangoAttribute dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(PangoAttribute dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(PangoAttrColor dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(PangoAttrColor dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(PangoAttrInt dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(PangoAttrInt dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(PangoItem dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(PangoItem dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(PangoLayoutLine dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(PangoLayoutLine dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(PangoLayoutRun dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
+public static final native void memmove(PangoLayoutRun dest, long src, long size);
 /**
  * @param dest cast=(void *),flags=no_in
  * @param src cast=(const void *)
  * @param size cast=(size_t)
  */
-public static final void memmove(PangoLogAttr dest, long src, long size) { OS_FFM.memmove(dest, src, size); }
-public static final int pango_version() { return OS_FFM.pango_version(); }
+public static final native void memmove(PangoLogAttr dest, long src, long size);
+public static final native int pango_version();
 /** @param attribute cast=(const PangoAttribute *) */
-public static final long pango_attribute_copy(long attribute) { return OS_FFM.pango_attribute_copy(attribute); }
-public static final long pango_attr_background_new(short red, short green, short blue) { return OS_FFM.pango_attr_background_new(red, green, blue); }
+public static final native long pango_attribute_copy(long attribute);
+public static final native long pango_attr_background_new(short red, short green, short blue);
 /** @param desc cast=(const PangoFontDescription *) */
-public static final long pango_attr_font_desc_new(long desc) { return OS_FFM.pango_attr_font_desc_new(desc); }
-public static final long pango_attr_foreground_new(short red, short green, short blue) { return OS_FFM.pango_attr_foreground_new(red, green, blue); }
-public static final long pango_attr_rise_new(int rise) { return OS_FFM.pango_attr_rise_new(rise); }
+public static final native long pango_attr_font_desc_new(long desc);
+public static final native long pango_attr_foreground_new(short red, short green, short blue);
+public static final native long pango_attr_rise_new(int rise);
 /**
  * @param ink_rect flags=no_out
  * @param logical_rect flags=no_out
  */
-public static final long pango_attr_shape_new(PangoRectangle ink_rect, PangoRectangle logical_rect) { return OS_FFM.pango_attr_shape_new(ink_rect, logical_rect); }
+public static final native long pango_attr_shape_new(PangoRectangle ink_rect, PangoRectangle logical_rect);
 /**
  * @param list cast=(PangoAttrList *)
  * @param attr cast=(PangoAttribute *)
  */
-public static final void pango_attr_list_insert(long list, long attr) { OS_FFM.pango_attr_list_insert(list, attr); }
+public static final native void pango_attr_list_insert(long list, long attr);
 /** @param list cast=(PangoAttrList *) */
-public static final long pango_attr_list_get_iterator(long list) { return OS_FFM.pango_attr_list_get_iterator(list); }
+public static final native long pango_attr_list_get_iterator(long list);
 /** @param iterator cast=(PangoAttrIterator *) */
-public static final boolean pango_attr_iterator_next(long iterator) { return OS_FFM.pango_attr_iterator_next(iterator); }
+public static final native boolean pango_attr_iterator_next(long iterator);
 /**
  * @param iterator cast=(PangoAttrIterator *)
  * @param start cast=(gint *)
  * @param end cast=(gint *)
  */
-public static final void pango_attr_iterator_range(long iterator, int[] start, int[] end) { OS_FFM.pango_attr_iterator_range(iterator, start, end); }
+public static final native void pango_attr_iterator_range(long iterator, int[] start, int[] end);
 /**
  * @param iterator cast=(PangoAttrIterator *)
  * @param type cast=(PangoAttrType)
  */
-public static final long pango_attr_iterator_get(long iterator, int type) { return OS_FFM.pango_attr_iterator_get(iterator, type); }
+public static final native long pango_attr_iterator_get(long iterator, int type);
 /** @param iterator cast=(PangoAttrIterator *) */
-public static final void pango_attr_iterator_destroy(long iterator) { OS_FFM.pango_attr_iterator_destroy(iterator); }
-public static final long pango_attr_list_new() { return OS_FFM.pango_attr_list_new(); }
+public static final native void pango_attr_iterator_destroy(long iterator);
+public static final native long pango_attr_list_new();
 /** @param list cast=(PangoAttrList *) */
-public static final void pango_attr_list_unref(long list) { OS_FFM.pango_attr_list_unref(list); }
+public static final native void pango_attr_list_unref(long list);
 /** @method flags=dynamic **/
-public static final long pango_attr_insert_hyphens_new(boolean hyphens) { return OS_FFM.pango_attr_insert_hyphens_new(hyphens); }
-public static final long pango_attr_strikethrough_color_new(short red, short green, short blue) { return OS_FFM.pango_attr_strikethrough_color_new(red, green, blue); }
-public static final long pango_attr_strikethrough_new(boolean strikethrough) { return OS_FFM.pango_attr_strikethrough_new(strikethrough); }
-public static final long pango_attr_underline_color_new(short red, short green, short blue) { return OS_FFM.pango_attr_underline_color_new(red, green, blue); }
-public static final long pango_attr_underline_new(int underline) { return OS_FFM.pango_attr_underline_new(underline); }
-public static final long pango_attr_weight_new(int weight) { return OS_FFM.pango_attr_weight_new(weight); }
+public static final native long pango_attr_insert_hyphens_new(boolean hyphens);
+public static final native long pango_attr_strikethrough_color_new(short red, short green, short blue);
+public static final native long pango_attr_strikethrough_new(boolean strikethrough);
+public static final native long pango_attr_underline_color_new(short red, short green, short blue);
+public static final native long pango_attr_underline_new(int underline);
+public static final native long pango_attr_weight_new(int weight);
 /**
  * @param cairo cast=(cairo_t *)
  */
-public static final long pango_cairo_create_layout(long cairo) { return OS_FFM.pango_cairo_create_layout(cairo); }
-public static final long pango_cairo_font_map_get_default() { return OS_FFM.pango_cairo_font_map_get_default(); }
+public static final native long pango_cairo_create_layout(long cairo);
+public static final native long pango_cairo_font_map_get_default();
 /**
  * @param context cast=(PangoContext *)
  */
-public static final long pango_cairo_context_get_font_options(long context) { return OS_FFM.pango_cairo_context_get_font_options(context); }
+public static final native long pango_cairo_context_get_font_options(long context);
 /**
  * @param context cast=(PangoContext *)
  * @param options cast=( cairo_font_options_t *)
  */
-public static final void pango_cairo_context_set_font_options(long context, long options) { OS_FFM.pango_cairo_context_set_font_options(context, options); }
+public static final native void pango_cairo_context_set_font_options(long context, long options);
 /**
  * @param cairo cast=(cairo_t *)
  * @param layout cast=(PangoLayout *)
  */
-public static final void pango_cairo_layout_path(long cairo, long layout) { OS_FFM.pango_cairo_layout_path(cairo, layout); }
+public static final native void pango_cairo_layout_path(long cairo, long layout);
 /**
  * @param cairo cast=(cairo_t *)
  * @param layout cast=(PangoLayout *)
  */
-public static final void pango_cairo_show_layout(long cairo, long layout) { OS_FFM.pango_cairo_show_layout(cairo, layout); }
+public static final native void pango_cairo_show_layout(long cairo, long layout);
 /** @param context cast=(PangoContext *) */
-public static final int pango_context_get_base_dir(long context) { return OS_FFM.pango_context_get_base_dir(context); }
+public static final native int pango_context_get_base_dir(long context);
 /** @param context cast=(PangoContext *) */
-public static final long pango_context_get_language(long context) { return OS_FFM.pango_context_get_language(context); }
+public static final native long pango_context_get_language(long context);
 /**
  * @param context cast=(PangoContext *)
  * @param desc cast=(const PangoFontDescription *)
  * @param language cast=(PangoLanguage *)
  */
-public static final long pango_context_get_metrics(long context, long desc, long language) { return OS_FFM.pango_context_get_metrics(context, desc, language); }
+public static final native long pango_context_get_metrics(long context, long desc, long language);
 /**
  * @param context cast=(PangoContext *)
  * @param families cast=(PangoFontFamily ***)
  * @param n_families cast=(int *)
  */
-public static final void pango_context_list_families(long context, long [] families, int[] n_families) { OS_FFM.pango_context_list_families(context, families, n_families); }
+public static final native void pango_context_list_families(long context, long [] families, int[] n_families);
 /** @param context cast=(PangoContext *) */
-public static final void pango_context_set_base_dir(long context, int direction) { OS_FFM.pango_context_set_base_dir(context, direction); }
+public static final native void pango_context_set_base_dir(long context, int direction);
 /**
  * @param context cast=(PangoContext *)
  * @param language cast=(PangoLanguage *)
  */
-public static final void pango_context_set_language(long context, long language) { OS_FFM.pango_context_set_language(context, language); }
+public static final native void pango_context_set_language(long context, long language);
 
 
 /* PangoFontDescription */
 /** @param desc cast=(PangoFontDescription *) */
-public static final long pango_font_description_copy(long desc) { return OS_FFM.pango_font_description_copy(desc); }
+public static final native long pango_font_description_copy(long desc);
 /** @param desc cast=(PangoFontDescription *) */
-public static final void pango_font_description_free(long desc) { OS_FFM.pango_font_description_free(desc); }
+public static final native void pango_font_description_free(long desc);
 /** @param str cast=(const char *),flags=no_out critical */
-public static final long pango_font_description_from_string(byte[] str) { return OS_FFM.pango_font_description_from_string(str); }
+public static final native long pango_font_description_from_string(byte[] str);
 /** @param desc cast=(PangoFontDescription *) */
-public static final long pango_font_description_get_family(long desc) { return OS_FFM.pango_font_description_get_family(desc); }
+public static final native long pango_font_description_get_family(long desc);
 /** @param desc cast=(PangoFontDescription *) */
-public static final int pango_font_description_get_size(long desc) { return OS_FFM.pango_font_description_get_size(desc); }
+public static final native int pango_font_description_get_size(long desc);
 /** @param desc cast=(PangoFontDescription *) */
-public static final int pango_font_description_get_stretch(long desc) { return OS_FFM.pango_font_description_get_stretch(desc); }
+public static final native int pango_font_description_get_stretch(long desc);
 /** @param desc cast=(PangoFontDescription *) */
-public static final int pango_font_description_get_variant(long desc) { return OS_FFM.pango_font_description_get_variant(desc); }
+public static final native int pango_font_description_get_variant(long desc);
 /** @param desc cast=(PangoFontDescription *) */
-public static final int pango_font_description_get_style(long desc) { return OS_FFM.pango_font_description_get_style(desc); }
+public static final native int pango_font_description_get_style(long desc);
 /** @param desc cast=(PangoFontDescription *) */
-public static final int pango_font_description_get_weight(long desc) { return OS_FFM.pango_font_description_get_weight(desc); }
-public static final long pango_font_description_new() { return OS_FFM.pango_font_description_new(); }
+public static final native int pango_font_description_get_weight(long desc);
+public static final native long pango_font_description_new();
 /**
  * @param desc cast=(PangoFontDescription *)
  * @param family cast=(const char *),flags=no_out critical
  */
-public static final void pango_font_description_set_family(long desc, byte[] family) { OS_FFM.pango_font_description_set_family(desc, family); }
+public static final native void pango_font_description_set_family(long desc, byte[] family);
 /**
  * @param desc cast=(PangoFontDescription *)
  * @param size cast=(gint)
  */
-public static final void pango_font_description_set_size(long desc, int size) { OS_FFM.pango_font_description_set_size(desc, size); }
+public static final native void pango_font_description_set_size(long desc, int size);
 /**
  * @param desc cast=(PangoFontDescription *)
  * @param stretch cast=(PangoStretch)
  */
-public static final void pango_font_description_set_stretch(long desc, int stretch) { OS_FFM.pango_font_description_set_stretch(desc, stretch); }
+public static final native void pango_font_description_set_stretch(long desc, int stretch);
 /**
  * @param desc cast=(PangoFontDescription *)
  * @param weight cast=(PangoStyle)
  */
-public static final void pango_font_description_set_style(long desc, int weight) { OS_FFM.pango_font_description_set_style(desc, weight); }
+public static final native void pango_font_description_set_style(long desc, int weight);
 /**
  * @param desc cast=(PangoFontDescription *)
  * @param weight cast=(PangoWeight)
  */
-public static final void pango_font_description_set_weight(long desc, int weight) { OS_FFM.pango_font_description_set_weight(desc, weight); }
+public static final native void pango_font_description_set_weight(long desc, int weight);
 /**
  * @param desc cast=(PangoFontDescription *)
  * @param variant cast=(PangoVariant)
  */
-public static final void pango_font_description_set_variant(long desc, int variant) { OS_FFM.pango_font_description_set_variant(desc, variant); }
+public static final native void pango_font_description_set_variant(long desc, int variant);
 /** @param desc cast=(PangoFontDescription *) */
-public static final long pango_font_description_to_string(long desc) { return OS_FFM.pango_font_description_to_string(desc); }
+public static final native long pango_font_description_to_string(long desc);
 /** @param desc cast=(PangoFontDescription *) */
-public static final int pango_font_description_get_set_fields(long desc) { return OS_FFM.pango_font_description_get_set_fields(desc); }
+public static final native int pango_font_description_get_set_fields(long desc);
 
 
 /* PangoFontFace */
 /** @param face cast=(PangoFontFace *) */
-public static final long pango_font_face_describe(long face) { return OS_FFM.pango_font_face_describe(face); }
+public static final native long pango_font_face_describe(long face);
 
 
 /* PangoFontFamily */
 /** @param family cast=(PangoFontFamily *) */
-public static final long pango_font_family_get_name(long family) { return OS_FFM.pango_font_family_get_name(family); }
+public static final native long pango_font_family_get_name(long family);
 /**
  * @param family cast=(PangoFontFamily *)
  * @param faces cast=(PangoFontFace ***)
  * @param n_faces cast=(int *)
  */
-public static final void pango_font_family_list_faces(long family, long [] faces, int[] n_faces) { OS_FFM.pango_font_family_list_faces(family, faces, n_faces); }
+public static final native void pango_font_family_list_faces(long family, long [] faces, int[] n_faces);
 
 
 /* PangoFontMap */
 /** @param fontMap cast=(PangoFontMap *) */
-public static final long pango_font_map_create_context(long fontMap) { return OS_FFM.pango_font_map_create_context(fontMap); }
+public static final native long pango_font_map_create_context(long fontMap);
 /** @param metrics cast=(PangoFontMetrics *) */
 
 
 /* PangoFontMetrics */
-public static final int pango_font_metrics_get_approximate_char_width(long metrics) { return OS_FFM.pango_font_metrics_get_approximate_char_width(metrics); }
+public static final native int pango_font_metrics_get_approximate_char_width(long metrics);
 /** @param metrics cast=(PangoFontMetrics *) */
-public static final int pango_font_metrics_get_ascent(long metrics) { return OS_FFM.pango_font_metrics_get_ascent(metrics); }
+public static final native int pango_font_metrics_get_ascent(long metrics);
 /** @param metrics cast=(PangoFontMetrics *) */
-public static final int pango_font_metrics_get_descent(long metrics) { return OS_FFM.pango_font_metrics_get_descent(metrics); }
+public static final native int pango_font_metrics_get_descent(long metrics);
 /** @param metrics cast=(PangoFontMetrics *) */
-public static final void pango_font_metrics_unref(long metrics) { OS_FFM.pango_font_metrics_unref(metrics); }
+public static final native void pango_font_metrics_unref(long metrics);
 
 /* PangoLayout */
 /** @param layout cast=(PangoLayout *) */
-public static final void pango_layout_context_changed(long layout) { OS_FFM.pango_layout_context_changed(layout); }
+public static final native void pango_layout_context_changed(long layout);
 /** @param layout cast=(PangoLayout*) */
-public static final int pango_layout_get_alignment(long layout) { return OS_FFM.pango_layout_get_alignment(layout); }
+public static final native int pango_layout_get_alignment(long layout);
 /** @param layout cast=(PangoLayout *) */
-public static final long pango_layout_get_context(long layout) { return OS_FFM.pango_layout_get_context(layout); }
+public static final native long pango_layout_get_context(long layout);
 /** @param layout cast=(PangoLayout*) */
-public static final int pango_layout_get_indent(long layout) { return OS_FFM.pango_layout_get_indent(layout); }
+public static final native int pango_layout_get_indent(long layout);
 /** @param layout cast=(PangoLayout*) */
-public static final long pango_layout_get_iter(long layout) { return OS_FFM.pango_layout_get_iter(layout); }
+public static final native long pango_layout_get_iter(long layout);
 /** @param layout cast=(PangoLayout*) */
-public static final boolean pango_layout_get_justify(long layout) { return OS_FFM.pango_layout_get_justify(layout); }
+public static final native boolean pango_layout_get_justify(long layout);
 /** @param layout cast=(PangoLayout *) */
-public static final long pango_layout_get_line(long layout, int line) { return OS_FFM.pango_layout_get_line(layout, line); }
+public static final native long pango_layout_get_line(long layout, int line);
 /** @param layout cast=(PangoLayout*) */
-public static final int pango_layout_get_line_count(long layout) { return OS_FFM.pango_layout_get_line_count(layout); }
+public static final native int pango_layout_get_line_count(long layout);
 /**
  * @param layout cast=(PangoLayout*)
  * @param attrs cast=(PangoLogAttr **)
  * @param n_attrs cast=(int *)
  */
-public static final void pango_layout_get_log_attrs(long layout, long [] attrs, int[] n_attrs) { OS_FFM.pango_layout_get_log_attrs(layout, attrs, n_attrs); }
+public static final native void pango_layout_get_log_attrs(long layout, long [] attrs, int[] n_attrs);
 /**
  * @param layout cast=(PangoLayout *)
  * @param width cast=(int *)
  * @param height cast=(int *)
  */
-public static final void pango_layout_get_size(long layout, int[] width, int[] height) { OS_FFM.pango_layout_get_size(layout, width, height); }
+public static final native void pango_layout_get_size(long layout, int[] width, int[] height);
 /**
  * @param layout cast=(PangoLayout *)
  * @param width cast=(int *)
  * @param height cast=(int *)
  */
-public static final void pango_layout_get_pixel_size(long layout, int[] width, int[] height) { OS_FFM.pango_layout_get_pixel_size(layout, width, height); }
+public static final native void pango_layout_get_pixel_size(long layout, int[] width, int[] height);
 /** @param layout cast=(PangoLayout*) */
-public static final int pango_layout_get_spacing(long layout) { return OS_FFM.pango_layout_get_spacing(layout); }
+public static final native int pango_layout_get_spacing(long layout);
 /** @param layout cast=(PangoLayout *) */
-public static final long pango_layout_get_text(long layout) { return OS_FFM.pango_layout_get_text(layout); }
+public static final native long pango_layout_get_text(long layout);
 /** @param layout cast=(PangoLayout *) */
-public static final int pango_layout_get_width(long layout) { return OS_FFM.pango_layout_get_width(layout); }
+public static final native int pango_layout_get_width(long layout);
 /**
  * @param layout cast=(PangoLayout*)
  * @param pos flags=no_in
  */
-public static final void pango_layout_index_to_pos(long layout, int index, PangoRectangle pos) { OS_FFM.pango_layout_index_to_pos(layout, index, pos); }
+public static final native void pango_layout_index_to_pos(long layout, int index, PangoRectangle pos);
 /** @param iter cast=(PangoLayoutIter*) */
-public static final void pango_layout_iter_free(long iter) { OS_FFM.pango_layout_iter_free(iter); }
+public static final native void pango_layout_iter_free(long iter);
 /**
  * @param iter cast=(PangoLayoutIter*)
  * @param ink_rect flags=no_in
  * @param logical_rect flags=no_in
  */
-public static final void pango_layout_iter_get_line_extents(long iter, PangoRectangle ink_rect, PangoRectangle logical_rect) { OS_FFM.pango_layout_iter_get_line_extents(iter, ink_rect, logical_rect); }
+public static final native void pango_layout_iter_get_line_extents(long iter, PangoRectangle ink_rect, PangoRectangle logical_rect);
 /** @param iter cast=(PangoLayoutIter*) */
-public static final int pango_layout_iter_get_index(long iter) { return OS_FFM.pango_layout_iter_get_index(iter); }
+public static final native int pango_layout_iter_get_index(long iter);
 /** @param iter cast=(PangoLayoutIter*) */
-public static final long pango_layout_iter_get_run(long iter) { return OS_FFM.pango_layout_iter_get_run(iter); }
+public static final native long pango_layout_iter_get_run(long iter);
 /** @param iter cast=(PangoLayoutIter*) */
-public static final boolean pango_layout_iter_next_line(long iter) { return OS_FFM.pango_layout_iter_next_line(iter); }
+public static final native boolean pango_layout_iter_next_line(long iter);
 /** @param iter cast=(PangoLayoutIter*) */
-public static final boolean pango_layout_iter_next_run(long iter) { return OS_FFM.pango_layout_iter_next_run(iter); }
+public static final native boolean pango_layout_iter_next_run(long iter);
 /**
  * @param line cast=(PangoLayoutLine*)
  * @param ink_rect cast=(PangoRectangle *),flags=no_in
  * @param logical_rect cast=(PangoRectangle *),flags=no_in
  */
-public static final void pango_layout_line_get_extents(long line, PangoRectangle ink_rect, PangoRectangle logical_rect) { OS_FFM.pango_layout_line_get_extents(line, ink_rect, logical_rect); }
+public static final native void pango_layout_line_get_extents(long line, PangoRectangle ink_rect, PangoRectangle logical_rect);
 /** @param context cast=(PangoContext *) */
-public static final long pango_layout_new(long context) { return OS_FFM.pango_layout_new(context); }
+public static final native long pango_layout_new(long context);
 /** @param layout cast=(PangoLayout *) */
-public static final void pango_layout_set_alignment(long layout, int alignment) { OS_FFM.pango_layout_set_alignment(layout, alignment); }
+public static final native void pango_layout_set_alignment(long layout, int alignment);
 /**
  * @param layout cast=(PangoLayout *)
  * @param attrs cast=(PangoAttrList *)
  */
-public static final void pango_layout_set_attributes(long layout, long attrs) { OS_FFM.pango_layout_set_attributes(layout, attrs); }
+public static final native void pango_layout_set_attributes(long layout, long attrs);
 /**
  * @param layout cast=(PangoLayout *)
  */
-public static final void pango_layout_set_auto_dir(long layout, boolean auto_dir) { OS_FFM.pango_layout_set_auto_dir(layout, auto_dir); }
+public static final native void pango_layout_set_auto_dir(long layout, boolean auto_dir);
 /**
  * @param context cast=(PangoLayout *)
  * @param descr cast=(PangoFontDescription *)
  */
-public static final void pango_layout_set_font_description(long context, long descr) { OS_FFM.pango_layout_set_font_description(context, descr); }
+public static final native void pango_layout_set_font_description(long context, long descr);
 /** @param layout cast=(PangoLayout*) */
-public static final void pango_layout_set_indent(long layout, int indent) { OS_FFM.pango_layout_set_indent(layout, indent); }
+public static final native void pango_layout_set_indent(long layout, int indent);
 /** @param layout cast=(PangoLayout*) */
-public static final void pango_layout_set_justify(long layout, boolean justify) { OS_FFM.pango_layout_set_justify(layout, justify); }
+public static final native void pango_layout_set_justify(long layout, boolean justify);
 /**
  * @param context cast=(PangoLayout *)
  * @param setting cast=(gboolean)
  */
-public static final void pango_layout_set_single_paragraph_mode(long context, boolean setting) { OS_FFM.pango_layout_set_single_paragraph_mode(context, setting); }
+public static final native void pango_layout_set_single_paragraph_mode(long context, boolean setting);
 /** @param layout cast=(PangoLayout *) */
-public static final void pango_layout_set_spacing(long layout, int spacing) { OS_FFM.pango_layout_set_spacing(layout, spacing); }
+public static final native void pango_layout_set_spacing(long layout, int spacing);
 /**
  * @param layout cast=(PangoLayout *)
  * @param tabs cast=(PangoTabArray *)
  */
-public static final void pango_layout_set_tabs(long layout, long tabs) { OS_FFM.pango_layout_set_tabs(layout, tabs); }
+public static final native void pango_layout_set_tabs(long layout, long tabs);
 /**
  * @param layout cast=(PangoLayout *)
  * @param text cast=(const char *),flags=no_out critical
  * @param length cast=(int)
  */
-public static final void pango_layout_set_text(long layout, byte[] text, int length) { OS_FFM.pango_layout_set_text(layout, text, length); }
+public static final native void pango_layout_set_text(long layout, byte[] text, int length);
 /** @param layout cast=(PangoLayout *) */
-public static final void pango_layout_set_width(long layout, int width) { OS_FFM.pango_layout_set_width(layout, width); }
+public static final native void pango_layout_set_width(long layout, int width);
 /** @param layout cast=(PangoLayout *) */
-public static final void pango_layout_set_wrap(long layout, int wrap) { OS_FFM.pango_layout_set_wrap(layout, wrap); }
+public static final native void pango_layout_set_wrap(long layout, int wrap);
 /**
  * @param layout cast=(PangoLayout *)
  * @param index cast=(int *)
  * @param trailing cast=(int *)
  */
-public static final boolean pango_layout_xy_to_index(long layout, int x, int y, int[] index, int[] trailing) { return OS_FFM.pango_layout_xy_to_index(layout, x, y, index, trailing); }
+public static final native boolean pango_layout_xy_to_index(long layout, int x, int y, int[] index, int[] trailing);
 
 
 /** @param tab_array cast=(PangoTabArray *) */
-public static final void pango_tab_array_free(long tab_array) { OS_FFM.pango_tab_array_free(tab_array); }
+public static final native void pango_tab_array_free(long tab_array);
 /**
  * @param initial_size cast=(gint)
  * @param positions_in_pixels cast=(gboolean)
  */
-public static final long pango_tab_array_new(int initial_size, boolean positions_in_pixels) { return OS_FFM.pango_tab_array_new(initial_size, positions_in_pixels); }
+public static final native long pango_tab_array_new(int initial_size, boolean positions_in_pixels);
 /**
  * @param tab_array cast=(PangoTabArray *)
  * @param tab_index cast=(gint)
  * @param alignment cast=(PangoTabAlign)
  * @param location cast=(gint)
  */
-public static final void pango_tab_array_set_tab(long tab_array, int tab_index, long alignment, int location) { OS_FFM.pango_tab_array_set_tab(tab_array, tab_index, alignment, location); }
+public static final native void pango_tab_array_set_tab(long tab_array, int tab_index, long alignment, int location);
 /**
  * @method flags=dynamic
  */
-public static final long ubuntu_menu_proxy_get() { return OS_FFM.ubuntu_menu_proxy_get(); }
+public static final native long ubuntu_menu_proxy_get();
 /**
  * @param s1 cast=(const char*)
  * @param s2 cast=(const char*)
  */
-public static final int strcmp(long s1, byte [] s2) { return OS_FFM.strcmp(s1, s2); }
+public static final native int strcmp (long s1, byte [] s2);
 
 /**
  * Theme name as given by OS.
@@ -2082,7 +2082,7 @@ public static final void setTheme(boolean isDarkTheme) {
  * @param tmpl cast=(const gchar *)
  * @param error cast=(GError **)
  */
-public static final long g_dir_make_tmp(long tmpl, long [] error) { return OS_FFM.g_dir_make_tmp(tmpl, error); }
+public static final native long g_dir_make_tmp(long tmpl, long [] error);
 
 /**
  * @param info cast=(GDBusInterfaceInfo *)
@@ -2093,8 +2093,8 @@ public static final long g_dir_make_tmp(long tmpl, long [] error) { return OS_FF
  * @param error cast=(GError **)
  * @category gdbus
  */
-public static final long g_dbus_proxy_new_for_bus_sync(int bus_type, int flags, long info, byte [] name, byte [] object_path, byte [] interface_name,
-		long cancellable, long [] error) { return OS_FFM.g_dbus_proxy_new_for_bus_sync(bus_type, flags, info, name, object_path, interface_name, cancellable, error); }
+public static final native long g_dbus_proxy_new_for_bus_sync(int bus_type, int flags, long info, byte [] name, byte [] object_path, byte [] interface_name,
+		long cancellable, long [] error);
 
 /**
  * @param proxy cast=(GDBusProxy *)
@@ -2104,7 +2104,7 @@ public static final long g_dbus_proxy_new_for_bus_sync(int bus_type, int flags, 
  * @param error cast=(GError **)
  * @category gdbus
  */
-public static final long g_dbus_proxy_call_sync(long proxy, byte[] method_name, long parameters, int flags, int timeout_msec, long cancellable, long [] error) { return OS_FFM.g_dbus_proxy_call_sync(proxy, method_name, parameters, flags, timeout_msec, cancellable, error); }
+public static final native long g_dbus_proxy_call_sync (long proxy, byte[] method_name, long parameters, int flags, int timeout_msec, long cancellable, long [] error);
 
 /**
  * @param proxy cast=(GDBusProxy *)
@@ -2115,20 +2115,20 @@ public static final long g_dbus_proxy_call_sync(long proxy, byte[] method_name, 
  * @param error cast=(GError **)
  * @category gdbus
  */
-public static final void g_dbus_proxy_call(long proxy, byte[] method_name, long parameters, int flags, int timeout_msec, long cancellable, long callback, long [] error) { OS_FFM.g_dbus_proxy_call(proxy, method_name, parameters, flags, timeout_msec, cancellable, callback, error); }
+public static final native void g_dbus_proxy_call (long proxy, byte[] method_name, long parameters, int flags, int timeout_msec, long cancellable, long callback, long [] error);
 
 /**
  * @param proxy cast=(GDBusProxy *)
  * @category gdbus
  */
-public static final long g_dbus_proxy_get_name_owner(long proxy) { return OS_FFM.g_dbus_proxy_get_name_owner(proxy); }
+public static final native long g_dbus_proxy_get_name_owner(long proxy);
 
 /**
  * @param xml_data cast=(const gchar *)
  * @param error cast=(GError **)
  * @category gdbus
  */
-public static final long g_dbus_node_info_new_for_xml(byte[] xml_data, long [] error) { return OS_FFM.g_dbus_node_info_new_for_xml(xml_data, error); }
+public static final native long g_dbus_node_info_new_for_xml(byte[] xml_data, long [] error);
 
 /**
  * @param bus_type cast=(GBusType)
@@ -2141,7 +2141,7 @@ public static final long g_dbus_node_info_new_for_xml(byte[] xml_data, long [] e
  * @param user_data_free_func cast=(GDestroyNotify)
  * @category gdbus
  */
-public static final int g_bus_own_name(int bus_type, byte[] name, int flags, long bus_acquired_handler, long name_acquired_handler, long name_lost_handler, long  user_data, long user_data_free_func) { return OS_FFM.g_bus_own_name(bus_type, name, flags, bus_acquired_handler, name_acquired_handler, name_lost_handler, user_data, user_data_free_func); }
+public static final native int g_bus_own_name(int bus_type, byte[] name, int flags, long bus_acquired_handler, long name_acquired_handler, long name_lost_handler, long  user_data, long user_data_free_func);
 
 /**
  * @param connection cast=(GDBusConnection *)
@@ -2153,65 +2153,65 @@ public static final int g_bus_own_name(int bus_type, byte[] name, int flags, lon
  * @param error cast=(GError **)
  * @category gdbus
  */
-public static final int g_dbus_connection_register_object(long connection, byte[] object_path, long interface_info, long [] vtable, long user_data, long user_data_free_func, long [] error) { return OS_FFM.g_dbus_connection_register_object(connection, object_path, interface_info, vtable, user_data, user_data_free_func, error); }
+public static final native int g_dbus_connection_register_object(long connection, byte[] object_path, long interface_info, long [] vtable, long user_data, long user_data_free_func, long [] error);
 
 /**
  * @param info cast=(GDBusNodeInfo *)
  * @param name cast=(const gchar *)
  * @category gdbus
  */
-public static final long g_dbus_node_info_lookup_interface(long info, byte [] name) { return OS_FFM.g_dbus_node_info_lookup_interface(info, name); }
+public static final native long g_dbus_node_info_lookup_interface(long info, byte [] name);
 
 /**
  * @param invocation cast=(GDBusMethodInvocation *)
  * @param parameters cast=(GVariant *)
  * @category gdbus
  */
-public static final void g_dbus_method_invocation_return_value(long invocation, long parameters) { OS_FFM.g_dbus_method_invocation_return_value(invocation, parameters); }
+public static final native void g_dbus_method_invocation_return_value(long invocation, long parameters);
 
 /**
  * @param type cast=(const GVariantType *)
  * @category gdbus
  */
-public static final long g_variant_builder_new(long type) { return OS_FFM.g_variant_builder_new(type); }
+public static final native long g_variant_builder_new(long type);
 
 /**
  * @param builder cast=(GVariantBuilder *)
  * @param value cast=(GVariant *)
  * @category gdbus
  */
-public static final void g_variant_builder_add_value(long builder, long value) { OS_FFM.g_variant_builder_add_value(builder, value); }
+public static final native void g_variant_builder_add_value(long builder, long value);
 
 /**
  * @param type cast=(GVariantType *)
  * @category gdbus
  */
-public static final void g_variant_type_free(long type) { OS_FFM.g_variant_type_free(type); }
+public static final native void g_variant_type_free(long type);
 
 /**
  * @param type cast=(const gchar *)
  * @category gdbus
  */
-public static final long g_variant_type_new(byte [] type) { return OS_FFM.g_variant_type_new(type); }
+public static final native long g_variant_type_new(byte [] type);
 
 /**
  * @param builder cast=(GVariantBuilder *)
  * @category gdbus
  */
-public static final long g_variant_builder_end(long builder) { return OS_FFM.g_variant_builder_end(builder); }
+public static final native long g_variant_builder_end(long builder);
 
 /**
  * @param builder cast=(GVariantBuilder *)
  * @category gdbus
  */
-public static final void g_variant_builder_unref(long builder) { OS_FFM.g_variant_builder_unref(builder); }
+public static final native void g_variant_builder_unref(long builder);
 
 /**
  * @param format_string cast=(const gchar *),flags=no_out
  * @param arg0 cast=(const gchar *),flags=no_out
  * @category gdbus
  */
-public static final long g_variant_new(byte[] format_string, byte[] arg0) { return OS_FFM.g_variant_new(format_string, arg0); }
+public static final native long g_variant_new (byte[] format_string, byte[] arg0);
 
 /**
  * @param format_string cast=(const gchar *),flags=no_out
@@ -2219,7 +2219,7 @@ public static final long g_variant_new(byte[] format_string, byte[] arg0) { retu
  * @param arg1 cast=(const gchar *),flags=no_out
  * @category gdbus
  */
-public static final long g_variant_new(byte[] format_string, boolean arg0, byte[] arg1) { return OS_FFM.g_variant_new(format_string, arg0, arg1); }
+public static final native long g_variant_new (byte[] format_string, boolean arg0, byte[] arg1);
 
 /**
  * @param format_string cast=(const gchar *),flags=no_out
@@ -2227,13 +2227,13 @@ public static final long g_variant_new(byte[] format_string, boolean arg0, byte[
  * @param arg1 cast=(const gchar *),flags=no_out
  * @category gdbus
  */
-public static final long g_variant_new(byte[] format_string, byte[] arg0, byte[] arg1) { return OS_FFM.g_variant_new(format_string, arg0, arg1); }
+public static final native long g_variant_new (byte[] format_string, byte[] arg0, byte[] arg1);
 
 /**
  * @param intval cast=(gint32)
  * @category gdbus
  */
-public static final long g_variant_new_int32(int intval) { return OS_FFM.g_variant_new_int32(intval); }
+public static final native long g_variant_new_int32(int intval);
 
 
 /**
@@ -2241,115 +2241,115 @@ public static final long g_variant_new_int32(int intval) { return OS_FFM.g_varia
  * @category gdbus
  * @return int
  */
-public static final int g_variant_get_int32(long gvariant) { return OS_FFM.g_variant_get_int32(gvariant); }
+public static final native int g_variant_get_int32(long gvariant);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @category gdbus
  * @return guchar
  */
-public static final byte g_variant_get_byte(long gvariant) { return OS_FFM.g_variant_get_byte(gvariant); }
+public static final native byte g_variant_get_byte(long gvariant);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @category gdbus
  */
-public static final boolean g_variant_get_boolean(long gvariant) { return OS_FFM.g_variant_get_boolean(gvariant); }
+public static final native boolean g_variant_get_boolean(long gvariant);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @param index cast=(gsize)
  * @category gdbus
  */
-public static final long g_variant_get_child_value(long gvariant, int index) { return OS_FFM.g_variant_get_child_value(gvariant, index); }
+public static final native long g_variant_get_child_value(long gvariant, int index);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @category gdbus
  */
-public static final double g_variant_get_double(long gvariant) { return OS_FFM.g_variant_get_double(gvariant); }
+public static final native double g_variant_get_double(long gvariant);
 
-public static final long g_variant_new_uint64(long value) { return OS_FFM.g_variant_new_uint64(value); }
+public static final native long g_variant_new_uint64(long value);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @category gdbus
  */
-public static final long g_variant_get_uint64(long gvariant) { return OS_FFM.g_variant_get_uint64(gvariant); }
+public static final native long g_variant_get_uint64(long gvariant);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @param length cast=(gsize *)
  * @category gdbus
  */
-public static final long g_variant_get_string(long gvariant, long[] length) { return OS_FFM.g_variant_get_string(gvariant, length); }
+public static final native long g_variant_get_string(long gvariant, long[] length);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @category gdbus
  */
-public static final long g_variant_get_type_string(long gvariant) { return OS_FFM.g_variant_get_type_string(gvariant); }
+public static final native long g_variant_get_type_string(long gvariant);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @param type cast=(const GVariantType *)
  * @category gdbus
  */
-public static final boolean g_variant_is_of_type(long gvariant, byte[] type) { return OS_FFM.g_variant_is_of_type(gvariant, type); }
+public static final native boolean g_variant_is_of_type(long gvariant, byte[] type);
 
 /**
  * @param gvariant cast=(GVariant *)
  * @category gdbus
  */
-public static final long g_variant_n_children(long gvariant) { return OS_FFM.g_variant_n_children(gvariant); }
+public static final native long g_variant_n_children(long gvariant);
 
 /**
  * @param value cast=(gboolean)
  * @category gdbus
  */
-public static final long g_variant_new_boolean(boolean value) { return OS_FFM.g_variant_new_boolean(value); }
+public static final native long g_variant_new_boolean(boolean value);
 
 /**
  * @param value cast=(gboolean)
  * @category gdbus
  */
-public static final long g_variant_new_double(double value) { return OS_FFM.g_variant_new_double(value); }
+public static final native long g_variant_new_double(double value);
 
 /**
  * @param value cast=(guchar)
  * @category gdbus
  */
-public static final long g_variant_new_byte(byte value) { return OS_FFM.g_variant_new_byte(value); }
+public static final native long g_variant_new_byte(byte value);
 
 /**
  * @param items cast=(GVariant * const *)
  * @param length cast=(gsize)
  * @category gdbus
  */
-public static final long g_variant_new_tuple(long [] items, long length) { return OS_FFM.g_variant_new_tuple(items, length); }
+public static final native long g_variant_new_tuple(long [] items, long length);
 
 /**
  * @param string cast=(const gchar *)
  * @category gdbus
  */
-public static final long g_variant_new_string(byte[] string) { return OS_FFM.g_variant_new_string(string); }
+public static final native long g_variant_new_string(byte[] string);
 
 /**
  * @param string cast=(const gchar *)
  * @category gdbus
  */
-public static final long g_variant_new_string(long string) { return OS_FFM.g_variant_new_string(string); }
+public static final native long g_variant_new_string(long string);
 
 /**
  * @param value cast=(GVariant *)
  * @category gdbus
  */
-public static final void g_variant_unref(long value) { OS_FFM.g_variant_unref(value); }
+public static final native void g_variant_unref(long value);
 
 /**
  * @param object cast=(GObject *)
  */
-public static final long g_object_ref_sink(long object) { return OS_FFM.g_object_ref_sink(object); }
+public static final native long g_object_ref_sink(long object);
 
 /* GDateTime */
 /**
@@ -2358,7 +2358,7 @@ public static final long g_object_ref_sink(long object) { return OS_FFM.g_object
  * @param month cast=(gint *)
  * @param day cast=(gint *)
  */
-public static final void g_date_time_get_ymd(long dateTime, int[] year, int[] month, int[] day) { OS_FFM.g_date_time_get_ymd(dateTime, year, month, day); }
+public static final native void g_date_time_get_ymd(long dateTime, int[] year, int[] month, int[] day);
 /**
  * Ranges:
  * year must be between 1 - 9999,
@@ -2375,111 +2375,111 @@ public static final void g_date_time_get_ymd(long dateTime, int[] year, int[] mo
  * @param minute cast=(gint)
  * @param seconds cast=(gdouble)
  */
-public static final long g_date_time_new_local(int year, int month, int day, int hour, int minute, double seconds) { return OS_FFM.g_date_time_new_local(year, month, day, hour, minute, seconds); }
+public static final native long g_date_time_new_local(int year, int month, int day, int hour, int minute, double seconds);
 /** @param datetime cast=(GDateTime *) */
-public static final void g_date_time_unref(long datetime) { OS_FFM.g_date_time_unref(datetime); }
+public static final native void g_date_time_unref(long datetime);
 
 /** @param file cast=(GFile *) */
-public static final long g_file_get_path(long file) { return OS_FFM.g_file_get_path(file); }
+public static final native long g_file_get_path(long file);
 
 
 /* GMenu */
-public static final long g_menu_new() { return OS_FFM.g_menu_new(); }
+public static final native long g_menu_new();
 /**
  * @param label cast=(const gchar *)
  * @param submenu cast=(GMenuModel *)
  */
-public static final long g_menu_item_new_submenu(byte[] label, long submenu) { return OS_FFM.g_menu_item_new_submenu(label, submenu); }
+public static final native long g_menu_item_new_submenu(byte[] label, long submenu);
 /**
  * @param label cast=(const gchar *)
  * @param section cast=(GMenuModel *)
  */
-public static final long g_menu_item_new_section(byte[] label, long section) { return OS_FFM.g_menu_item_new_section(label, section); }
+public static final native long g_menu_item_new_section(byte[] label, long section);
 /**
  * @param label cast=(const gchar *)
  * @param detailed_action cast=(const gchar *)
  */
-public static final long g_menu_item_new(byte[] label, byte[] detailed_action) { return OS_FFM.g_menu_item_new(label, detailed_action); }
+public static final native long g_menu_item_new(byte[] label, byte[] detailed_action);
 /**
  * @param menu_item cast=(GMenuItem *)
  * @param submenu cast=(GMenuModel *)
  */
-public static final void g_menu_item_set_submenu(long menu_item, long submenu) { OS_FFM.g_menu_item_set_submenu(menu_item, submenu); }
+public static final native void g_menu_item_set_submenu(long menu_item, long submenu);
 /**
  * @param menu cast=(GMenu *)
  * @param item cast=(GMenuItem *)
  */
-public static final void g_menu_insert_item(long menu, int position, long item) { OS_FFM.g_menu_insert_item(menu, position, item); }
+public static final native void g_menu_insert_item(long menu, int position, long item);
 /** @param menu cast=(GMenu *) */
-public static final void g_menu_remove(long menu, int position) { OS_FFM.g_menu_remove(menu, position); }
+public static final native void g_menu_remove(long menu, int position);
 /**
  * @param menu_item cast=(GMenuItem *)
  * @param label cast=(const gchar *)
  */
-public static final void g_menu_item_set_label(long menu_item, byte[] label) { OS_FFM.g_menu_item_set_label(menu_item, label); }
+public static final native void g_menu_item_set_label(long menu_item, byte[] label);
 /**
  * @param menu_item cast=(GMenuItem *)
  * @param attribute cast=(const gchar *)
  * @param format_string cast=(const gchar *)
  * @param data cast=(const gchar *)
  */
-public static final void g_menu_item_set_attribute(long menu_item, byte[] attribute, byte[] format_string, long data) { OS_FFM.g_menu_item_set_attribute(menu_item, attribute, format_string, data); }
+public static final native void g_menu_item_set_attribute(long menu_item, byte[] attribute, byte[] format_string, long data);
 /**
  * @param menu_item cast=(GMenuItem *)
  * @param attribute cast=(const gchar *)
  * @param value cast=(GVariant *)
  */
-public static final void g_menu_item_set_attribute_value(long menu_item, byte[] attribute, long value) { OS_FFM.g_menu_item_set_attribute_value(menu_item, attribute, value); }
+public static final native void g_menu_item_set_attribute_value(long menu_item, byte[] attribute, long value);
 
 /* GSimpleActionGroup */
-public static final long g_simple_action_group_new() { return OS_FFM.g_simple_action_group_new(); }
+public static final native long g_simple_action_group_new();
 
 /* GSimpleAction */
 /**
  * @param name cast=(const gchar *)
  * @param parameter_type cast=(const GVariantType *)
  */
-public static final long g_simple_action_new(byte[] name, long parameter_type) { return OS_FFM.g_simple_action_new(name, parameter_type); }
+public static final native long g_simple_action_new(byte[] name, long parameter_type);
 /**
  * @param name cast=(const gchar *)
  * @param parameter_type cast=(const GVariantType *)
  * @param initial_state cast=(GVariant *)
  */
-public static final long g_simple_action_new_stateful(byte[] name, long parameter_type, long initial_state) { return OS_FFM.g_simple_action_new_stateful(name, parameter_type, initial_state); }
+public static final native long g_simple_action_new_stateful(byte[] name, long parameter_type, long initial_state);
 /**
  * @param simple_action cast=(GSimpleAction *)
  * @param value cast=(GVariant *)
  */
-public static final void g_simple_action_set_state(long simple_action, long value) { OS_FFM.g_simple_action_set_state(simple_action, value); }
+public static final native void g_simple_action_set_state(long simple_action, long value);
 /** @param simple_action cast=(GSimpleAction *) */
-public static final void g_simple_action_set_enabled(long simple_action, boolean enabled) { OS_FFM.g_simple_action_set_enabled(simple_action, enabled); }
+public static final native void g_simple_action_set_enabled(long simple_action, boolean enabled);
 
 /* GAction */
 /** @param action cast=(GAction *) */
-public static final boolean g_action_get_enabled(long action) { return OS_FFM.g_action_get_enabled(action); }
+public static final native boolean g_action_get_enabled(long action);
 /** @param action cast=(GAction *) */
-public static final long g_action_get_state(long action) { return OS_FFM.g_action_get_state(action); }
+public static final native long g_action_get_state(long action);
 
 /* GActionMap */
 /**
  * @param action_map cast=(GActionMap *)
  * @param action cast=(GAction *)
  */
-public static final void g_action_map_add_action(long action_map, long action) { OS_FFM.g_action_map_add_action(action_map, action); }
+public static final native void g_action_map_add_action(long action_map, long action);
 /**
  * @param action_map cast=(GActionMap *)
  * @param action_name cast=(const gchar *)
  */
-public static final void g_action_map_remove_action(long action_map, byte[] action_name) { OS_FFM.g_action_map_remove_action(action_map, action_name); }
+public static final native void g_action_map_remove_action(long action_map, byte[] action_name);
 
 /* GListModel */
 /** @param list cast=(GListModel *) */
-public static final int g_list_model_get_n_items(long list) { return OS_FFM.g_list_model_get_n_items(list); }
+public static final native int g_list_model_get_n_items(long list);
 /**
  * @param list cast=(GListModel *)
  * @param position cast=(guint)
  */
-public static final long g_list_model_get_item(long list, int position) { return OS_FFM.g_list_model_get_item(list, position); }
+public static final native long g_list_model_get_item(long list, int position);
 
 /* GMemoryInputStream */
 /**
@@ -2487,7 +2487,7 @@ public static final long g_list_model_get_item(long list, int position) { return
  * @param len cast=(gssize)
  * @param destroy cast=(GDestroyNotify)
  */
-public static final long g_memory_input_stream_new_from_data(long data, long len, long destroy) { return OS_FFM.g_memory_input_stream_new_from_data(data, len, destroy); }
+public static final native long g_memory_input_stream_new_from_data(long data, long len, long destroy);
 
 /**
  * @param stream cast=(GOutputStream*)
@@ -2498,37 +2498,37 @@ public static final long g_memory_input_stream_new_from_data(long data, long len
  * @param callback cast=(GAsyncReadyCallback)
  * @param user_data cast=(gpointer)
  */
-public static final void g_output_stream_splice_async(long stream, long source, int flags, int io_priority, long cancellable, long callback, long user_data) { OS_FFM.g_output_stream_splice_async(stream, source, flags, io_priority, cancellable, callback, user_data); }
+public static final native void g_output_stream_splice_async(long stream, long source, int flags, int io_priority, long cancellable, long callback, long user_data);
 /**
  * @param stream cast=(GOutputStream*)
  * @param result cast=(GAsyncResult*)
  * @param error cast=(GError**)
  */
-public static final long g_output_stream_splice_finish(long stream, long result, long[] error) { return OS_FFM.g_output_stream_splice_finish(stream, result, error); }
+public static final native long g_output_stream_splice_finish(long stream, long result, long[] error);
 /**
  *
  */
-public static final long g_memory_output_stream_new_resizable() { return OS_FFM.g_memory_output_stream_new_resizable(); }
+public static final native long g_memory_output_stream_new_resizable();
 /**
  * @param ostream cast=(GMemoryOutputStream*)
  */
-public static final long g_memory_output_stream_get_data(long ostream) { return OS_FFM.g_memory_output_stream_get_data(ostream); }
+public static final native long g_memory_output_stream_get_data(long ostream);
 /**
  * @param ostream cast=(GMemoryOutputStream*)
  */
-public static final long g_memory_output_stream_get_size(long ostream) { return OS_FFM.g_memory_output_stream_get_size(ostream); }
+public static final native long g_memory_output_stream_get_size(long ostream);
 /**
  * @param ostream cast=(GMemoryOutputStream*)
  */
-public static final long g_memory_output_stream_get_data_size(long ostream) { return OS_FFM.g_memory_output_stream_get_data_size(ostream); }
+public static final native long g_memory_output_stream_get_data_size(long ostream);
 /**
  * @param ostream cast=(GMemoryOutputStream*)
  */
-public static final long g_memory_output_stream_steal_data(long ostream) { return OS_FFM.g_memory_output_stream_steal_data(ostream); }
+public static final native long g_memory_output_stream_steal_data(long ostream);
 /**
  * @param ostream cast=(GMemoryOutputStream*)
  */
-public static final long g_memory_output_stream_steal_as_bytes(long ostream) { return OS_FFM.g_memory_output_stream_steal_as_bytes(ostream); }
+public static final native long g_memory_output_stream_steal_as_bytes(long ostream);
 /**
  * @param stream cast=(GOutputStream*)
  * @param buffer cast=(void*)
@@ -2537,7 +2537,7 @@ public static final long g_memory_output_stream_steal_as_bytes(long ostream) { r
  * @param cancellable cast=(GCancellable*)
  * @param error cast=(GError**)
  */
-public static final boolean g_output_stream_write_all(long stream, long buffer, long count, long[] bytes_written, long cancellable, long[] error) { return OS_FFM.g_output_stream_write_all(stream, buffer, count, bytes_written, cancellable, error); }
+public static final native boolean g_output_stream_write_all(long stream, long buffer, long count, long[] bytes_written, long cancellable, long[] error);
 /**
  * @param stream cast=(GOutputStream*)
  * @param buffer cast=(void*)
@@ -2547,7 +2547,7 @@ public static final boolean g_output_stream_write_all(long stream, long buffer, 
  * @param callback cast=(GAsyncReadyCallback)
  * @param user_data cast=(gpointer)
  */
-public static final void g_output_stream_write_all_async(long stream, long buffer, long count, int io_priority, long cancellable, long callback, long user_data) { OS_FFM.g_output_stream_write_all_async(stream, buffer, count, io_priority, cancellable, callback, user_data); }
+public static final native void g_output_stream_write_all_async(long stream, long buffer, long count, int io_priority, long cancellable, long callback, long user_data);
 /**
  *
  * @param stream cast=(GOutputStream*)
@@ -2555,5 +2555,5 @@ public static final void g_output_stream_write_all_async(long stream, long buffe
  * @param bytes_written cast=(gsize*)
  * @param error cast=(GError**)
  */
-public static final boolean g_output_stream_write_all_finish(long stream, long result, long[] bytes_written, long[] error) { return OS_FFM.g_output_stream_write_all_finish(stream, result, bytes_written, error); }
+public static final native boolean g_output_stream_write_all_finish(long stream, long result, long[] bytes_written, long[] error);
 }
