@@ -192,6 +192,9 @@ Copied arrays pay for a confined arena per call; a reusable per-thread allocator
 
 The committed sources keep their `native` declarations: `bundles/org.eclipse.swt.tools/ffm/apply-ffm.sh` turns them into calls of their FFM implementation in the checkout, and a product build runs it before Maven.
 `FFMRewriter.java` runs as a source file, so that step needs no compiled tooling.
+The step rewrites only `Eclipse SWT PI/gtk` and `Eclipse SWT PI/cairo`: `C.java` and `Callback.java` sit in folders the win32 and cocoa fragments compile too, which have no FFM implementation, so in a product build they stay on JNI and `libswt-gtk` is still loaded for them, while `libswt-pi3`, `libswt-cairo` and `libswt-atk` are not.
+Running without any native library, as the test harness does, needs those two classes split per platform first.
+All five GTK fragments list the FFM source folders, since they all compile the rewritten GTK sources.
 Rewriting the files in the branch instead made every change to `OS.java`, `GTK.java` or `GDK.java` collide with it, which upstream does several times a week.
 
 
