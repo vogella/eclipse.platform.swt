@@ -40,6 +40,7 @@ private static final class MH_atk_1object_1add_1relationship {
 public static boolean atk_object_add_relationship(long arg0, int arg1, long arg2) {
 	try {
 		int rc = (int) MH_atk_1object_1add_1relationship.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -52,6 +53,7 @@ private static final class MH_atk_1object_1notify_1state_1change {
 public static void atk_object_notify_state_change(long arg0, int arg1, boolean arg2) {
 	try {
 		MH_atk_1object_1notify_1state_1change.MH.invokeExact(arg0, (long) arg1, (int) (arg2 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -63,6 +65,7 @@ private static final class MH_atk_1object_1remove_1relationship {
 public static boolean atk_object_remove_relationship(long arg0, int arg1, long arg2) {
 	try {
 		int rc = (int) MH_atk_1object_1remove_1relationship.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -75,6 +78,7 @@ private static final class MH_atk_1state_1set_1add_1state {
 public static boolean atk_state_set_add_state(long arg0, int arg1) {
 	try {
 		int rc = (int) MH_atk_1state_1set_1add_1state.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -87,6 +91,7 @@ private static final class MH_atk_1text_1attribute_1get_1name {
 public static long atk_text_attribute_get_name(int arg0) {
 	try {
 		long rc = (long) MH_atk_1text_1attribute_1get_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -99,6 +104,7 @@ private static final class MH_atk_1text_1attribute_1get_1value {
 public static long atk_text_attribute_get_value(int arg0, int arg1) {
 	try {
 		long rc = (long) MH_atk_1text_1attribute_1get_1value.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -113,6 +119,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.accessibility.gtk
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkAttribute_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkAttribute_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_accessibility_gtk_AtkAttribute_2I.MH.invokeExact(arg0, lparg1, (long) arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -126,6 +133,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.accessibility.gtk
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRange_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRange_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_accessibility_gtk_AtkTextRange_2I.MH.invokeExact(arg0, lparg1, (long) arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -139,6 +147,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.accessibility.gtk
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRectangle_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRectangle_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_accessibility_gtk_AtkTextRectangle_2I.MH.invokeExact(arg0, lparg1, (long) arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -157,6 +166,7 @@ public static void memmove(org.eclipse.swt.internal.accessibility.gtk.AtkAttribu
 		if (arg0 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkAttribute_write(lparg0, arg0);
 		MH_memmove__Lorg_eclipse_swt_internal_accessibility_gtk_AtkAttribute_2JI.MH.invokeExact(lparg0, arg1, (long) arg2);
 		if (arg0 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkAttribute_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -199,6 +209,7 @@ public static void memmove(org.eclipse.swt.internal.accessibility.gtk.AtkTextRan
 		if (arg0 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRange_write(lparg0, arg0);
 		MH_memmove__Lorg_eclipse_swt_internal_accessibility_gtk_AtkTextRange_2JI.MH.invokeExact(lparg0, arg1, (long) arg2);
 		if (arg0 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRange_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -213,6 +224,7 @@ public static void memmove(org.eclipse.swt.internal.accessibility.gtk.AtkTextRec
 		if (arg0 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRectangle_write(lparg0, arg0);
 		MH_memmove__Lorg_eclipse_swt_internal_accessibility_gtk_AtkTextRectangle_2JI.MH.invokeExact(lparg0, arg1, (long) arg2);
 		if (arg0 != null) org.eclipse.swt.internal.accessibility.gtk.Structs_FFM.AtkTextRectangle_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}

@@ -67,6 +67,48 @@ public final class FFM {
 		return LOOKUP.find(name).orElseThrow(() -> new UnsatisfiedLinkError(name)).address();
 	}
 
+	/**
+	 * The exception a callback left behind, which the JNI glue kept pending on the thread so that it
+	 * surfaced when the native call that dispatched the callback returned to Java.
+	 */
+	static volatile Throwable pendingException;
+	static volatile Thread pendingThread;
+
+	/** Called by the upcall stubs when the Java side of a callback failed. */
+	public static void callbackFailed(Throwable failure) {
+		Throwable pending = pendingException;
+		if (pending != null && pendingThread == Thread.currentThread()) {
+			if (pending != failure) pending.addSuppressed(failure);
+			return;
+		}
+		pendingException = failure;
+		pendingThread = Thread.currentThread();
+	}
+
+	/** Takes the exception pending for this thread, as JNI's ExceptionOccurred plus ExceptionClear did. */
+	public static Throwable takePending() {
+		Throwable pending = pendingException;
+		if (pending == null || pendingThread != Thread.currentThread()) return null;
+		pendingException = null;
+		pendingThread = null;
+		return pending;
+	}
+
+	public static void setPending(Throwable failure) {
+		pendingException = failure;
+		pendingThread = failure == null ? null : Thread.currentThread();
+	}
+
+	/**
+	 * Throws what a callback left behind. The generated bindings call this after every downcall, which
+	 * is where the JNI glue let a pending exception surface.
+	 */
+	public static void checkCallbackException() {
+		if (pendingException == null) return;
+		Throwable pending = takePending();
+		if (pending != null) throw rethrow(pending);
+	}
+
 	public static RuntimeException rethrow(Throwable t) {
 		if (t instanceof RuntimeException e) throw e;
 		if (t instanceof Error e) throw e;

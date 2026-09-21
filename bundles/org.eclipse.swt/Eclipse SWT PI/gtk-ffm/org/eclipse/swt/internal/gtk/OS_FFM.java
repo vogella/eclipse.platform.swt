@@ -33,6 +33,7 @@ public static boolean FcConfigAppFontAddFile(long arg0, byte[] arg1) {
 			rc = (byte) MH_FcConfigAppFontAddFile.MH.invokeExact(arg0, lparg1);
 		}
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return (rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -85,6 +86,7 @@ private static final class MH_XCheckIfEvent {
 public static boolean XCheckIfEvent(long arg0, long arg1, long arg2, long arg3) {
 	try {
 		int rc = (int) MH_XCheckIfEvent.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -97,6 +99,7 @@ private static final class MH_XDefaultRootWindow {
 public static long XDefaultRootWindow(long arg0) {
 	try {
 		long rc = (long) MH_XDefaultRootWindow.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -109,6 +112,7 @@ private static final class MH_XDefaultScreen {
 public static int XDefaultScreen(long arg0) {
 	try {
 		int rc = (int) MH_XDefaultScreen.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -133,6 +137,7 @@ private static final class MH_XFree {
 public static void XFree(long arg0) {
 	try {
 		MH_XFree.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -158,6 +163,7 @@ public static int XQueryPointer(long arg0, long arg1, long[] arg2, long[] arg3, 
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -170,6 +176,7 @@ private static final class MH_XSetErrorHandler {
 public static long XSetErrorHandler(long arg0) {
 	try {
 		long rc = (long) MH_XSetErrorHandler.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -182,6 +189,7 @@ private static final class MH_XSetIOErrorHandler {
 public static long XSetIOErrorHandler(long arg0) {
 	try {
 		long rc = (long) MH_XSetIOErrorHandler.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -194,6 +202,7 @@ private static final class MH_XSetInputFocus {
 public static int XSetInputFocus(long arg0, long arg1, int arg2, int arg3) {
 	try {
 		int rc = (int) MH_XSetInputFocus.MH.invokeExact(arg0, arg1, arg2, (long) arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -206,6 +215,7 @@ private static final class MH_XSetTransientForHint {
 public static int XSetTransientForHint(long arg0, long arg1, long arg2) {
 	try {
 		int rc = (int) MH_XSetTransientForHint.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -218,6 +228,7 @@ private static final class MH_XSynchronize {
 public static long XSynchronize(long arg0, boolean arg1) {
 	try {
 		long rc = (long) MH_XSynchronize.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -234,6 +245,7 @@ private static final class MH_g_1action_1get_1enabled {
 public static boolean g_action_get_enabled(long arg0) {
 	try {
 		int rc = (int) MH_g_1action_1get_1enabled.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -246,6 +258,7 @@ private static final class MH_g_1action_1get_1state {
 public static long g_action_get_state(long arg0) {
 	try {
 		long rc = (long) MH_g_1action_1get_1state.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -258,6 +271,7 @@ private static final class MH_g_1action_1map_1add_1action {
 public static void g_action_map_add_action(long arg0, long arg1) {
 	try {
 		MH_g_1action_1map_1add_1action.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -271,6 +285,7 @@ public static void g_action_map_remove_action(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1action_1map_1remove_1action.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -286,6 +301,7 @@ public static long g_app_info_create_from_commandline(byte[] arg0, byte[] arg1, 
 		long rc = (long) MH_g_1app_1info_1create_1from_1commandline.MH.invokeExact(lparg0, lparg1, (int) arg2, arg3);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -298,6 +314,7 @@ private static final class MH_g_1app_1info_1get_1all {
 public static long g_app_info_get_all() {
 	try {
 		long rc = (long) MH_g_1app_1info_1get_1all.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -310,6 +327,7 @@ private static final class MH_g_1app_1info_1get_1commandline {
 public static long g_app_info_get_commandline(long arg0) {
 	try {
 		long rc = (long) MH_g_1app_1info_1get_1commandline.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -324,6 +342,7 @@ public static long g_app_info_get_default_for_type(byte[] arg0, boolean arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1app_1info_1get_1default_1for_1type.MH.invokeExact(lparg0, (int) (arg1 ? 1 : 0));
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -336,6 +355,7 @@ private static final class MH_g_1app_1info_1get_1executable {
 public static long g_app_info_get_executable(long arg0) {
 	try {
 		long rc = (long) MH_g_1app_1info_1get_1executable.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -348,6 +368,7 @@ private static final class MH_g_1app_1info_1get_1icon {
 public static long g_app_info_get_icon(long arg0) {
 	try {
 		long rc = (long) MH_g_1app_1info_1get_1icon.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -360,6 +381,7 @@ private static final class MH_g_1app_1info_1get_1name {
 public static long g_app_info_get_name(long arg0) {
 	try {
 		long rc = (long) MH_g_1app_1info_1get_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -372,6 +394,7 @@ private static final class MH_g_1app_1info_1launch {
 public static boolean g_app_info_launch(long arg0, long arg1, long arg2, long arg3) {
 	try {
 		int rc = (int) MH_g_1app_1info_1launch.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -384,6 +407,7 @@ private static final class MH_g_1app_1info_1launch_1default_1for_1uri {
 public static boolean g_app_info_launch_default_for_uri(long arg0, long arg1, long arg2) {
 	try {
 		int rc = (int) MH_g_1app_1info_1launch_1default_1for_1uri.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -396,6 +420,7 @@ private static final class MH_g_1app_1info_1supports_1uris {
 public static boolean g_app_info_supports_uris(long arg0) {
 	try {
 		int rc = (int) MH_g_1app_1info_1supports_1uris.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -410,6 +435,7 @@ public static int g_bus_own_name(int arg0, byte[] arg1, int arg2, long arg3, lon
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_g_1bus_1own_1name.MH.invokeExact(arg0, lparg1, arg2, arg3, arg4, arg5, arg6, arg7);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -424,6 +450,7 @@ public static long g_bytes_new(byte[] arg0, long arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1bytes_1new.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -436,6 +463,7 @@ private static final class MH_g_1bytes_1unref {
 public static void g_bytes_unref(long arg0) {
 	try {
 		MH_g_1bytes_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -447,6 +475,7 @@ private static final class MH_g_1cclosure_1new {
 public static long g_cclosure_new(long arg0, long arg1, long arg2) {
 	try {
 		long rc = (long) MH_g_1cclosure_1new.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -459,6 +488,7 @@ private static final class MH_g_1closure_1ref {
 public static long g_closure_ref(long arg0) {
 	try {
 		long rc = (long) MH_g_1closure_1ref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -471,6 +501,7 @@ private static final class MH_g_1closure_1sink {
 public static void g_closure_sink(long arg0) {
 	try {
 		MH_g_1closure_1sink.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -482,6 +513,7 @@ private static final class MH_g_1closure_1unref {
 public static void g_closure_unref(long arg0) {
 	try {
 		MH_g_1closure_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -495,6 +527,7 @@ public static boolean g_content_type_equals(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_g_1content_1type_1equals.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -509,6 +542,7 @@ public static boolean g_content_type_is_a(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_g_1content_1type_1is_1a.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -527,6 +561,7 @@ public static void g_date_time_get_ymd(long arg0, int[] arg1, int[] arg2, int[] 
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -538,6 +573,7 @@ private static final class MH_g_1date_1time_1new_1local {
 public static long g_date_time_new_local(int arg0, int arg1, int arg2, int arg3, int arg4, double arg5) {
 	try {
 		long rc = (long) MH_g_1date_1time_1new_1local.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -550,6 +586,7 @@ private static final class MH_g_1date_1time_1unref {
 public static void g_date_time_unref(long arg0) {
 	try {
 		MH_g_1date_1time_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -567,6 +604,7 @@ public static int g_dbus_connection_register_object(long arg0, byte[] arg1, long
 		FFM.copyOut(lparg6, arg6);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -579,6 +617,7 @@ private static final class MH_g_1dbus_1method_1invocation_1return_1value {
 public static void g_dbus_method_invocation_return_value(long arg0, long arg1) {
 	try {
 		MH_g_1dbus_1method_1invocation_1return_1value.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -592,6 +631,7 @@ public static long g_dbus_node_info_lookup_interface(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_g_1dbus_1node_1info_1lookup_1interface.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -608,6 +648,7 @@ public static long g_dbus_node_info_new_for_xml(byte[] arg0, long[] arg1) {
 		long rc = (long) MH_g_1dbus_1node_1info_1new_1for_1xml.MH.invokeExact(lparg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -624,6 +665,7 @@ public static void g_dbus_proxy_call(long arg0, byte[] arg1, long arg2, int arg3
 		MH_g_1dbus_1proxy_1call.MH.invokeExact(arg0, lparg1, arg2, arg3, arg4, arg5, arg6, lparg7);
 		FFM.copyOut(lparg7, arg7);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -639,6 +681,7 @@ public static long g_dbus_proxy_call_sync(long arg0, byte[] arg1, long arg2, int
 		long rc = (long) MH_g_1dbus_1proxy_1call_1sync.MH.invokeExact(arg0, lparg1, arg2, arg3, arg4, arg5, lparg6);
 		FFM.copyOut(lparg6, arg6);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -651,6 +694,7 @@ private static final class MH_g_1dbus_1proxy_1get_1name_1owner {
 public static long g_dbus_proxy_get_name_owner(long arg0) {
 	try {
 		long rc = (long) MH_g_1dbus_1proxy_1get_1name_1owner.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -671,6 +715,7 @@ public static long g_dbus_proxy_new_for_bus_sync(int arg0, int arg1, long arg2, 
 		FFM.copyOut(lparg5, arg5);
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -685,6 +730,7 @@ public static long g_dir_make_tmp(long arg0, long[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_g_1dir_1make_1tmp.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -697,6 +743,7 @@ private static final class MH_g_1error_1free {
 public static void g_error_free(long arg0) {
 	try {
 		MH_g_1error_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -708,6 +755,7 @@ private static final class MH_g_1error_1matches {
 public static boolean g_error_matches(long arg0, int arg1, int arg2) {
 	try {
 		int rc = (int) MH_g_1error_1matches.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -721,6 +769,7 @@ public static long g_error_new_literal(long arg0, int arg1, String arg2) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg2 = FFM.string(arena, arg2);
 		long rc = (long) MH_g_1error_1new_1literal.MH.invokeExact((int) arg0, arg1, lparg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -733,6 +782,7 @@ private static final class MH_g_1file_1error_1quark {
 public static int g_file_error_quark() {
 	try {
 		int rc = (int) MH_g_1file_1error_1quark.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -745,6 +795,7 @@ private static final class MH_g_1file_1get_1path {
 public static long g_file_get_path(long arg0) {
 	try {
 		long rc = (long) MH_g_1file_1get_1path.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -757,6 +808,7 @@ private static final class MH_g_1file_1get_1uri {
 public static long g_file_get_uri(long arg0) {
 	try {
 		long rc = (long) MH_g_1file_1get_1uri.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -769,6 +821,7 @@ private static final class MH_g_1file_1info_1get_1content_1type {
 public static long g_file_info_get_content_type(long arg0) {
 	try {
 		long rc = (long) MH_g_1file_1info_1get_1content_1type.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -783,6 +836,7 @@ public static long g_file_new_for_commandline_arg(byte[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1file_1new_1for_1commandline_1arg.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -797,6 +851,7 @@ public static long g_file_new_for_path(byte[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1file_1new_1for_1path.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -811,6 +866,7 @@ public static long g_file_new_for_uri(byte[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1file_1new_1for_1uri.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -825,6 +881,7 @@ public static long g_file_query_info(long arg0, byte[] arg1, long arg2, long arg
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_g_1file_1query_1info.MH.invokeExact(arg0, lparg1, (int) arg2, arg3, arg4);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -839,6 +896,7 @@ public static boolean g_file_test(byte[] arg0, int arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		int rc = (int) MH_g_1file_1test.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -851,6 +909,7 @@ private static final class MH_g_1filename_1display_1name {
 public static long g_filename_display_name(long arg0) {
 	try {
 		long rc = (long) MH_g_1filename_1display_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -867,6 +926,7 @@ public static long g_filename_from_uri(long arg0, long[] arg1, long[] arg2) {
 		long rc = (long) MH_g_1filename_1from_1uri.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -885,6 +945,7 @@ public static long g_filename_from_utf8(long arg0, long arg1, long[] arg2, long[
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -899,6 +960,7 @@ public static long g_filename_to_uri(long arg0, long arg1, long[] arg2) {
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		long rc = (long) MH_g_1filename_1to_1uri.MH.invokeExact(arg0, arg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -917,6 +979,7 @@ public static long g_filename_to_utf8(long arg0, long arg1, long[] arg2, long[] 
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -929,6 +992,7 @@ private static final class MH_g_1free {
 public static void g_free(long arg0) {
 	try {
 		MH_g_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -940,6 +1004,7 @@ private static final class MH_g_1get_1current_1time {
 public static void g_get_current_time(long arg0) {
 	try {
 		MH_g_1get_1current_1time.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -952,6 +1017,7 @@ public static long g_getenv(byte[] arg0) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1getenv.MH.invokeExact(lparg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -968,6 +1034,7 @@ public static long g_icon_new_for_string(byte[] arg0, long[] arg1) {
 		long rc = (long) MH_g_1icon_1new_1for_1string.MH.invokeExact(lparg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -980,6 +1047,7 @@ private static final class MH_g_1icon_1to_1string {
 public static long g_icon_to_string(long arg0) {
 	try {
 		long rc = (long) MH_g_1icon_1to_1string.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -992,6 +1060,7 @@ private static final class MH_g_1idle_1add {
 public static int g_idle_add(long arg0, long arg1) {
 	try {
 		int rc = (int) MH_g_1idle_1add.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1004,6 +1073,7 @@ private static final class MH_g_1io_1error_1quark {
 public static int g_io_error_quark() {
 	try {
 		int rc = (int) MH_g_1io_1error_1quark.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1016,6 +1086,7 @@ private static final class MH_g_1list_1append {
 public static long g_list_append(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1list_1append.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1028,6 +1099,7 @@ private static final class MH_g_1list_1free {
 public static void g_list_free(long arg0) {
 	try {
 		MH_g_1list_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1039,6 +1111,7 @@ private static final class MH_g_1list_1last {
 public static long g_list_last(long arg0) {
 	try {
 		long rc = (long) MH_g_1list_1last.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1051,6 +1124,7 @@ private static final class MH_g_1list_1length {
 public static int g_list_length(long arg0) {
 	try {
 		int rc = (int) MH_g_1list_1length.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1063,6 +1137,7 @@ private static final class MH_g_1list_1model_1get_1item {
 public static long g_list_model_get_item(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_g_1list_1model_1get_1item.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1075,6 +1150,7 @@ private static final class MH_g_1list_1model_1get_1n_1items {
 public static int g_list_model_get_n_items(long arg0) {
 	try {
 		int rc = (int) MH_g_1list_1model_1get_1n_1items.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1087,6 +1163,7 @@ private static final class MH_g_1list_1nth_1data {
 public static long g_list_nth_data(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_g_1list_1nth_1data.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1099,6 +1176,7 @@ private static final class MH_g_1list_1store_1append {
 public static void g_list_store_append(long arg0, long arg1) {
 	try {
 		MH_g_1list_1store_1append.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1110,6 +1188,7 @@ private static final class MH_g_1list_1store_1new {
 public static long g_list_store_new(long arg0) {
 	try {
 		long rc = (long) MH_g_1list_1store_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1122,6 +1201,7 @@ private static final class MH_g_1log_1default_1handler {
 public static void g_log_default_handler(long arg0, int arg1, long arg2, long arg3) {
 	try {
 		MH_g_1log_1default_1handler.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1134,6 +1214,7 @@ public static void g_log_remove_handler(byte[] arg0, int arg1) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_g_1log_1remove_1handler.MH.invokeExact(lparg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1146,6 +1227,7 @@ public static int g_log_set_handler(byte[] arg0, int arg1, long arg2, long arg3)
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		int rc = (int) MH_g_1log_1set_1handler.MH.invokeExact(lparg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1158,6 +1240,7 @@ private static final class MH_g_1main_1context_1acquire {
 public static boolean g_main_context_acquire(long arg0) {
 	try {
 		int rc = (int) MH_g_1main_1context_1acquire.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1170,6 +1253,7 @@ private static final class MH_g_1main_1context_1check {
 public static int g_main_context_check(long arg0, int arg1, long arg2, int arg3) {
 	try {
 		int rc = (int) MH_g_1main_1context_1check.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1182,6 +1266,7 @@ private static final class MH_g_1main_1context_1default {
 public static long g_main_context_default() {
 	try {
 		long rc = (long) MH_g_1main_1context_1default.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1194,6 +1279,7 @@ private static final class MH_g_1main_1context_1get_1poll_1func {
 public static long g_main_context_get_poll_func(long arg0) {
 	try {
 		long rc = (long) MH_g_1main_1context_1get_1poll_1func.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1206,6 +1292,7 @@ private static final class MH_g_1main_1context_1iteration {
 public static boolean g_main_context_iteration(long arg0, boolean arg1) {
 	try {
 		int rc = (int) MH_g_1main_1context_1iteration.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1220,6 +1307,7 @@ public static boolean g_main_context_prepare(long arg0, int[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_g_1main_1context_1prepare.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1234,6 +1322,7 @@ public static int g_main_context_query(long arg0, int arg1, int[] arg2, long arg
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		int rc = (int) MH_g_1main_1context_1query.MH.invokeExact(arg0, arg1, lparg2, arg3, arg4);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1246,6 +1335,7 @@ private static final class MH_g_1main_1context_1release {
 public static void g_main_context_release(long arg0) {
 	try {
 		MH_g_1main_1context_1release.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1257,6 +1347,7 @@ private static final class MH_g_1main_1context_1wakeup {
 public static void g_main_context_wakeup(long arg0) {
 	try {
 		MH_g_1main_1context_1wakeup.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1268,6 +1359,7 @@ private static final class MH_g_1malloc {
 public static long g_malloc(long arg0) {
 	try {
 		long rc = (long) MH_g_1malloc.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1280,6 +1372,7 @@ private static final class MH_g_1memory_1input_1stream_1new_1from_1data {
 public static long g_memory_input_stream_new_from_data(long arg0, long arg1, long arg2) {
 	try {
 		long rc = (long) MH_g_1memory_1input_1stream_1new_1from_1data.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1292,6 +1385,7 @@ private static final class MH_g_1memory_1output_1stream_1get_1data {
 public static long g_memory_output_stream_get_data(long arg0) {
 	try {
 		long rc = (long) MH_g_1memory_1output_1stream_1get_1data.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1304,6 +1398,7 @@ private static final class MH_g_1memory_1output_1stream_1get_1data_1size {
 public static long g_memory_output_stream_get_data_size(long arg0) {
 	try {
 		long rc = (long) MH_g_1memory_1output_1stream_1get_1data_1size.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1316,6 +1411,7 @@ private static final class MH_g_1memory_1output_1stream_1get_1size {
 public static long g_memory_output_stream_get_size(long arg0) {
 	try {
 		long rc = (long) MH_g_1memory_1output_1stream_1get_1size.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1328,6 +1424,7 @@ private static final class MH_g_1memory_1output_1stream_1new_1resizable {
 public static long g_memory_output_stream_new_resizable() {
 	try {
 		long rc = (long) MH_g_1memory_1output_1stream_1new_1resizable.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1340,6 +1437,7 @@ private static final class MH_g_1memory_1output_1stream_1steal_1as_1bytes {
 public static long g_memory_output_stream_steal_as_bytes(long arg0) {
 	try {
 		long rc = (long) MH_g_1memory_1output_1stream_1steal_1as_1bytes.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1352,6 +1450,7 @@ private static final class MH_g_1memory_1output_1stream_1steal_1data {
 public static long g_memory_output_stream_steal_data(long arg0) {
 	try {
 		long rc = (long) MH_g_1memory_1output_1stream_1steal_1data.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1364,6 +1463,7 @@ private static final class MH_g_1menu_1insert_1item {
 public static void g_menu_insert_item(long arg0, int arg1, long arg2) {
 	try {
 		MH_g_1menu_1insert_1item.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1379,6 +1479,7 @@ public static long g_menu_item_new(byte[] arg0, byte[] arg1) {
 		long rc = (long) MH_g_1menu_1item_1new.MH.invokeExact(lparg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1393,6 +1494,7 @@ public static long g_menu_item_new_section(byte[] arg0, long arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1menu_1item_1new_1section.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1407,6 +1509,7 @@ public static long g_menu_item_new_submenu(byte[] arg0, long arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1menu_1item_1new_1submenu.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1423,6 +1526,7 @@ public static void g_menu_item_set_attribute(long arg0, byte[] arg1, byte[] arg2
 		MH_g_1menu_1item_1set_1attribute.MH.invokeExact(arg0, lparg1, lparg2, arg3);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1436,6 +1540,7 @@ public static void g_menu_item_set_attribute_value(long arg0, byte[] arg1, long 
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1menu_1item_1set_1attribute_1value.MH.invokeExact(arg0, lparg1, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1449,6 +1554,7 @@ public static void g_menu_item_set_label(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1menu_1item_1set_1label.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1460,6 +1566,7 @@ private static final class MH_g_1menu_1item_1set_1submenu {
 public static void g_menu_item_set_submenu(long arg0, long arg1) {
 	try {
 		MH_g_1menu_1item_1set_1submenu.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1471,6 +1578,7 @@ private static final class MH_g_1menu_1new {
 public static long g_menu_new() {
 	try {
 		long rc = (long) MH_g_1menu_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1483,6 +1591,7 @@ private static final class MH_g_1menu_1remove {
 public static void g_menu_remove(long arg0, int arg1) {
 	try {
 		MH_g_1menu_1remove.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1497,6 +1606,7 @@ public static void g_object_get(long arg0, byte[] arg1, int[] arg2, long arg3) {
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		MH_g_1object_1get__J_3B_3IJ.MH.invokeExact(arg0, lparg1, lparg2, 0L);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1511,6 +1621,7 @@ public static void g_object_get(long arg0, byte[] arg1, long[] arg2, long arg3) 
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		MH_g_1object_1get__J_3B_3JJ.MH.invokeExact(arg0, lparg1, lparg2, 0L);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1522,6 +1633,7 @@ private static final class MH_g_1object_1get_1qdata {
 public static long g_object_get_qdata(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_g_1object_1get_1qdata.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1534,6 +1646,7 @@ private static final class MH_g_1object_1new__JJ {
 public static long g_object_new(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1object_1new__JJ.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1548,6 +1661,7 @@ public static long g_object_new(long arg0, byte[] arg1, byte[] arg2, long arg3) 
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		long rc = (long) MH_g_1object_1new__J_3B_3BJ.MH.invokeExact(arg0, lparg1, lparg2, 0L);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1562,6 +1676,7 @@ public static void g_object_notify(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1object_1notify.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1573,6 +1688,7 @@ private static final class MH_g_1object_1ref {
 public static long g_object_ref(long arg0) {
 	try {
 		long rc = (long) MH_g_1object_1ref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1585,6 +1701,7 @@ private static final class MH_g_1object_1ref_1sink {
 public static long g_object_ref_sink(long arg0) {
 	try {
 		long rc = (long) MH_g_1object_1ref_1sink.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1598,6 +1715,7 @@ public static void g_object_set(long arg0, byte[] arg1, float arg2, long arg3) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1object_1set__J_3BFJ.MH.invokeExact(arg0, lparg1, (double) arg2, 0L);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1610,6 +1728,7 @@ public static void g_object_set(long arg0, byte[] arg1, int arg2, long arg3) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1object_1set__J_3BIJ.MH.invokeExact(arg0, lparg1, arg2, 0L);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1622,6 +1741,7 @@ public static void g_object_set(long arg0, byte[] arg1, long arg2, long arg3) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1object_1set__J_3BJJ.MH.invokeExact(arg0, lparg1, arg2, 0L);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1638,6 +1758,7 @@ public static void g_object_set(long arg0, byte[] arg1, org.eclipse.swt.internal
 		MH_g_1object_1set__J_3BLorg_eclipse_swt_internal_gtk_GdkRGBA_2J.MH.invokeExact(arg0, lparg1, lparg2, 0L);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_read(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1650,6 +1771,7 @@ public static void g_object_set(long arg0, byte[] arg1, boolean arg2, long arg3)
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1object_1set__J_3BZJ.MH.invokeExact(arg0, lparg1, (int) (arg2 ? 1 : 0), 0L);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1664,6 +1786,7 @@ public static void g_object_set(long arg0, byte[] arg1, byte[] arg2, long arg3) 
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		MH_g_1object_1set__J_3B_3BJ.MH.invokeExact(arg0, lparg1, lparg2, 0L);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1675,6 +1798,7 @@ private static final class MH_g_1object_1set_1qdata {
 public static void g_object_set_qdata(long arg0, int arg1, long arg2) {
 	try {
 		MH_g_1object_1set_1qdata.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1686,6 +1810,7 @@ private static final class MH_g_1object_1unref {
 public static void g_object_unref(long arg0) {
 	try {
 		MH_g_1object_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1697,6 +1822,7 @@ private static final class MH_g_1output_1stream_1splice_1async {
 public static void g_output_stream_splice_async(long arg0, long arg1, int arg2, int arg3, long arg4, long arg5, long arg6) {
 	try {
 		MH_g_1output_1stream_1splice_1async.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1710,6 +1836,7 @@ public static long g_output_stream_splice_finish(long arg0, long arg1, long[] ar
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		long rc = (long) MH_g_1output_1stream_1splice_1finish.MH.invokeExact(arg0, arg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1726,6 +1853,7 @@ public static boolean g_output_stream_write_all(long arg0, long arg1, long arg2,
 		int rc = (int) MH_g_1output_1stream_1write_1all.MH.invokeExact(arg0, arg1, arg2, lparg3, arg4, lparg5);
 		FFM.copyOut(lparg5, arg5);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1738,6 +1866,7 @@ private static final class MH_g_1output_1stream_1write_1all_1async {
 public static void g_output_stream_write_all_async(long arg0, long arg1, long arg2, int arg3, long arg4, long arg5, long arg6) {
 	try {
 		MH_g_1output_1stream_1write_1all_1async.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1753,6 +1882,7 @@ public static boolean g_output_stream_write_all_finish(long arg0, long arg1, lon
 		int rc = (int) MH_g_1output_1stream_1write_1all_1finish.MH.invokeExact(arg0, arg1, lparg2, lparg3);
 		FFM.copyOut(lparg3, arg3);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1766,6 +1896,7 @@ public static int g_quark_from_string(byte[] arg0) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		int rc = (int) MH_g_1quark_1from_1string.MH.invokeExact(lparg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1779,6 +1910,7 @@ public static void g_set_prgname(byte[] arg0) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_g_1set_1prgname.MH.invokeExact(lparg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1790,6 +1922,7 @@ private static final class MH_g_1signal_1add_1emission_1hook {
 public static long g_signal_add_emission_hook(int arg0, int arg1, long arg2, long arg3, long arg4) {
 	try {
 		long rc = (long) MH_g_1signal_1add_1emission_1hook.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1804,6 +1937,7 @@ public static int g_signal_connect_closure(long arg0, byte[] arg1, long arg2, bo
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_g_1signal_1connect_1closure.MH.invokeExact(arg0, lparg1, arg2, (int) (arg3 ? 1 : 0));
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return (int) rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1816,6 +1950,7 @@ private static final class MH_g_1signal_1connect_1closure_1by_1id {
 public static int g_signal_connect_closure_by_id(long arg0, int arg1, int arg2, long arg3, boolean arg4) {
 	try {
 		long rc = (long) MH_g_1signal_1connect_1closure_1by_1id.MH.invokeExact(arg0, arg1, arg2, arg3, (int) (arg4 ? 1 : 0));
+		FFM.checkCallbackException();
 		return (int) rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1829,6 +1964,7 @@ public static void g_signal_emit_by_name(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1signal_1emit_1by_1name__J_3B.MH.invokeExact(arg0, lparg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1841,6 +1977,7 @@ public static void g_signal_emit_by_name(long arg0, byte[] arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1signal_1emit_1by_1name__J_3BJ.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1853,6 +1990,7 @@ public static void g_signal_emit_by_name(long arg0, byte[] arg1, long arg2, long
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1signal_1emit_1by_1name__J_3BJJ.MH.invokeExact(arg0, lparg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1868,6 +2006,7 @@ public static void g_signal_emit_by_name(long arg0, byte[] arg1, org.eclipse.swt
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_write(lparg2, arg2);
 		MH_g_1signal_1emit_1by_1name__J_3BLorg_eclipse_swt_internal_gtk_GdkRectangle_2.MH.invokeExact(arg0, lparg1, lparg2);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1882,6 +2021,7 @@ public static void g_signal_emit_by_name(long arg0, byte[] arg1, byte[] arg2) {
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		MH_g_1signal_1emit_1by_1name__J_3B_3B.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1893,6 +2033,7 @@ private static final class MH_g_1signal_1handler_1disconnect {
 public static void g_signal_handler_disconnect(long arg0, long arg1) {
 	try {
 		MH_g_1signal_1handler_1disconnect.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1904,6 +2045,7 @@ private static final class MH_g_1signal_1handlers_1block_1matched {
 public static int g_signal_handlers_block_matched(long arg0, int arg1, int arg2, int arg3, long arg4, long arg5, long arg6) {
 	try {
 		int rc = (int) MH_g_1signal_1handlers_1block_1matched.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1916,6 +2058,7 @@ private static final class MH_g_1signal_1handlers_1unblock_1matched {
 public static int g_signal_handlers_unblock_matched(long arg0, int arg1, int arg2, int arg3, long arg4, long arg5, long arg6) {
 	try {
 		int rc = (int) MH_g_1signal_1handlers_1unblock_1matched.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1929,6 +2072,7 @@ public static int g_signal_lookup(byte[] arg0, long arg1) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		int rc = (int) MH_g_1signal_1lookup.MH.invokeExact(lparg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1941,6 +2085,7 @@ private static final class MH_g_1signal_1remove_1emission_1hook {
 public static void g_signal_remove_emission_hook(int arg0, long arg1) {
 	try {
 		MH_g_1signal_1remove_1emission_1hook.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1953,6 +2098,7 @@ public static void g_signal_stop_emission_by_name(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1signal_1stop_1emission_1by_1name.MH.invokeExact(arg0, lparg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1964,6 +2110,7 @@ private static final class MH_g_1simple_1action_1group_1new {
 public static long g_simple_action_group_new() {
 	try {
 		long rc = (long) MH_g_1simple_1action_1group_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1978,6 +2125,7 @@ public static long g_simple_action_new(byte[] arg0, long arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1simple_1action_1new.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -1992,6 +2140,7 @@ public static long g_simple_action_new_stateful(byte[] arg0, long arg1, long arg
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1simple_1action_1new_1stateful.MH.invokeExact(lparg0, arg1, arg2);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2004,6 +2153,7 @@ private static final class MH_g_1simple_1action_1set_1enabled {
 public static void g_simple_action_set_enabled(long arg0, boolean arg1) {
 	try {
 		MH_g_1simple_1action_1set_1enabled.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2015,6 +2165,7 @@ private static final class MH_g_1simple_1action_1set_1state {
 public static void g_simple_action_set_state(long arg0, long arg1) {
 	try {
 		MH_g_1simple_1action_1set_1state.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2026,6 +2177,7 @@ private static final class MH_g_1slist_1append {
 public static long g_slist_append(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1slist_1append.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2038,6 +2190,7 @@ private static final class MH_g_1slist_1free {
 public static void g_slist_free(long arg0) {
 	try {
 		MH_g_1slist_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2049,6 +2202,7 @@ private static final class MH_g_1slist_1length {
 public static int g_slist_length(long arg0) {
 	try {
 		int rc = (int) MH_g_1slist_1length.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2061,6 +2215,7 @@ private static final class MH_g_1source_1remove {
 public static boolean g_source_remove(long arg0) {
 	try {
 		int rc = (int) MH_g_1source_1remove.MH.invokeExact((int) arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2073,6 +2228,7 @@ private static final class MH_g_1strdup {
 public static long g_strdup(long arg0) {
 	try {
 		long rc = (long) MH_g_1strdup.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2085,6 +2241,7 @@ private static final class MH_g_1strfreev {
 public static void g_strfreev(long arg0) {
 	try {
 		MH_g_1strfreev.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2098,6 +2255,7 @@ public static double g_strtod(long arg0, long[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		double rc = (double) MH_g_1strtod.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2110,6 +2268,7 @@ private static final class MH_g_1time_1val_1add {
 public static void g_time_val_add(long arg0, long arg1) {
 	try {
 		MH_g_1time_1val_1add.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2121,6 +2280,7 @@ private static final class MH_g_1timeout_1add {
 public static int g_timeout_add(int arg0, long arg1, long arg2) {
 	try {
 		int rc = (int) MH_g_1timeout_1add.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2133,6 +2293,7 @@ private static final class MH_g_1type_1class_1peek {
 public static long g_type_class_peek(long arg0) {
 	try {
 		long rc = (long) MH_g_1type_1class_1peek.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2145,6 +2306,7 @@ private static final class MH_g_1type_1class_1peek_1parent {
 public static long g_type_class_peek_parent(long arg0) {
 	try {
 		long rc = (long) MH_g_1type_1class_1peek_1parent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2157,6 +2319,7 @@ private static final class MH_g_1type_1class_1ref {
 public static long g_type_class_ref(long arg0) {
 	try {
 		long rc = (long) MH_g_1type_1class_1ref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2169,6 +2332,7 @@ private static final class MH_g_1type_1class_1unref {
 public static void g_type_class_unref(long arg0) {
 	try {
 		MH_g_1type_1class_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2180,6 +2344,7 @@ private static final class MH_g_1type_1interface_1peek_1parent {
 public static long g_type_interface_peek_parent(long arg0) {
 	try {
 		long rc = (long) MH_g_1type_1interface_1peek_1parent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2192,6 +2357,7 @@ private static final class MH_g_1type_1is_1a {
 public static boolean g_type_is_a(long arg0, long arg1) {
 	try {
 		int rc = (int) MH_g_1type_1is_1a.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2204,6 +2370,7 @@ private static final class MH_g_1type_1name {
 public static long g_type_name(long arg0) {
 	try {
 		long rc = (long) MH_g_1type_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2216,6 +2383,7 @@ private static final class MH_g_1type_1parent {
 public static long g_type_parent(long arg0) {
 	try {
 		long rc = (long) MH_g_1type_1parent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2230,6 +2398,7 @@ public static long g_type_register_static(long arg0, byte[] arg1, long arg2, int
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_g_1type_1register_1static.MH.invokeExact(arg0, lparg1, arg2, arg3);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2243,6 +2412,7 @@ public static void g_unsetenv(byte[] arg0) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MH_g_1unsetenv.MH.invokeExact(lparg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2261,6 +2431,7 @@ public static long g_uri_parse(byte[] arg0, long arg1, long[] arg2) {
 		}
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2275,6 +2446,7 @@ public static void g_uri_unref(long arg0) {
 		if (MH_g_1uri_1unref.MH != null) {
 			MH_g_1uri_1unref.MH.invokeExact(arg0);
 		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2286,6 +2458,7 @@ private static final class MH_g_1utf16_1offset_1to_1pointer {
 public static long g_utf16_offset_to_pointer(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1utf16_1offset_1to_1pointer.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2298,6 +2471,7 @@ private static final class MH_g_1utf16_1offset_1to_1utf8_1offset {
 public static long g_utf16_offset_to_utf8_offset(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1utf16_1offset_1to_1utf8_1offset.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2310,6 +2484,7 @@ private static final class MH_g_1utf16_1pointer_1to_1offset {
 public static long g_utf16_pointer_to_offset(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1utf16_1pointer_1to_1offset.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2322,6 +2497,7 @@ private static final class MH_g_1utf16_1strlen {
 public static long g_utf16_strlen(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1utf16_1strlen.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2334,6 +2510,7 @@ private static final class MH_g_1utf16_1to_1utf8 {
 public static long g_utf16_to_utf8(char[] arg0, long arg1, long[] arg2, long[] arg3, long[] arg4) {
 	try {
 		long rc = (long) MH_g_1utf16_1to_1utf8.MH.invokeExact(FFM.heap(arg0), arg1, FFM.heap(arg2), FFM.heap(arg3), FFM.heap(arg4));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2346,6 +2523,7 @@ private static final class MH_g_1utf8_1offset_1to_1utf16_1offset {
 public static long g_utf8_offset_to_utf16_offset(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1utf8_1offset_1to_1utf16_1offset.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2358,6 +2536,7 @@ private static final class MH_g_1utf8_1pointer_1to_1offset {
 public static long g_utf8_pointer_to_offset(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1utf8_1pointer_1to_1offset.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2370,6 +2549,7 @@ private static final class MH_g_1utf8_1strlen {
 public static long g_utf8_strlen(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1utf8_1strlen.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2382,6 +2562,7 @@ private static final class MH_g_1utf8_1to_1utf16__JJ_3J_3J_3J {
 public static long g_utf8_to_utf16(long arg0, long arg1, long[] arg2, long[] arg3, long[] arg4) {
 	try {
 		long rc = (long) MH_g_1utf8_1to_1utf16__JJ_3J_3J_3J.MH.invokeExact(arg0, arg1, FFM.heap(arg2), FFM.heap(arg3), FFM.heap(arg4));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2394,6 +2575,7 @@ private static final class MH_g_1utf8_1to_1utf16___3BJ_3J_3J_3J {
 public static long g_utf8_to_utf16(byte[] arg0, long arg1, long[] arg2, long[] arg3, long[] arg4) {
 	try {
 		long rc = (long) MH_g_1utf8_1to_1utf16___3BJ_3J_3J_3J.MH.invokeExact(FFM.heap(arg0), arg1, FFM.heap(arg2), FFM.heap(arg3), FFM.heap(arg4));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2406,6 +2588,7 @@ private static final class MH_g_1value_1get_1boxed {
 public static long g_value_get_boxed(long arg0) {
 	try {
 		long rc = (long) MH_g_1value_1get_1boxed.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2418,6 +2601,7 @@ private static final class MH_g_1value_1get_1double {
 public static double g_value_get_double(long arg0) {
 	try {
 		double rc = (double) MH_g_1value_1get_1double.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2430,6 +2614,7 @@ private static final class MH_g_1value_1get_1float {
 public static float g_value_get_float(long arg0) {
 	try {
 		float rc = (float) MH_g_1value_1get_1float.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2442,6 +2627,7 @@ private static final class MH_g_1value_1get_1gtype {
 public static long g_value_get_gtype(long arg0) {
 	try {
 		long rc = (long) MH_g_1value_1get_1gtype.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2454,6 +2640,7 @@ private static final class MH_g_1value_1get_1int {
 public static int g_value_get_int(long arg0) {
 	try {
 		int rc = (int) MH_g_1value_1get_1int.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2466,6 +2653,7 @@ private static final class MH_g_1value_1get_1int64 {
 public static long g_value_get_int64(long arg0) {
 	try {
 		long rc = (long) MH_g_1value_1get_1int64.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2478,6 +2666,7 @@ private static final class MH_g_1value_1get_1object {
 public static long g_value_get_object(long arg0) {
 	try {
 		long rc = (long) MH_g_1value_1get_1object.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2490,6 +2679,7 @@ private static final class MH_g_1value_1get_1string {
 public static long g_value_get_string(long arg0) {
 	try {
 		long rc = (long) MH_g_1value_1get_1string.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2502,6 +2692,7 @@ private static final class MH_g_1value_1init {
 public static long g_value_init(long arg0, long arg1) {
 	try {
 		long rc = (long) MH_g_1value_1init.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2514,6 +2705,7 @@ private static final class MH_g_1value_1peek_1pointer {
 public static long g_value_peek_pointer(long arg0) {
 	try {
 		long rc = (long) MH_g_1value_1peek_1pointer.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2526,6 +2718,7 @@ private static final class MH_g_1value_1set_1double {
 public static void g_value_set_double(long arg0, double arg1) {
 	try {
 		MH_g_1value_1set_1double.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2537,6 +2730,7 @@ private static final class MH_g_1value_1set_1float {
 public static void g_value_set_float(long arg0, float arg1) {
 	try {
 		MH_g_1value_1set_1float.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2548,6 +2742,7 @@ private static final class MH_g_1value_1set_1int {
 public static void g_value_set_int(long arg0, int arg1) {
 	try {
 		MH_g_1value_1set_1int.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2559,6 +2754,7 @@ private static final class MH_g_1value_1set_1int64 {
 public static void g_value_set_int64(long arg0, long arg1) {
 	try {
 		MH_g_1value_1set_1int64.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2572,6 +2768,7 @@ public static void g_value_set_string(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MH_g_1value_1set_1string.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2583,6 +2780,7 @@ private static final class MH_g_1value_1take_1boxed {
 public static void g_value_take_boxed(long arg0, long arg1) {
 	try {
 		MH_g_1value_1take_1boxed.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2594,6 +2792,7 @@ private static final class MH_g_1value_1unset {
 public static void g_value_unset(long arg0) {
 	try {
 		MH_g_1value_1unset.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2605,6 +2804,7 @@ private static final class MH_g_1variant_1builder_1add_1value {
 public static void g_variant_builder_add_value(long arg0, long arg1) {
 	try {
 		MH_g_1variant_1builder_1add_1value.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2616,6 +2816,7 @@ private static final class MH_g_1variant_1builder_1end {
 public static long g_variant_builder_end(long arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1builder_1end.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2628,6 +2829,7 @@ private static final class MH_g_1variant_1builder_1new {
 public static long g_variant_builder_new(long arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1builder_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2640,6 +2842,7 @@ private static final class MH_g_1variant_1builder_1unref {
 public static void g_variant_builder_unref(long arg0) {
 	try {
 		MH_g_1variant_1builder_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2651,6 +2854,7 @@ private static final class MH_g_1variant_1get_1boolean {
 public static boolean g_variant_get_boolean(long arg0) {
 	try {
 		int rc = (int) MH_g_1variant_1get_1boolean.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2663,6 +2867,7 @@ private static final class MH_g_1variant_1get_1byte {
 public static byte g_variant_get_byte(long arg0) {
 	try {
 		byte rc = (byte) MH_g_1variant_1get_1byte.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2675,6 +2880,7 @@ private static final class MH_g_1variant_1get_1child_1value {
 public static long g_variant_get_child_value(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_g_1variant_1get_1child_1value.MH.invokeExact(arg0, (long) arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2687,6 +2893,7 @@ private static final class MH_g_1variant_1get_1double {
 public static double g_variant_get_double(long arg0) {
 	try {
 		double rc = (double) MH_g_1variant_1get_1double.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2699,6 +2906,7 @@ private static final class MH_g_1variant_1get_1int32 {
 public static int g_variant_get_int32(long arg0) {
 	try {
 		int rc = (int) MH_g_1variant_1get_1int32.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2713,6 +2921,7 @@ public static long g_variant_get_string(long arg0, long[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_g_1variant_1get_1string.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2725,6 +2934,7 @@ private static final class MH_g_1variant_1get_1type_1string {
 public static long g_variant_get_type_string(long arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1get_1type_1string.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2737,6 +2947,7 @@ private static final class MH_g_1variant_1get_1uint64 {
 public static long g_variant_get_uint64(long arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1get_1uint64.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2751,6 +2962,7 @@ public static boolean g_variant_is_of_type(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_g_1variant_1is_1of_1type.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2763,6 +2975,7 @@ private static final class MH_g_1variant_1n_1children {
 public static long g_variant_n_children(long arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1n_1children.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2777,6 +2990,7 @@ public static long g_variant_new(byte[] arg0, boolean arg1, byte[] arg2) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		long rc = (long) MH_g_1variant_1new___3BZ_3B.MH.invokeExact(lparg0, (int) (arg1 ? 1 : 0), lparg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2791,6 +3005,7 @@ public static long g_variant_new(byte[] arg0, byte[] arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		long rc = (long) MH_g_1variant_1new___3B_3B.MH.invokeExact(lparg0, lparg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2806,6 +3021,7 @@ public static long g_variant_new(byte[] arg0, byte[] arg1, byte[] arg2) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		long rc = (long) MH_g_1variant_1new___3B_3B_3B.MH.invokeExact(lparg0, lparg1, lparg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2818,6 +3034,7 @@ private static final class MH_g_1variant_1new_1boolean {
 public static long g_variant_new_boolean(boolean arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1new_1boolean.MH.invokeExact((int) (arg0 ? 1 : 0));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2830,6 +3047,7 @@ private static final class MH_g_1variant_1new_1byte {
 public static long g_variant_new_byte(byte arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1new_1byte.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2842,6 +3060,7 @@ private static final class MH_g_1variant_1new_1double {
 public static long g_variant_new_double(double arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1new_1double.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2854,6 +3073,7 @@ private static final class MH_g_1variant_1new_1int32 {
 public static long g_variant_new_int32(int arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1new_1int32.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2866,6 +3086,7 @@ private static final class MH_g_1variant_1new_1string__J {
 public static long g_variant_new_string(long arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1new_1string__J.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2880,6 +3101,7 @@ public static long g_variant_new_string(byte[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1variant_1new_1string___3B.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2894,6 +3116,7 @@ public static long g_variant_new_tuple(long[] arg0, long arg1) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1variant_1new_1tuple.MH.invokeExact(lparg0, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2906,6 +3129,7 @@ private static final class MH_g_1variant_1new_1uint64 {
 public static long g_variant_new_uint64(long arg0) {
 	try {
 		long rc = (long) MH_g_1variant_1new_1uint64.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2918,6 +3142,7 @@ private static final class MH_g_1variant_1type_1free {
 public static void g_variant_type_free(long arg0) {
 	try {
 		MH_g_1variant_1type_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2931,6 +3156,7 @@ public static long g_variant_type_new(byte[] arg0) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		long rc = (long) MH_g_1variant_1type_1new.MH.invokeExact(lparg0);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -2943,6 +3169,7 @@ private static final class MH_g_1variant_1unref {
 public static void g_variant_unref(long arg0) {
 	try {
 		MH_g_1variant_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2956,6 +3183,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk.GTypeInfo arg
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GTypeInfo_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GTypeInfo_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_gtk_GTypeInfo_2I.MH.invokeExact(arg0, lparg1, (long) arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2969,6 +3197,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk.GdkRGBA arg1,
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_gtk_GdkRGBA_2J.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2990,6 +3219,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk.PangoAttribut
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttribute_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttribute_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_gtk_PangoAttribute_2J.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3003,6 +3233,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk.XExposeEvent 
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.XExposeEvent_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.XExposeEvent_write(lparg1, arg1);
 		MH_memmove__JLorg_eclipse_swt_internal_gtk_XExposeEvent_2J.MH.invokeExact(arg0, lparg1, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3016,6 +3247,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.GdkKeymapKey arg0, long 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GdkKeymapKey_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_GdkKeymapKey_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkKeymapKey_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3029,6 +3261,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.GdkRGBA arg0, long arg1,
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_GdkRGBA_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3042,6 +3275,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.GdkRectangle arg0, long 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_GdkRectangle_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRectangle_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3055,6 +3289,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.GtkBorder arg0, long arg
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GtkBorder_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_GtkBorder_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GtkBorder_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3076,6 +3311,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.PangoAttrColor arg0, lon
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttrColor_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_PangoAttrColor_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttrColor_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3089,6 +3325,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.PangoAttrInt arg0, long 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttrInt_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_PangoAttrInt_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttrInt_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3102,6 +3339,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.PangoAttribute arg0, lon
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttribute_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_PangoAttribute_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoAttribute_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3115,6 +3353,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.PangoItem arg0, long arg
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoItem_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_PangoItem_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoItem_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3128,6 +3367,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.PangoLayoutLine arg0, lo
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoLayoutLine_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_PangoLayoutLine_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoLayoutLine_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3141,6 +3381,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.PangoLayoutRun arg0, lon
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoLayoutRun_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_PangoLayoutRun_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoLayoutRun_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3154,6 +3395,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.PangoLogAttr arg0, long 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoLogAttr_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_PangoLogAttr_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoLogAttr_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3167,6 +3409,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.XExposeEvent arg0, long 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.XExposeEvent_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_XExposeEvent_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.XExposeEvent_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3180,6 +3423,7 @@ public static void memmove(org.eclipse.swt.internal.gtk.XFocusChangeEvent arg0, 
 		MemorySegment lparg0 = arg0 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.XFocusChangeEvent_SIZEOF, 16);
 		MH_memmove__Lorg_eclipse_swt_internal_gtk_XFocusChangeEvent_2JJ.MH.invokeExact(lparg0, arg1, arg2);
 		if (arg0 != null) org.eclipse.swt.internal.gtk.Structs_FFM.XFocusChangeEvent_read(lparg0, arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3191,6 +3435,7 @@ private static final class MH_pango_1attr_1background_1new {
 public static long pango_attr_background_new(short arg0, short arg1, short arg2) {
 	try {
 		long rc = (long) MH_pango_1attr_1background_1new.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3203,6 +3448,7 @@ private static final class MH_pango_1attr_1font_1desc_1new {
 public static long pango_attr_font_desc_new(long arg0) {
 	try {
 		long rc = (long) MH_pango_1attr_1font_1desc_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3215,6 +3461,7 @@ private static final class MH_pango_1attr_1foreground_1new {
 public static long pango_attr_foreground_new(short arg0, short arg1, short arg2) {
 	try {
 		long rc = (long) MH_pango_1attr_1foreground_1new.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3230,6 +3477,7 @@ public static long pango_attr_insert_hyphens_new(boolean arg0) {
 		if (MH_pango_1attr_1insert_1hyphens_1new.MH != null) {
 			rc = (long) MH_pango_1attr_1insert_1hyphens_1new.MH.invokeExact((byte) (arg0 ? 1 : 0));
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3242,6 +3490,7 @@ private static final class MH_pango_1attr_1iterator_1destroy {
 public static void pango_attr_iterator_destroy(long arg0) {
 	try {
 		MH_pango_1attr_1iterator_1destroy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3253,6 +3502,7 @@ private static final class MH_pango_1attr_1iterator_1get {
 public static long pango_attr_iterator_get(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_pango_1attr_1iterator_1get.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3265,6 +3515,7 @@ private static final class MH_pango_1attr_1iterator_1next {
 public static boolean pango_attr_iterator_next(long arg0) {
 	try {
 		int rc = (int) MH_pango_1attr_1iterator_1next.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3281,6 +3532,7 @@ public static void pango_attr_iterator_range(long arg0, int[] arg1, int[] arg2) 
 		MH_pango_1attr_1iterator_1range.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3292,6 +3544,7 @@ private static final class MH_pango_1attr_1list_1get_1iterator {
 public static long pango_attr_list_get_iterator(long arg0) {
 	try {
 		long rc = (long) MH_pango_1attr_1list_1get_1iterator.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3304,6 +3557,7 @@ private static final class MH_pango_1attr_1list_1insert {
 public static void pango_attr_list_insert(long arg0, long arg1) {
 	try {
 		MH_pango_1attr_1list_1insert.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3315,6 +3569,7 @@ private static final class MH_pango_1attr_1list_1new {
 public static long pango_attr_list_new() {
 	try {
 		long rc = (long) MH_pango_1attr_1list_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3327,6 +3582,7 @@ private static final class MH_pango_1attr_1list_1unref {
 public static void pango_attr_list_unref(long arg0) {
 	try {
 		MH_pango_1attr_1list_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3338,6 +3594,7 @@ private static final class MH_pango_1attr_1rise_1new {
 public static long pango_attr_rise_new(int arg0) {
 	try {
 		long rc = (long) MH_pango_1attr_1rise_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3354,6 +3611,7 @@ public static long pango_attr_shape_new(org.eclipse.swt.internal.gtk.PangoRectan
 		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_SIZEOF, 16);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_write(lparg1, arg1);
 		long rc = (long) MH_pango_1attr_1shape_1new.MH.invokeExact(lparg0, lparg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3366,6 +3624,7 @@ private static final class MH_pango_1attr_1strikethrough_1color_1new {
 public static long pango_attr_strikethrough_color_new(short arg0, short arg1, short arg2) {
 	try {
 		long rc = (long) MH_pango_1attr_1strikethrough_1color_1new.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3378,6 +3637,7 @@ private static final class MH_pango_1attr_1strikethrough_1new {
 public static long pango_attr_strikethrough_new(boolean arg0) {
 	try {
 		long rc = (long) MH_pango_1attr_1strikethrough_1new.MH.invokeExact((int) (arg0 ? 1 : 0));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3390,6 +3650,7 @@ private static final class MH_pango_1attr_1underline_1color_1new {
 public static long pango_attr_underline_color_new(short arg0, short arg1, short arg2) {
 	try {
 		long rc = (long) MH_pango_1attr_1underline_1color_1new.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3402,6 +3663,7 @@ private static final class MH_pango_1attr_1underline_1new {
 public static long pango_attr_underline_new(int arg0) {
 	try {
 		long rc = (long) MH_pango_1attr_1underline_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3414,6 +3676,7 @@ private static final class MH_pango_1attr_1weight_1new {
 public static long pango_attr_weight_new(int arg0) {
 	try {
 		long rc = (long) MH_pango_1attr_1weight_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3426,6 +3689,7 @@ private static final class MH_pango_1attribute_1copy {
 public static long pango_attribute_copy(long arg0) {
 	try {
 		long rc = (long) MH_pango_1attribute_1copy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3438,6 +3702,7 @@ private static final class MH_pango_1cairo_1context_1get_1font_1options {
 public static long pango_cairo_context_get_font_options(long arg0) {
 	try {
 		long rc = (long) MH_pango_1cairo_1context_1get_1font_1options.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3450,6 +3715,7 @@ private static final class MH_pango_1cairo_1context_1set_1font_1options {
 public static void pango_cairo_context_set_font_options(long arg0, long arg1) {
 	try {
 		MH_pango_1cairo_1context_1set_1font_1options.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3461,6 +3727,7 @@ private static final class MH_pango_1cairo_1create_1layout {
 public static long pango_cairo_create_layout(long arg0) {
 	try {
 		long rc = (long) MH_pango_1cairo_1create_1layout.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3473,6 +3740,7 @@ private static final class MH_pango_1cairo_1font_1map_1get_1default {
 public static long pango_cairo_font_map_get_default() {
 	try {
 		long rc = (long) MH_pango_1cairo_1font_1map_1get_1default.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3485,6 +3753,7 @@ private static final class MH_pango_1cairo_1layout_1path {
 public static void pango_cairo_layout_path(long arg0, long arg1) {
 	try {
 		MH_pango_1cairo_1layout_1path.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3496,6 +3765,7 @@ private static final class MH_pango_1cairo_1show_1layout {
 public static void pango_cairo_show_layout(long arg0, long arg1) {
 	try {
 		MH_pango_1cairo_1show_1layout.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3507,6 +3777,7 @@ private static final class MH_pango_1context_1get_1base_1dir {
 public static int pango_context_get_base_dir(long arg0) {
 	try {
 		int rc = (int) MH_pango_1context_1get_1base_1dir.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3519,6 +3790,7 @@ private static final class MH_pango_1context_1get_1language {
 public static long pango_context_get_language(long arg0) {
 	try {
 		long rc = (long) MH_pango_1context_1get_1language.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3531,6 +3803,7 @@ private static final class MH_pango_1context_1get_1metrics {
 public static long pango_context_get_metrics(long arg0, long arg1, long arg2) {
 	try {
 		long rc = (long) MH_pango_1context_1get_1metrics.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3547,6 +3820,7 @@ public static void pango_context_list_families(long arg0, long[] arg1, int[] arg
 		MH_pango_1context_1list_1families.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3558,6 +3832,7 @@ private static final class MH_pango_1context_1set_1base_1dir {
 public static void pango_context_set_base_dir(long arg0, int arg1) {
 	try {
 		MH_pango_1context_1set_1base_1dir.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3569,6 +3844,7 @@ private static final class MH_pango_1context_1set_1language {
 public static void pango_context_set_language(long arg0, long arg1) {
 	try {
 		MH_pango_1context_1set_1language.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3580,6 +3856,7 @@ private static final class MH_pango_1font_1description_1copy {
 public static long pango_font_description_copy(long arg0) {
 	try {
 		long rc = (long) MH_pango_1font_1description_1copy.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3592,6 +3869,7 @@ private static final class MH_pango_1font_1description_1free {
 public static void pango_font_description_free(long arg0) {
 	try {
 		MH_pango_1font_1description_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3603,6 +3881,7 @@ private static final class MH_pango_1font_1description_1from_1string {
 public static long pango_font_description_from_string(byte[] arg0) {
 	try {
 		long rc = (long) MH_pango_1font_1description_1from_1string.MH.invokeExact(FFM.heap(arg0));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3615,6 +3894,7 @@ private static final class MH_pango_1font_1description_1get_1family {
 public static long pango_font_description_get_family(long arg0) {
 	try {
 		long rc = (long) MH_pango_1font_1description_1get_1family.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3627,6 +3907,7 @@ private static final class MH_pango_1font_1description_1get_1set_1fields {
 public static int pango_font_description_get_set_fields(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1description_1get_1set_1fields.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3639,6 +3920,7 @@ private static final class MH_pango_1font_1description_1get_1size {
 public static int pango_font_description_get_size(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1description_1get_1size.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3651,6 +3933,7 @@ private static final class MH_pango_1font_1description_1get_1stretch {
 public static int pango_font_description_get_stretch(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1description_1get_1stretch.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3663,6 +3946,7 @@ private static final class MH_pango_1font_1description_1get_1style {
 public static int pango_font_description_get_style(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1description_1get_1style.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3675,6 +3959,7 @@ private static final class MH_pango_1font_1description_1get_1variant {
 public static int pango_font_description_get_variant(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1description_1get_1variant.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3687,6 +3972,7 @@ private static final class MH_pango_1font_1description_1get_1weight {
 public static int pango_font_description_get_weight(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1description_1get_1weight.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3699,6 +3985,7 @@ private static final class MH_pango_1font_1description_1new {
 public static long pango_font_description_new() {
 	try {
 		long rc = (long) MH_pango_1font_1description_1new.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3711,6 +3998,7 @@ private static final class MH_pango_1font_1description_1set_1family {
 public static void pango_font_description_set_family(long arg0, byte[] arg1) {
 	try {
 		MH_pango_1font_1description_1set_1family.MH.invokeExact(arg0, FFM.heap(arg1));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3722,6 +4010,7 @@ private static final class MH_pango_1font_1description_1set_1size {
 public static void pango_font_description_set_size(long arg0, int arg1) {
 	try {
 		MH_pango_1font_1description_1set_1size.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3733,6 +4022,7 @@ private static final class MH_pango_1font_1description_1set_1stretch {
 public static void pango_font_description_set_stretch(long arg0, int arg1) {
 	try {
 		MH_pango_1font_1description_1set_1stretch.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3744,6 +4034,7 @@ private static final class MH_pango_1font_1description_1set_1style {
 public static void pango_font_description_set_style(long arg0, int arg1) {
 	try {
 		MH_pango_1font_1description_1set_1style.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3755,6 +4046,7 @@ private static final class MH_pango_1font_1description_1set_1variant {
 public static void pango_font_description_set_variant(long arg0, int arg1) {
 	try {
 		MH_pango_1font_1description_1set_1variant.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3766,6 +4058,7 @@ private static final class MH_pango_1font_1description_1set_1weight {
 public static void pango_font_description_set_weight(long arg0, int arg1) {
 	try {
 		MH_pango_1font_1description_1set_1weight.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3777,6 +4070,7 @@ private static final class MH_pango_1font_1description_1to_1string {
 public static long pango_font_description_to_string(long arg0) {
 	try {
 		long rc = (long) MH_pango_1font_1description_1to_1string.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3789,6 +4083,7 @@ private static final class MH_pango_1font_1face_1describe {
 public static long pango_font_face_describe(long arg0) {
 	try {
 		long rc = (long) MH_pango_1font_1face_1describe.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3801,6 +4096,7 @@ private static final class MH_pango_1font_1family_1get_1name {
 public static long pango_font_family_get_name(long arg0) {
 	try {
 		long rc = (long) MH_pango_1font_1family_1get_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3817,6 +4113,7 @@ public static void pango_font_family_list_faces(long arg0, long[] arg1, int[] ar
 		MH_pango_1font_1family_1list_1faces.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3828,6 +4125,7 @@ private static final class MH_pango_1font_1map_1create_1context {
 public static long pango_font_map_create_context(long arg0) {
 	try {
 		long rc = (long) MH_pango_1font_1map_1create_1context.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3840,6 +4138,7 @@ private static final class MH_pango_1font_1metrics_1get_1approximate_1char_1widt
 public static int pango_font_metrics_get_approximate_char_width(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1metrics_1get_1approximate_1char_1width.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3852,6 +4151,7 @@ private static final class MH_pango_1font_1metrics_1get_1ascent {
 public static int pango_font_metrics_get_ascent(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1metrics_1get_1ascent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3864,6 +4164,7 @@ private static final class MH_pango_1font_1metrics_1get_1descent {
 public static int pango_font_metrics_get_descent(long arg0) {
 	try {
 		int rc = (int) MH_pango_1font_1metrics_1get_1descent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3876,6 +4177,7 @@ private static final class MH_pango_1font_1metrics_1unref {
 public static void pango_font_metrics_unref(long arg0) {
 	try {
 		MH_pango_1font_1metrics_1unref.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3887,6 +4189,7 @@ private static final class MH_pango_1layout_1context_1changed {
 public static void pango_layout_context_changed(long arg0) {
 	try {
 		MH_pango_1layout_1context_1changed.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3898,6 +4201,7 @@ private static final class MH_pango_1layout_1get_1alignment {
 public static int pango_layout_get_alignment(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1get_1alignment.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3910,6 +4214,7 @@ private static final class MH_pango_1layout_1get_1context {
 public static long pango_layout_get_context(long arg0) {
 	try {
 		long rc = (long) MH_pango_1layout_1get_1context.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3922,6 +4227,7 @@ private static final class MH_pango_1layout_1get_1indent {
 public static int pango_layout_get_indent(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1get_1indent.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3934,6 +4240,7 @@ private static final class MH_pango_1layout_1get_1iter {
 public static long pango_layout_get_iter(long arg0) {
 	try {
 		long rc = (long) MH_pango_1layout_1get_1iter.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3946,6 +4253,7 @@ private static final class MH_pango_1layout_1get_1justify {
 public static boolean pango_layout_get_justify(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1get_1justify.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3958,6 +4266,7 @@ private static final class MH_pango_1layout_1get_1line {
 public static long pango_layout_get_line(long arg0, int arg1) {
 	try {
 		long rc = (long) MH_pango_1layout_1get_1line.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3970,6 +4279,7 @@ private static final class MH_pango_1layout_1get_1line_1count {
 public static int pango_layout_get_line_count(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1get_1line_1count.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -3986,6 +4296,7 @@ public static void pango_layout_get_log_attrs(long arg0, long[] arg1, int[] arg2
 		MH_pango_1layout_1get_1log_1attrs.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4001,6 +4312,7 @@ public static void pango_layout_get_pixel_size(long arg0, int[] arg1, int[] arg2
 		MH_pango_1layout_1get_1pixel_1size.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4016,6 +4328,7 @@ public static void pango_layout_get_size(long arg0, int[] arg1, int[] arg2) {
 		MH_pango_1layout_1get_1size.MH.invokeExact(arg0, lparg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4027,6 +4340,7 @@ private static final class MH_pango_1layout_1get_1spacing {
 public static int pango_layout_get_spacing(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1get_1spacing.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4039,6 +4353,7 @@ private static final class MH_pango_1layout_1get_1text {
 public static long pango_layout_get_text(long arg0) {
 	try {
 		long rc = (long) MH_pango_1layout_1get_1text.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4051,6 +4366,7 @@ private static final class MH_pango_1layout_1get_1width {
 public static int pango_layout_get_width(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1get_1width.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4065,6 +4381,7 @@ public static void pango_layout_index_to_pos(long arg0, int arg1, org.eclipse.sw
 		MemorySegment lparg2 = arg2 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_SIZEOF, 16);
 		MH_pango_1layout_1index_1to_1pos.MH.invokeExact(arg0, arg1, lparg2);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_read(lparg2, arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4076,6 +4393,7 @@ private static final class MH_pango_1layout_1iter_1free {
 public static void pango_layout_iter_free(long arg0) {
 	try {
 		MH_pango_1layout_1iter_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4087,6 +4405,7 @@ private static final class MH_pango_1layout_1iter_1get_1index {
 public static int pango_layout_iter_get_index(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1iter_1get_1index.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4103,6 +4422,7 @@ public static void pango_layout_iter_get_line_extents(long arg0, org.eclipse.swt
 		MH_pango_1layout_1iter_1get_1line_1extents.MH.invokeExact(arg0, lparg1, lparg2);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_read(lparg2, arg2);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4114,6 +4434,7 @@ private static final class MH_pango_1layout_1iter_1get_1run {
 public static long pango_layout_iter_get_run(long arg0) {
 	try {
 		long rc = (long) MH_pango_1layout_1iter_1get_1run.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4126,6 +4447,7 @@ private static final class MH_pango_1layout_1iter_1next_1line {
 public static boolean pango_layout_iter_next_line(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1iter_1next_1line.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4138,6 +4460,7 @@ private static final class MH_pango_1layout_1iter_1next_1run {
 public static boolean pango_layout_iter_next_run(long arg0) {
 	try {
 		int rc = (int) MH_pango_1layout_1iter_1next_1run.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4154,6 +4477,7 @@ public static void pango_layout_line_get_extents(long arg0, org.eclipse.swt.inte
 		MH_pango_1layout_1line_1get_1extents.MH.invokeExact(arg0, lparg1, lparg2);
 		if (arg2 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_read(lparg2, arg2);
 		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.PangoRectangle_read(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4165,6 +4489,7 @@ private static final class MH_pango_1layout_1new {
 public static long pango_layout_new(long arg0) {
 	try {
 		long rc = (long) MH_pango_1layout_1new.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4177,6 +4502,7 @@ private static final class MH_pango_1layout_1set_1alignment {
 public static void pango_layout_set_alignment(long arg0, int arg1) {
 	try {
 		MH_pango_1layout_1set_1alignment.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4188,6 +4514,7 @@ private static final class MH_pango_1layout_1set_1attributes {
 public static void pango_layout_set_attributes(long arg0, long arg1) {
 	try {
 		MH_pango_1layout_1set_1attributes.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4199,6 +4526,7 @@ private static final class MH_pango_1layout_1set_1auto_1dir {
 public static void pango_layout_set_auto_dir(long arg0, boolean arg1) {
 	try {
 		MH_pango_1layout_1set_1auto_1dir.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4210,6 +4538,7 @@ private static final class MH_pango_1layout_1set_1font_1description {
 public static void pango_layout_set_font_description(long arg0, long arg1) {
 	try {
 		MH_pango_1layout_1set_1font_1description.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4221,6 +4550,7 @@ private static final class MH_pango_1layout_1set_1indent {
 public static void pango_layout_set_indent(long arg0, int arg1) {
 	try {
 		MH_pango_1layout_1set_1indent.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4232,6 +4562,7 @@ private static final class MH_pango_1layout_1set_1justify {
 public static void pango_layout_set_justify(long arg0, boolean arg1) {
 	try {
 		MH_pango_1layout_1set_1justify.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4243,6 +4574,7 @@ private static final class MH_pango_1layout_1set_1single_1paragraph_1mode {
 public static void pango_layout_set_single_paragraph_mode(long arg0, boolean arg1) {
 	try {
 		MH_pango_1layout_1set_1single_1paragraph_1mode.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4254,6 +4586,7 @@ private static final class MH_pango_1layout_1set_1spacing {
 public static void pango_layout_set_spacing(long arg0, int arg1) {
 	try {
 		MH_pango_1layout_1set_1spacing.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4265,6 +4598,7 @@ private static final class MH_pango_1layout_1set_1tabs {
 public static void pango_layout_set_tabs(long arg0, long arg1) {
 	try {
 		MH_pango_1layout_1set_1tabs.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4276,6 +4610,7 @@ private static final class MH_pango_1layout_1set_1text {
 public static void pango_layout_set_text(long arg0, byte[] arg1, int arg2) {
 	try {
 		MH_pango_1layout_1set_1text.MH.invokeExact(arg0, FFM.heap(arg1), arg2);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4287,6 +4622,7 @@ private static final class MH_pango_1layout_1set_1width {
 public static void pango_layout_set_width(long arg0, int arg1) {
 	try {
 		MH_pango_1layout_1set_1width.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4298,6 +4634,7 @@ private static final class MH_pango_1layout_1set_1wrap {
 public static void pango_layout_set_wrap(long arg0, int arg1) {
 	try {
 		MH_pango_1layout_1set_1wrap.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4313,6 +4650,7 @@ public static boolean pango_layout_xy_to_index(long arg0, int arg1, int arg2, in
 		int rc = (int) MH_pango_1layout_1xy_1to_1index.MH.invokeExact(arg0, arg1, arg2, lparg3, lparg4);
 		FFM.copyOut(lparg4, arg4);
 		FFM.copyOut(lparg3, arg3);
+		FFM.checkCallbackException();
 		return ((byte) rc != 0);
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4325,6 +4663,7 @@ private static final class MH_pango_1tab_1array_1free {
 public static void pango_tab_array_free(long arg0) {
 	try {
 		MH_pango_1tab_1array_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4336,6 +4675,7 @@ private static final class MH_pango_1tab_1array_1new {
 public static long pango_tab_array_new(int arg0, boolean arg1) {
 	try {
 		long rc = (long) MH_pango_1tab_1array_1new.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4348,6 +4688,7 @@ private static final class MH_pango_1tab_1array_1set_1tab {
 public static void pango_tab_array_set_tab(long arg0, int arg1, long arg2, int arg3) {
 	try {
 		MH_pango_1tab_1array_1set_1tab.MH.invokeExact(arg0, arg1, (int) arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4359,6 +4700,7 @@ private static final class MH_pango_1version {
 public static int pango_version() {
 	try {
 		int rc = (int) MH_pango_1version.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4375,6 +4717,7 @@ public static long realpath(byte[] arg0, byte[] arg1) {
 		long rc = (long) MH_realpath.MH.invokeExact(lparg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
 		FFM.copyOut(lparg0, arg0);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4389,6 +4732,7 @@ public static int strcmp(long arg0, byte[] arg1) {
 		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
 		int rc = (int) MH_strcmp.MH.invokeExact(arg0, lparg1);
 		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4401,6 +4745,7 @@ private static final class MH_swt_1debug_1on_1fatal_1warnings {
 public static void swt_debug_on_fatal_warnings() {
 	try {
 		MH_swt_1debug_1on_1fatal_1warnings.MH.invokeExact();
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4412,6 +4757,7 @@ private static final class MH_swt_1fixed_1accessible_1get_1type {
 public static long swt_fixed_accessible_get_type() {
 	try {
 		long rc = (long) MH_swt_1fixed_1accessible_1get_1type.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4424,6 +4770,7 @@ private static final class MH_swt_1fixed_1get_1type {
 public static long swt_fixed_get_type() {
 	try {
 		long rc = (long) MH_swt_1fixed_1get_1type.MH.invokeExact();
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4436,6 +4783,7 @@ private static final class MH_swt_1fixed_1move {
 public static void swt_fixed_move(long arg0, long arg1, int arg2, int arg3) {
 	try {
 		MH_swt_1fixed_1move.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4447,6 +4795,7 @@ private static final class MH_swt_1fixed_1resize {
 public static void swt_fixed_resize(long arg0, long arg1, int arg2, int arg3) {
 	try {
 		MH_swt_1fixed_1resize.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4458,6 +4807,7 @@ private static final class MH_swt_1fixed_1restack {
 public static void swt_fixed_restack(long arg0, long arg1, long arg2, boolean arg3) {
 	try {
 		MH_swt_1fixed_1restack.MH.invokeExact(arg0, arg1, arg2, (int) (arg3 ? 1 : 0));
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4469,6 +4819,7 @@ private static final class MH_swt_1set_1lock_1functions {
 public static void swt_set_lock_functions() {
 	try {
 		MH_swt_1set_1lock_1functions.MH.invokeExact();
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -4483,6 +4834,7 @@ public static long ubuntu_menu_proxy_get() {
 		if (MH_ubuntu_1menu_1proxy_1get.MH != null) {
 			rc = (long) MH_ubuntu_1menu_1proxy_1get.MH.invokeExact();
 		}
+		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
