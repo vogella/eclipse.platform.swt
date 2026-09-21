@@ -204,7 +204,16 @@ Median main thread CPU time of 10 alternating fresh JVMs on 4 pinned cores:
 Once warm the two are within noise, except widget creation (+23%) and dispose (+11%).
 The first use costs about 1.3 s more CPU time, most of it in `java.lang.invoke` and `jdk.internal.foreign` building downcall handles and in the class initialisers of the holder classes.
 Full IDE start-up to the workbench window did not show a stable difference: two batches of 10 and 15 alternating pairs gave +430 ms and -749 ms, so machine noise dominates there.
-Reducing the cold cost (an AOT cache of JEP 483 and 514, fewer distinct holder classes, sharing handles per descriptor) is the first performance work.
+A cold FFM run loads about 3,900 classes against 1,400 for JNI, most of them `LambdaForm` classes the JDK spins while linking and first invoking the downcall handles.
+
+Two remedies were measured on the first iteration of the workload (main thread CPU, median of 5):
+
+* One shared handle per call shape, 202 shapes for 1,390 functions, with the function address passed as the first argument, removed only 200 of the spun classes and made no measurable difference, because the JDK already caches the downcall stub per shape.
+  It was not kept.
+* An AOT cache from a training run (`-XX:AOTCacheOutput`, JEP 483 and 514) cut the cold FFM cost from 2,633 ms to 1,932 ms, against 1,152 ms for JNI with a cache, so the FFM penalty drops from about 1.4 s to 0.8 s.
+  The cache needs jars on the class path.
+
+What remains is running the bindings interpreted until the JIT compiles them, which only compiled code in the cache would remove.
 
 ### Building it
 
@@ -231,7 +240,7 @@ Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks 
    This is what makes the GTK3 product build JNI free, and it is the last piece before an upstream proposal.
 2. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
    The build time rewrite is fine for a fork, but upstream needs one committed shape.
-3. Cut the cold cost of linking, about 1.3 s of CPU time on first use (see Performance), for example with an AOT cache, and replace the confined arena per copied array with a per-thread allocator.
+3. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance): try an AOT cache for the whole IDE, and replace the confined arena per copied array with a per-thread allocator.
 4. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
 5. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
 
