@@ -33,6 +33,8 @@ implementations=(
 	"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMRuntime.java"
 )
 
-for root in "Eclipse SWT PI/gtk" "Eclipse SWT PI/cairo" "Eclipse SWT PI/common" "Eclipse SWT/common"; do
+# Only sources that no other platform compiles: C.java and Callback.java sit in folders the
+# win32 and cocoa fragments share, which have no FFM implementation, so they stay on JNI here.
+for root in "Eclipse SWT PI/gtk" "Eclipse SWT PI/cairo"; do
 	java "$REWRITER" "$SUPPORTED" "$SWT/$root" "${implementations[@]}"
 done
