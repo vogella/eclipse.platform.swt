@@ -82,6 +82,7 @@ All scripts live in `bundles/org.eclipse.swt.tools/ffm` and need clang, gcc, the
 * `build-gtk.sh jni|ffm` compiles the GTK bundle with plain javac, either stock plus the FFM classes or with the supported natives delegated to FFM.
 * `test-gtk.sh` runs `FFMCrossCheck` and then the SWT JUnit tests on both builds and diffs the outcomes; `SWT_NATIVES` points it at other native libraries.
 * `test/.../FFMBench.java` compares the per-call cost of both implementations.
+* `bench-gtk.sh <swt-gtk jar> <checkout apply-ffm.sh ran in>` runs `FFMWorkloadBench` on a product jar and on its JNI twin, alternating fresh JVMs, and prints the cold and warm medians per phase.
 
 ### Callbacks
 
@@ -188,7 +189,7 @@ Best of five runs of two million calls on Linux x86_64, JDK 25:
 The callback row is from a later run on a busier machine, where the JNI numbers of the other rows are about twice as high as shown, so compare it only with its own JNI value.
 Copied arrays pay for a confined arena per call; a reusable per-thread allocator is the obvious next optimisation.
 
-A widget workload (a shell with 16 composites of labels, texts, checks, combos, a tree, a table and a `StyledText`, opened, relaid out 20 times, 2,000 GC operations, disposed) compares the product jar with a twin whose six rewritten PI classes are compiled from the unrewritten sources.
+A widget workload (a shell with 16 composites of labels, texts, checks, combos, a tree, a table and a `StyledText`, opened, relaid out 20 times, 2,000 GC operations, disposed) compares the product jar with a twin whose six rewritten PI classes are compiled from the unrewritten sources (`bench-gtk.sh`).
 Median main thread CPU time of 10 alternating fresh JVMs on 4 pinned cores:
 
 | Phase | cold JNI | cold FFM | warm JNI | warm FFM |
