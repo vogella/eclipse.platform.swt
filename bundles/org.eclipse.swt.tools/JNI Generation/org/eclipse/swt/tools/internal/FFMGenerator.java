@@ -464,6 +464,8 @@ public class FFMGenerator extends JNIGenerator {
 				outputln("\t\tif (arg" + i + " != null) " + p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_read(lparg" + i + ", arg" + i + ");");
 			}
 		}
+		// a callback may have failed during the call, and JNI let that exception surface here
+		outputln("\t\tFFM.checkCallbackException();");
 		if (returns) outputln("\t\treturn " + toJava(plan.returnKind, returnJava, "rc") + ";");
 		outputln("\t} catch (Throwable e) {");
 		outputln("\t\tthrow FFM.rethrow(e);");
@@ -510,9 +512,13 @@ public class FFMGenerator extends JNIGenerator {
 			case "memmove_write":
 				outputln("\tif (arg1 != null) " + struct + "_write(FFM.segment(arg0, " + struct + "_SIZEOF), arg1);");
 				break;
-			case "memmove_read":
-				outputln("\tif (arg0 != null) " + struct + "_read(FFM.segment(arg1, " + struct + "_SIZEOF), arg0);");
+			case "memmove_read": {
+				// the JNI glue copied the given number of bytes, so never read beyond it
+				boolean sized = plan.method.getParameters().length == 3;
+				String size = sized ? "Math.min(arg2, " + struct + "_SIZEOF)" : struct + "_SIZEOF";
+				outputln("\tif (arg0 != null) " + struct + "_read(FFM.segment(arg1, " + size + "), arg0);");
 				break;
+			}
 			default:
 				throw new IllegalStateException(plan.special);
 		}
