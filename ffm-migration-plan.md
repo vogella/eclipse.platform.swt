@@ -188,6 +188,23 @@ Best of five runs of two million calls on Linux x86_64, JDK 25:
 The callback row is from a later run on a busier machine, where the JNI numbers of the other rows are about twice as high as shown, so compare it only with its own JNI value.
 Copied arrays pay for a confined arena per call; a reusable per-thread allocator is the obvious next optimisation.
 
+A widget workload (a shell with 16 composites of labels, texts, checks, combos, a tree, a table and a `StyledText`, opened, relaid out 20 times, 2,000 GC operations, disposed) compares the product jar with a twin whose six rewritten PI classes are compiled from the unrewritten sources.
+Median main thread CPU time of 10 alternating fresh JVMs on 4 pinned cores:
+
+| Phase | cold JNI | cold FFM | warm JNI | warm FFM |
+| --- | --- | --- | --- | --- |
+| `new Display()` | 130 ms | 468 ms | | |
+| create widgets | 322 ms | 935 ms | 179 ms | 221 ms |
+| open | 321 ms | 465 ms | 312 ms | 315 ms |
+| relayout | 426 ms | 662 ms | 333 ms | 338 ms |
+| GC drawing | 50 ms | 87 ms | 38 ms | 37 ms |
+| dispose | 69 ms | 94 ms | 60 ms | 66 ms |
+
+Once warm the two are within noise, except widget creation (+23%) and dispose (+11%).
+The first use costs about 1.3 s more CPU time, most of it in `java.lang.invoke` and `jdk.internal.foreign` building downcall handles and in the class initialisers of the holder classes.
+Full IDE start-up to the workbench window did not show a stable difference: two batches of 10 and 15 alternating pairs gave +430 ms and -749 ms, so machine noise dominates there.
+Reducing the cold cost (an AOT cache of JEP 483 and 514, fewer distinct holder classes, sharing handles per descriptor) is the first performance work.
+
 ### Building it
 
 The committed sources keep their `native` declarations: `bundles/org.eclipse.swt.tools/ffm/apply-ffm.sh` turns them into calls of their FFM implementation in the checkout, and a product build runs it before Maven.
@@ -213,7 +230,7 @@ Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks 
    This is what makes the GTK3 product build JNI free, and it is the last piece before an upstream proposal.
 2. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
    The build time rewrite is fine for a fork, but upstream needs one committed shape.
-3. Measure IDE start-up and replace the confined arena per copied array with a per-thread allocator, the one call shape where FFM is slower than JNI.
+3. Cut the cold cost of linking, about 1.3 s of CPU time on first use (see Performance), for example with an AOT cache, and replace the confined arena per copied array with a per-thread allocator.
 4. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
 5. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
 
