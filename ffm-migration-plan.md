@@ -213,10 +213,8 @@ Two remedies were measured on the first iteration of the workload (main thread C
 
 * One shared handle per call shape, 202 shapes for 1,390 functions, with the function address passed as the first argument, removed only 200 of the spun classes and made no measurable difference, because the JDK already caches the downcall stub per shape.
   It was not kept.
-* An AOT cache from a training run (`-XX:AOTCacheOutput`, JEP 483 and 514) cut the cold FFM cost from 2,633 ms to 1,932 ms, against 1,152 ms for JNI with a cache, so the FFM penalty drops from about 1.4 s to 0.8 s.
-  The cache needs jars on the class path.
-
-What remains is running the bindings interpreted until the JIT compiles them, which only compiled code in the cache would remove.
+* An AOT cache from a training run (`-XX:AOTCacheOutput`, JEP 483 and 514) cut the cold FFM cost from 2,633 ms to 1,932 ms, against 1,152 ms for JNI with a cache.
+  An AOT cache is not an option for Eclipse, so the cold cost has to come down in the bindings themselves.
 
 ### Building it
 
@@ -242,7 +240,8 @@ Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks 
 
 1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
    The build time rewrite is fine for a fork, but upstream needs one committed shape.
-2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance): try an AOT cache for the whole IDE, and replace the confined arena per copied array with a per-thread allocator.
+2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance), without an AOT cache: profile the first iteration at a finer sampling interval to split handle linking, `LambdaForm` spinning and interpreted execution, then attack the largest part.
+   Replace the confined arena per copied array with a per-thread allocator for the warm cost.
 3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
 4. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
 
