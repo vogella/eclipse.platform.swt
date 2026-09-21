@@ -134,6 +134,25 @@ The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK
 * The same cross check, JUnit and Visual Oracle runs pass unchanged with the callbacks routed through upcall stubs.
 * 127 SWT JUnit test classes (widgets, graphics, custom, accessibility, dnd, layout, events, program, printing; 4,150 tests) produce identical outcomes on the JNI build and on the FFM build: 4,059 passed, 78 failed and 11 aborted on both, the failures coming from the headless environment.
 
+### Review findings addressed
+
+An independent review of the whole branch found these, all fixed:
+
+* Closing the arena of an upcall stub in `Callback.dispose` frees it even while the stub is on a stack, because the JDK keeps the arena alive for downcalls but not for upcalls in flight.
+  Retired stubs are now freed only once no callback is running, which the entry count already tracks.
+* A callback that threw had its exception swallowed, while the JNI glue left it pending so that it surfaced when the dispatching native call returned to Java.
+  The failure is kept for the thread, nested callbacks save and restore it as `callback.c` did, and the generated bindings check after every downcall.
+* `AtkObjectClass.ref_state_set` was missing, because the C function is spelled `swt_fixed_accesssible_ref_state_set` and the extraction expected the correct spelling.
+  Without it no state a control reports through `AccessibleControlListener.getState` reached AT-SPI.
+* `sizeAllocate` and `map` iterated the live child list while allocating children, which sends `SWT.Resize` and can add or remove children; they iterate a snapshot now, as the C cached the next node.
+* Only `FFMCallback` guarded against exceptions escaping into native code; every hand written upcall does now, since an exception leaving an upcall stub terminates the VM.
+* `FFMAccessible.REGISTERED` was never cleared, so a later accessible at a reused address counted as registered; the entry is dropped when the object is finalized.
+* `memmove` into a struct ignored the size argument, and the generated bindings now never read beyond it.
+* The clang AST reader accepted implicitly declared functions, whose guessed prototype would have truncated a returned pointer to 32 bits.
+* `forall` and the parent class calls built a downcall handle per invocation; they use one handle per descriptor now.
+
+Two findings were deliberately not acted on: the entry count is incremented even while callbacks are disabled, which nothing on GTK reads, and `AtkTableIface.remove_column_selection` forwards to `atkTable_remove_row_selection`, which faithfully reproduces a bug of the C and deserves its own fix upstream.
+
 ### Findings
 
 * `MethodHandle.invokeExact` in the arm of an arrow switch is a value producing expression, so ECJ inferred `Object` as its return type where javac inferred `void`, and the Tycho built jar failed with a `WrongMethodTypeException` that no javac build showed.
@@ -181,6 +200,7 @@ The JNI generator reads the `native` declarations, so regenerating either backen
 
 * WebKit, GLX, the AWT bridge and GTK4 are not generated yet; a GTK3 application does not load them, but they still need their JNI libraries when used.
 
+* Raising the BREE of SWT alone is fine: a bundle with a JavaSE-21 BREE resolves against one that requires JavaSE-25, because the execution environment capability comes from the running JVM rather than from the consuming bundle.
 * Java baseline: FFM is final from Java 22, SWT requires Java 21, so shipping needs a Java 25 baseline, which is an Eclipse Platform wide decision.
 * Native access: OSGi bundles live in the unnamed module, so launchers need `--enable-native-access=ALL-UNNAMED`, which becomes mandatory in a future Java release.
 * Where the declarations live once JNI is gone: `native` declarations cannot keep a body, so the final shape is either generated delegating bodies in `OS.java` or a non-compiled declaration file.

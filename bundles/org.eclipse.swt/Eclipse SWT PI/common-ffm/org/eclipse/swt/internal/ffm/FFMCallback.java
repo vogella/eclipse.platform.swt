@@ -31,6 +31,7 @@ public final class FFMCallback {
 
 	static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 	static final Map<Object, Stub> STUBS = new IdentityHashMap<>();
+	static final java.util.concurrent.ConcurrentLinkedQueue<Arena> RETIRED = new java.util.concurrent.ConcurrentLinkedQueue<>();
 	static final AtomicInteger ENTRY_COUNT = new AtomicInteger();
 
 	static volatile boolean enabled = true;
@@ -62,10 +63,25 @@ public final class FFMCallback {
 			stub = STUBS.remove(callback);
 		}
 		if (stub == null) return;
-		try {
-			stub.arena().close();
-		} catch (IllegalStateException e) {
-			// a call is still in flight, keep the stub alive rather than crashing in native code
+		RETIRED.add(stub.arena());
+		release();
+	}
+
+	/**
+	 * Frees retired stubs once no callback is running. Closing the arena of a stub that is still on a
+	 * stack frees its code while native code is inside it, and unlike the trampolines of callback.c a
+	 * stale pointer is then fatal rather than harmless.
+	 */
+	static void release() {
+		if (ENTRY_COUNT.get() != 0) return;
+		Arena arena;
+		while ((arena = RETIRED.poll()) != null) {
+			try {
+				arena.close();
+			} catch (IllegalStateException e) {
+				RETIRED.add(arena);
+				return;
+			}
 		}
 	}
 
@@ -76,12 +92,9 @@ public final class FFMCallback {
 			STUBS.clear();
 		}
 		for (Stub stub : stubs) {
-			try {
-				stub.arena().close();
-			} catch (IllegalStateException e) {
-				// as in unbind
-			}
+			RETIRED.add(stub.arena());
 		}
+		release();
 	}
 
 	public static String getPlatform() {
@@ -106,17 +119,34 @@ public final class FFMCallback {
 		return enabled;
 	}
 
+	/** The exception pending when the callback started, which callback.c saved the same way. */
+	static final ThreadLocal<ArrayDeque<Throwable>> SAVED = ThreadLocal.withInitial(ArrayDeque::new);
+
 	static void enter() {
 		ENTRY_COUNT.incrementAndGet();
+		Throwable pending = FFM.takePending();
+		SAVED.get().push(pending == null ? NONE : pending);
 	}
 
 	static void exit() {
-		ENTRY_COUNT.decrementAndGet();
+		Throwable saved = SAVED.get().pop();
+		if (saved != NONE) {
+			// the older exception wins, as callback.c rethrows it after the callback
+			Throwable mine = FFM.takePending();
+			if (mine != null && mine != saved) saved.addSuppressed(mine);
+			FFM.setPending(saved);
+		}
+		if (ENTRY_COUNT.decrementAndGet() == 0 && !RETIRED.isEmpty()) release();
 	}
 
+	static final Throwable NONE = new Throwable("no exception was pending");
+
+	/**
+	 * Keeps the failure pending for the thread instead of swallowing it, so that it surfaces when the
+	 * native call that dispatched the callback returns to Java, which is what JNI did.
+	 */
 	static void report(Throwable t) {
-		System.err.println("SWT-FFM: exception in callback");
-		t.printStackTrace();
+		FFM.callbackFailed(t);
 	}
 
 	/* ---------------------------------------------------------------- stub construction */

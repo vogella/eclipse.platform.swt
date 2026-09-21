@@ -141,6 +141,8 @@ public final class FFMAccessible {
 		slot("AtkObjectClass", "get_parent", "atkObject_get_parent", JAVA_LONG, false, Mode.PARENT, JAVA_LONG),
 		slot("AtkObjectClass", "get_role", "atkObject_get_role", JAVA_INT, false, Mode.PARENT, JAVA_LONG),
 		slot("AtkObjectClass", "ref_child", "atkObject_ref_child", JAVA_LONG, false, Mode.PARENT, JAVA_LONG, JAVA_INT),
+		// the C function is swt_fixed_accesssible_ref_state_set, whose spelling hid it from the extraction
+		slot("AtkObjectClass", "ref_state_set", "atkObject_ref_state_set", JAVA_LONG, false, Mode.PARENT, JAVA_LONG),
 		slot("GObjectClass", "finalize", "gObjectClass_finalize", null, false, Mode.CHAIN, JAVA_LONG),
 	};
 
@@ -196,6 +198,14 @@ public final class FFMAccessible {
 	/* ---------------------------------------------------------------- the vtables */
 
 	static void classInit(long klass, long data) {
+		try {
+			classInit0(klass, data);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void classInit0(long klass, long data) {
 		parentClass = OS.g_type_class_peek_parent(klass);
 		install(klass, "AtkObjectClass");
 		install(klass, "GObjectClass");
@@ -211,6 +221,14 @@ public final class FFMAccessible {
 	}
 
 	static void interfaceInit(String struct, long iface, long data) {
+		try {
+			interfaceInit0(struct, iface, data);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void interfaceInit0(String struct, long iface, long data) {
 		install(iface, struct);
 		if (struct.equals("AtkComponentIface")) {
 			try {
@@ -274,10 +292,21 @@ public final class FFMAccessible {
 
 	/** Calls the AccessibleObject method, or the implementation of the parent class. */
 	static long dispatch(String method, Mode mode, long offset, long[] arguments) {
+		try {
+			return dispatch0(method, mode, offset, arguments);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+			return 0;
+		}
+	}
+
+	static long dispatch0(String method, Mode mode, long offset, long[] arguments) {
 		long accessible = arguments[0];
 		boolean registered = REGISTERED.contains(accessible);
 		long result = 0;
 		if (registered) result = call(method, arguments);
+		// the C kept has_accessible in the instance, so it died with it; an address gets reused
+		if (registered && method.equals("gObjectClass_finalize")) REGISTERED.remove(accessible);
 		if (registered && mode != Mode.CHAIN) return result;
 		if (mode == Mode.FORWARD) return result;
 		return parent(offset, arguments);
@@ -308,15 +337,20 @@ public final class FFMAccessible {
 	}
 
 	/** Calls the function the parent class put into the same slot. */
+	static final Map<Integer, MethodHandle> PARENT_CALLS = new ConcurrentHashMap<>();
+
 	static long parent(long offset, long[] arguments) {
 		long function = MemorySegment.ofAddress(parentClass + offset).reinterpret(8).get(JAVA_LONG_UNALIGNED, 0);
 		if (function == 0) return 0;
-		MemoryLayout[] layouts = new MemoryLayout[arguments.length];
-		Arrays.fill(layouts, JAVA_LONG);
+		// one handle per argument count, taking the function as its first argument
+		MethodHandle handle = PARENT_CALLS.computeIfAbsent(arguments.length, count -> {
+			MemoryLayout[] layouts = new MemoryLayout[count];
+			Arrays.fill(layouts, JAVA_LONG);
+			return FFM.LINKER.downcallHandle(FunctionDescriptor.of(JAVA_LONG, layouts))
+				.asSpreader(long[].class, count);
+		});
 		try {
-			MethodHandle handle = FFM.LINKER.downcallHandle(MemorySegment.ofAddress(function),
-				FunctionDescriptor.of(JAVA_LONG, layouts)).asSpreader(long[].class, arguments.length);
-			return (long) handle.invokeExact(arguments);
+			return (long) handle.invokeExact(MemorySegment.ofAddress(function), arguments);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -325,6 +359,14 @@ public final class FFMAccessible {
 	/* ---------------------------------------------------------------- the two hand written functions */
 
 	static void initialize(long accessible, long data) {
+		try {
+			initialize0(accessible, data);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void initialize0(long accessible, long data) {
 		long function = MemorySegment.ofAddress(parentClass + offset("AtkObjectClass", "initialize")).reinterpret(8).get(JAVA_LONG_UNALIGNED, 0);
 		try {
 			if (function != 0) {
@@ -339,6 +381,14 @@ public final class FFMAccessible {
 	}
 
 	static void getExtents(long component, long x, long y, long width, long height, int coordinateType) {
+		try {
+			getExtents0(component, x, y, width, height, coordinateType);
+		} catch (Throwable t) {
+			FFM.callbackFailed(t);
+		}
+	}
+
+	static void getExtents0(long component, long x, long y, long width, long height, int coordinateType) {
 		if (REGISTERED.contains(component)) {
 			call("atkComponent_get_extents", new long[] {component, x, y, width, height, coordinateType});
 			return;
