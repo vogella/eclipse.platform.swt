@@ -47,9 +47,28 @@ public final class FFM {
 		return lookup.or(LINKER.defaultLookup());
 	}
 
+	/**
+	 * Returns a lookup searching the first of <code>alternatives</code> that loads, then the SWT
+	 * libraries, the way the JNI glue dlopens a library that SWT does not link against.
+	 */
+	public static SymbolLookup library(String... alternatives) {
+		for (String library : alternatives) {
+			try {
+				return SymbolLookup.libraryLookup(library, Arena.global()).or(LOOKUP);
+			} catch (IllegalArgumentException e) {
+				// try the next one
+			}
+		}
+		return LOOKUP;
+	}
+
 	/** Links <code>name</code>, or returns a handle that throws {@link UnsatisfiedLinkError} when invoked. */
 	public static MethodHandle downcall(String name, FunctionDescriptor descriptor, Linker.Option... options) {
-		MethodHandle handle = downcallOptional(name, descriptor, options);
+		return downcall(LOOKUP, name, descriptor, options);
+	}
+
+	public static MethodHandle downcall(SymbolLookup lookup, String name, FunctionDescriptor descriptor, Linker.Option... options) {
+		MethodHandle handle = downcallOptional(lookup, name, descriptor, options);
 		if (handle != null) return handle;
 		MethodType type = descriptor.toMethodType();
 		MethodHandle thrower = MethodHandles.throwException(type.returnType(), UnsatisfiedLinkError.class);
@@ -59,12 +78,20 @@ public final class FFM {
 
 	/** Links <code>name</code>, or returns <code>null</code> if the symbol does not exist. */
 	public static MethodHandle downcallOptional(String name, FunctionDescriptor descriptor, Linker.Option... options) {
-		Optional<MemorySegment> symbol = LOOKUP.find(name);
+		return downcallOptional(LOOKUP, name, descriptor, options);
+	}
+
+	public static MethodHandle downcallOptional(SymbolLookup lookup, String name, FunctionDescriptor descriptor, Linker.Option... options) {
+		Optional<MemorySegment> symbol = lookup.find(name);
 		return symbol.map(s -> LINKER.downcallHandle(s, descriptor, options)).orElse(null);
 	}
 
 	public static long address(String name) {
-		return LOOKUP.find(name).orElseThrow(() -> new UnsatisfiedLinkError(name)).address();
+		return address(LOOKUP, name);
+	}
+
+	public static long address(SymbolLookup lookup, String name) {
+		return lookup.find(name).orElseThrow(() -> new UnsatisfiedLinkError(name)).address();
 	}
 
 	/**

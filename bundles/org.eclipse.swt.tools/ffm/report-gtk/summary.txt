@@ -6,8 +6,10 @@ org.eclipse.swt.internal.gtk.GTK                        FFM   523  JNI    30
 org.eclipse.swt.internal.gtk3.GTK3                      FFM   228  JNI     2
 org.eclipse.swt.internal.cairo.Cairo                    FFM   119  JNI     1
 org.eclipse.swt.internal.accessibility.gtk.ATK          FFM    24  JNI    20
+org.eclipse.swt.internal.opengl.glx.GLX                 FFM    11  JNI     0
+org.eclipse.swt.internal.webkit.WebKitGTK               FFM   136  JNI     0
 
-Total FFM 1462, JNI 147
+Total FFM 1609, JNI 147
 
 Kept on JNI by reason:
      1  JNI caller context
