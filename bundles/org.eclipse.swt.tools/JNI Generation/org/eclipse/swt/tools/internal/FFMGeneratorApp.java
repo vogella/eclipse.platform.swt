@@ -157,7 +157,8 @@ public class FFMGeneratorApp {
 	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"swt[\\w-]*\"\\s*\\)\\s*;");
 
 	static final Map<String, String> HANDWRITTEN = Map.of(
-		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback");
+		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback",
+		"org.eclipse.swt.awt.SWT_AWT", "org.eclipse.swt.internal.ffm.FFMAwt");
 
 	static final Pattern IMPLEMENTATION = Pattern.compile("^\\tpublic static (?:synchronized |final )*[\\w\\[\\]]+ (\\w+)\\(", Pattern.MULTILINE);
 
