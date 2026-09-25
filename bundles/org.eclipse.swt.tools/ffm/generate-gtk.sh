@@ -11,7 +11,7 @@
 ###############################################################################
 # Generates the GTK3 FFM bindings from the SWT native declarations.
 #
-# Needs clang, gcc, pkg-config with the GTK3 development headers, a JDK 21+ and
+# Needs clang, gcc, pkg-config with the GTK3 and GL development headers, a JDK 21+ and
 # an Eclipse installation (ECLIPSE_HOME) providing JDT Core for the generator.
 # Intermediate files go to BUILD_DIR (default: /tmp/swt-ffm-build).
 
@@ -47,6 +47,8 @@ run_generator() {
 GTK_FLAGS="$(pkg-config --cflags gtk+-3.0 gtk+-unix-print-3.0)"
 CAIRO_FLAGS="$(pkg-config --cflags cairo)"
 ATK_FLAGS="$(pkg-config --cflags atk gtk+-3.0 gtk+-unix-print-3.0)"
+GLX_FLAGS="$(pkg-config --cflags gl x11)"
+WEBKIT_FLAGS="$(pkg-config --cflags gio-2.0 gtk+-3.0)"
 INCLUDES=(-I"$SWT/Eclipse SWT/common/library" -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux")
 CFLAGS=(-DLINUX -DGTK -std=gnu17 -w "${INCLUDES[@]}")
 
@@ -57,6 +59,8 @@ UNITS=(
 	"org.eclipse.swt.internal.gtk3.GTK3|Eclipse SWT PI/gtk/library/gtk3.c|$GTK_FLAGS"
 	"org.eclipse.swt.internal.cairo.Cairo|Eclipse SWT PI/cairo/library/cairo.c|$CAIRO_FLAGS"
 	"org.eclipse.swt.internal.accessibility.gtk.ATK|Eclipse SWT PI/gtk/library/atk.c|$ATK_FLAGS"
+	"org.eclipse.swt.internal.opengl.glx.GLX|Eclipse SWT OpenGL/glx/library/glx.c|$GLX_FLAGS"
+	"org.eclipse.swt.internal.webkit.WebKitGTK|Eclipse SWT WebKit/gtk/library/webkitgtk.c|$WEBKIT_FLAGS"
 )
 
 args=()

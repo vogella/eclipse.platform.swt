@@ -33,7 +33,7 @@ implementations=(
 	"$SWT/Eclipse SWT PI/gtk-ffm/org/eclipse/swt/internal/ffm/FFMRuntime.java"
 )
 
-for root in "Eclipse SWT PI/gtk" "Eclipse SWT PI/cairo"; do
+for root in "Eclipse SWT PI/gtk" "Eclipse SWT PI/cairo" "Eclipse SWT OpenGL/glx" "Eclipse SWT WebKit/gtk" "Eclipse SWT AWT/gtk"; do
 	java "$REWRITER" "$SUPPORTED" "$SWT/$root" "${implementations[@]}"
 done
 
