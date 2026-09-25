@@ -61,11 +61,17 @@ The other 64-bit Linux architectures SWT supports use the same LP64 layouts for 
 * Variadic functions use `Linker.Option.firstVariadicArg` with C default argument promotions, and `flags=sentinel` passes a trailing `NULL`.
 * `flags=dynamic` functions resolve optionally and behave like the JNI glue (no call, result 0) when the symbol is missing.
 * Symbols resolve through the SWT native library loaded by the class loader, whose dependency tree contains GTK, GDK, GLib, Pango, Cairo and ATK.
+* A natives class whose JNI glue dlopens its own library searches that library first: `GLX` uses `libGL.so.1`, `WebKitGTK` the same `libwebkit2gtk-4.1`, `libwebkit2gtk-4.0` or, with `SWT_GTK4=1`, `libwebkitgtk-6.0` that `webkitgtk.h` picks (`FFMGenerator.LOOKUPS`).
 
-### Not yet handled, stays on JNI
+### Not generated
 
-Callbacks (`CALLBACK_*`), macros and `static inline` functions that have no symbol, `flags=const` constants, struct by value parameters, `Object` parameters, `unicode` strings and GTK4.
-The generator reports every method it leaves on JNI together with the reason.
+The generator leaves these shapes to hand written code or to JNI and reports every such method with the reason:
+
+* Macros, `static inline` functions and `flags=const` constants have no symbol to link against; `FFMMacros` and `FFMTypes` implement the GTK3 ones in Java.
+* Struct by value parameters (`flags=struct`) do not occur on GTK, while Win32 has 21 and Cocoa 132, so they come with phase 5.
+* `Object` parameters are JNI references, which FFM cannot pass; only natives whose C code itself uses JNI take them, such as the AWT bridge, which `FFMAwt` implements by hand.
+* `flags=unicode` strings are no longer declared by any platform.
+* Callbacks (`CALLBACK_*`) are replaced by `FFMCallback` as a whole, and GTK4 is not generated yet.
 
 ### Running side by side
 
@@ -78,7 +84,7 @@ That build runs the regular SWT JUnit tests and can be compared with the Visual 
 
 All scripts live in `bundles/org.eclipse.swt.tools/ffm` and need clang, gcc, the GTK3 development headers, a JDK 25, `xvfb-run` and an Eclipse installation (`ECLIPSE_HOME`) for JDT Core and JUnit.
 
-* `generate-gtk.sh` dumps the clang AST of `c.c`, `os.c`, `gtk3.c`, `cairo.c` and `atk.c`, compiles and runs the layout probes, and writes the generated classes to `Eclipse SWT PI/gtk-ffm` and the report to `report-gtk`.
+* `generate-gtk.sh` dumps the clang AST of `c.c`, `os.c`, `gtk3.c`, `cairo.c`, `atk.c`, `glx.c` and `webkitgtk.c`, compiles and runs the layout probes, and writes the generated classes to `Eclipse SWT PI/gtk-ffm` and the report to `report-gtk`.
 * `build-gtk.sh jni|ffm` compiles the GTK bundle with plain javac, either stock plus the FFM classes or with the supported natives delegated to FFM.
 * `test-gtk.sh` runs `FFMCrossCheck` and then the SWT JUnit tests on both builds and diffs the outcomes; `SWT_NATIVES` points it at other native libraries.
 * `test/.../FFMBench.java` compares the per-call cost of both implementations.
@@ -120,6 +126,15 @@ The rewriter learns which natives a hand written class implements from the publi
 
 `FFMTypes` supplies what the remaining macros gave: the fundamental GTypes as the compile time constants they are, the registered ones through their `get_type` function, the `sizeof` of C types without a Java struct class from the probe, the glib version variables as exported symbols, the `GDK_WINDOWING_*` checks as the presence of the matching display type, and the calls through a function pointer as downcall handles.
 
+### OpenGL, WebKit and the AWT bridge
+
+`GLX` and `WebKitGTK` are generated completely, 11 and 136 natives; every WebKit function is `flags=dynamic`, so a missing WebKit makes `WebKit.IsInstalled` report false through a zero version, as with JNI.
+`SWT_AWT` needs JNI by definition: JAWT takes a `JNIEnv` and the AWT component as a `jobject`, and the other natives call `sun.awt.X11.XEmbeddedFrame`, which JNI reaches regardless of module encapsulation.
+`FFMJni` calls the JNI function table of the running VM through FFM, from `JNI_GetCreatedJavaVMs` and `GetEnv`, and `FFMAwt` implements the six natives on top of it as `swt_awt.c` does.
+Java objects cross over through a `ThreadLocal` that the JNI side reads and writes with `CallObjectMethod`, because FFM cannot pass references; the class holding it is loaded through the context class loader, since JNI `FindClass` resolves against the JDK frame of the downcall.
+The VM clears a thread's local references whenever any native method returns to Java, which in interpreted code includes memory segment access and `Thread.currentThread()`, so while a reference is live the bridge only makes JNI calls through two prelinked call sites and computes with `long` values; C strings and function pointers are prepared beforehand, and arguments travel in registers through the variadic `Call*Method` functions instead of a `jvalue` array.
+Built this way, `libswt-glx`, `libswt-webkit` and `libswt-awt` are no longer needed.
+
 ### Coverage
 
 1,515 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
@@ -134,6 +149,8 @@ The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK
   At 150% every specimen fails on both sides with `IllegalArgumentException: Argument not valid`, which is a pre-existing limitation of the harness at fractional zoom and unrelated to FFM.
 * The same cross check, JUnit and Visual Oracle runs pass unchanged with the callbacks routed through upcall stubs.
 * 127 SWT JUnit test classes (widgets, graphics, custom, accessibility, dnd, layout, events, program, printing; 4,150 tests) produce identical outcomes on the JNI build and on the FFM build: 4,059 passed, 78 failed and 11 aborted on both, the failures coming from the headless environment.
+* The browser tests (201 passed, 7 aborted) produce the same outcomes on the JNI build and on the FFM build without `libswt-webkit`, `libswt-glx` and `libswt-awt` on the library path.
+  A `GLCanvas` and an `SWT_AWT` frame, shell, handle and debug switch behave the same on both builds, also interpreted (`-Xint`), compiled (`-Xcomp`) and under `-Xcheck:jni`, and 5,000 `getAWTHandle` calls under garbage collection pressure return the same handle.
 
 ### Review findings addressed
 
@@ -222,8 +239,8 @@ The committed sources keep their `native` declarations: `bundles/org.eclipse.swt
 `FFMRewriter.java` runs as a source file, so that step needs no compiled tooling.
 The step rewrites `Eclipse SWT PI/gtk` and `Eclipse SWT PI/cairo` in place.
 `C.java` and `Callback.java` sit in folders the win32 and cocoa fragments compile too, which have no FFM implementation, so the step moves them out: a rewritten copy goes to `Eclipse SWT PI/gtk-ffm-shared`, which only the GTK fragments list, and the original to `Eclipse SWT PI/jni-shared`, which only the win32 and cocoa fragments list.
-The step also keeps every `Library.loadLibrary` call: a product build merges pull requests on top, and a native one of them adds is not in `report-gtk` yet, so it has to keep working through JNI; the rewriter names such natives in its output.
-On GTK3 the libraries are therefore loaded but no call goes through them; the GTK4 natives still need them.
+The step keeps the `Library.loadLibrary` call of every class that still has a native: a product build merges pull requests on top, and a native one of them adds is not in `report-gtk` yet, so it has to keep working through JNI; the rewriter names such natives in its output.
+A class left without natives, such as `C`, `GLX`, `WebKitGTK` and `SWT_AWT`, no longer loads its library, and on GTK3 only `libswt-pi3` is loaded, for the GTK4 natives of `OS`.
 All five GTK fragments list the FFM source folders, since they all compile the rewritten GTK sources.
 Rewriting the files in the branch instead made every change to `OS.java`, `GTK.java` or `GDK.java` collide with it, which upstream does several times a week.
 Because the declarations stay, the generator keeps its input and the comparison harness keeps its JNI reference.
@@ -243,11 +260,11 @@ Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks 
 2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance), without an AOT cache: profile the first iteration at a finer sampling interval to split handle linking, `LambdaForm` spinning and interpreted execution, then attack the largest part.
    Replace the confined arena per copied array with a per-thread allocator for the warm cost.
 3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
-4. Then GTK4, WebKit, GLX and the AWT bridge on Linux, followed by Win32 and Cocoa (phase 5).
+4. Then GTK4 on Linux, followed by Win32 and Cocoa (phase 5).
 
 ## Open questions
 
-* WebKit, GLX, the AWT bridge and GTK4 are not generated yet; a GTK3 application does not load them, but they still need their JNI libraries when used.
+* GTK4 is not generated yet; a GTK3 application does not call it, but its natives keep `libswt-pi3` loaded.
 * Java baseline: FFM is final from Java 22 and SWT requires Java 21, so shipping needs a Java 25 baseline; the `java25-bree` branch is ready and lands when something needs it.
   Raising the BREE of SWT alone is fine: a bundle with a JavaSE-21 BREE resolves against one that requires JavaSE-25, because the execution environment capability comes from the running JVM rather than from the consuming bundle.
 * Native access: OSGi bundles live in the unnamed module, so launchers need `--enable-native-access=ALL-UNNAMED`, which becomes mandatory in a future Java release.
