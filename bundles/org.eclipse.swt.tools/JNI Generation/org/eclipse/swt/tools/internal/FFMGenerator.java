@@ -40,10 +40,17 @@ public class FFMGenerator extends JNIGenerator {
 	static final Map<String, String> JNI_ONLY = Map.of(
 		"swt_fixed_accessible_register_accessible", "JNI caller context: caches the SWT class for JNI FindClass");
 
+	/** Libraries the JNI glue of a natives class dlopens itself instead of linking against, as a lookup expression. */
+	static final Map<String, String> LOOKUPS = Map.of(
+		"org.eclipse.swt.internal.opengl.glx.GLX", "FFM.library(\"libGL.so.1\")",
+		"org.eclipse.swt.internal.webkit.WebKitGTK", "\"1\".equals(System.getenv(\"SWT_GTK4\")) ? FFM.library(\"libwebkitgtk-6.0.so.4\") : FFM.library(\"libwebkit2gtk-4.1.so.0\", \"libwebkit2gtk-4.0.so.37\")");
+
 	final CTypes ctypes;
 	final Map<String, StructInfo> structs;
 	final Map<String, String> unsupported = new TreeMap<>();
 	final Set<String> supported = new TreeSet<>();
+	/** Lookup of the class being generated, <code>null</code> for the SWT libraries. */
+	String lookup;
 
 	public FFMGenerator(CTypes ctypes, Map<String, StructInfo> structs) {
 		this.ctypes = ctypes;
@@ -244,12 +251,16 @@ public class FFMGenerator extends JNIGenerator {
 		}
 		if (method.getName().endsWith("_sizeof") && params.length == 0 && returnType.isType("int")) {
 			String structName = method.getName().substring(0, method.getName().length() - "_sizeof".length());
-			for (StructInfo info : structs.values()) {
-				if (info.clazz.getSimpleName().equals(structName)) {
-					plan.special = "sizeof";
-					plan.struct = info;
-					return null;
+			StructInfo match = structs.get(packageOf(method.getDeclaringClass().getName()) + "." + structName);
+			if (match == null) {
+				for (StructInfo info : structs.values()) {
+					if (match == null && info.clazz.getSimpleName().equals(structName)) match = info;
 				}
+			}
+			if (match != null) {
+				plan.special = "sizeof";
+				plan.struct = match;
+				return null;
 			}
 		}
 
@@ -379,6 +390,11 @@ public class FFMGenerator extends JNIGenerator {
 		output(clazz.getSimpleName() + SUFFIX);
 		outputln(" {");
 		outputln();
+		lookup = LOOKUPS.get(clazz.getName());
+		if (lookup != null) {
+			outputln("private static final SymbolLookup LOOKUP = " + lookup + ";");
+			outputln();
+		}
 		for (Plan plan : plans) {
 			generate(plan);
 		}
@@ -480,7 +496,7 @@ public class FFMGenerator extends JNIGenerator {
 		outputln(" {");
 		output("\tstatic final MethodHandle MH = FFM.");
 		output(plan.dynamic ? "downcallOptional" : "downcall");
-		output("(\"");
+		output(lookup != null ? "(LOOKUP, \"" : "(\"");
 		output(plan.cName);
 		output("\", ");
 		StringBuilder layouts = new StringBuilder();
@@ -504,7 +520,7 @@ public class FFMGenerator extends JNIGenerator {
 		String struct = plan.struct != null ? plan.struct.helper() + "." + plan.struct.clazz.getSimpleName() : null;
 		switch (plan.special) {
 			case "address":
-				outputln("\treturn FFM.address(\"" + plan.cName + "\");");
+				outputln("\treturn FFM.address(" + (lookup != null ? "LOOKUP, \"" : "\"") + plan.cName + "\");");
 				break;
 			case "sizeof":
 				outputln("\treturn (int) " + struct + "_SIZEOF;");

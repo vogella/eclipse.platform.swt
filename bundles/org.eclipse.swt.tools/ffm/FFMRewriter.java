@@ -35,7 +35,9 @@ public class FFMRewriter {
 
 	/** Classes whose natives are implemented by a hand written FFM class instead of generated code. */
 	static final Map<String, String> HANDWRITTEN = Map.of(
-		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback");
+		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback",
+		"org.eclipse.swt.awt.SWT_AWT", "org.eclipse.swt.internal.ffm.FFMAwt");
+	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"swt[\\w-]*\"\\s*\\)\\s*;");
 
 	public static void main(String[] args) throws IOException {
 		if (args.length < 2) {
@@ -110,9 +112,10 @@ public class FFMRewriter {
 		}
 		if (!changed) return null;
 		m.appendTail(result);
-		// The JNI libraries stay loaded: a native this list does not know yet, for example one a
-		// merged pull request adds, keeps working through JNI instead of failing to link.
-		return result.toString();
+		// A class keeps loading its JNI library while it has natives left, for example one a merged
+		// pull request adds that this list does not know yet, so that it links instead of failing.
+		if (NATIVE.matcher(result).find()) return result.toString();
+		return LOAD_LIBRARY.matcher(result).replaceAll("/* FFM: no JNI library needed */");
 	}
 
 	static String key(String className, String methodName, List<String> parameterTypes) {
