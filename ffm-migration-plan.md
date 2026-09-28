@@ -169,7 +169,7 @@ An independent review of the whole branch found these, all fixed:
 * The clang AST reader accepted implicitly declared functions, whose guessed prototype would have truncated a returned pointer to 32 bits.
 * `forall` and the parent class calls built a downcall handle per invocation; they use one handle per descriptor now.
 
-Two findings were deliberately not acted on: the entry count is incremented even while callbacks are disabled, which nothing on GTK reads, and `AtkTableIface.remove_column_selection` forwards to `atkTable_remove_row_selection`, which faithfully reproduces a bug of the C and deserves its own fix upstream.
+One finding was deliberately not acted on: `AtkTableIface.remove_column_selection` forwards to `atkTable_remove_row_selection`, which faithfully reproduces a bug of the C and deserves its own fix upstream.
 
 ### Findings
 
@@ -253,6 +253,111 @@ A Speed Eclipse IDE built that way (Java 25, GTK 3.24.52, Wayland, two monitors 
 Its loaded classes show 665 generated functions linked after normal use and `FFMSwtFixed` and `FFMAccessible` serving every control; the JNI libraries stay mapped, as described above; at that time `C` and `Callback` still went through them.
 Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks are the event loop and PNG encoding, as expected.
 
+## Phase 5: Win32
+
+### Size (measured on master)
+
+| Class | Natives | Notes |
+| --- | --- | --- |
+| `OS` | 712 | plain C calls into `user32`, `gdi32`, `comctl32` and friends |
+| `Gdip` | 188 | 136 are `flags=cpp`, `new` or `delete`: inline C++ wrapper classes without exported symbols |
+| `COM` | 146 | 69 `VtblCall` overloads |
+| `OsVersion` | 2 | |
+
+About 220 struct classes (128 Win32, 92 OLE), 21 `flags=struct` parameters and 8 `flags=dynamic` functions.
+The hand written code is small: `os_custom.c` has 445 lines, `com_custom.cpp` 451.
+
+### What carries over from GTK
+
+* The generator, reading C types from a clang AST dump of `os.c` and `com.c` and struct layouts from a compiled probe.
+* `FFMCallback`: window procs, hooks and the vtables of `COMObject` already go through `Callback`, and x64 and aarch64 have a single calling convention.
+* The cross check, the side by side JUnit comparison and the build time rewrite.
+
+### What is new
+
+* LLP64: `long` is 32 bits on Windows, and the headers bring unions, packed structs and `A`/`W` macro names.
+  The AST dump and the probes have to use `clang-cl` and MSVC against the Windows SDK, for x64 and aarch64.
+* Struct by value parameters (21), which GTK did not need.
+* `GetLastError`: the JVM can overwrite the last error between a downcall and `OS.GetLastError()` (9 call sites).
+  Functions whose error is read need `Linker.Option.captureCallState("GetLastError")`.
+* `VtblCall` becomes a read of the function pointer from the vtable plus a downcall handle per descriptor.
+* GDI+: the C++ wrappers are inline header code, so each of the 136 natives has to be reimplemented on the flat API that `gdiplus.dll` exports (`GdipCreateBitmapFromHBITMAP`, `GdipDrawLineI`, ...), checked pixel for pixel.
+* WebView2: the C++ callback, host and options objects of `com_custom.cpp` become Java COM objects with upcall vtables, as `COMObject` does for OLE.
+* `os_custom.c`: the `DllMain` instance handle, the `DPI_AWARENESS_CONTEXT_*` constants and the validated `uxtheme` dark mode ordinals 133, 135 and 140 move to Java.
+
+### Steps
+
+Each step runs in its own worktree so they can proceed in parallel; step 1 is the only one the others build on.
+
+1. Generator backend for Win32 (`generate-win32`): `clang-cl` AST dump, MSVC layout probes, LLP64 types, struct by value, `captureCallState`; generate `OS_FFM` and `COM_FFM` with a coverage report.
+2. Runtime: `VtblCall`, `GetLastError` capture and `FFMCallback` on Windows.
+3. `os_custom.c` in Java.
+4. WebView2 COM objects in Java.
+5. GDI+ on the flat API.
+6. Integrate, then run the cross check and the JUnit comparison against the JNI build.
+
+The goal is to drop `swt-win32`, `swt-gdip` and `swt-osversion`, and with them the Visual Studio build.
+
+### Status of step 1
+
+`generate-win32.sh` (Git Bash) dumps the `clang-cl` AST and macros of `c.c`, `os.c`, `com.c` and `osversion.c` with the defines of `make_win32.mak`, compiles and runs the layout probes with `clang-cl`, and writes `C_FFM`, `OS_FFM`, `COM_FFM`, `OsVersion_FFM`, the `Structs_FFM` and `Extra_FFM` classes to `Eclipse SWT PI/win32-ffm` and the report to `report-win32`.
+`ARCH=arm64` selects the other target; the probes run, so they have to be built for the host.
+
+* Types: `long` is 32 bits when `size_t` is `unsigned long long`, and the `__attribute__((stdcall))` that `clang-cl` prints into function types is dropped.
+* Names: a `.macros` dump next to the AST resolves renaming macros, `CreateWindowEx` to `CreateWindowExW` and `MoveMemory` through `RtlMoveMemory` to `memmove`.
+* Symbols: each function resolves from the DLL that its import library names, read with `llvm-nm` from the Windows SDK libraries that `make_win32.mak` links, first library wins; a dynamic function from its `name_LIB` macro; the C runtime through the default lookup (`report-win32/symbols.txt`).
+  `FFMLibraries` loads a DLL on first use.
+* Struct by value: the layout comes from the probed fields with padding; the one primitive case, `ScriptStringOut`, reads the pointer the JNI glue dereferenced.
+  A pointer that the C side takes as a pointer sized integer, the `LPARAM` of `SendMessage`, is passed as the address of the copy.
+* `GetLastError`: the functions whose error SWT reads (`FFMGenerator.CAPTURE_LAST_ERROR`) capture it, and `OS_FFM.GetLastError` returns what `FFMLastError` holds for the thread.
+  The list is curated from the call sites and has to follow them.
+* The `sizeof` macros without a Java struct class come from the probe (`Extra_FFM`).
+
+796 of 1,072 natives are generated (`report-win32/summary.txt`); left are the 188 of `Gdip`, the 69 `VtblCall`, 12 `no_gen` natives of `os_custom.c` and `com_custom.cpp`, `PathToPIDL`, and five macros (`IsEqualGUID`, `TreeView_GetItemRect`, `GID_ROTATE_ANGLE_FROM_ARGUMENT`, `PTR_sizeof`, `setenv`) plus one constant.
+
+`test-win32.sh` compiles stock SWT with the FFM classes (`build-win32.sh`) and runs `FFMCrossCheckWin32` against JNI DLLs built from this checkout (`SWT_NATIVES`): all 495 symbols resolve, all 653 downcall handles link, and 138 struct sizes, 1,020 struct reads, 480 struct writes and 51 call results (struct by value with `AlphaBlend`, `WindowFromPoint`, `ChildWindowFromPointEx` and `ScriptStringOut` compared pixel for pixel, `LPARAM` structs, dynamic functions, captured last error) show no mismatch.
+The only known difference is `NOTIFYICONDATA`, whose Java `sizeof` is `NOTIFYICONDATA_V2_SIZE`.
+In the same run JNI returned 0 from `GetLastError` right after a failing `GetMenuItemCount`, while the capture returned 1401, the error the call set.
+
+`FFMLibraries` loads `comctl32.dll` on first use, after `OS` activated the SWT manifest, so it resolves to version 6 (checked in the integration).
+
+### Runtime (step 2)
+
+* `FFM` resolves symbols on Windows through the DLLs `swt-win32` links against, each loaded when a lookup first reaches it, so that `comctl32` is loaded after `OS` activated the SWT manifest and resolves to version 6.
+* `FFMCallback` needs nothing Windows specific; its entry count now follows `callback.c` and only counts callbacks that reach Java, while retired stubs wait for all stubs in flight.
+* `FFMCom` implements the 69 `VtblCall` overloads and `VtblCall_put_Bounds`, with one address-less downcall handle per call shape (46).
+  A null struct passed by value throws `NullPointerException`, where the JNI glue dereferences NULL.
+* `FFMLastError` keeps one `captureCallState("GetLastError")` buffer per thread; the generated `OS_FFM.GetLastError` returns it.
+  JNI loses the error in practice: `GetMenuItemCount` on a bad handle followed by `OS.GetLastError()` returns 0, the capturing binding 1401.
+* `test-win32-runtime.sh` runs `FFMWin32RuntimeCheck`: window procs, nested and failing callbacks, disabled callbacks, hooks, timer procs, callbacks on native threads and array based COM slots against JNI `Callback`, every `VtblCall` overload against JNI on a recording object, `IShellLinkW` and `IPersistFile` through both, and the captured last error.
+
+### Status of phase 5
+
+All 1,048 natives of `OS`, `COM`, `Gdip` and `OsVersion`, plus `C` and `Callback`, have an FFM implementation, and the FFM build runs without `swt-win32`, `swt-gdip` and `swt-osversion`.
+Only `SWT_AWT` (`swt-awt`) and `WGL` (`swt-wgl`) stay on JNI; `apply-ffm.sh win32` does not rewrite them.
+
+* Generated (step 1): 796 natives.
+* Hand written, registered through the implementation files of the rewriter, not `HANDWRITTEN`: `FFMCom` (`VtblCall`), `FFMOsCustom` (`os_custom.c`), `FFMComCustom` (`com_custom.cpp`, `PathToPIDL`), `FFMGdipGraphics` and `FFMGdipObjects` (GDI+ on the flat API, every handle a raw `Gp*` pointer; `FFMGdipObjects` names `Gdip` through `IMPLEMENTS` so its `MoveMemory` does not capture `OS.MoveMemory`), `FFMWin32Macros` (`IsEqualGUID`, `TreeView_GetItemRect`, `GID_ROTATE_ANGLE_FROM_ARGUMENT`, `NOTIFYICONDATA_V2_SIZE`, `PTR_sizeof`, `setenv`).
+* `FFMResources` replaces what the FFM build loses with `swt.rc`: with `GetLibraryHandle` 0, `CreateActCtx` reads the SWT manifest from a temporary copy of a class path resource, so `comctl32` is still version 6, and `LoadImage` builds the `Text` search and cancel icons 101 to 104 from the `.ico` files with `LookupIconIdFromDirectoryEx` and `CreateIconFromResourceEx`, as a resource load does.
+* `build-win32.sh jni|ffm` and `test-win32.sh` mirror the GTK scripts; `apply-ffm.sh gtk win32` switches either or both, with a rewritten `C` and `Callback` per platform in `<platform>-ffm-shared`.
+  The win32 fragments list `common-ffm` and `win32-ffm`; the Tycho build of both fragments compiles them with ECJ.
+
+Verification, Windows 11 x64, JDK 25, against JNI DLLs built from this checkout:
+
+* `FFMCrossCheckWin32`: 3,997 checks, 0 mismatches, including the macros and the icons of `FFMResources`, pixel for pixel against `swt-win32` at seven sizes.
+* `FFMWin32RuntimeCheck` 480 checks, the `os_custom.c` check, `GdipGraphicsCrossCheck` 137 checks, `FFMGdipObjectsCheck` 16,105 checks: 0 mismatches. `GdipScenes` on the JNI build and on the full FFM build: 30 images and 258 values identical. `FFMWebView2Check` passes on both builds.
+* JUnit, 137 classes of `org.eclipse.swt.tests` (widgets, graphics, custom, browser, accessibility, dnd, layout, events, program, printing) and `org.eclipse.swt.tests.win32`, 4,633 tests, JNI build then FFM build without any SWT library: 4,361 against 4,357 passed, 64 aborted and 8 skipped on both.
+  The 8 differences are focus and position dependent (`Browser.test_toControl*`/`test_toDisplay*` flip in both directions, `Shell.test_Issue450_NoShellActivateOnSetFocus`) or remote URLs (`Browser_IE.test_setUrl_remote*`); rerunning those classes gave identical outcomes.
+  The failures on both builds come from the environment (no SVG rasterizer, off by one pixel positions).
+
+Open:
+
+* `GetLastError` returns what the last capturing call left; `FFMGenerator.CAPTURE_LAST_ERROR` has to follow the call sites.
+* Failed GDI+ constructors return 0 where the C++ gave an object without a native one, so SWT raises `ERROR_NO_HANDLES` instead of drawing nothing.
+* The callback exception slot is not per thread, which matters more for COM threads than on GTK.
+* aarch64 is untested: the layouts, the `uxtheme` validators and the struct by value classification only ran on x64.
+* Not measured: performance and the cold start cost on Windows; a product build with `apply-ffm.sh win32` under Tycho and an IDE session.
+
 ## Next steps
 
 1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
@@ -260,7 +365,7 @@ Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks 
 2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance), without an AOT cache: profile the first iteration at a finer sampling interval to split handle linking, `LambdaForm` spinning and interpreted execution, then attack the largest part.
    Replace the confined arena per copied array with a per-thread allocator for the warm cost.
 3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
-4. Then GTK4 on Linux, followed by Win32 and Cocoa (phase 5).
+4. Then GTK4 on Linux, Win32 (see Phase 5: Win32) and Cocoa.
 
 ## Open questions
 

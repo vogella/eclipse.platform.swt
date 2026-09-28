@@ -32,6 +32,7 @@ public class FFMRewriter {
 	static final Pattern NATIVE = Pattern.compile("((?:" + MODIFIERS + "\\s+)*)native\\s+((?:" + MODIFIERS + "\\s+)*)([\\w\\[\\]]+)\\s*(?:/\\*[^*]*\\*/\\s*)?(\\w+)\\s*\\(([^)]*)\\)\\s*;");
 	static final Pattern PARAM = Pattern.compile("(.+?)\\s*\\b(\\w+)\\s*((?:\\[\\s*\\])*)", Pattern.DOTALL);
 	static final Pattern IMPLEMENTATION = Pattern.compile("^\\tpublic static (?:synchronized |final )*[\\w\\[\\]]+ (\\w+)\\(", Pattern.MULTILINE);
+	static final Pattern IMPLEMENTS = Pattern.compile("static final String IMPLEMENTS = \"([\\w.]+)\";");
 
 	/** Classes whose natives are implemented by a hand written FFM class instead of generated code. */
 	static final Map<String, String> HANDWRITTEN = Map.of(
@@ -66,7 +67,7 @@ public class FFMRewriter {
 		}
 		System.out.println("FFMRewriter: " + count + " natives in " + files + " files below " + root);
 		if (!remaining.isEmpty()) {
-			System.out.println("FFMRewriter: " + remaining.size() + " natives stay on JNI, GTK4 ones and any added since report-gtk was generated");
+			System.out.println("FFMRewriter: " + remaining.size() + " natives stay on JNI, GTK4 ones and any added since the report was generated");
 			List<String> unknown = remaining.stream().filter(n -> !n.matches(".*\\.(gdk_(surface|event|popup|texture|clipboard|cursor_new_from_texture|display_get_monitor_at_surface|x11_surface|scroll_event|key_event|button_event|crossing_event|focus_event)\\w*|swt_fixed_(add|remove)|swt_scaled_paintable_new|content_providers_\\w+)")).collect(Collectors.toList());
 			if (!unknown.isEmpty()) System.out.println("FFMRewriter: not yet generated, running on JNI: " + String.join(", ", unknown));
 		}
@@ -94,7 +95,7 @@ public class FFMRewriter {
 				names.add(pm.group(2));
 			}
 			String target;
-			String implementation = implementations.get(name);
+			String implementation = implementations.getOrDefault(className + "#" + name, implementations.get(name));
 			if (handwritten != null) {
 				target = handwritten;
 			} else if (implementation != null) {
@@ -135,8 +136,11 @@ public class FFMRewriter {
 			String source = Files.readString(Paths.get(file));
 			String name = Paths.get(file).getFileName().toString().replace(".java", "");
 			String packageName = source.replaceAll("(?s).*?package\\s+([\\w.]+);.*", "$1");
+			// a class naming the natives class it implements replaces only the natives of that class
+			Matcher target = IMPLEMENTS.matcher(source);
+			String prefix = target.find() ? target.group(1) + "#" : "";
 			Matcher m = IMPLEMENTATION.matcher(source);
-			while (m.find()) result.put(m.group(1), packageName + "." + name);
+			while (m.find()) result.put(prefix + m.group(1), packageName + "." + name);
 		}
 		return result;
 	}
