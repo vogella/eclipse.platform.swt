@@ -169,7 +169,7 @@ An independent review of the whole branch found these, all fixed:
 * The clang AST reader accepted implicitly declared functions, whose guessed prototype would have truncated a returned pointer to 32 bits.
 * `forall` and the parent class calls built a downcall handle per invocation; they use one handle per descriptor now.
 
-Two findings were deliberately not acted on: the entry count is incremented even while callbacks are disabled, which nothing on GTK reads, and `AtkTableIface.remove_column_selection` forwards to `atkTable_remove_row_selection`, which faithfully reproduces a bug of the C and deserves its own fix upstream.
+One finding was deliberately not acted on: `AtkTableIface.remove_column_selection` forwards to `atkTable_remove_row_selection`, which faithfully reproduces a bug of the C and deserves its own fix upstream.
 
 ### Findings
 
@@ -320,6 +320,16 @@ The only known difference is `NOTIFYICONDATA`, whose Java `sizeof` is `NOTIFYICO
 In the same run JNI returned 0 from `GetLastError` right after a failing `GetMenuItemCount`, while the capture returned 1401, the error the call set.
 
 Open for later steps: the JNI library binds `comctl32` version 6 through its manifest, while `FFMLibraries` loads `comctl32.dll` without an activation context, which may give version 5.82; not checked yet.
+
+### Runtime (step 2)
+
+* `FFM` resolves symbols on Windows through the DLLs `swt-win32` links against, each loaded when a lookup first reaches it, so that `comctl32` is loaded after `OS` activated the SWT manifest and resolves to version 6.
+* `FFMCallback` needs nothing Windows specific; its entry count now follows `callback.c` and only counts callbacks that reach Java, while retired stubs wait for all stubs in flight.
+* `FFMCom` implements the 69 `VtblCall` overloads and `VtblCall_put_Bounds`, with one address-less downcall handle per call shape (46).
+  A null struct passed by value throws `NullPointerException`, where the JNI glue dereferences NULL.
+* `FFMLastError` keeps one `captureCallState("GetLastError")` buffer per thread and implements `OS.GetLastError`.
+  JNI loses the error in practice: `GetMenuItemCount` on a bad handle followed by `OS.GetLastError()` returns 0, the capturing binding 1401.
+* `test-win32-runtime.sh` runs `FFMWin32RuntimeCheck`: window procs, nested and failing callbacks, disabled callbacks, hooks, timer procs, callbacks on native threads and array based COM slots against JNI `Callback`, every `VtblCall` overload against JNI on a recording object, `IShellLinkW` and `IPersistFile` through both, and the captured last error.
 
 ## Next steps
 
