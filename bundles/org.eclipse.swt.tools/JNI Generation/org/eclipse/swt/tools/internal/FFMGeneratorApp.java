@@ -24,9 +24,13 @@ import org.eclipse.swt.tools.internal.FFMGenerator.*;
  *
  * <pre>
  * probe    &lt;mainClass&gt; &lt;ast&gt; &lt;out.c&gt;
- * generate &lt;outputRoot&gt; &lt;reportDir&gt; (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)...
+ * generate &lt;outputRoot&gt; &lt;reportDir&gt; [--imports &lt;imports.txt&gt;] (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)...
  * rewrite  &lt;supported.txt&gt; &lt;sourceRoot&gt; &lt;outputRoot&gt;
  * </pre>
+ *
+ * A <code>clang -E -dM</code> dump next to an AST, with the extension <code>.macros</code>, resolves function renaming
+ * macros. <code>--imports</code> lists <code>function dll</code> pairs from the Windows import libraries, and an AST
+ * and layout of <code>-</code> stand for a natives class that is not generated at all.
  */
 public class FFMGeneratorApp {
 
@@ -57,6 +61,7 @@ public class FFMGeneratorApp {
 
 	static Map<String, String> readLayout(String file) throws IOException {
 		Map<String, String> layout = new HashMap<>();
+		if (file.equals("-")) return layout;
 		for (String line : Files.readAllLines(Paths.get(file))) {
 			int eq = line.indexOf('=');
 			if (eq > 0) layout.put(line.substring(0, eq), line.substring(eq + 1));
@@ -64,7 +69,25 @@ public class FFMGeneratorApp {
 		return layout;
 	}
 
-	static void generate(String outputRoot, String reportDir, List<String[]> units) throws IOException {
+	static CTypes readCTypes(String ast) throws IOException {
+		if (ast.equals("-")) return null;
+		Path macros = Paths.get(ast.replaceAll("\\.ast$", "") + ".macros");
+		return new CTypes(ast, Files.exists(macros) ? macros.toString() : null);
+	}
+
+	/** Reads <code>function dll</code> lines, the first library naming a function wins as with the linker. */
+	static Map<String, String> readImports(String file) throws IOException {
+		Map<String, String> imports = new HashMap<>();
+		for (String line : Files.readAllLines(Paths.get(file))) {
+			String[] parts = line.trim().split("\\s+");
+			if (parts.length == 2) imports.putIfAbsent(parts[0], parts[1]);
+		}
+		return imports;
+	}
+
+	static void generate(String outputRoot, String reportDir, String importsFile, List<String[]> units) throws IOException {
+		Map<String, String> imports = importsFile != null ? readImports(importsFile) : null;
+		Map<String, String> symbols = new TreeMap<>();
 		Map<String, StructInfo> structs = new HashMap<>();
 		Map<String, List<StructInfo>> byPackage = new TreeMap<>();
 		List<JNIGeneratorApp> apps = new ArrayList<>();
@@ -92,7 +115,13 @@ public class FFMGeneratorApp {
 		StringBuilder summary = new StringBuilder();
 		for (int u = 0; u < units.size(); u++) {
 			JNIGeneratorApp app = apps.get(u);
-			FFMGenerator generator = new FFMGenerator(new CTypes(units.get(u)[1]), structs);
+			FFMGenerator generator = new FFMGenerator(readCTypes(units.get(u)[1]), structs);
+			generator.setImports(imports);
+			Map<String, String> extras = new HashMap<>();
+			readLayout(units.get(u)[2]).forEach((k, v) -> {
+				if (k.startsWith("EXTRA.")) extras.put(k.substring("EXTRA.".length()), v);
+			});
+			generator.setExtras(extras);
 			generator.setMetaData(app.getMetaData());
 			generator.setMainClass(app.getMainClass());
 			for (JNIClass clazz : app.getNativesClasses(app.getClasses())) {
@@ -106,6 +135,7 @@ public class FFMGeneratorApp {
 			}
 			unsupported.putAll(generator.getUnsupported());
 			supported.addAll(generator.getSupported());
+			symbols.putAll(generator.getSymbols());
 		}
 		for (int u = 0; u < units.size(); u++) {
 			Map<String, String> layout = readLayout(units.get(u)[2]);
@@ -135,6 +165,10 @@ public class FFMGeneratorApp {
 		Files.createDirectories(Paths.get(reportDir));
 		Files.write(Paths.get(reportDir, "supported.txt"), supported);
 		Files.write(Paths.get(reportDir, "unsupported.txt"), unsupported.entrySet().stream().map(e -> e.getKey() + "\t" + e.getValue()).collect(Collectors.toList()));
+		if (imports != null) {
+			// "-": not in an import library, resolved through the default lookup (C runtime)
+			Files.write(Paths.get(reportDir, "symbols.txt"), symbols.entrySet().stream().map(e -> e.getKey() + "\t" + e.getValue()).collect(Collectors.toList()));
+		}
 		Map<String, Long> reasons = unsupported.values().stream()
 			.collect(Collectors.groupingBy(r -> r.substring(0, r.indexOf(':')), TreeMap::new, Collectors.counting()));
 		summary.append(String.format("%nTotal FFM %d, JNI %d%n%nKept on JNI by reason:%n", supported.size(), unsupported.size()));
@@ -242,8 +276,14 @@ public class FFMGeneratorApp {
 				break;
 			case "generate":
 				List<String[]> units = new ArrayList<>();
-				for (int i = 3; i + 2 < args.length; i += 3) units.add(new String[] {args[i], args[i + 1], args[i + 2]});
-				generate(args[1], args[2], units);
+				int first = 3;
+				String imports = null;
+				if (args.length > 4 && args[3].equals("--imports")) {
+					imports = args[4];
+					first = 5;
+				}
+				for (int i = first; i + 2 < args.length; i += 3) units.add(new String[] {args[i], args[i + 1], args[i + 2]});
+				generate(args[1], args[2], imports, units);
 				break;
 			case "rewrite":
 				rewrite(args[1], args[2], args[3], Arrays.copyOfRange(args, 4, args.length));
