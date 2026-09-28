@@ -23,12 +23,26 @@ public final class FFM {
 
 	static final Linker LINKER = Linker.nativeLinker();
 
+	static final boolean WINDOWS = System.getProperty("os.name", "").startsWith("Windows");
+
 	/** Libraries searched after the SWT libraries, whose dlopen handles already cover their dependencies. */
-	static final String[] LIBRARIES = {
+	static final String[] GTK_LIBRARIES = {
 		"libgtk-3.so.0", "libgdk-3.so.0", "libgdk_pixbuf-2.0.so.0", "libgobject-2.0.so.0", "libglib-2.0.so.0", "libgio-2.0.so.0",
 		"libpango-1.0.so.0", "libpangocairo-1.0.so.0", "libcairo.so.2", "libatk-1.0.so.0", "libgthread-2.0.so.0",
 		"libfontconfig.so.1", "libX11.so.6",
 	};
+
+	/**
+	 * The DLLs swt-win32 links against (make_win32.mak), plus gdiplus. The loader lookup only sees the
+	 * JNI exports of the SWT DLL, so on Windows every system DLL has to be listed.
+	 */
+	static final String[] WIN32_LIBRARIES = {
+		"kernel32.dll", "user32.dll", "gdi32.dll", "ole32.dll", "oleaut32.dll", "shell32.dll", "comdlg32.dll", "imm32.dll",
+		"usp10.dll", "uxtheme.dll", "msimg32.dll", "dwmapi.dll", "shlwapi.dll", "advapi32.dll", "oleacc.dll", "winspool.drv",
+		"urlmon.dll", "wininet.dll", "propsys.dll", "gdiplus.dll", "comctl32.dll",
+	};
+
+	static final String[] LIBRARIES = WINDOWS ? WIN32_LIBRARIES : GTK_LIBRARIES;
 
 	static final SymbolLookup LOOKUP = createLookup();
 
@@ -38,6 +52,10 @@ public final class FFM {
 	static SymbolLookup createLookup() {
 		SymbolLookup lookup = SymbolLookup.loaderLookup();
 		for (String library : LIBRARIES) {
+			if (WINDOWS) {
+				lookup = lookup.or(lazy(library));
+				continue;
+			}
 			try {
 				lookup = lookup.or(SymbolLookup.libraryLookup(library, Arena.global()));
 			} catch (IllegalArgumentException e) {
@@ -45,6 +63,32 @@ public final class FFM {
 			}
 		}
 		return lookup.or(LINKER.defaultLookup());
+	}
+
+	/**
+	 * Loads <code>library</code> when a lookup first reaches it. comctl32 has to be loaded after
+	 * <code>OS</code> activated the SWT manifest, or it resolves to version 5 instead of 6.
+	 */
+	static SymbolLookup lazy(String library) {
+		return new SymbolLookup() {
+			volatile SymbolLookup loaded;
+			volatile boolean missing;
+
+			@Override
+			public Optional<MemorySegment> find(String name) {
+				SymbolLookup lookup = loaded;
+				if (lookup == null) {
+					if (missing) return Optional.empty();
+					try {
+						loaded = lookup = SymbolLookup.libraryLookup(library, Arena.global());
+					} catch (IllegalArgumentException e) {
+						missing = true;
+						return Optional.empty();
+					}
+				}
+				return lookup.find(name);
+			}
+		};
 	}
 
 	/**
