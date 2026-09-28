@@ -32,7 +32,10 @@ public final class FFMCallback {
 	static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 	static final Map<Object, Stub> STUBS = new IdentityHashMap<>();
 	static final java.util.concurrent.ConcurrentLinkedQueue<Arena> RETIRED = new java.util.concurrent.ConcurrentLinkedQueue<>();
+	/** Callbacks that reached Java, what callback.c counts and {@link #getEntryCount()} reports. */
 	static final AtomicInteger ENTRY_COUNT = new AtomicInteger();
+	/** Stubs on a stack, including those that returned 0 because callbacks were disabled. */
+	static final AtomicInteger IN_FLIGHT = new AtomicInteger();
 
 	static volatile boolean enabled = true;
 
@@ -73,7 +76,7 @@ public final class FFMCallback {
 	 * stale pointer is then fatal rather than harmless.
 	 */
 	static void release() {
-		if (ENTRY_COUNT.get() != 0) return;
+		if (IN_FLIGHT.get() != 0) return;
 		Arena arena;
 		while ((arena = RETIRED.poll()) != null) {
 			try {
@@ -120,23 +123,30 @@ public final class FFMCallback {
 	}
 
 	/** The exception pending when the callback started, which callback.c saved the same way. */
-	static final ThreadLocal<ArrayDeque<Throwable>> SAVED = ThreadLocal.withInitial(ArrayDeque::new);
+	static final ThreadLocal<ArrayDeque<Object>> SAVED = ThreadLocal.withInitial(ArrayDeque::new);
 
 	static void enter() {
-		ENTRY_COUNT.incrementAndGet();
+		IN_FLIGHT.incrementAndGet();
+		// callback.c returns 0 without counting while callbacks are disabled
+		boolean counted = enabled;
+		if (counted) ENTRY_COUNT.incrementAndGet();
 		Throwable pending = FFM.takePending();
-		SAVED.get().push(pending == null ? NONE : pending);
+		ArrayDeque<Object> saved = SAVED.get();
+		saved.push(pending == null ? NONE : pending);
+		saved.push(counted ? Boolean.TRUE : Boolean.FALSE);
 	}
 
 	static void exit() {
-		Throwable saved = SAVED.get().pop();
+		ArrayDeque<Object> frames = SAVED.get();
+		if (frames.pop() == Boolean.TRUE) ENTRY_COUNT.decrementAndGet();
+		Throwable saved = (Throwable) frames.pop();
 		if (saved != NONE) {
 			// the older exception wins, as callback.c rethrows it after the callback
 			Throwable mine = FFM.takePending();
 			if (mine != null && mine != saved) saved.addSuppressed(mine);
 			FFM.setPending(saved);
 		}
-		if (ENTRY_COUNT.decrementAndGet() == 0 && !RETIRED.isEmpty()) release();
+		if (IN_FLIGHT.decrementAndGet() == 0 && !RETIRED.isEmpty()) release();
 	}
 
 	static final Throwable NONE = new Throwable("no exception was pending");
