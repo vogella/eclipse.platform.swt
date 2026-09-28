@@ -674,7 +674,7 @@ public final class FFMGdipGraphics {
 	public static int Graphics_DrawString(long graphics, char[] string, int length, long font, PointF origin, long format, long brush) {
 		try (Arena arena = Arena.ofConfined()) {
 			MemorySegment lpstring = FFM.copyIn(arena, string);
-			int rc = (int) MH_GdipDrawString.MH.invokeExact(graphics, lpstring, length, font, layoutRect(arena, origin), format, brush);
+			int rc = (int) MH_GdipDrawString.MH.invokeExact(graphics, lpstring, length, FFMGdipObjects.nativeObject(font), layoutRect(arena, origin), format, brush);
 			FFM.copyOut(lpstring, string);
 			return rc;
 		} catch (Throwable e) {
@@ -693,7 +693,7 @@ public final class FFMGdipGraphics {
 		try (Arena arena = Arena.ofConfined()) {
 			MemorySegment lpstring = FFM.copyIn(arena, string);
 			MemorySegment lpbox = boundingBox == null ? MemorySegment.NULL : rectF(arena, boundingBox);
-			int rc = (int) MH_GdipMeasureString.MH.invokeExact(graphics, lpstring, length, font, layoutRect(arena, origin), format, lpbox, 0L, 0L);
+			int rc = (int) MH_GdipMeasureString.MH.invokeExact(graphics, lpstring, length, FFMGdipObjects.nativeObject(font), layoutRect(arena, origin), format, lpbox, 0L, 0L);
 			if (boundingBox != null) rectF(lpbox, boundingBox);
 			FFM.copyOut(lpstring, string);
 			return rc;
@@ -707,7 +707,7 @@ public final class FFMGdipGraphics {
 	}
 	public static int Graphics_DrawDriverString(long graphics, long text, int length, long font, long brush, PointF positions, int flags, long matrix) {
 		try (Arena arena = Arena.ofConfined()) {
-			return (int) MH_GdipDrawDriverString.MH.invokeExact(graphics, text, length, font, brush, pointF(arena, positions), flags, matrix);
+			return (int) MH_GdipDrawDriverString.MH.invokeExact(graphics, text, length, FFMGdipObjects.nativeObject(font), brush, pointF(arena, positions), flags, matrix);
 		} catch (Throwable e) {
 			throw FFM.rethrow(e);
 		}
@@ -715,7 +715,7 @@ public final class FFMGdipGraphics {
 
 	public static int Graphics_DrawDriverString(long graphics, long text, int length, long font, long brush, float[] positions, int flags, long matrix) {
 		try (Arena arena = Arena.ofConfined()) {
-			return (int) MH_GdipDrawDriverString.MH.invokeExact(graphics, text, length, font, brush, FFM.copyIn(arena, positions), flags, matrix);
+			return (int) MH_GdipDrawDriverString.MH.invokeExact(graphics, text, length, FFMGdipObjects.nativeObject(font), brush, FFM.copyIn(arena, positions), flags, matrix);
 		} catch (Throwable e) {
 			throw FFM.rethrow(e);
 		}
@@ -727,7 +727,7 @@ public final class FFMGdipGraphics {
 	public static int Graphics_MeasureDriverString(long graphics, long text, int length, long font, float[] positions, int flags, long matrix, RectF boundingBox) {
 		try (Arena arena = Arena.ofConfined()) {
 			MemorySegment lpbox = boundingBox == null ? MemorySegment.NULL : rectF(arena, boundingBox);
-			int rc = (int) MH_GdipMeasureDriverString.MH.invokeExact(graphics, text, length, font, FFM.copyIn(arena, positions), flags, matrix, lpbox);
+			int rc = (int) MH_GdipMeasureDriverString.MH.invokeExact(graphics, text, length, FFMGdipObjects.nativeObject(font), FFM.copyIn(arena, positions), flags, matrix, lpbox);
 			if (boundingBox != null) rectF(lpbox, boundingBox);
 			return rc;
 		} catch (Throwable e) {

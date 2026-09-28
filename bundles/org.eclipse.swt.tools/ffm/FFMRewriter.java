@@ -67,7 +67,7 @@ public class FFMRewriter {
 		}
 		System.out.println("FFMRewriter: " + count + " natives in " + files + " files below " + root);
 		if (!remaining.isEmpty()) {
-			System.out.println("FFMRewriter: " + remaining.size() + " natives stay on JNI, GTK4 ones and any added since report-gtk was generated");
+			System.out.println("FFMRewriter: " + remaining.size() + " natives stay on JNI, GTK4 ones and any added since the report was generated");
 			List<String> unknown = remaining.stream().filter(n -> !n.matches(".*\\.(gdk_(surface|event|popup|texture|clipboard|cursor_new_from_texture|display_get_monitor_at_surface|x11_surface|scroll_event|key_event|button_event|crossing_event|focus_event)\\w*|swt_fixed_(add|remove)|swt_scaled_paintable_new|content_providers_\\w+)")).collect(Collectors.toList());
 			if (!unknown.isEmpty()) System.out.println("FFMRewriter: not yet generated, running on JNI: " + String.join(", ", unknown));
 		}
