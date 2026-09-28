@@ -298,6 +298,29 @@ Each step runs in its own worktree so they can proceed in parallel; step 1 is th
 
 The goal is to drop `swt-win32`, `swt-gdip` and `swt-osversion`, and with them the Visual Studio build.
 
+### Status of step 1
+
+`generate-win32.sh` (Git Bash) dumps the `clang-cl` AST and macros of `c.c`, `os.c`, `com.c` and `osversion.c` with the defines of `make_win32.mak`, compiles and runs the layout probes with `clang-cl`, and writes `C_FFM`, `OS_FFM`, `COM_FFM`, `OsVersion_FFM`, the `Structs_FFM` and `Extra_FFM` classes to `Eclipse SWT PI/win32-ffm` and the report to `report-win32`.
+`ARCH=arm64` selects the other target; the probes run, so they have to be built for the host.
+
+* Types: `long` is 32 bits when `size_t` is `unsigned long long`, and the `__attribute__((stdcall))` that `clang-cl` prints into function types is dropped.
+* Names: a `.macros` dump next to the AST resolves renaming macros, `CreateWindowEx` to `CreateWindowExW` and `MoveMemory` through `RtlMoveMemory` to `memmove`.
+* Symbols: each function resolves from the DLL that its import library names, read with `llvm-nm` from the Windows SDK libraries that `make_win32.mak` links, first library wins; a dynamic function from its `name_LIB` macro; the C runtime through the default lookup (`report-win32/symbols.txt`).
+  `FFMLibraries` loads a DLL on first use.
+* Struct by value: the layout comes from the probed fields with padding; the one primitive case, `ScriptStringOut`, reads the pointer the JNI glue dereferenced.
+  A pointer that the C side takes as a pointer sized integer, the `LPARAM` of `SendMessage`, is passed as the address of the copy.
+* `GetLastError`: the functions whose error SWT reads (`FFMGenerator.CAPTURE_LAST_ERROR`) capture it, and `OS_FFM.GetLastError` returns what `FFMLastError` holds for the thread.
+  The list is curated from the call sites and has to follow them.
+* The `sizeof` macros without a Java struct class come from the probe (`Extra_FFM`).
+
+796 of 1,072 natives are generated (`report-win32/summary.txt`); left are the 188 of `Gdip`, the 69 `VtblCall`, 12 `no_gen` natives of `os_custom.c` and `com_custom.cpp`, `PathToPIDL`, and five macros (`IsEqualGUID`, `TreeView_GetItemRect`, `GID_ROTATE_ANGLE_FROM_ARGUMENT`, `PTR_sizeof`, `setenv`) plus one constant.
+
+`test-win32.sh` compiles stock SWT with the FFM classes (`build-win32.sh`) and runs `FFMCrossCheckWin32` against JNI DLLs built from this checkout (`SWT_NATIVES`): all 495 symbols resolve, all 653 downcall handles link, and 138 struct sizes, 1,020 struct reads, 480 struct writes and 51 call results (struct by value with `AlphaBlend`, `WindowFromPoint`, `ChildWindowFromPointEx` and `ScriptStringOut` compared pixel for pixel, `LPARAM` structs, dynamic functions, captured last error) show no mismatch.
+The only known difference is `NOTIFYICONDATA`, whose Java `sizeof` is `NOTIFYICONDATA_V2_SIZE`.
+In the same run JNI returned 0 from `GetLastError` right after a failing `GetMenuItemCount`, while the capture returned 1401, the error the call set.
+
+Open for later steps: the JNI library binds `comctl32` version 6 through its manifest, while `FFMLibraries` loads `comctl32.dll` without an activation context, which may give version 5.82; not checked yet.
+
 ## Next steps
 
 1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.

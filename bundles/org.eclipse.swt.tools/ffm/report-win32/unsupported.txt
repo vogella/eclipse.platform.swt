@@ -1,0 +1,276 @@
+org.eclipse.swt.internal.C#PTR_sizeof()	no C function declaration (macro or custom C): PTR_sizeof
+org.eclipse.swt.internal.C#setenv(byte[],byte[],int)	no C function declaration (macro or custom C): setenv
+org.eclipse.swt.internal.gdip.Gdip#BitmapData_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#BitmapData_new()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_GetHBITMAP(long,int,long[])	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_GetHICON(long,long[])	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_LockBits(long,long,int,int,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_UnlockBits(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_new(char[],boolean)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_new(int,int,int,int,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_new(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Bitmap_new(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Brush_Clone(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Brush_GetType(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#ColorPalette_sizeof()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#FontFamily_GetFamilyName(long,char[],char)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#FontFamily_IsAvailable(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#FontFamily_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#FontFamily_new()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#FontFamily_new(char[],long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_GetFamily(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_GetLogFontW(long,long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_GetSize(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_GetStyle(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_IsAvailable(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_new(char[],float,int,int,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_new(long,float,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Font_new(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GdiplusShutdown(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GdiplusStartup(long[],GdiplusStartupInput,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GdiplusStartupInput_sizeof()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_AddArc(long,float,float,float,float,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_AddBezier(long,float,float,float,float,float,float,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_AddLine(long,float,float,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_AddPath(long,long,boolean)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_AddRectangle(long,RectF)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_AddString(long,char[],int,long,int,float,PointF,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_Clone(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_CloseFigure(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_Flatten(long,long,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_GetBounds(long,RectF,long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_GetLastPoint(long,PointF)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_GetPathPoints(long,float[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_GetPathTypes(long,byte[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_GetPointCount(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_IsOutlineVisible(long,float,float,long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_IsVisible(long,float,float,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_SetFillMode(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_StartFigure(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_Transform(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_new(int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#GraphicsPath_new(int[],byte[],int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawArc(long,long,int,int,int,int,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawDriverString(long,long,int,long,long,PointF,int,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawDriverString(long,long,int,long,long,float[],int,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawEllipse(long,long,int,int,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawImage(long,long,Rect,int,int,int,int,int,long,long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawImage(long,long,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawLine(long,long,int,int,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawLines(long,long,int[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawPath(long,long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawPolygon(long,long,int[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawRectangle(long,long,int,int,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawString(long,char[],int,long,PointF,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_DrawString(long,char[],int,long,PointF,long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_FillEllipse(long,long,int,int,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_FillPath(long,long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_FillPie(long,long,int,int,int,int,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_FillPolygon(long,long,int[],int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_FillRectangle(long,long,int,int,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_Flush(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetClip(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetClipBounds(long,Rect)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetClipBounds(long,RectF)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetHDC(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetInterpolationMode(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetSmoothingMode(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetTextRenderingHint(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetTransform(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_GetVisibleClipBounds(long,Rect)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_MeasureDriverString(long,long,int,long,float[],int,long,RectF)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_MeasureString(long,char[],int,long,PointF,RectF)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_MeasureString(long,char[],int,long,PointF,long,RectF)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_ReleaseHDC(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_ResetClip(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_Restore(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_Save(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_ScaleTransform(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetClip(long,Rect,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetClip(long,long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetClipPath(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetClipPath(long,long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetCompositingQuality(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetInterpolationMode(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetPageUnit(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetPixelOffsetMode(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetSmoothingMode(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetTextRenderingHint(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_SetTransform(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_TranslateTransform(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Graphics_new(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#HatchBrush_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#HatchBrush_new(int,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#ImageAttributes_SetColorMatrix(long,float[],int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#ImageAttributes_SetWrapMode(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#ImageAttributes_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#ImageAttributes_new()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_Clone(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_GetHeight(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_GetLastStatus(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_GetPalette(long,long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_GetPaletteSize(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_GetPixelFormat(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_GetWidth(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Image_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#LinearGradientBrush_ResetTransform(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#LinearGradientBrush_ScaleTransform(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#LinearGradientBrush_SetInterpolationColors(long,int[],float[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#LinearGradientBrush_SetWrapMode(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#LinearGradientBrush_TranslateTransform(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#LinearGradientBrush_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#LinearGradientBrush_new(PointF,PointF,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_GetElements(long,float[])	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_Invert(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_IsIdentity(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_Multiply(long,long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_Rotate(long,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_Scale(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_SetElements(long,float,float,float,float,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_Shear(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_TransformPoints(long,PointF,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_TransformPoints(long,float[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_TransformVectors(long,PointF,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_Translate(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Matrix_new(float,float,float,float,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#MoveMemory(BitmapData,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#MoveMemory(ColorPalette,long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_SetCenterColor(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_SetCenterPoint(long,PointF)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_SetGraphicsPath(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_SetInterpolationColors(long,int[],float[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_SetSurroundColors(long,int[],int[])	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_SetWrapMode(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PathGradientBrush_new(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_GetBrush(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetBrush(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetDashOffset(long,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetDashPattern(long,float[],int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetDashStyle(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetLineCap(long,int,int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetLineJoin(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetMiterLimit(long,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_SetWidth(long,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Pen_new(long,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Point_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Point_new(int,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PrivateFontCollection_AddFontFile(long,char[])	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PrivateFontCollection_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#PrivateFontCollection_new()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Region_GetHRGN(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Region_IsInfinite(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Region_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Region_new()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Region_new(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#Region_newGraphicsPath(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#SolidBrush_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#SolidBrush_new(int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_Clone(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_GenericDefault()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_GenericTypographic()	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_GetFormatFlags(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_SetFormatFlags(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_SetHotkeyPrefix(long,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_SetTabStops(long,float,int,float[])	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#StringFormat_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_GetImage(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_ResetTransform(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_ScaleTransform(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_SetTransform(long,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_TranslateTransform(long,float,float,int)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_delete(long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_new(long,Rect,long)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.gdip.Gdip#TextureBrush_new(long,int,float,float,float,float)	GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API
+org.eclipse.swt.internal.ole.win32.COM#CreateSwtWebView2Callback(ICoreWebView2SwtCallback)	no_gen: hand written C
+org.eclipse.swt.internal.ole.win32.COM#CreateSwtWebView2Host(ICoreWebView2SwtHost)	no_gen: hand written C
+org.eclipse.swt.internal.ole.win32.COM#CreateSwtWebView2Options()	no_gen: hand written C
+org.eclipse.swt.internal.ole.win32.COM#IsEqualGUID(GUID,GUID)	no C function declaration (macro or custom C): IsEqualGUID
+org.eclipse.swt.internal.ole.win32.COM#PathToPIDL(char[],long[])	no exported symbol (custom C): PathToPIDL
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,CAUUID)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,CONTROLINFO)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,FORMATETC)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,FORMATETC,STGMEDIUM)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,GUID)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,GUID,GUID,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,GUID,int,OLECMD,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,GUID,int,int,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,GUID,long,int,int,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,GUID,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,LICINFO)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,MSG)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,POINT,int)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,PROPERTYKEY,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,RECT)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,RECT,RECT)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,RECT,long,int)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,RECT,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,TF_DISPLAYATTRIBUTE)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],char[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],char[],char[],char[],long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],char[],long,char[],long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],int)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],int,int,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],int,int,int[],int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],long,int,int,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],long,int,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,char[],long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,double)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,GUID)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,GUID,GUID,GUID)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,GUID,int,int,DISPPARAMS,long,EXCEPINFO,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,GUID,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,MSG,long,int,long,RECT)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,SIZE)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,int,int,DISPPARAMS,long,EXCEPINFO,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,int,long,SIZE)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long[],int,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long[],int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int,long[],long[],int[],long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,int[],GUID,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,POINT,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,int)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,int,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,int,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,int[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long,GUID,long,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long,POINT,int)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long,int,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long,long,long,long)	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall(int,long,long[])	function pointer call: VtblCall
+org.eclipse.swt.internal.ole.win32.COM#VtblCall_put_Bounds(int,long,RECT)	function pointer call: VtblCall_put_Bounds
+org.eclipse.swt.internal.win32.OS#AllowDarkModeForWindow(long,boolean)	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE()	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2()	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#DPI_AWARENESS_CONTEXT_SYSTEM_AWARE()	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#DPI_AWARENESS_CONTEXT_UNAWARE()	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED()	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#GID_ROTATE_ANGLE_FROM_ARGUMENT(long)	no C function declaration (macro or custom C): GID_ROTATE_ANGLE_FROM_ARGUMENT
+org.eclipse.swt.internal.win32.OS#GetLibraryHandle()	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#IsDarkModeAvailable()	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#NOTIFYICONDATA_V2_SIZE()	const: macro or constant
+org.eclipse.swt.internal.win32.OS#SetPreferredAppMode(int)	no_gen: hand written C
+org.eclipse.swt.internal.win32.OS#TreeView_GetItemRect(long,long,RECT,boolean)	no C function declaration (macro or custom C): TreeView_GetItemRect

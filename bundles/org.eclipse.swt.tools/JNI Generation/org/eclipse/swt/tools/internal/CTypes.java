@@ -45,17 +45,79 @@ public class CTypes {
 
 	static final Pattern DECL = Pattern.compile("^[|`]-(FunctionDecl|TypedefDecl) 0x\\S+ .*?(\\w+) '([^']*)'(?::'([^']*)')?(.*)$");
 
-	static final Pattern RECORD = Pattern.compile("^[|`]-RecordDecl 0x\\S+ .* ((?:struct|union) \\w+) definition$");
+	/** A named or, as in <code>typedef struct {...} NAME</code>, anonymous struct definition. */
+	static final Pattern RECORD = Pattern.compile("^[|`]-RecordDecl 0x\\S+ .* ((?:struct|union)(?: \\w+)?) definition(?: [\\w-]+)*$");
 	static final Pattern FIELD = Pattern.compile("^[| ] [|`]-FieldDecl 0x\\S+ .*?(\\w+) '[^']*'(?::'[^']*')?$");
 	static final Pattern BIT_WIDTH = Pattern.compile("^[| ] [| ] [|`]-ConstantExpr .*");
+
+	/** Calling convention and other attributes that clang-cl prints into function types. */
+	static final Pattern ATTRIBUTE = Pattern.compile("\\s*__attribute__\\(\\((?:[^()]|\\([^()]*\\))*\\)\\)");
+	/** <code>#define A B</code> */
+	static final Pattern MACRO_ALIAS = Pattern.compile("^#define (\\w+) (\\w+)$");
+	/** <code>#define A(x, y) B((x), (y))</code>, forwarding its arguments unchanged. */
+	static final Pattern MACRO_FORWARD = Pattern.compile("^#define (\\w+)\\(([\\w, ]*)\\) (\\w+)\\((.*)\\)$");
+	/** <code>#define name_LIB "library"</code>, the library the JNI glue loads a dynamic function from. */
+	static final Pattern MACRO_LIBRARY = Pattern.compile("^#define (\\w+)_LIB \"([^\"]+)\"$");
 
 	final Map<String, Function> functions = new HashMap<>();
 	final Map<String, String> typedefs = new HashMap<>();
 	final Set<String> bitfields = new HashSet<>();
+	final Map<String, String> aliases = new HashMap<>();
+	final Map<String, String> libraries = new HashMap<>();
+	/** C <code>long</code> is 32 bits (Windows), derived from <code>size_t</code>. */
+	final boolean llp64;
 
 	public CTypes(String astFile) throws IOException {
+		this(astFile, null);
+	}
+
+	/**
+	 * @param macroFile optional <code>clang -E -dM</code> output of the same unit, used to resolve
+	 * 	macros that rename a function, such as the <code>A</code>/<code>W</code> variants of Windows
+	 */
+	public CTypes(String astFile, String macroFile) throws IOException {
+		parseAst(astFile);
+		if (macroFile != null) parseMacros(macroFile);
+		String size = "size_t";
+		for (int i = 0; i < 20 && typedefs.containsKey(size); i++) size = typedefs.get(size);
+		llp64 = size.equals("unsigned long long");
+	}
+
+	void parseMacros(String macroFile) throws IOException {
+		for (String line : Files.readAllLines(Paths.get(macroFile), StandardCharsets.UTF_8)) {
+			line = line.trim();
+			Matcher m = MACRO_LIBRARY.matcher(line);
+			if (m.matches()) {
+				libraries.put(m.group(1), m.group(2));
+				continue;
+			}
+			m = MACRO_ALIAS.matcher(line);
+			if (m.matches()) {
+				aliases.put(m.group(1), m.group(2));
+				continue;
+			}
+			m = MACRO_FORWARD.matcher(line);
+			if (m.matches() && forwards(m.group(2), m.group(4))) aliases.put(m.group(1), m.group(3));
+		}
+	}
+
+	/** Whether the arguments of a macro body are the macro parameters in order, each at most in parentheses. */
+	static boolean forwards(String params, String args) {
+		List<String> p = splitParams(params), a = splitParams(args);
+		if (p.size() != a.size()) return false;
+		for (int i = 0; i < p.size(); i++) {
+			String arg = a.get(i);
+			while (arg.startsWith("(") && arg.endsWith(")")) arg = arg.substring(1, arg.length() - 1).trim();
+			if (!arg.equals(p.get(i))) return false;
+		}
+		return true;
+	}
+
+	void parseAst(String astFile) throws IOException {
 		try (BufferedReader reader = Files.newBufferedReader(Paths.get(astFile), StandardCharsets.UTF_8)) {
 			String line, record = null, field = null;
+			// bit-fields of an anonymous struct, named by the typedef that follows it
+			List<String> anonymousBits = new ArrayList<>();
 			while ((line = reader.readLine()) != null) {
 				if (!line.startsWith("|-") && !line.startsWith("`-")) {
 					if (record == null) continue;
@@ -63,19 +125,25 @@ public class CTypes {
 					if (f.matches()) {
 						field = f.group(1);
 					} else if (field != null && BIT_WIDTH.matcher(line).matches()) {
-						bitfields.add(record + "." + field);
+						if (record.indexOf(' ') == -1) anonymousBits.add(field);
+						else bitfields.add(record + "." + field);
 					}
 					continue;
 				}
+				List<String> pendingBits = new ArrayList<>(anonymousBits);
+				anonymousBits.clear();
 				Matcher r = RECORD.matcher(line);
 				record = r.matches() ? r.group(1) : null;
 				field = null;
 				if (record != null) continue;
 				Matcher m = DECL.matcher(line);
 				if (!m.matches()) continue;
-				String name = m.group(2), sugared = m.group(3), rest = m.group(5);
+				String name = m.group(2), sugared = ATTRIBUTE.matcher(m.group(3)).replaceAll(""), rest = m.group(5);
 				if (m.group(1).equals("TypedefDecl")) {
 					typedefs.put(name, sugared.startsWith("enum ") ? "enum " + name : sugared);
+					if (sugared.startsWith("struct ") || sugared.startsWith("union ")) {
+						for (String bit : pendingBits) bitfields.add(sugared + "." + bit);
+					}
 					continue;
 				}
 				// an implicitly declared function has no real prototype, so binding it would guess
@@ -149,6 +217,25 @@ public class CTypes {
 		return functions.get(name);
 	}
 
+	/** The function a call of <code>name</code> reaches after macro expansion, or <code>null</code>. */
+	public String resolve(String name) {
+		String current = name;
+		for (int i = 0; i < 10 && current != null; i++) {
+			if (functions.containsKey(current)) return current;
+			current = aliases.get(current);
+		}
+		return null;
+	}
+
+	/** The library a <code>flags=dynamic</code> function is loaded from (<code>name_LIB</code>), or <code>null</code>. */
+	public String getLibrary(String name) {
+		return libraries.get(name);
+	}
+
+	public boolean isLLP64() {
+		return llp64;
+	}
+
 	public Kind classify(String type) {
 		return classify(type, 0);
 	}
@@ -168,8 +255,13 @@ public class CTypes {
 			case "unsigned short": case "unsigned short int": return Kind.U16;
 			case "int": case "signed": case "signed int": case "jint": return Kind.I32;
 			case "unsigned": case "unsigned int": return Kind.U32;
-			case "long": case "long int": case "long long": case "long long int": case "jlong": return Kind.I64;
-			case "unsigned long": case "unsigned long int": case "unsigned long long": case "unsigned long long int": return Kind.U64;
+			case "long": case "long int": return llp64 ? Kind.I32 : Kind.I64;
+			case "unsigned long": case "unsigned long int": return llp64 ? Kind.U32 : Kind.U64;
+			case "long long": case "long long int": case "jlong": return Kind.I64;
+			case "unsigned long long": case "unsigned long long int": return Kind.U64;
+			// predefined sugar of recent clang, pointer sized on every target SWT supports
+			case "__size_t": return Kind.U64;
+			case "__signed_size_t": case "__ptrdiff_t": return Kind.I64;
 			case "float": case "jfloat": return Kind.F32;
 			case "double": case "jdouble": return Kind.F64;
 			default:
