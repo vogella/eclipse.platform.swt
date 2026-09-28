@@ -15,7 +15,7 @@
 #   2. The SWT JUnit tests run on the JNI build and on the FFM build, one after the other since both share the
 #      desktop; the outcomes are diffed. The FFM build runs without any SWT library on the library path.
 #
-# Run generate-win32.sh first. Needs a JDK 25, JUnit 5 jars (JUNIT_REPO, default ~/.m2/repository) and the JNI DLLs
+# Run generate-win32.sh first. Needs a JDK 25, JUnit 5 and JSVG jars (JUNIT_REPO, default ~/.m2/repository) and the JNI DLLs
 # of this checkout: SWT_NATIVES points to their directory (default: the win32 x86_64 fragment, which holds Git LFS
 # pointers unless LFS is set up). Pass test class names to restrict step 2, or "--skip-junit".
 
@@ -64,6 +64,16 @@ echo "\"$(w "$TOOLS/ffm/test/org/eclipse/swt/tools/ffm/FFMTestRunner.java")\"" >
 javac --release 25 -nowarn -encoding UTF-8 -d "$(w "$B/swt-tests")" -cp "$(w "$B/swt-jni/classes");$junit" @"$(w "$B/swt-tests-sources.txt")" 2>&1 | grep -v '^Note:' || true
 (cd "$TESTS/JUnit Tests" && find . -type f ! -name '*.java' -exec cp --parents {} "$B/swt-tests" \;)
 
+# the SVG fragment, found through ServiceLoader as in an OSGi runtime
+SVG="$REPO/bundles/org.eclipse.swt.svg"
+jsvg="$(w "$(find_jar com/github/weisj/jsvg 2.2.0)")"
+rm -rf "$B/swt-svg"
+mkdir -p "$B/swt-svg"
+javac --release 25 -nowarn -encoding UTF-8 -d "$(w "$B/swt-svg")" -cp "$(w "$B/swt-jni/classes");$jsvg" \
+	$(find "$SVG/src" -name '*.java' | cygpath -m -f -)
+cp -r "$SVG/resources/." "$B/swt-svg/"
+svg="$(w "$B/swt-svg");$jsvg"
+
 if [ $# -gt 0 ]; then
 	classes=("$@")
 else
@@ -79,7 +89,7 @@ cp "$NATIVES/WebView2Loader.dll" "$B/ffm-natives/" 2>/dev/null || true
 for mode in jni ffm; do
 	if [ $mode = jni ]; then libs="$(w "$NATIVES")"; else libs="$(w "$B/ffm-natives")"; fi
 	echo "Running ${#classes[@]} test classes on the $mode build"
-	(cd "$TESTS" && run -Djava.library.path="$libs" -cp "$(w "$B/swt-$mode/classes");$(w "$B/swt-tests");$junit" \
+	(cd "$TESTS" && run -Djava.library.path="$libs" -cp "$(w "$B/swt-$mode/classes");$svg;$(w "$B/swt-tests");$junit" \
 		org.eclipse.swt.tools.ffm.FFMTestRunner "$(w "$B/results-$mode.txt")" "${classes[@]}" > "$B/log-$mode.txt" 2>&1) || true
 done
 
