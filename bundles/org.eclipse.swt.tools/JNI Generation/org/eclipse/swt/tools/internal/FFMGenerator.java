@@ -10,6 +10,7 @@
  *******************************************************************************/
 package org.eclipse.swt.tools.internal;
 
+import java.lang.foreign.*;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -30,6 +31,8 @@ public class FFMGenerator extends JNIGenerator {
 		String packageName;
 		long size;
 		Map<String, String> fields = new HashMap<>();
+		/** Passed by value somewhere, so <code>Structs_FFM</code> needs its <code>MemoryLayout</code>. */
+		boolean byValue;
 
 		String helper() {
 			return packageName + "." + STRUCTS;
@@ -45,16 +48,52 @@ public class FFMGenerator extends JNIGenerator {
 		"org.eclipse.swt.internal.opengl.glx.GLX", "FFM.library(\"libGL.so.1\")",
 		"org.eclipse.swt.internal.webkit.WebKitGTK", "\"1\".equals(System.getenv(\"SWT_GTK4\")) ? FFM.library(\"libwebkitgtk-6.0.so.4\") : FFM.library(\"libwebkit2gtk-4.1.so.0\", \"libwebkit2gtk-4.0.so.37\")");
 
+	/** Natives classes left to hand written code as a whole, with the reason. */
+	static final Map<String, String> EXCLUDED = Map.of(
+		"org.eclipse.swt.internal.gdip.Gdip", "GDI+: inline C++ wrapper classes without exported symbols, ported by hand on the flat API");
+
+	/**
+	 * Win32 functions whose last error SWT reads with <code>OS.GetLastError()</code> afterwards, see its call sites
+	 * (Device.getLastError via Image, Menu, MenuItem, PDFDocument, KeyboardLayoutTest). The JVM may change the
+	 * thread's last error between two downcalls, so these capture it and <code>GetLastError</code> returns the capture.
+	 */
+	static final Set<String> CAPTURE_LAST_ERROR = Set.of(
+		"ActivateKeyboardLayout", "CreateCompatibleBitmap", "CreateDIBSection", "GetKeyboardLayoutList",
+		"GetMenuDefaultItem", "GetMenuItemCount", "GetMenuItemInfo", "InsertMenuItem", "SendInput",
+		"SetMenuItemInfo", "StartDoc", "StartPage");
+
 	final CTypes ctypes;
 	final Map<String, StructInfo> structs;
 	final Map<String, String> unsupported = new TreeMap<>();
 	final Set<String> supported = new TreeSet<>();
 	/** Lookup of the class being generated, <code>null</code> for the SWT libraries. */
 	String lookup;
+	/**
+	 * Windows: exported function name to the DLL its import library names, from the link libraries of the
+	 * native build; <code>null</code> on other platforms, where symbols resolve through {@code FFM}'s lookup.
+	 */
+	Map<String, String> imports;
+	/** Symbol and library of every generated downcall, for the report. */
+	final Map<String, String> symbols = new TreeMap<>();
 
 	public FFMGenerator(CTypes ctypes, Map<String, StructInfo> structs) {
 		this.ctypes = ctypes;
 		this.structs = structs;
+	}
+
+	public void setImports(Map<String, String> imports) {
+		this.imports = imports;
+	}
+
+	/** Sizes of C types without a Java struct class, from the probe of the unit, generated as <code>Extra_FFM</code>. */
+	Map<String, String> extras = Map.of();
+
+	public void setExtras(Map<String, String> extras) {
+		this.extras = extras;
+	}
+
+	public Map<String, String> getSymbols() {
+		return symbols;
 	}
 
 	static String packageOf(String qualifiedName) {
@@ -173,6 +212,8 @@ public class FFMGenerator extends JNIGenerator {
 		Kind kind;
 		String mode;
 		StructInfo struct;
+		/** A copied array, string or struct whose address is passed as an integer. */
+		boolean address;
 	}
 
 	class Plan {
@@ -183,7 +224,7 @@ public class FFMGenerator extends JNIGenerator {
 		Kind returnKind;
 		List<Param> params = new ArrayList<>();
 		int firstVariadic = -1;
-		boolean dynamic, critical, arena;
+		boolean dynamic, critical, arena, captureLastError;
 	}
 
 	static boolean isMemmove(JNIMethod method) {
@@ -214,6 +255,8 @@ public class FFMGenerator extends JNIGenerator {
 	}
 
 	String reject(JNIMethod method) {
+		String excluded = EXCLUDED.get(method.getDeclaringClass().getName());
+		if (excluded != null) return excluded;
 		if (method.getFlag(FLAG_NO_GEN)) return "no_gen: hand written C";
 		String jniOnly = JNI_ONLY.get(method.getName());
 		if (jniOnly != null) return jniOnly;
@@ -262,15 +305,32 @@ public class FFMGenerator extends JNIGenerator {
 				plan.struct = match;
 				return null;
 			}
+			// Windows only: GTK implements these in FFMTypes
+			if (imports != null && extras.containsKey(structName)) {
+				plan.special = "sizeof_extra";
+				return null;
+			}
+		}
+
+		if (imports != null && plan.cName.equals("GetLastError") && params.length == 0 && returnType.isType("int")) {
+			plan.special = "last_error";
+			return null;
 		}
 
 		plan.dynamic = method.getFlag(FLAG_DYNAMIC);
+		plan.captureLastError = imports != null && CAPTURE_LAST_ERROR.contains(plan.cName);
 		Function function = null;
 		if (plan.dynamic) {
 			plan.returnKind = javaKind(returnType);
 		} else {
+			String resolved = ctypes.resolve(plan.cName);
+			if (resolved == null) return "no C function declaration (macro or custom C): " + plan.cName;
+			plan.cName = resolved;
+			// Windows: the symbol comes from a DLL of the import libraries or from the C runtime of the default lookup
+			if (imports != null && !imports.containsKey(plan.cName) && Linker.nativeLinker().defaultLookup().find(plan.cName).isEmpty()) {
+				return "no exported symbol (custom C): " + plan.cName;
+			}
 			function = ctypes.getFunction(plan.cName);
-			if (function == null) return "no C function declaration (macro or custom C): " + plan.cName;
 			if (function.inline) return "static inline: " + plan.cName;
 			plan.returnKind = ctypes.classify(function.returnType);
 			if (plan.returnKind == Kind.UNKNOWN || plan.returnKind == Kind.STRUCT) return "C return type: " + function.returnType;
@@ -304,18 +364,44 @@ public class FFMGenerator extends JNIGenerator {
 			if (param.getFlag(FLAG_SENTINEL) && i == params.length - 1) {
 				p.mode = "sentinel";
 				p.kind = Kind.PTR;
+			} else if (param.getFlag(FLAG_STRUCT)) {
+				// passed by value: the JNI glue dereferences the Java value, a pointer or a struct object
+				if (function == null || variadic) return "struct by value without prototype: " + plan.cName;
+				Kind cKind = ctypes.classify(function.params.get(i));
+				if (p.type.isPrimitive()) {
+					if (!p.type.isType("long") || !(cKind.isInteger() || cKind == Kind.PTR || cKind == Kind.F32 || cKind == Kind.F64)) {
+						return "struct by value of C type: " + function.params.get(i);
+					}
+					p.mode = "deref";
+					p.kind = cKind;
+				} else {
+					if (cKind != Kind.STRUCT) return "struct by value, C parameter is not a struct: " + function.params.get(i);
+					p.struct = structs.get(p.type.getName());
+					if (p.struct == null) return "struct without layout: " + p.type.getSimpleName();
+					String reason = structLayout(p.struct, new ArrayList<>());
+					if (reason != null) return "struct by value: " + reason;
+					p.struct.byValue = true;
+					p.mode = "byvalue";
+					p.kind = Kind.STRUCT;
+					plan.arena = true;
+				}
 			} else if (p.type.isPrimitive()) {
 				p.mode = "value";
 				if (!(p.kind.isInteger() || p.kind == Kind.PTR || p.kind == Kind.F32 || p.kind == Kind.F64)) {
 					return "C parameter type: " + (function != null && !variadic ? function.params.get(i) : cast);
 				}
 			} else {
-				if (param.getFlag(FLAG_STRUCT)) return "struct by value: " + p.type.getSimpleName();
-				if (p.kind != Kind.PTR) return "C parameter is not a pointer: " + p.type.getSimpleName();
+				if (p.kind == Kind.I64 || p.kind == Kind.U64) {
+					// the JNI glue casts the pointer to a pointer sized integer, such as the LPARAM of SendMessage
+					p.address = true;
+				} else if (p.kind != Kind.PTR) {
+					return "C parameter is not a pointer: " + p.type.getSimpleName();
+				}
 				if (p.type.isArray()) {
 					JNIType component = p.type.getComponentType();
 					if (!component.isPrimitive() || component.isType("boolean")) return "array type: " + p.type.getTypeSignature3();
-					p.mode = isCritical(param) ? "critical" : "array";
+					// a heap segment has no address to pass as an integer
+					p.mode = isCritical(param) && !p.address ? "critical" : "array";
 				} else if (p.type.isType("java.lang.String")) {
 					if (param.getFlag(FLAG_UNICODE)) return "unicode string: " + plan.cName;
 					p.mode = "string";
@@ -442,6 +528,13 @@ public class FFMGenerator extends JNIGenerator {
 						outputln("\t\tif (arg" + i + " != null) " + p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_write(lparg" + i + ", arg" + i + ");");
 					}
 					break;
+				case "byvalue":
+					// JNI dereferences a null struct, here it is passed zeroed
+					outputln("\t\tMemorySegment lparg" + i + " = arena.allocate(" + p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_LAYOUT);");
+					if (!p.param.getFlag(FLAG_NO_IN)) {
+						outputln("\t\tif (arg" + i + " != null) " + p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_write(lparg" + i + ", arg" + i + ");");
+					}
+					break;
 				default:
 			}
 		}
@@ -458,6 +551,7 @@ public class FFMGenerator extends JNIGenerator {
 			output("rc = (" + carrier(plan.returnKind) + ") ");
 		}
 		output(holder + ".MH.invokeExact(");
+		if (plan.captureLastError) output(plan.params.isEmpty() ? "FFMLastError.state()" : "FFMLastError.state(), ");
 		for (int i = 0; i < plan.params.size(); i++) {
 			if (i != 0) output(", ");
 			Param p = plan.params.get(i);
@@ -465,7 +559,8 @@ public class FFMGenerator extends JNIGenerator {
 				case "sentinel": output("0L"); break;
 				case "value": output(toC(p.type.getName(), p.kind, "arg" + i)); break;
 				case "critical": output("FFM.heap(arg" + i + ")"); break;
-				default: output("lparg" + i);
+				case "deref": output("FFM.segment(arg" + i + ", " + byteSize(p.kind) + ").get(" + layout(p.kind) + ", 0)"); break;
+				default: output(p.address ? "lparg" + i + ".address()" : "lparg" + i);
 			}
 		}
 		outputln(");");
@@ -476,7 +571,7 @@ public class FFMGenerator extends JNIGenerator {
 			if (p.param.getFlag(FLAG_NO_OUT)) continue;
 			if (p.mode.equals("array")) {
 				outputln("\t\tFFM.copyOut(lparg" + i + ", arg" + i + ");");
-			} else if (p.mode.equals("struct")) {
+			} else if (p.mode.equals("struct") || p.mode.equals("byvalue")) {
 				outputln("\t\tif (arg" + i + " != null) " + p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_read(lparg" + i + ", arg" + i + ");");
 			}
 		}
@@ -496,14 +591,15 @@ public class FFMGenerator extends JNIGenerator {
 		outputln(" {");
 		output("\tstatic final MethodHandle MH = FFM.");
 		output(plan.dynamic ? "downcallOptional" : "downcall");
-		output(lookup != null ? "(LOOKUP, \"" : "(\"");
+		output("(" + lookupArgument(plan) + "\"");
 		output(plan.cName);
 		output("\", ");
 		StringBuilder layouts = new StringBuilder();
 		for (Param p : plan.params) {
 			if (layouts.length() != 0) layouts.append(", ");
 			boolean segment = p.mode.equals("array") || p.mode.equals("string") || p.mode.equals("struct") || p.mode.equals("critical");
-			layouts.append(segment ? "ADDRESS" : layout(p.kind));
+			if (p.mode.equals("byvalue")) layouts.append(p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_LAYOUT");
+			else layouts.append(segment && !p.address ? "ADDRESS" : layout(p.kind));
 		}
 		if (plan.returnKind == Kind.VOID) {
 			output("FunctionDescriptor.ofVoid(" + layouts + ")");
@@ -512,15 +608,46 @@ public class FFMGenerator extends JNIGenerator {
 		}
 		if (plan.firstVariadic != -1) output(", Linker.Option.firstVariadicArg(" + plan.firstVariadic + ")");
 		if (plan.critical) output(", Linker.Option.critical(true)");
+		if (plan.captureLastError) output(", Linker.Option.captureCallState(\"GetLastError\")");
 		outputln(");");
 		outputln("}");
+	}
+
+	/**
+	 * The lookup argument, with trailing comma, for {@code FFM.downcall} and {@code FFM.address}: the class lookup, or
+	 * on Windows the DLL that the import library or the <code>name_LIB</code> macro of a dynamic function names.
+	 * Functions of neither kind, the C runtime, resolve through the default lookup of {@code FFM}.
+	 */
+	String lookupArgument(Plan plan) {
+		if (imports == null) return lookup != null ? "LOOKUP, " : "";
+		String dll = plan.dynamic ? ctypes.getLibrary(plan.cName) : imports.get(plan.cName);
+		symbols.put(plan.cName, dll != null ? dll : "-");
+		return dll != null ? "FFMLibraries.get(\"" + dll + "\"), " : "";
+	}
+
+	static int byteSize(Kind kind) {
+		switch (kind) {
+			case I8: case U8: return 1;
+			case I16: case U16: return 2;
+			case I32: case U32: case F32: return 4;
+			default: return 8;
+		}
 	}
 
 	void generateSpecial(Plan plan) {
 		String struct = plan.struct != null ? plan.struct.helper() + "." + plan.struct.clazz.getSimpleName() : null;
 		switch (plan.special) {
 			case "address":
-				outputln("\treturn FFM.address(" + (lookup != null ? "LOOKUP, \"" : "\"") + plan.cName + "\");");
+				outputln("\treturn FFM.address(" + lookupArgument(plan) + "\"" + plan.cName + "\");");
+				break;
+			case "sizeof_extra": {
+				String name = plan.method.getName();
+				outputln("\treturn (int) Extra" + SUFFIX + "." + name.substring(0, name.length() - "_sizeof".length()).toUpperCase(Locale.ROOT) + ";");
+				break;
+			}
+			case "last_error":
+				// what the last function with a captured call state left, see CAPTURE_LAST_ERROR
+				outputln("\treturn FFMLastError.get();");
 				break;
 			case "sizeof":
 				outputln("\treturn (int) " + struct + "_SIZEOF;");
@@ -572,6 +699,68 @@ public class FFMGenerator extends JNIGenerator {
 		}
 	}
 
+	/**
+	 * Builds the <code>MemoryLayout</code> expression of a struct passed by value from its probed fields, with padding
+	 * for C fields that Java does not map; returns why that is not possible, or <code>null</code>.
+	 * <code>out</code> receives the expression and the alignment.
+	 */
+	String structLayout(StructInfo info, List<Object> out) {
+		TreeMap<Long, Object[]> members = new TreeMap<>();
+		for (JNIClass c = info.clazz; !c.getName().equals("java.lang.Object"); c = c.getSuperclass()) {
+			StructInfo owner = structs.get(c.getName());
+			if (owner == null) return "struct without layout: " + c.getSimpleName();
+			for (JNIField field : c.getDeclaredFields()) {
+				if (ignoreField(field)) continue;
+				String layout = owner.fields.get(field.getName());
+				if (layout == null) continue;
+				String[] parts = layout.split(",");
+				if (parts[0].equals("bit")) return "bit-field " + c.getSimpleName() + "." + field.getName();
+				long offset = Long.parseLong(parts[0]), size = Long.parseLong(parts[1]);
+				JNIType type = field.getType();
+				String expr;
+				long align;
+				if (type.isPrimitive()) {
+					Kind kind = fieldKind(size, Integer.parseInt(parts[2]), parts[3].equals("1"));
+					expr = layout(kind);
+					align = size;
+				} else if (type.isArray()) {
+					long elementSize = Long.parseLong(parts[4]);
+					JNIType component = type.getComponentType();
+					Kind element = component.isType("float") || component.isType("double") ? (elementSize == 4 ? Kind.F32 : Kind.F64)
+						: fieldKind(elementSize, 1, true);
+					expr = "MemoryLayout.sequenceLayout(" + size / elementSize + ", " + layout(element) + ")";
+					align = elementSize;
+				} else {
+					StructInfo nested = structs.get(type.getName());
+					if (nested == null) return "struct without layout: " + type.getSimpleName();
+					List<Object> inner = new ArrayList<>();
+					String reason = structLayout(nested, inner);
+					if (reason != null) return reason;
+					expr = (String) inner.get(0);
+					align = (Long) inner.get(1);
+				}
+				if (offset % align != 0) return "packed field " + c.getSimpleName() + "." + field.getName();
+				if (members.put(offset, new Object[] {expr, size, align}) != null) return "overlapping fields (union) in " + c.getSimpleName();
+			}
+		}
+		StringBuilder b = new StringBuilder("MemoryLayout.structLayout(");
+		long position = 0, alignment = 1;
+		for (Map.Entry<Long, Object[]> member : members.entrySet()) {
+			long offset = member.getKey(), size = (Long) member.getValue()[1];
+			if (offset < position) return "overlapping fields (union) in " + info.clazz.getSimpleName();
+			if (position != 0) b.append(", ");
+			if (offset > position) b.append("MemoryLayout.paddingLayout(" + (offset - position) + "), ");
+			b.append(member.getValue()[0]);
+			position = offset + size;
+			alignment = Math.max(alignment, (Long) member.getValue()[2]);
+		}
+		if (position > info.size || info.size % alignment != 0) return "size " + info.size + " does not fit its fields";
+		if (position < info.size) b.append(position != 0 ? ", " : "").append("MemoryLayout.paddingLayout(" + (info.size - position) + ")");
+		out.add(b.append(")").toString());
+		out.add(alignment);
+		return null;
+	}
+
 	/** Generates the <code>Structs_FFM</code> class for the structs of one package. */
 	public void generateStructs(String packageName, List<StructInfo> infos) {
 		generateHeader(packageName);
@@ -582,6 +771,11 @@ public class FFMGenerator extends JNIGenerator {
 			String name = info.clazz.getSimpleName();
 			String type = info.clazz.getName();
 			outputln("public static final long " + name + "_SIZEOF = " + info.size + "L;");
+			if (info.byValue) {
+				List<Object> layout = new ArrayList<>();
+				if (structLayout(info, layout) != null) throw new IllegalStateException(name);
+				outputln("public static final StructLayout " + name + "_LAYOUT = " + layout.get(0) + ";");
+			}
 			for (JNIField field : info.clazz.getDeclaredFields()) {
 				if (ignoreField(field)) continue;
 				String layout = info.fields.get(field.getName());

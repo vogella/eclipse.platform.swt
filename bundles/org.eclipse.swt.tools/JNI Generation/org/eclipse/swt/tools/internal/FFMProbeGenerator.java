@@ -36,28 +36,35 @@ public class FFMProbeGenerator extends JNIGenerator {
 		outputln("int main(void) {");
 	}
 
-	/** C types whose size the FFM code needs although no Java struct class describes them, per unit. */
+	static final String GTK_OS = "org.eclipse.swt.internal.gtk.OS";
+	static final String WIN32_OS = "org.eclipse.swt.internal.win32.OS";
+	static final String WIN32_COM = "org.eclipse.swt.internal.ole.win32.COM";
+
+	/** C types whose size the FFM code needs although no Java struct class describes them, per main class. */
 	static final String[][] EXTRA_SIZES = {
-		{"os", "GtkContainer"}, {"os", "GtkContainerClass"},
-		{"os", "GtkTextIter"}, {"os", "GtkTreeIter"}, {"os", "GPollFD"}, {"os", "GValue"},
-		{"os", "GtkCellRendererText"}, {"os", "GtkCellRendererTextClass"},
-		{"os", "GtkCellRendererPixbuf"}, {"os", "GtkCellRendererPixbufClass"},
-		{"os", "GtkCellRendererToggle"}, {"os", "GtkCellRendererToggleClass"},
-		{"os", "GtkContainerAccessible"}, {"os", "GtkContainerAccessibleClass"},
+		// the <type>_sizeof() macros of os_custom.h and com_custom.h
+		{WIN32_OS, "SCRIPT_STRING_ANALYSIS"}, {WIN32_OS, "PROPVARIANT"}, {WIN32_OS, "LOGPEN"},
+		{WIN32_COM, "ELEMDESC"}, {WIN32_COM, "TYPEDESC"},
+		{GTK_OS, "GtkContainer"}, {GTK_OS, "GtkContainerClass"},
+		{GTK_OS, "GtkTextIter"}, {GTK_OS, "GtkTreeIter"}, {GTK_OS, "GPollFD"}, {GTK_OS, "GValue"},
+		{GTK_OS, "GtkCellRendererText"}, {GTK_OS, "GtkCellRendererTextClass"},
+		{GTK_OS, "GtkCellRendererPixbuf"}, {GTK_OS, "GtkCellRendererPixbufClass"},
+		{GTK_OS, "GtkCellRendererToggle"}, {GTK_OS, "GtkCellRendererToggleClass"},
+		{GTK_OS, "GtkContainerAccessible"}, {GTK_OS, "GtkContainerAccessibleClass"},
 	};
 
-	/** Struct fields the FFM code needs the offset of, per unit. */
+	/** Struct fields the FFM code needs the offset of, per main class. */
 	static final String[][] EXTRA_OFFSETS = {
-		{"os", "GtkWidgetClass", "realize"}, {"os", "GtkWidgetClass", "map"},
-		{"os", "GtkWidgetClass", "get_preferred_width"}, {"os", "GtkWidgetClass", "get_preferred_height"},
-		{"os", "GtkWidgetClass", "size_allocate"}, {"os", "GtkWidgetClass", "get_accessible"},
-		{"os", "GtkContainerClass", "add"}, {"os", "GtkContainerClass", "remove"}, {"os", "GtkContainerClass", "forall"},
+		{GTK_OS, "GtkWidgetClass", "realize"}, {GTK_OS, "GtkWidgetClass", "map"},
+		{GTK_OS, "GtkWidgetClass", "get_preferred_width"}, {GTK_OS, "GtkWidgetClass", "get_preferred_height"},
+		{GTK_OS, "GtkWidgetClass", "size_allocate"}, {GTK_OS, "GtkWidgetClass", "get_accessible"},
+		{GTK_OS, "GtkContainerClass", "add"}, {GTK_OS, "GtkContainerClass", "remove"}, {GTK_OS, "GtkContainerClass", "forall"},
 	};
 
 	@Override
 	public void generate() {
 		super.generate();
-		String unit = getOutputName();
+		String unit = getMainClass().getName();
 		for (String[] extra : EXTRA_SIZES) {
 			if (!extra[0].equals(unit)) continue;
 			outputln("\tprintf(\"EXTRA." + extra[1] + "=%zu\\n\", sizeof(" + extra[1] + "));");
@@ -98,6 +105,9 @@ public class FFMProbeGenerator extends JNIGenerator {
 				outputln("\t}");
 			} else if (fieldType.isPrimitive()) {
 				outputln("\tprintf(\"" + key + "=%zu,%zu,%d,%d,0\\n\", " + offset + ", sizeof(" + expr + "), __builtin_classify_type(" + expr + "), (int)SWT_SIGNED(" + expr + "));");
+			} else if (fieldType.isArray() && field.getFlag(FLAG_STRUCT)) {
+				// a struct copied as the bytes of a Java array
+				outputln("\tprintf(\"" + key + "=%zu,%zu,0,0,1\\n\", " + offset + ", sizeof(" + expr + "));");
 			} else if (fieldType.isArray()) {
 				outputln("\tprintf(\"" + key + "=%zu,%zu,0,0,%zu\\n\", " + offset + ", sizeof(" + expr + "), sizeof(" + expr + "[0]));");
 			} else {
