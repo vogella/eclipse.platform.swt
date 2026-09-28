@@ -11,7 +11,7 @@
 ###############################################################################
 # Generates the GTK3 FFM bindings from the SWT native declarations.
 #
-# Needs clang, gcc, pkg-config with the GTK3 and GL development headers, a JDK 21+ and
+# Needs clang, gcc, pkg-config with the GTK3 and GL development headers, a JDK 25 and
 # an Eclipse installation (ECLIPSE_HOME) providing JDT Core for the generator.
 # Intermediate files go to BUILD_DIR (default: /tmp/swt-ffm-build).
 
