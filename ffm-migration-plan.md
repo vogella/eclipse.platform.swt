@@ -253,6 +253,51 @@ A Speed Eclipse IDE built that way (Java 25, GTK 3.24.52, Wayland, two monitors 
 Its loaded classes show 665 generated functions linked after normal use and `FFMSwtFixed` and `FFMAccessible` serving every control; the JNI libraries stay mapped, as described above; at that time `C` and `Callback` still went through them.
 Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks are the event loop and PNG encoding, as expected.
 
+## Phase 5: Win32
+
+### Size (measured on master)
+
+| Class | Natives | Notes |
+| --- | --- | --- |
+| `OS` | 712 | plain C calls into `user32`, `gdi32`, `comctl32` and friends |
+| `Gdip` | 188 | 136 are `flags=cpp`, `new` or `delete`: inline C++ wrapper classes without exported symbols |
+| `COM` | 146 | 69 `VtblCall` overloads |
+| `OsVersion` | 2 | |
+
+About 220 struct classes (128 Win32, 92 OLE), 21 `flags=struct` parameters and 8 `flags=dynamic` functions.
+The hand written code is small: `os_custom.c` has 445 lines, `com_custom.cpp` 451.
+
+### What carries over from GTK
+
+* The generator, reading C types from a clang AST dump of `os.c` and `com.c` and struct layouts from a compiled probe.
+* `FFMCallback`: window procs, hooks and the vtables of `COMObject` already go through `Callback`, and x64 and aarch64 have a single calling convention.
+* The cross check, the side by side JUnit comparison and the build time rewrite.
+
+### What is new
+
+* LLP64: `long` is 32 bits on Windows, and the headers bring unions, packed structs and `A`/`W` macro names.
+  The AST dump and the probes have to use `clang-cl` and MSVC against the Windows SDK, for x64 and aarch64.
+* Struct by value parameters (21), which GTK did not need.
+* `GetLastError`: the JVM can overwrite the last error between a downcall and `OS.GetLastError()` (9 call sites).
+  Functions whose error is read need `Linker.Option.captureCallState("GetLastError")`.
+* `VtblCall` becomes a read of the function pointer from the vtable plus a downcall handle per descriptor.
+* GDI+: the C++ wrappers are inline header code, so each of the 136 natives has to be reimplemented on the flat API that `gdiplus.dll` exports (`GdipCreateBitmapFromHBITMAP`, `GdipDrawLineI`, ...), checked pixel for pixel.
+* WebView2: the C++ callback, host and options objects of `com_custom.cpp` become Java COM objects with upcall vtables, as `COMObject` does for OLE.
+* `os_custom.c`: the `DllMain` instance handle, the `DPI_AWARENESS_CONTEXT_*` constants and the validated `uxtheme` dark mode ordinals 133, 135 and 140 move to Java.
+
+### Steps
+
+Each step runs in its own worktree so they can proceed in parallel; step 1 is the only one the others build on.
+
+1. Generator backend for Win32 (`generate-win32`): `clang-cl` AST dump, MSVC layout probes, LLP64 types, struct by value, `captureCallState`; generate `OS_FFM` and `COM_FFM` with a coverage report.
+2. Runtime: `VtblCall`, `GetLastError` capture and `FFMCallback` on Windows.
+3. `os_custom.c` in Java.
+4. WebView2 COM objects in Java.
+5. GDI+ on the flat API.
+6. Integrate, then run the cross check and the JUnit comparison against the JNI build.
+
+The goal is to drop `swt-win32`, `swt-gdip` and `swt-osversion`, and with them the Visual Studio build.
+
 ## Next steps
 
 1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
@@ -260,7 +305,7 @@ Its Error Log shows no entry from SWT, and the only FFM frames in logged stacks 
 2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance), without an AOT cache: profile the first iteration at a finer sampling interval to split handle linking, `LambdaForm` spinning and interpreted execution, then attack the largest part.
    Replace the confined arena per copied array with a per-thread allocator for the warm cost.
 3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
-4. Then GTK4 on Linux, followed by Win32 and Cocoa (phase 5).
+4. Then GTK4 on Linux, Win32 (see Phase 5: Win32) and Cocoa.
 
 ## Open questions
 
