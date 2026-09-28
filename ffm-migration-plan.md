@@ -319,7 +319,7 @@ The goal is to drop `swt-win32`, `swt-gdip` and `swt-osversion`, and with them t
 The only known difference is `NOTIFYICONDATA`, whose Java `sizeof` is `NOTIFYICONDATA_V2_SIZE`.
 In the same run JNI returned 0 from `GetLastError` right after a failing `GetMenuItemCount`, while the capture returned 1401, the error the call set.
 
-Open for later steps: the JNI library binds `comctl32` version 6 through its manifest, while `FFMLibraries` loads `comctl32.dll` without an activation context, which may give version 5.82; not checked yet.
+`FFMLibraries` loads `comctl32.dll` on first use, after `OS` activated the SWT manifest, so it resolves to version 6 (checked in the integration).
 
 ### Runtime (step 2)
 
@@ -327,9 +327,36 @@ Open for later steps: the JNI library binds `comctl32` version 6 through its man
 * `FFMCallback` needs nothing Windows specific; its entry count now follows `callback.c` and only counts callbacks that reach Java, while retired stubs wait for all stubs in flight.
 * `FFMCom` implements the 69 `VtblCall` overloads and `VtblCall_put_Bounds`, with one address-less downcall handle per call shape (46).
   A null struct passed by value throws `NullPointerException`, where the JNI glue dereferences NULL.
-* `FFMLastError` keeps one `captureCallState("GetLastError")` buffer per thread and implements `OS.GetLastError`.
+* `FFMLastError` keeps one `captureCallState("GetLastError")` buffer per thread; the generated `OS_FFM.GetLastError` returns it.
   JNI loses the error in practice: `GetMenuItemCount` on a bad handle followed by `OS.GetLastError()` returns 0, the capturing binding 1401.
 * `test-win32-runtime.sh` runs `FFMWin32RuntimeCheck`: window procs, nested and failing callbacks, disabled callbacks, hooks, timer procs, callbacks on native threads and array based COM slots against JNI `Callback`, every `VtblCall` overload against JNI on a recording object, `IShellLinkW` and `IPersistFile` through both, and the captured last error.
+
+### Status of phase 5
+
+All 1,048 natives of `OS`, `COM`, `Gdip` and `OsVersion`, plus `C` and `Callback`, have an FFM implementation, and the FFM build runs without `swt-win32`, `swt-gdip` and `swt-osversion`.
+Only `SWT_AWT` (`swt-awt`) and `WGL` (`swt-wgl`) stay on JNI; `apply-ffm.sh win32` does not rewrite them.
+
+* Generated (step 1): 796 natives.
+* Hand written, registered through the implementation files of the rewriter, not `HANDWRITTEN`: `FFMCom` (`VtblCall`), `FFMOsCustom` (`os_custom.c`), `FFMComCustom` (`com_custom.cpp`, `PathToPIDL`), `FFMGdipGraphics` and `FFMGdipObjects` (GDI+ on the flat API, every handle a raw `Gp*` pointer; `FFMGdipObjects` names `Gdip` through `IMPLEMENTS` so its `MoveMemory` does not capture `OS.MoveMemory`), `FFMWin32Macros` (`IsEqualGUID`, `TreeView_GetItemRect`, `GID_ROTATE_ANGLE_FROM_ARGUMENT`, `NOTIFYICONDATA_V2_SIZE`, `PTR_sizeof`, `setenv`).
+* `FFMResources` replaces what the FFM build loses with `swt.rc`: with `GetLibraryHandle` 0, `CreateActCtx` reads the SWT manifest from a temporary copy of a class path resource, so `comctl32` is still version 6, and `LoadImage` builds the `Text` search and cancel icons 101 to 104 from the `.ico` files with `LookupIconIdFromDirectoryEx` and `CreateIconFromResourceEx`, as a resource load does.
+* `build-win32.sh jni|ffm` and `test-win32.sh` mirror the GTK scripts; `apply-ffm.sh gtk win32` switches either or both, with a rewritten `C` and `Callback` per platform in `<platform>-ffm-shared`.
+  The win32 fragments list `common-ffm` and `win32-ffm`; the Tycho build of both fragments compiles them with ECJ.
+
+Verification, Windows 11 x64, JDK 25, against JNI DLLs built from this checkout:
+
+* `FFMCrossCheckWin32`: 3,997 checks, 0 mismatches, including the macros and the icons of `FFMResources`, pixel for pixel against `swt-win32` at seven sizes.
+* `FFMWin32RuntimeCheck` 480 checks, the `os_custom.c` check, `GdipGraphicsCrossCheck` 137 checks, `FFMGdipObjectsCheck` 16,105 checks: 0 mismatches. `GdipScenes` on the JNI build and on the full FFM build: 30 images and 258 values identical. `FFMWebView2Check` passes on both builds.
+* JUnit, 137 classes of `org.eclipse.swt.tests` (widgets, graphics, custom, browser, accessibility, dnd, layout, events, program, printing) and `org.eclipse.swt.tests.win32`, 4,633 tests, JNI build then FFM build without any SWT library: 4,361 against 4,357 passed, 64 aborted and 8 skipped on both.
+  The 8 differences are focus and position dependent (`Browser.test_toControl*`/`test_toDisplay*` flip in both directions, `Shell.test_Issue450_NoShellActivateOnSetFocus`) or remote URLs (`Browser_IE.test_setUrl_remote*`); rerunning those classes gave identical outcomes.
+  The failures on both builds come from the environment (no SVG rasterizer, off by one pixel positions).
+
+Open:
+
+* `GetLastError` returns what the last capturing call left; `FFMGenerator.CAPTURE_LAST_ERROR` has to follow the call sites.
+* Failed GDI+ constructors return 0 where the C++ gave an object without a native one, so SWT raises `ERROR_NO_HANDLES` instead of drawing nothing.
+* The callback exception slot is not per thread, which matters more for COM threads than on GTK.
+* aarch64 is untested: the layouts, the `uxtheme` validators and the struct by value classification only ran on x64.
+* Not measured: performance and the cold start cost on Windows; a product build with `apply-ffm.sh win32` under Tycho and an IDE session.
 
 ## Next steps
 
