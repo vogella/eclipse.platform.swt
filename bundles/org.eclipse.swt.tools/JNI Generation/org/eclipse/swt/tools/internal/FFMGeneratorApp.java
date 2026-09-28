@@ -195,6 +195,7 @@ public class FFMGeneratorApp {
 		"org.eclipse.swt.awt.SWT_AWT", "org.eclipse.swt.internal.ffm.FFMAwt");
 
 	static final Pattern IMPLEMENTATION = Pattern.compile("^\\tpublic static (?:synchronized |final )*[\\w\\[\\]]+ (\\w+)\\(", Pattern.MULTILINE);
+	static final Pattern IMPLEMENTS = Pattern.compile("static final String IMPLEMENTS = \"([\\w.]+)\";");
 
 	/**
 	 * Maps a native name to the hand written FFM class implementing it, read from the public static
@@ -206,8 +207,11 @@ public class FFMGeneratorApp {
 			String source = Files.readString(Paths.get(file));
 			String name = Paths.get(file).getFileName().toString().replace(".java", "");
 			String packageName = source.replaceAll("(?s).*?package\\s+([\\w.]+);.*", "$1");
+			// a class naming the natives class it implements replaces only the natives of that class
+			Matcher target = IMPLEMENTS.matcher(source);
+			String prefix = target.find() ? target.group(1) + "#" : "";
 			Matcher m = IMPLEMENTATION.matcher(source);
-			while (m.find()) result.put(m.group(1), packageName + "." + name);
+			while (m.find()) result.put(prefix + m.group(1), packageName + "." + name);
 		}
 		return result;
 	}
@@ -238,7 +242,7 @@ public class FFMGeneratorApp {
 						names.add(pm.group(2));
 					}
 					String target;
-					String handwrittenMethod = implementations.get(name);
+					String handwrittenMethod = implementations.getOrDefault(className + "#" + name, implementations.get(name));
 					if (handwritten != null) {
 						target = handwritten;
 					} else if (handwrittenMethod != null) {
