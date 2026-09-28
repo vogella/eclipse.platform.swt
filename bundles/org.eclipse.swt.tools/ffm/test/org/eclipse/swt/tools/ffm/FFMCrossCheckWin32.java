@@ -72,6 +72,7 @@ public class FFMCrossCheckWin32 {
 		Display display = new Display();
 		try {
 			checkFunctions(display);
+			checkHandwritten(display);
 		} finally {
 			display.dispose();
 		}
@@ -409,6 +410,78 @@ public class FFMCrossCheckWin32 {
 
 		System.out.println("Compared " + (checks - start) + " call results");
 		shell.dispose();
+	}
+
+	/** The macros of FFMWin32Macros and the swt.rc resources FFMResources serves without swt-win32. */
+	static void checkHandwritten(Display display) {
+		int start = checks;
+		check("NOTIFYICONDATA_V2_SIZE", OS.NOTIFYICONDATA_V2_SIZE(), FFMWin32Macros.NOTIFYICONDATA_V2_SIZE());
+		check("PTR_sizeof", C.PTR_sizeof(), FFMWin32Macros.PTR_sizeof());
+		for (long arg : new long[] {0, 1, 32767, 32768, 65535, 65536, -1}) {
+			check("GID_ROTATE_ANGLE_FROM_ARGUMENT(" + arg + ")", OS.GID_ROTATE_ANGLE_FROM_ARGUMENT(arg), FFMWin32Macros.GID_ROTATE_ANGLE_FROM_ARGUMENT(arg));
+		}
+		GUID a = new GUID(), b = new GUID();
+		COM.CLSIDFromString("{00000000-0000-0000-C000-000000000046}\0".toCharArray(), a);
+		COM.CLSIDFromString("{00000000-0000-0000-C000-000000000046}\0".toCharArray(), b);
+		check("IsEqualGUID equal", COM.IsEqualGUID(a, b), FFMWin32Macros.IsEqualGUID(a, b));
+		for (int i = 0; i < 4; i++) {
+			GUID c = new GUID();
+			COM.CLSIDFromString("{00000000-0000-0000-C000-000000000046}\0".toCharArray(), c);
+			switch (i) {
+				case 0 -> c.Data1++;
+				case 1 -> c.Data2++;
+				case 2 -> c.Data3++;
+				default -> c.Data4[7]++;
+			}
+			check("IsEqualGUID differs in part " + i, COM.IsEqualGUID(a, c), FFMWin32Macros.IsEqualGUID(a, c));
+		}
+
+		Shell shell = new Shell(display);
+		org.eclipse.swt.widgets.Tree tree = new org.eclipse.swt.widgets.Tree(shell, SWT.BORDER);
+		tree.setBounds(0, 0, 200, 200);
+		org.eclipse.swt.widgets.TreeItem item = new org.eclipse.swt.widgets.TreeItem(tree, 0);
+		item.setText("item");
+		new org.eclipse.swt.widgets.TreeItem(item, 0).setText("child");
+		item.setExpanded(true);
+		shell.open();
+		long hItem = OS.SendMessage(tree.handle, OS.TVM_GETNEXTITEM, OS.TVGN_ROOT, 0);
+		for (boolean code : new boolean[] {true, false}) {
+			for (long h : new long[] {hItem, OS.SendMessage(tree.handle, OS.TVM_GETNEXTITEM, OS.TVGN_CHILD, hItem), 0x1234}) {
+				RECT jni = new RECT(), ffm = new RECT();
+				check("TreeView_GetItemRect(" + code + ")", OS.TreeView_GetItemRect(tree.handle, h, jni, code), FFMWin32Macros.TreeView_GetItemRect(tree.handle, h, ffm, code));
+				check("TreeView_GetItemRect(" + code + ") rect", jni, ffm);
+			}
+		}
+		shell.dispose();
+
+		// the icons of swt.rc, from the swt-win32 module and from the .ico files
+		for (int id = 101; id <= 104; id++) {
+			for (int size : new int[] {16, 20, 24, 32, 40, 48, 64}) {
+				long jni = OS.LoadImage(OS.GetLibraryHandle(), id, OS.IMAGE_ICON, size, size, 0);
+				long ffm = FFMResources.LoadImage(0, id, OS.IMAGE_ICON, size, size, 0);
+				check("LoadImage icon " + id + " size " + size + " loaded", true, jni != 0 && ffm != 0);
+				if (jni == 0 || ffm == 0) continue;
+				org.eclipse.swt.graphics.Image jniImage = org.eclipse.swt.graphics.Image.win32_new(display, SWT.ICON, jni, 100);
+				org.eclipse.swt.graphics.Image ffmImage = org.eclipse.swt.graphics.Image.win32_new(display, SWT.ICON, ffm, 100);
+				org.eclipse.swt.graphics.ImageData jniData = jniImage.getImageData(), ffmData = ffmImage.getImageData();
+				check("LoadImage icon " + id + " size " + size + " pixels", jniData.data, ffmData.data);
+				check("LoadImage icon " + id + " size " + size + " alpha", jniData.alphaData, ffmData.alphaData);
+				check("LoadImage icon " + id + " size " + size + " mask", jniData.maskData, ffmData.maskData);
+				jniImage.dispose();
+				ffmImage.dispose();
+			}
+		}
+		check("LoadImage OEM icon passes through", OS.LoadImage(0, 32512, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED) != 0,
+			FFMResources.LoadImage(0, 32512, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED) != 0);
+
+		// the manifest, from a temporary file when there is no module
+		ACTCTX context = new ACTCTX();
+		context.cbSize = ACTCTX.sizeof;
+		context.dwFlags = OS.ACTCTX_FLAG_RESOURCE_NAME_VALID | OS.ACTCTX_FLAG_HMODULE_VALID;
+		context.lpResourceName = OS.MANIFEST_RESOURCE_ID;
+		long hActCtx = FFMResources.CreateActCtx(context);
+		check("CreateActCtx from the manifest file", true, hActCtx != 0 && hActCtx != -1);
+		System.out.println("Compared " + (checks - start) + " macro and resource results");
 	}
 
 	/** BLENDFUNCTION by value: the same blend into two bitmaps, compared pixel by pixel. */
