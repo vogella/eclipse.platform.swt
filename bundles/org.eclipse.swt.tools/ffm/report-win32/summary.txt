@@ -1,0 +1,15 @@
+org.eclipse.swt.internal.C                              FFM    22  JNI     2
+org.eclipse.swt.internal.win32.OS                       FFM   700  JNI    12
+org.eclipse.swt.internal.ole.win32.COM                  FFM    72  JNI    74
+org.eclipse.swt.internal.win32.version.OsVersion        FFM     2  JNI     0
+org.eclipse.swt.internal.gdip.Gdip                      FFM     0  JNI   188
+
+Total FFM 796, JNI 276
+
+Kept on JNI by reason:
+   188  GDI+
+     1  const
+    69  function pointer call
+     5  no C function declaration (macro or custom C)
+     1  no exported symbol (custom C)
+    12  no_gen
