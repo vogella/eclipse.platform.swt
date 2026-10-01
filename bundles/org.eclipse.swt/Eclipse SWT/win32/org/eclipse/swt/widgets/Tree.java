@@ -93,7 +93,7 @@ public class Tree extends Composite {
 	boolean lockSelection, oldSelected, newSelected, ignoreColumnMove, ignoreColumnResize;
 	boolean linesVisible, customDraw, painted;
 	boolean ignoreCustomDraw, ignoreDrawForeground, ignoreDrawBackground, ignoreDrawFocus;
-	boolean ignoreDrawSelection, ignoreDrawHot, ignoreFullSelection, explorerTheme;
+	boolean ignoreDrawSelection, ignoreDrawHot, ignoreFullSelection, explorerTheme, useDarkModeExplorerTheme;
 	boolean createdAsRTL;
 	boolean headerItemDragging;
 	int scrollWidth, selectionForeground;
@@ -389,7 +389,7 @@ private void drawThemeItemBackground (long hDC, boolean selected, boolean hot, R
 		if (hot) {
 			iStateId = OS.TREIS_HOTSELECTED;
 		} else {
-			iStateId = OS.GetFocus () == handle ? OS.TREIS_SELECTED : OS.TREIS_SELECTEDNOTFOCUS;
+			iStateId = OS.GetFocus () == handle ? OS.TREIS_SELECTED : getSelectedNotFocusState ();
 		}
 	}
 	if (iStateId == OS.TREIS_SELECTEDNOTFOCUS && fillsUnfocusedSelection ()) {
@@ -951,6 +951,11 @@ LRESULT CDDS_ITEMPOSTPAINT (NMTVCUSTOMDRAW nmcd, long wParam, long lParam) {
 		}
 	}
 	return new LRESULT (OS.CDRF_DODEFAULT);
+}
+
+private int getSelectedNotFocusState () {
+	/* DarkMode_Explorer draws the not-focused state as an outline without fill */
+	return useDarkModeExplorerTheme ? OS.TREIS_SELECTED : OS.TREIS_SELECTEDNOTFOCUS;
 }
 
 int getFirstColumnIndex() {
@@ -1887,6 +1892,7 @@ Point computeSizeInPixels (Point hintInPoints, int zoom, boolean changed) {
 @Override
 void createHandle () {
 	super.createHandle ();
+	useDarkModeExplorerTheme = display.useDarkModeExplorerTheme;
 	state &= ~(CANVAS | THEME_BACKGROUND);
 
 	/* Use the Explorer theme */
