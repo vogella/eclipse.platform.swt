@@ -99,11 +99,11 @@ public static String [] getExtensions () {
 		NSWorkspace workspace = NSWorkspace.sharedWorkspace();
 		NSString CFBundleDocumentTypes = NSString.stringWith("CFBundleDocumentTypes");
 		NSString CFBundleTypeExtensions = NSString.stringWith("CFBundleTypeExtensions");
+		NSFileManager fileManager = NSFileManager.defaultManager();
 		NSArray array = new NSArray(OS.NSSearchPathForDirectoriesInDomains(OS.NSAllApplicationsDirectory, OS.NSAllDomainsMask, true));
 		int count = (int)array.count();
 		for (int i = 0; i < count; i++) {
 			NSString path = new NSString(array.objectAtIndex(i));
-			NSFileManager fileManager = NSFileManager.defaultManager();
 			NSDirectoryEnumerator enumerator = fileManager.enumeratorAtPath(path);
 			if (enumerator != null) {
 				id id;
@@ -167,13 +167,11 @@ private static NSURL findAppURLForExtension(NSString ext) {
 }
 
 static Program getProgram(NSBundle bundle) {
-	NSString CFBundleName = NSString.stringWith("CFBundleName");
-	NSString CFBundleDisplayName = NSString.stringWith("CFBundleDisplayName");
 	NSString fullPath = bundle.bundlePath();
 	NSString identifier = bundle.bundleIdentifier();
-	id bundleName = bundle.objectForInfoDictionaryKey(CFBundleDisplayName);
+	id bundleName = bundle.objectForInfoDictionaryKey(NSString.stringWith("CFBundleDisplayName"));
 	if (bundleName == null) {
-		bundleName = bundle.objectForInfoDictionaryKey(CFBundleName);
+		bundleName = bundle.objectForInfoDictionaryKey(NSString.stringWith("CFBundleName"));
 	}
 	if (bundleName == null) {
 		if (fullPath == null) return null;
@@ -199,11 +197,11 @@ public static Program [] getPrograms () {
 	try {
 		LinkedHashSet<Program> programs = new LinkedHashSet<>();
 		NSWorkspace workspace = NSWorkspace.sharedWorkspace();
+		NSFileManager fileManager = NSFileManager.defaultManager();
 		NSArray array = new NSArray(OS.NSSearchPathForDirectoriesInDomains(OS.NSAllApplicationsDirectory, OS.NSAllDomainsMask, true));
 		int count = (int)array.count();
 		for (int i = 0; i < count; i++) {
 			NSString path = new NSString(array.objectAtIndex(i));
-			NSFileManager fileManager = NSFileManager.defaultManager();
 			NSDirectoryEnumerator enumerator = fileManager.enumeratorAtPath(path);
 			if (enumerator != null) {
 				id id;
