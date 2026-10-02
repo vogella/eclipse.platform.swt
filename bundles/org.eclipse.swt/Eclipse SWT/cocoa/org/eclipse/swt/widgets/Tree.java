@@ -82,7 +82,7 @@ public class Tree extends Composite {
 	NSButtonCell buttonCell;
 	NSTableHeaderView headerView;
 	TreeItem [] items;
-	int itemCount;
+	int itemCount, lastIndexOf;
 	TreeColumn [] columns;
 	TreeColumn sortColumn;
 	int columnCount;
@@ -715,7 +715,7 @@ void createItem (TreeItem item, TreeItem parentItem, int index) {
 	if (index == -1) index = count;
 	if (!(0 <= index && index <= count)) error (SWT.ERROR_INVALID_RANGE);
 	if (count == items.length) {
-		TreeItem [] newItems = new TreeItem [items.length + 4];
+		TreeItem [] newItems = new TreeItem [Math.max (4, items.length * 3 / 2)];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 		if (parentItem != null) {
@@ -2060,8 +2060,19 @@ public int indexOf (TreeItem item) {
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (item.parentItem != null) return -1;
-	for (int i = 0; i < itemCount; i++) {
-		if (item == items[i]) return i;
+	if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
+		if (items [lastIndexOf] == item) return lastIndexOf;
+		if (items [lastIndexOf + 1] == item) return ++lastIndexOf;
+		if (items [lastIndexOf - 1] == item) return --lastIndexOf;
+	}
+	if (lastIndexOf < itemCount / 2) {
+		for (int i = 0; i < itemCount; i++) {
+			if (items [i] == item) return lastIndexOf = i;
+		}
+	} else {
+		for (int i = itemCount - 1; i >= 0; --i) {
+			if (items [i] == item) return lastIndexOf = i;
+		}
 	}
 	return -1;
 }
