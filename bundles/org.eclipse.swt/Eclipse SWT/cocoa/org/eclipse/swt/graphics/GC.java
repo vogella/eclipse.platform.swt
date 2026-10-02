@@ -123,9 +123,15 @@ public final class GC extends Resource {
 		private NSRange range;
 
 		/**
-		 * Key object to use for Cache consisting of text string, alpho, font and foreground color
+		 * Key object to use for Cache consisting of text string, alpha, font and foreground color
+		 * (as primitive RGBA components, so that equal colors result in equal keys)
 		 */
-		private static record Key(String string, int alpha, long font, double[] fgColor) {}
+		private static record Key(String string, int alpha, long font, boolean hasFg, double r, double g, double b, double a) {
+			static Key of(String string, int alpha, long font, double[] fg) {
+				if (fg == null) return new Key(string, alpha, font, false, 0, 0, 0, 0);
+				return new Key(string, alpha, font, true, fg[0], fg[1], fg[2], fg[3]);
+			}
+		}
 
 		/**
 		 * Simple {@link GCTextData} cache limited to a set number of items.
@@ -137,7 +143,7 @@ public final class GC extends Resource {
 
 				@Override
 				protected boolean removeEldestEntry(Map.Entry<Key, GCTextData> eldest) {
-					if (size() >= cacheSize) {
+					if (size() > cacheSize) {
 						((GCTextData) eldest.getValue()).release();
 						return true;
 					}
@@ -1899,7 +1905,7 @@ private void doFastDrawText(String string, int x, int y) {
 private GCTextData getTextData(String string) {
 	// Create a cache key from the string, alpha, font and foreground color
 	// This ensures that the same string with different attributes is drawn correctly
-	GCTextData.Key key = new GCTextData.Key(string, data.alpha,
+	GCTextData.Key key = GCTextData.Key.of(string, data.alpha,
 			(data.font == null || data.font.handle == null) ? 0 : data.font.handle.id,
 			data.foreground);
 
