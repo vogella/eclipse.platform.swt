@@ -197,6 +197,49 @@ void addTraits(NSMutableAttributedString attrStr, NSRange range) {
 	}
 }
 
+/**
+ * Cached attribute dictionaries (font, traits and optionally the paragraph
+ * style) used for text measuring, indexed by whether a paragraph style is set.
+ * They are owned by the receiver and released in destroy().
+ */
+private NSMutableDictionary[] textAttributes;
+private long textAttributesFont;
+private int textAttributesTraits;
+
+/**
+ * Returns the cached attribute dictionary for measuring text with this font.
+ * The result is owned by the receiver and must not be modified or released.
+ */
+NSMutableDictionary getTextAttributes(NSParagraphStyle paragraphStyle) {
+	if (textAttributes != null && (textAttributesFont != handle.id || textAttributesTraits != extraTraits)) {
+		releaseTextAttributes();
+	}
+	if (textAttributes == null) {
+		textAttributes = new NSMutableDictionary[2];
+		textAttributesFont = handle.id;
+		textAttributesTraits = extraTraits;
+	}
+	int index = paragraphStyle != null ? 1 : 0;
+	NSMutableDictionary dict = textAttributes[index];
+	if (dict == null) {
+		dict = ((NSMutableDictionary)new NSMutableDictionary().alloc()).initWithCapacity(3);
+		dict.setObject(handle, OS.NSFontAttributeName);
+		addTraits(dict);
+		if (paragraphStyle != null) dict.setObject(paragraphStyle, OS.NSParagraphStyleAttributeName);
+		textAttributes[index] = dict;
+	}
+	return dict;
+}
+
+private void releaseTextAttributes() {
+	if (textAttributes != null) {
+		for (NSMutableDictionary dict : textAttributes) {
+			if (dict != null) dict.release();
+		}
+		textAttributes = null;
+	}
+}
+
 void addTraits(NSMutableDictionary dict) {
 	if ((extraTraits & OS.NSBoldFontMask) != 0) {
 		dict.setObject(NSNumber.numberWithDouble(SYNTHETIC_BOLD), OS.NSStrokeWidthAttributeName);
@@ -208,6 +251,7 @@ void addTraits(NSMutableDictionary dict) {
 
 @Override
 void destroy() {
+	releaseTextAttributes();
 	handle.release();
 	handle = null;
 	metrics = null;
