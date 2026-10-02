@@ -2173,4 +2173,129 @@ public void test_getItemHeight_returns_inconsistent_heights () {
 
 	assertEquals(emptyListItemHeight, filledListItemHeight);
 }
+
+@Test
+public void test_addManyItemsOneByOne_orderAndIndexOf() {
+	int count = 10_000;
+	for (int i = 0; i < count; i++) {
+		list.add("Item " + i);
+		assertEquals(i + 1, list.getItemCount());
+	}
+	String[] items = list.getItems();
+	assertEquals(count, items.length);
+	for (int i = 0; i < count; i++) {
+		assertEquals("Item " + i, items[i]);
+		assertEquals("Item " + i, list.getItem(i));
+	}
+	assertEquals(0, list.indexOf("Item 0"));
+	assertEquals(count / 2, list.indexOf("Item " + count / 2));
+	assertEquals(count - 1, list.indexOf("Item " + (count - 1)));
+	assertEquals(-1, list.indexOf("missing"));
+}
+
+@Test
+public void test_setItems_manyItemsOrderAndIndexOf() {
+	int count = 10_000;
+	String[] items = new String[count];
+	for (int i = 0; i < count; i++) {
+		items[i] = "Item " + i;
+	}
+	list.setItems(items);
+	assertEquals(count, list.getItemCount());
+	assertArrayEquals(items, list.getItems());
+	assertEquals(0, list.indexOf("Item 0"));
+	assertEquals(count / 2, list.indexOf("Item " + count / 2));
+	assertEquals(count - 1, list.indexOf("Item " + (count - 1)));
+}
+
+@Test
+public void test_indexOf_afterInsertAtStart() {
+	for (int i = 0; i < 20; i++) {
+		list.add("Item " + i);
+	}
+	list.add("first", 0);
+	assertEquals(0, list.indexOf("first"));
+	assertEquals(1, list.indexOf("Item 0"));
+	assertEquals(20, list.indexOf("Item 19"));
+	list.add("middle", 10);
+	assertEquals(10, list.indexOf("middle"));
+	assertEquals(0, list.indexOf("first"));
+	assertEquals(9, list.indexOf("Item 8"));
+	assertEquals(11, list.indexOf("Item 9"));
+	assertEquals(21, list.indexOf("Item 19"));
+	assertEquals(22, list.getItemCount());
+}
+
+@Test
+public void test_indexOf_withStart() {
+	list.setItems(new String[] { "a", "b", "a", "c", "a" });
+	assertEquals(0, list.indexOf("a"));
+	assertEquals(0, list.indexOf("a", 0));
+	assertEquals(2, list.indexOf("a", 1));
+	assertEquals(4, list.indexOf("a", 3));
+	assertEquals(-1, list.indexOf("c", 4));
+	list.add("a", 0);
+	assertEquals(1, list.indexOf("a", 1));
+	assertEquals(3, list.indexOf("a", 3));
+	assertEquals(5, list.indexOf("a", 4));
+}
+
+@Test
+public void test_indexOf_afterRemove() {
+	for (int i = 0; i < 20; i++) {
+		list.add("Item " + i);
+	}
+	// warm any lookup cache
+	assertEquals(15, list.indexOf("Item 15"));
+	list.remove(10);
+	assertEquals(-1, list.indexOf("Item 10"));
+	for (int i = 0; i < 10; i++) {
+		assertEquals(i, list.indexOf("Item " + i));
+	}
+	for (int i = 11; i < 20; i++) {
+		assertEquals(i - 1, list.indexOf("Item " + i));
+	}
+	list.remove("Item 3");
+	assertEquals(2, list.indexOf("Item 2"));
+	assertEquals(3, list.indexOf("Item 4"));
+	assertEquals(17, list.indexOf("Item 19"));
+	assertEquals(18, list.getItemCount());
+}
+
+@Test
+public void test_removeManyItemsInARow_getItemsConsistent() {
+	int count = 1000;
+	for (int i = 0; i < count; i++) {
+		list.add("Item " + i);
+	}
+	// remove from the back so indices stay valid
+	for (int i = count - 1; i >= 1; i -= 2) {
+		list.remove(i);
+	}
+	assertEquals(count / 2, list.getItemCount());
+	String[] remaining = list.getItems();
+	for (int i = 0; i < remaining.length; i++) {
+		assertEquals("Item " + (2 * i), remaining[i]);
+		assertEquals(i, list.indexOf("Item " + (2 * i)));
+	}
+	list.remove(0, 99);
+	list.remove(list.getItemCount() - 100, list.getItemCount() - 1);
+	assertEquals(count / 2 - 200, list.getItemCount());
+	String[] left = list.getItems();
+	for (int i = 0; i < left.length; i++) {
+		assertEquals("Item " + (2 * (i + 100)), left[i]);
+	}
+}
+
+@Test
+public void test_setItem_keepsOrder() {
+	for (int i = 0; i < 10; i++) {
+		list.add("Item " + i);
+	}
+	list.setItem(5, "changed");
+	assertEquals(5, list.indexOf("changed"));
+	assertEquals(-1, list.indexOf("Item 5"));
+	assertEquals(6, list.indexOf("Item 6"));
+	assertEquals(10, list.getItemCount());
+}
 }

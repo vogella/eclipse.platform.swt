@@ -10,16 +10,24 @@
  *******************************************************************************/
 package org.eclipse.swt.tests.junit;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.DND;
+import org.eclipse.swt.dnd.Transfer;
+import org.eclipse.swt.dnd.TransferData;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
@@ -54,6 +62,32 @@ public class ClipboardBase {
 	protected Shell shell;
 	protected Clipboard clipboard;
 	protected RemoteClipboard remote;
+
+	/**
+	 * Checks that the supported types of a transfer are stable across calls and
+	 * that mutating a returned array does not affect later calls. The actual type
+	 * ids are not part of the API, but their use with isSupportedType is.
+	 */
+	protected static void assertSupportedTypesStable(Transfer transfer) {
+		TransferData[] first = transfer.getSupportedTypes();
+		TransferData[] second = transfer.getSupportedTypes();
+		assertNotNull(first);
+		assertTrue(first.length > 0);
+		assertNotSame(first, second);
+		assertEquals(first.length, second.length);
+		for (int i = 0; i < first.length; i++) {
+			assertTrue(transfer.isSupportedType(first[i]));
+			assertTrue(transfer.isSupportedType(second[i]));
+		}
+		assertFalse(transfer.isSupportedType(null));
+		Arrays.fill(first, null);
+		Arrays.fill(second, null);
+		TransferData[] third = transfer.getSupportedTypes();
+		assertEquals(second.length, third.length);
+		for (TransferData data : third) {
+			assertTrue(transfer.isSupportedType(data));
+		}
+	}
 
 	/**
 	 * Return the set of clipboards that are supported on this platform, this method

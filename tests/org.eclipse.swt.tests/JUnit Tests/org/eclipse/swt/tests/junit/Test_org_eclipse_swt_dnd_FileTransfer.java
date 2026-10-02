@@ -193,4 +193,13 @@ public class Test_org_eclipse_swt_dnd_FileTransfer extends ClipboardBase {
 		assertArrayEquals(fileList, contents);
 
 	}
+
+	/**
+	 * The type ids behind getSupportedTypes must be stable across calls and
+	 * independent of arrays handed out earlier.
+	 */
+	@Test
+	public void test_supportedTypesStable() {
+		assertSupportedTypesStable(fileTransfer);
+	}
 }

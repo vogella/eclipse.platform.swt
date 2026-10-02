@@ -160,4 +160,13 @@ public class Test_org_eclipse_swt_dnd_URLTransfer extends ClipboardBase {
 		result = trimTrailingNulCharacter(result);
 		assertEquals(test, result);
 	}
+
+	/**
+	 * The type ids behind getSupportedTypes must be stable across calls and
+	 * independent of arrays handed out earlier.
+	 */
+	@Test
+	public void test_supportedTypesStable() {
+		assertSupportedTypesStable(urlTransfer);
+	}
 }
