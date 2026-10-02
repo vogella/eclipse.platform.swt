@@ -45,6 +45,7 @@ public class RemoteClipboard implements ClipboardCommands {
 	private ClipboardCommands remote;
 	private Process remoteClipboardProcess;
 	private Path remoteClipboardTempDir;
+	private Path remoteClipboardStderr;
 
 	public void start() throws Exception {
 		assertNull(remote, "Create a new instance to restart");
@@ -74,6 +75,7 @@ public class RemoteClipboard implements ClipboardCommands {
 				Thread.interrupted();
 			}
 
+			printRemoteStderr();
 			String message = "Failed to get remote clipboards command, this seems to happen on macOS on I-build tests. Exception: "
 					+ e.toString() + " waitFor: " + waitFor + " exitValue: " + exitValue;
 
@@ -137,11 +139,26 @@ public class RemoteClipboard implements ClipboardCommands {
 
 		ProcessBuilder pb = new ProcessBuilder(javaExe, "clipboard.ClipboardTest", "-autoport")
 				.directory(remoteClipboardTempDir.toFile());
-		pb.inheritIO();
+		// Don't pollute the build log with the child's stderr, it is only shown if starting fails
+		remoteClipboardStderr = Files.createTempFile(remoteClipboardTempDir, "stderr", ".log");
+		pb.redirectError(Redirect.to(remoteClipboardStderr.toFile()));
+		pb.redirectInput(Redirect.INHERIT);
 		pb.redirectOutput(Redirect.PIPE);
 		remoteClipboardProcess = pb.start();
 
 		// Read server output to find the port
+		int port;
+		try {
+			port = readRemotePort();
+		} catch (RuntimeException | Error e) {
+			printRemoteStderr();
+			throw e;
+		}
+		assertNotEquals(0, port);
+		return port;
+	}
+
+	private int readRemotePort() {
 		int port = SwtTestUtil.runOperationInThread(REMOTE_STARTUP_TIMEOUT_MS, () -> {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(remoteClipboardProcess.getInputStream()));
 			String line;
@@ -153,8 +170,21 @@ public class RemoteClipboard implements ClipboardCommands {
 			}
 			throw new RuntimeException("Failed to get port");
 		});
-		assertNotEquals(0, port);
 		return port;
+	}
+
+	private void printRemoteStderr() {
+		if (remoteClipboardStderr == null) {
+			return;
+		}
+		try {
+			String err = Files.readString(remoteClipboardStderr);
+			if (!err.isBlank()) {
+				System.err.println("Output of the remote clipboard process (stderr):\n" + err);
+			}
+		} catch (IOException e) {
+			System.err.println("Could not read stderr of the remote clipboard process: " + e);
+		}
 	}
 
 	@Override
