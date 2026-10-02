@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
+import java.util.*;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cocoa.*;
@@ -65,8 +67,30 @@ public final class TextLayout extends Resource {
 	static final byte[] SWT_OBJECT = {'S', 'W', 'T', '_', 'O', 'B', 'J', 'E', 'C', 'T', '\0'};
 
 	static final int TAB_COUNT = 32;
+
+	/**
+	 * The NSTextStorage, NSLayoutManager and NSTextContainer triple used for
+	 * text layout. The text storage owns the layout manager and the container.
+	 */
+	static final class TextSystem {
+		final NSTextStorage textStorage;
+		final NSLayoutManager layoutManager;
+		final NSTextContainer textContainer;
+
+		TextSystem(NSSize size) {
+			textStorage = (NSTextStorage)new NSTextStorage().alloc().init();
+			layoutManager = (NSLayoutManager)new NSLayoutManager().alloc().init();
+			layoutManager.setBackgroundLayoutEnabled(NSThread.isMainThread());
+			NSTextContainer container = (NSTextContainer)new NSTextContainer().alloc();
+			textContainer = container.initWithContainerSize(size);
+			textContainer.setLineFragmentPadding(0);
+			textStorage.addLayoutManager(layoutManager);
+			layoutManager.addTextContainer(textContainer);
+			layoutManager.release();
+			textContainer.release();
+		}
+	}
 	static final int UNDERLINE_THICK = 1 << 16;
-	int[] invalidOffsets;
 	private boolean ignoreSegments;
 	static final char LTR_MARK = '\u200E', RTL_MARK = '\u200F';
 
@@ -291,9 +315,7 @@ void computeRuns() {
 		if (style.metrics != null) {
 			initClasses();
 			char [] buffer = new char [(int)range.length];
-			for (int j = 0; j < buffer.length; j++) {
-				buffer[j] = '\uFFFC';
-			}
+			Arrays.fill(buffer, '\uFFFC');
 			NSString string = (NSString) new NSString().alloc();
 			string = string.initWithCharacters(buffer, buffer.length);
 			attrStr.replaceCharactersInRange(range, string);
@@ -316,16 +338,10 @@ void computeRuns() {
 	size.width = wrapWidth != -1 ? wrapWidth : OS.MAX_TEXT_CONTAINER_SIZE;
 	size.height = OS.MAX_TEXT_CONTAINER_SIZE;
 	if (textStorage == null) {
-		textStorage = (NSTextStorage)new NSTextStorage().alloc().init();
-		layoutManager = (NSLayoutManager)new NSLayoutManager().alloc().init();
-		layoutManager.setBackgroundLayoutEnabled(NSThread.isMainThread());
-		textContainer = (NSTextContainer)new NSTextContainer().alloc();
-		textContainer = textContainer.initWithContainerSize(size);
-		textContainer.setLineFragmentPadding(0);
-		textStorage.addLayoutManager(layoutManager);
-		layoutManager.addTextContainer(textContainer);
-		layoutManager.release();
-		textContainer.release();
+		TextSystem system = new TextSystem(size);
+		textStorage = system.textStorage;
+		layoutManager = system.layoutManager;
+		textContainer = system.textContainer;
 	} else {
 		textContainer.setContainerSize(size);
 	}
@@ -498,14 +514,14 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 					rect.y += pt.y;
 					if (fixedLineMetrics != null) rect.height = fixedLineMetrics.height;
 					rect.height = Math.max(rect.height, ascent + descent);
-					if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/ (flags & SWT.LAST_LINE_SELECTION) != 0)) {
+					if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && ((flags & SWT.LAST_LINE_SELECTION) != 0)) {
 						rect.height += spacing;
 					}
 					path.appendBezierPathWithRect(rect);
 				}
 			}
 			//TODO draw full selection for wrapped text and delimiter selection for hard breaks
-			if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && (/*hasSelection ||*/ (flags & SWT.LAST_LINE_SELECTION) != 0)) {
+			if ((flags & (SWT.FULL_SELECTION | SWT.DELIMITER_SELECTION)) != 0 && ((flags & SWT.LAST_LINE_SELECTION) != 0)) {
 				NSRect bounds = lineBounds[lineBounds.length - 1];
 				rect.x = pt.x + bounds.x + bounds.width;
 				rect.y = y + bounds.y;
@@ -1449,18 +1465,27 @@ public char[] getSegmentsChars () {
 	return segmentsChars;
 }
 
-String getSegmentsText() {
-	int length = text.length();
-	if (length == 0) return text;
-	if (segments == null) return text;
+/*
+ *  Returns true if the segments do not change the text of the given length
+ */
+private boolean hasNoSegmentEffect(int length) {
+	if (length == 0) return true;
+	if (segments == null) return true;
 	int nSegments = segments.length;
-	if (nSegments == 0) return text;
+	if (nSegments == 0) return true;
 	if (segmentsChars == null) {
-		if (nSegments == 1) return text;
+		if (nSegments == 1) return true;
 		if (nSegments == 2) {
-			if (segments[0] == 0 && segments[1] == length) return text;
+			if (segments[0] == 0 && segments[1] == length) return true;
 		}
 	}
+	return false;
+}
+
+String getSegmentsText() {
+	int length = text.length();
+	if (hasNoSegmentEffect(length)) return text;
+	int nSegments = segments.length;
 	char[] oldChars = new char[length];
 	text.getChars(0, length, oldChars, 0);
 	char[] newChars = new char[length + nSegments];
@@ -2373,17 +2398,8 @@ static long textLayoutProc(long id, long sel) {
  *  Translate a client offset to an internal offset
  */
 int translateOffset (int offset) {
-	int length = text.length();
-	if (length == 0) return offset;
-	if (segments == null) return offset;
+	if (hasNoSegmentEffect(text.length())) return offset;
 	int nSegments = segments.length;
-	if (nSegments == 0) return offset;
-	if (segmentsChars == null) {
-		if (nSegments == 1) return offset;
-		if (nSegments == 2) {
-			if (segments[0] == 0 && segments[1] == length) return offset;
-		}
-	}
 	for (int i = 0; i < nSegments && offset - i >= segments[i]; i++) {
 		offset++;
 	}
@@ -2394,17 +2410,8 @@ int translateOffset (int offset) {
  *  Translate an internal offset to a client offset
  */
 int untranslateOffset (int offset) {
-	int length = text.length();
-	if (length == 0) return offset;
-	if (segments == null) return offset;
+	if (hasNoSegmentEffect(text.length())) return offset;
 	int nSegments = segments.length;
-	if (nSegments == 0) return offset;
-	if (segmentsChars == null) {
-		if (nSegments == 1) return offset;
-		if (nSegments == 2) {
-			if (segments[0] == 0 && segments[1] == length) return offset;
-		}
-	}
 	for (int i = 0; i < nSegments && offset > segments[i]; i++) {
 		offset--;
 	}
