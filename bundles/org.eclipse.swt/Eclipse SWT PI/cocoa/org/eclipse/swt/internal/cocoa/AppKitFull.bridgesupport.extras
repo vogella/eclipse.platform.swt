@@ -4385,7 +4385,6 @@
 	<enum name="NSAlternateKeyMask" swt_gen="true"></enum>
 	<enum name="NSAnyEventMask" swt_gen="true"></enum>
 	<enum name="NSAppKitDefined" swt_gen="true"></enum>
-	<enum name="NSApplicationActivateIgnoringOtherApps" swt_gen="true"></enum>
 	<enum name="NSApplicationActivationPolicyRegular" swt_gen="true"></enum>
 	<enum name="NSApplicationDefined" swt_gen="true"></enum>
 	<enum name="NSApplicationDelegateReplySuccess" swt_gen="true"></enum>
@@ -4444,12 +4443,6 @@
 	<enum name="NSEventPhaseBegan" swt_gen="true"></enum>
 	<enum name="NSEventPhaseCancelled" swt_gen="true"></enum>
 	<enum name="NSEventPhaseEnded" swt_gen="true"></enum>
-	<enum name="NSEventTypeBeginGesture" swt_gen="true"></enum>
-	<enum name="NSEventTypeEndGesture" swt_gen="true"></enum>
-	<enum name="NSEventTypeGesture" swt_gen="true"></enum>
-	<enum name="NSEventTypeMagnify" swt_gen="true"></enum>
-	<enum name="NSEventTypeRotate" swt_gen="true"></enum>
-	<enum name="NSEventTypeSwipe" swt_gen="true"></enum>
 	<enum name="NSFileHandlingPanelCancelButton" swt_gen="true"></enum>
 	<enum name="NSFileHandlingPanelOKButton" swt_gen="true"></enum>
 	<enum name="NSFlagsChanged" swt_gen="true"></enum>
@@ -4484,7 +4477,6 @@
 	<enum name="NSLeftTabStopType" swt_gen="true"></enum>
 	<enum name="NSLineBreakByClipping" swt_gen="true"></enum>
 	<enum name="NSLineBreakByTruncatingMiddle" swt_gen="true"></enum>
-	<enum name="NSLineBreakByTruncatingTail" swt_gen="true"></enum>
 	<enum name="NSLineBreakByWordWrapping" swt_gen="true"></enum>
 	<enum name="NSLineToBezierPathElement" swt_gen="true"></enum>
 	<enum name="NSMiterLineJoinStyle" swt_gen="true"></enum>
@@ -4516,8 +4508,6 @@
 	<enum name="NSPortraitOrientation" swt_gen="true"></enum>
 	<enum name="NSPrintPanelShowsPageSetupAccessory" swt_gen="true"></enum>
 	<enum name="NSPrintPanelShowsPrintSelection" swt_gen="true"></enum>
-	<enum name="NSRegularSquareBezelStyle" swt_gen="true"></enum>
-	<enum name="NSResizableWindowMask" swt_gen="true"></enum>
 	<enum name="NSRightMouseDown" swt_gen="true"></enum>
 	<enum name="NSRightMouseDragged" swt_gen="true"></enum>
 	<enum name="NSRightMouseUp" swt_gen="true"></enum>
