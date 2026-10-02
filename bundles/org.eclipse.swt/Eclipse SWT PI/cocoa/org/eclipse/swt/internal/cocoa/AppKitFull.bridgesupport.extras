@@ -448,10 +448,6 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setFillColor:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setFrameFromContentFrame:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -667,10 +663,6 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setFormatter:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setHighlighted:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -765,19 +757,10 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method class_method="true" selector="controlBackgroundColor" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 		<method class_method="true" selector="controlDarkShadowColor" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
-		<method class_method="true" selector="controlHighlightColor" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 		<method class_method="true" selector="controlLightHighlightColor" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method class_method="true" selector="controlShadowColor" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 		<method class_method="true" selector="controlTextColor" swt_gen="true">
@@ -1000,10 +983,6 @@
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="setFont:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setFormatter:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
@@ -1652,10 +1631,6 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setUsesScreenFonts:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="typesetter" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -2101,10 +2076,6 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setWorksWhenModal:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 	</class>
 	<class name="NSParagraphStyle" swt_gen="mixed">
 		<method selector="alignment" swt_gen="true">
@@ -2538,15 +2509,7 @@
 		<method selector="filename" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="nameFieldStringValue" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="runModal" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="runModalForDirectory:file:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 		<method class_method="true" selector="savePanel" swt_gen="true">
@@ -2565,10 +2528,6 @@
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="setCanCreateDirectories:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setDirectory:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
@@ -2740,9 +2699,6 @@
 		</method>
 	</class>
 	<class name="NSSearchField" swt_gen="mixed" swt_superclass="NSTextField">
-		<method selector="recentSearches" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 	</class>
 	<class name="NSSearchFieldCell" swt_gen="mixed" swt_superclass="NSTextFieldCell">
 		<method selector="cancelButtonCell" swt_gen="true">
@@ -2951,10 +2907,6 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setIdentifier:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setMinWidth:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -3117,10 +3069,6 @@
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="selectedRowIndexes" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setAllowsColumnReordering:" swt_gen="true">
-			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="setAllowsMultipleSelection:" swt_gen="true">
@@ -3461,10 +3409,6 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setAllowsUserCustomization:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setDelegate:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -3518,10 +3462,6 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setPaletteLabel:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setTarget:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -3540,9 +3480,6 @@
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="deviceSize" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="isResting" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="normalizedPosition" swt_gen="true">
@@ -3698,9 +3635,6 @@
 		<method selector="isOpaque" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="layer" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="lockFocus" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -3803,10 +3737,6 @@
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="setToolTip:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setWantsRestingTouches:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
@@ -4116,15 +4046,7 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setRepresentedURL:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setShowsResizeIndicator:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setShowsToolbarButton:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>

@@ -62,12 +62,6 @@
 		<method selector="wheelDelta" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="wheelDeltaX" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="wheelDeltaY" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 	</class>
 	<class name="NSObject" swt_gen="mixed">
 		<method selector="addEventListener:listener:useCapture:" swt_gen="true">
@@ -152,11 +146,6 @@
 		</method>
 		<method selector="webScriptValueAtIndex:" swt_gen="true">
 			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-	</class>
-	<class name="WebUndefined" swt_gen="true">
-		<method class_method="true" selector="undefined" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>

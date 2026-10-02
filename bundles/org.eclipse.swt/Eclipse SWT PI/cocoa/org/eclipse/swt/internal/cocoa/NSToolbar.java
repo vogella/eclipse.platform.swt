@@ -44,10 +44,6 @@ public void removeItemAtIndex(long index) {
 	OS.objc_msgSend(this.id, OS.sel_removeItemAtIndex_, index);
 }
 
-public void setAllowsUserCustomization(boolean allowsUserCustomization) {
-	OS.objc_msgSend(this.id, OS.sel_setAllowsUserCustomization_, allowsUserCustomization);
-}
-
 public void setDelegate(id delegate) {
 	OS.objc_msgSend(this.id, OS.sel_setDelegate_, delegate != null ? delegate.id : 0);
 }

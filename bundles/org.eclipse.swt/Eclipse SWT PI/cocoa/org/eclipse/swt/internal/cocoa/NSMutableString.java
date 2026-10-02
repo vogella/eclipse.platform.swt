@@ -27,10 +27,6 @@ public NSMutableString(id id) {
 	super(id);
 }
 
-public void appendString(NSString aString) {
-	OS.objc_msgSend(this.id, OS.sel_appendString_, aString != null ? aString.id : 0);
-}
-
 public void replaceCharactersInRange(NSRange range, NSString aString) {
 	OS.objc_msgSend(this.id, OS.sel_replaceCharactersInRange_withString_, range, aString != null ? aString.id : 0);
 }

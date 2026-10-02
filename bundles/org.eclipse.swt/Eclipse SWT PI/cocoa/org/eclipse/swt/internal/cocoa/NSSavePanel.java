@@ -32,17 +32,8 @@ public NSString filename() {
 	return result != 0 ? new NSString(result) : null;
 }
 
-public NSString nameFieldStringValue() {
-	long result = OS.objc_msgSend(this.id, OS.sel_nameFieldStringValue);
-	return result != 0 ? new NSString(result) : null;
-}
-
 public long runModal() {
 	return OS.objc_msgSend(this.id, OS.sel_runModal);
-}
-
-public long runModalForDirectory(NSString path, NSString name) {
-	return OS.objc_msgSend(this.id, OS.sel_runModalForDirectory_file_, path != null ? path.id : 0, name != null ? name.id : 0);
 }
 
 public static NSSavePanel savePanel() {
@@ -64,10 +55,6 @@ public void setAllowsOtherFileTypes(boolean allowsOtherFileTypes) {
 
 public void setCanCreateDirectories(boolean canCreateDirectories) {
 	OS.objc_msgSend(this.id, OS.sel_setCanCreateDirectories_, canCreateDirectories);
-}
-
-public void setDirectory(NSString path) {
-	OS.objc_msgSend(this.id, OS.sel_setDirectory_, path != null ? path.id : 0);
 }
 
 public void setDirectoryURL(NSURL directoryURL) {

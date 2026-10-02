@@ -38,10 +38,6 @@ public NSSize deviceSize() {
 	return result;
 }
 
-public boolean isResting() {
-	return OS.objc_msgSend_bool(this.id, OS.sel_isResting);
-}
-
 public NSPoint normalizedPosition() {
 	NSPoint result = new NSPoint();
 	OS.objc_msgSend_stret(result, this.id, OS.sel_normalizedPosition);

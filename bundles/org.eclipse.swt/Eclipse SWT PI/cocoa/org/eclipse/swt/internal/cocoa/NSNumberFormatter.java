@@ -32,40 +32,12 @@ public NSString decimalSeparator() {
 	return result != 0 ? new NSString(result) : null;
 }
 
-public void setAllowsFloats(boolean allowsFloats) {
-	OS.objc_msgSend(this.id, OS.sel_setAllowsFloats_, allowsFloats);
-}
-
 public void setMaximum(NSNumber maximum) {
 	OS.objc_msgSend(this.id, OS.sel_setMaximum_, maximum != null ? maximum.id : 0);
 }
 
-public void setMaximumFractionDigits(long maximumFractionDigits) {
-	OS.objc_msgSend(this.id, OS.sel_setMaximumFractionDigits_, maximumFractionDigits);
-}
-
-public void setMaximumIntegerDigits(long maximumIntegerDigits) {
-	OS.objc_msgSend(this.id, OS.sel_setMaximumIntegerDigits_, maximumIntegerDigits);
-}
-
 public void setMinimum(NSNumber minimum) {
 	OS.objc_msgSend(this.id, OS.sel_setMinimum_, minimum != null ? minimum.id : 0);
-}
-
-public void setMinimumFractionDigits(long minimumFractionDigits) {
-	OS.objc_msgSend(this.id, OS.sel_setMinimumFractionDigits_, minimumFractionDigits);
-}
-
-public void setMinimumIntegerDigits(long minimumIntegerDigits) {
-	OS.objc_msgSend(this.id, OS.sel_setMinimumIntegerDigits_, minimumIntegerDigits);
-}
-
-public void setNumberStyle(long numberStyle) {
-	OS.objc_msgSend(this.id, OS.sel_setNumberStyle_, numberStyle);
-}
-
-public void setPartialStringValidationEnabled(boolean partialStringValidationEnabled) {
-	OS.objc_msgSend(this.id, OS.sel_setPartialStringValidationEnabled_, partialStringValidationEnabled);
 }
 
 }

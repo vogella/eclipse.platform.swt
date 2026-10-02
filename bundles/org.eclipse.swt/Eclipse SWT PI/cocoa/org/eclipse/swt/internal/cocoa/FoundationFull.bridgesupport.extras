@@ -46,9 +46,6 @@
 		</method>
 	</class>
 	<class name="NSAppleEventDescriptor" swt_gen="mixed">
-		<method selector="initListDescriptor" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 	</class>
 	<class name="NSArray" swt_gen="mixed">
 		<method class_method="true" selector="array" swt_gen="true">
@@ -116,10 +113,6 @@
 		<method selector="bundlePath" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
-		<method class_method="true" selector="bundleWithIdentifier:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method class_method="true" selector="bundleWithPath:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -184,9 +177,6 @@
 		</method>
 	</class>
 	<class name="NSCoder" swt_gen="mixed">
-		<method selector="systemVersion" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 	</class>
 	<class name="NSData" swt_gen="mixed">
 		<method selector="bytes" swt_gen="true">
@@ -287,10 +277,6 @@
 		</method>
 	</class>
 	<class name="NSFormatter" swt_gen="mixed">
-		<method selector="stringForObjectValue:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 	</class>
 	<class name="NSHTTPCookie" swt_gen="mixed">
 		<method class_method="true" selector="cookiesWithResponseHeaderFields:forURL:" swt_gen="true">
@@ -485,10 +471,6 @@
 		</method>
 	</class>
 	<class name="NSMutableString" swt_gen="mixed" swt_superclass="NSString">
-		<method selector="appendString:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="replaceCharactersInRange:withString:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -509,10 +491,6 @@
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="setHTTPMethod:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setURL:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
@@ -583,39 +561,11 @@
 		<method selector="decimalSeparator" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setAllowsFloats:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setMaximum:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setMaximumFractionDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setMaximumIntegerDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setMinimum:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setMinimumFractionDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setMinimumIntegerDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setNumberStyle:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setPartialStringValidationEnabled:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
@@ -837,9 +787,6 @@
 		</method>
 	</class>
 	<class name="NSTimeZone" swt_gen="mixed">
-		<method class_method="true" selector="defaultTimeZone" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
 	</class>
 	<class name="NSTimer" swt_gen="mixed">
 		<method selector="invalidate" swt_gen="true">

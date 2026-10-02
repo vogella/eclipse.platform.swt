@@ -39,10 +39,6 @@ public void setHTTPMethod(NSString HTTPMethod) {
 	OS.objc_msgSend(this.id, OS.sel_setHTTPMethod_, HTTPMethod != null ? HTTPMethod.id : 0);
 }
 
-public void setURL(NSURL URL) {
-	OS.objc_msgSend(this.id, OS.sel_setURL_, URL != null ? URL.id : 0);
-}
-
 public void setValue(NSString value, NSString field) {
 	OS.objc_msgSend(this.id, OS.sel_setValue_forHTTPHeaderField_, value != null ? value.id : 0, field != null ? field.id : 0);
 }

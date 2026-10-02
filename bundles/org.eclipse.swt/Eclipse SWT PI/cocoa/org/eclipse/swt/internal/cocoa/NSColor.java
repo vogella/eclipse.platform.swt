@@ -75,28 +75,13 @@ public static NSColor colorWithPatternImage(NSImage image) {
 	return result != 0 ? new NSColor(result) : null;
 }
 
-public static NSColor controlBackgroundColor() {
-	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlBackgroundColor);
-	return result != 0 ? new NSColor(result) : null;
-}
-
 public static NSColor controlDarkShadowColor() {
 	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlDarkShadowColor);
 	return result != 0 ? new NSColor(result) : null;
 }
 
-public static NSColor controlHighlightColor() {
-	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlHighlightColor);
-	return result != 0 ? new NSColor(result) : null;
-}
-
 public static NSColor controlLightHighlightColor() {
 	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlLightHighlightColor);
-	return result != 0 ? new NSColor(result) : null;
-}
-
-public static NSColor controlShadowColor() {
-	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlShadowColor);
 	return result != 0 ? new NSColor(result) : null;
 }
 
