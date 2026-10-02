@@ -238,8 +238,6 @@ int calculateWidth (int index, GC gc) {
 	NSSize size = new NSSize();
 	OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
 	if (image != null) size.width += parent.imageBounds.width + Tree.IMAGE_GAP;
-//	cell.setImage (image != null ? image.handle : null);
-//	NSSize size = cell.cellSize ();
 
 	int width = (int)Math.ceil (size.width);
 	width += Tree.TEXT_GAP; // To fix truncation
@@ -364,13 +362,6 @@ void dealloc (long id, long sel) {
 }
 
 @Override
-void deregister () {
-	super.deregister ();
-	//This is done in #dealloc
-//	display.removeWidget (handle);
-}
-
-@Override
 void destroyJNIRef () {
 	//Do nothing - see #dealloc
 }
@@ -472,7 +463,6 @@ public Rectangle getBounds () {
 	super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
 	NSSize size = new NSSize();
 	OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
-//	NSSize size = cell.cellSize ();
 	NSRect columnRect = widget.rectOfColumn (columnIndex);
 	size.width = Math.min (size.width, columnRect.width - (titleRect.x - columnRect.x));
 	return new Rectangle ((int)titleRect.x, (int)titleRect.y, (int)Math.ceil (size.width), (int)Math.ceil (titleRect.height));
