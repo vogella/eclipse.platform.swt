@@ -55,7 +55,6 @@ public class Canvas extends Composite {
 		supportedPboardTypes = NSMutableArray.arrayWithCapacity(1);
 		supportedPboardTypes.retain();
 		supportedPboardTypes.addObject(OS.NSPasteboardTypeString);
-		//supportedPboardTypes.addObject(OS.NSRTFPboardType);
 	};
 
 Canvas () {
