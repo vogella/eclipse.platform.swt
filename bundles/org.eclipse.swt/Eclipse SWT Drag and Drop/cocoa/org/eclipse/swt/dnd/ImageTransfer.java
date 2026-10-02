@@ -40,6 +40,8 @@ public class ImageTransfer extends ByteArrayTransfer {
 static ImageTransfer _instance = new ImageTransfer();
 static final String TIFF = OS.NSTIFFPboardType.getString();
 static final int TIFFID = registerType(TIFF);
+static final int[] TYPE_IDS = new int[] { TIFFID };
+static final String[] TYPE_NAMES = new String[] { TIFF };
 
 ImageTransfer() {
 }
@@ -118,12 +120,12 @@ public Object nativeToJava(TransferData transferData) {
 
 @Override
 protected int[] getTypeIds() {
-	return new int[] { TIFFID };
+	return TYPE_IDS;
 }
 
 @Override
 protected String[] getTypeNames() {
-	return new String[] { TIFF };
+	return TYPE_NAMES;
 }
 
 boolean checkImage(Object object) {
