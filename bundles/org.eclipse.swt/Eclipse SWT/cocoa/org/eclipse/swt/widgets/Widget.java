@@ -1928,6 +1928,20 @@ private int getKeyboardType(NSEvent nsEvent) {
 	return (int)OS.CGEventGetIntegerValueField(cgEvent, OS.kCGKeyboardEventKeyboardType);
 }
 
+// Note that bit shift >> 8 in modifiers is needed according to docs
+// of UCKeyTranslate().
+private static final int [] MODIFIER_TESTS = {
+	// Many non-latin layouts have a latin plane on Cmd key in order
+	// to handle keyboard shortcuts. Furthermore, layouts such as
+	// 'Dvorak-QWERTY⌘' have different latin planes without Cmd (for
+	// typing) and with Cmd (for invoking shortcuts). In both cases,
+	// that's exactly what we want for 'Event.keyCode'.
+	OS.cmdKey >> 8,
+	// Fallback just in case. It's unknown if it's actually helpful
+	// in any layouts.
+	0,
+};
+
 private int calculateKeycode(Event event, NSEvent nsEvent) {
 	long keyLayout = Display.getCurrentKeyLayout();
 	if (keyLayout == 0) {
@@ -1946,21 +1960,7 @@ private int calculateKeycode(Event event, NSEvent nsEvent) {
 	long [] actualStringLength = new long [1];
 	int [] deadKeyState = new int[1];
 
-	// Note that bit shift >> 8 in modifiers is needed according to docs
-	// of UCKeyTranslate().
-	final int [] modifierTests = new int[] {
-		// Many non-latin layouts have a latin plane on Cmd key in order
-		// to handle keyboard shortcuts. Furthermore, layouts such as
-		// 'Dvorak-QWERTY⌘' have different latin planes without Cmd (for
-		// typing) and with Cmd (for invoking shortcuts). In both cases,
-		// that's exactly what we want for 'Event.keyCode'.
-		OS.cmdKey >> 8,
-		// Fallback just in case. It's unknown if it's actually helpful
-		// in any layouts.
-		0,
-	};
-
-	for (int modifiers : modifierTests) {
+	for (int modifiers : MODIFIER_TESTS) {
 		OS.UCKeyTranslate (keyLayout, nsKeyCode, keyAction, modifiers, keyboardType, 0, deadKeyState, maxStringLength, actualStringLength, unicodeString);
 		if (actualStringLength[0] < 1) {
 			// part of a multi-key key
