@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF8"?>
 <signatures swt_gen="mixed">
-	<constant name="kCFAllocatorDefault" swt_gen="true"></constant>
 	<constant name="kCFRunLoopCommonModes" swt_gen="true"></constant>
 	<enum name="kCFRunLoopBeforeWaiting" swt_gen="true"></enum>
 	<enum name="kCFStringEncodingUTF8" swt_gen="true"></enum>
