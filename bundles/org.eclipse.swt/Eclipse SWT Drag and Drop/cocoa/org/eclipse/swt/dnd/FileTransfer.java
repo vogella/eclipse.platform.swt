@@ -43,6 +43,8 @@ public class FileTransfer extends ByteArrayTransfer {
 	static final int ID = registerType(ID_NAME);
 	static final String ID1_NAME = OS.kUTTypeFileURL.getString();
 	static final int ID1 = registerType(ID1_NAME);
+	static final int[] TYPE_IDS = new int[] {ID, ID1};
+	static final String[] TYPE_NAMES = new String[] {ID_NAME, ID1_NAME};
 
 FileTransfer() {}
 
@@ -109,12 +111,12 @@ public Object nativeToJava(TransferData transferData) {
 
 @Override
 protected int[] getTypeIds(){
-	return new int[] {ID, ID1};
+	return TYPE_IDS;
 }
 
 @Override
 protected String[] getTypeNames(){
-	return new String[] {ID_NAME, ID1_NAME};
+	return TYPE_NAMES;
 }
 
 boolean checkFile(Object object) {
