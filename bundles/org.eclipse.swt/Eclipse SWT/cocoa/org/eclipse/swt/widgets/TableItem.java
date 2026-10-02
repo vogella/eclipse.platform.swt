@@ -159,8 +159,6 @@ int calculateWidth (int index, GC gc, boolean rowSelected) {
 	NSSize size = new NSSize();
 	OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
 	if (image != null) size.width += parent.imageBounds.width + Table.IMAGE_GAP;
-//	cell.setImage (image != null ? image.handle : null);
-//	NSSize size = cell.cellSize ();
 
 	int width = (int)Math.ceil (size.width);
 	boolean sendMeasure = true;
@@ -311,7 +309,6 @@ public Rectangle getBounds () {
 	super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
 	NSSize size = new NSSize();
 	OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
-//	NSSize size = cell.cellSize ();
 	NSRect columnRect = widget.rectOfColumn (columnIndex);
 	size.width = Math.min (size.width, columnRect.width - (titleRect.x - columnRect.x));
 	return new Rectangle ((int)titleRect.x, (int)titleRect.y, (int)Math.ceil (size.width), (int)Math.ceil (titleRect.height));
@@ -674,12 +671,6 @@ void redraw (int columnIndex) {
 void releaseHandle () {
 	super.releaseHandle ();
 	parent = null;
-}
-
-@Override
-void releaseParent () {
-	super.releaseParent ();
-//	parent.checkItems (true);
 }
 
 @Override
