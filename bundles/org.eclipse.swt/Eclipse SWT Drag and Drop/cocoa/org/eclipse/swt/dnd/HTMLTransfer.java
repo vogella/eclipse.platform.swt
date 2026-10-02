@@ -34,6 +34,8 @@ public class HTMLTransfer extends ByteArrayTransfer {
 	static HTMLTransfer _instance = new HTMLTransfer();
 	static final String HTML = OS.NSPasteboardTypeHTML.getString();
 	static final int HTMLID = registerType(HTML);
+	static final int[] TYPE_IDS = new int[] {HTMLID};
+	static final String[] TYPE_NAMES = new String[] {HTML};
 
 HTMLTransfer() {}
 
@@ -83,12 +85,12 @@ public Object nativeToJava(TransferData transferData){
 
 @Override
 protected int[] getTypeIds() {
-	return new int[] {HTMLID};
+	return TYPE_IDS;
 }
 
 @Override
 protected String[] getTypeNames() {
-	return new String[] {HTML};
+	return TYPE_NAMES;
 }
 
 boolean checkHTML(Object object) {
