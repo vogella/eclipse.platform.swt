@@ -970,10 +970,15 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 		selectionBackground = Color.cocoa_new(display, hasFocus ? display.getAlternateSelectedControlColor() : display.getSecondarySelectedControlColor());
 	}
 
-	NSSize contentSize = super.cellSize(id, OS.sel_cellSize);
 	NSImage image = cell.image();
-	if (image != null) contentSize.width += imageBounds.width + IMAGE_GAP;
-	int contentWidth = (int)Math.ceil (contentSize.width);
+	/* The content size is only needed by the measure and paint events */
+	NSSize contentSize = null;
+	int contentWidth = 0;
+	if (hooksMeasure || hooksPaint) {
+		contentSize = super.cellSize(id, OS.sel_cellSize);
+		if (image != null) contentSize.width += imageBounds.width + IMAGE_GAP;
+		contentWidth = (int)Math.ceil (contentSize.width);
+	}
 	NSSize spacing = widget.intercellSpacing();
 	int itemHeight = (int)Math.ceil (widget.rowHeight() + spacing.height);
 
