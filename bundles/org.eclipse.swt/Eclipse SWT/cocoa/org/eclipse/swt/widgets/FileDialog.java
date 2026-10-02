@@ -303,11 +303,6 @@ void handleResponse (long response) {
 	if (response == OS.NSFileHandlingPanelOKButton) {
 		NSString filename = panel.filename();
 		if ((style & SWT.SAVE) != 0) {
-			/*
-			 * This code is intentionally commented. The extension is now appended in the
-			 * delegate method: panel_userEnteredFilename_confirmed
-			 */
-			//filename = appendSelectedExtension(filename);
 			fullPath = filename.getString();
 			fileNames = new String [1];
 			fileName = fileNames [0] = filename.lastPathComponent().getString();
@@ -421,11 +416,6 @@ public Optional<String> openDialog () {
 	if (fileName != null && fileName.length() > 0) {
 		panel.setNameFieldStringValue(NSString.stringWith(fileName));
 	}
-	/*
-	 * This line is intentionally commented. Don't show hidden files forcefully,
-	 * instead allow File dialog to use the system preference.
-	 */
-	//	OS.objc_msgSend(panel.id, OS.sel_setShowsHiddenFiles_, true);
 	jniRef = 0;
 	delegate = null;
 	if (filterExtensions != null && filterExtensions.length != 0) {
