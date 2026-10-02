@@ -5787,7 +5787,7 @@ void applicationWillFinishLaunching (long id, long sel, long notification) {
 		NSMenu sm = appitem.submenu();
 		sm.setTitle(name);
 		NSArray ia = sm.itemArray();
-		for(int i = 0; i < ia.count(); i++) {
+		for (int i = 0, length = (int)ia.count(); i < length; i++) {
 			NSMenuItem ni = new NSMenuItem(ia.objectAtIndex(i));
 			NSString title = ni.title().stringByReplacingOccurrencesOfString(match, name);
 			ni.setTitle(title);
@@ -6094,11 +6094,17 @@ static Widget LookupWidget (long id, long sel) {
 	return widget;
 }
 
+private static final Map<Long, Long> accessibleCellClasses = new ConcurrentHashMap<>();
+
 static long windowProc(long id, long sel) {
 	if (sel == OS.sel_cellClass) {
 		long superCls = OS.objc_msgSend(OS.class_getSuperclass(id), sel);
+		Long cached = accessibleCellClasses.get(superCls);
+		if (cached != null) return cached;
 		long cls = OS.objc_lookUpClass("SWTAccessible" + OS.class_getName(superCls));
-		return cls != 0 ? cls : superCls;
+		if (cls == 0) return superCls;
+		accessibleCellClasses.put(superCls, cls);
+		return cls;
 	}
 	/*
 	* Feature in Cocoa.  In Cocoa, the default button animation is done
