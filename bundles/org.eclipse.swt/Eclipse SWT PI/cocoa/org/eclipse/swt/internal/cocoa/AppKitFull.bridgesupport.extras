@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF8"?>
 <signatures swt_gen="mixed">
-	<class name="NSActionCell" swt_gen="mixed" swt_superclass="NSCell">
+	<class name="NSActionCell" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSCell">
 		<method selector="action" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -24,7 +24,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSAlert" swt_gen="mixed">
+	<class name="NSAlert" swt_gen="mixed" swt_gen_const="false">
 		<method selector="addButtonWithTitle:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -865,7 +865,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSColorSpace" swt_gen="mixed">
+	<class name="NSColorSpace" swt_gen="mixed" swt_gen_const="false">
 		<method selector="colorSpaceModel" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -916,7 +916,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSComboBoxCell" swt_gen="mixed" swt_superclass="NSTextFieldCell">
+	<class name="NSComboBoxCell" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSTextFieldCell">
 		<method selector="objectValues" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -1101,7 +1101,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSDockTile" swt_gen="mixed">
+	<class name="NSDockTile" swt_gen="mixed" swt_gen_const="false">
 		<method selector="badgeLabel" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -1198,7 +1198,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSFileWrapper" swt_gen="mixed">
+	<class name="NSFileWrapper" swt_gen="mixed" swt_gen_const="false">
 		<method selector="setIcon:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -1289,7 +1289,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSGradient" swt_gen="mixed">
+	<class name="NSGradient" swt_gen="mixed" swt_gen_const="false">
 		<method selector="drawFromPoint:toPoint:options:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -1515,7 +1515,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSLayoutManager" swt_gen="mixed">
+	<class name="NSLayoutManager" swt_gen="mixed" swt_gen_const="false">
 		<method selector="addTemporaryAttribute:value:forCharacterRange:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -1823,7 +1823,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSMutableParagraphStyle" swt_gen="mixed" swt_superclass="NSParagraphStyle">
+	<class name="NSMutableParagraphStyle" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSParagraphStyle">
 		<method selector="addTabStop:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -1966,7 +1966,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSOpenGLPixelFormat" swt_gen="mixed">
+	<class name="NSOpenGLPixelFormat" swt_gen="mixed" swt_gen_const="false">
 		<method selector="getValues:forAttribute:forVirtualScreen:" swt_gen="true">
 			<arg swt_gen="true" swt_java_type="long[]"></arg>
 			<arg swt_gen="true"></arg>
@@ -2077,7 +2077,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSParagraphStyle" swt_gen="mixed">
+	<class name="NSParagraphStyle" swt_gen="mixed" swt_gen_const="false">
 		<method selector="alignment" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -2358,7 +2358,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSResponder" swt_gen="mixed">
+	<class name="NSResponder" swt_gen="mixed" swt_gen_const="false">
 		<method selector="acceptsFirstResponder" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -2764,7 +2764,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSStatusItem" swt_gen="mixed">
+	<class name="NSStatusItem" swt_gen="mixed" swt_gen_const="false">
 		<method selector="drawStatusBarBackgroundInRect:withHighlight:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -2881,7 +2881,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTableColumn" swt_gen="mixed">
+	<class name="NSTableColumn" swt_gen="mixed" swt_gen_const="false">
 		<method selector="dataCell" swt_gen="true">
 			<retval swt_gen="true" swt_java_type="NSCell"></retval>
 		</method>
@@ -3231,7 +3231,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTextAttachment" swt_gen="mixed">
+	<class name="NSTextAttachment" swt_gen="mixed" swt_gen_const="false">
 		<method selector="initWithFileWrapper:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -3241,7 +3241,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTextContainer" swt_gen="mixed">
+	<class name="NSTextContainer" swt_gen="mixed" swt_gen_const="false">
 		<method selector="initWithContainerSize:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -3303,7 +3303,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTextStorage" swt_gen="mixed" swt_superclass="NSMutableAttributedString">
+	<class name="NSTextStorage" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSMutableAttributedString">
 		<method selector="addLayoutManager:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -3312,7 +3312,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTextTab" swt_gen="mixed">
+	<class name="NSTextTab" swt_gen="mixed" swt_gen_const="false">
 		<method selector="initWithType:location:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -3426,7 +3426,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSToolbarItem" swt_gen="mixed">
+	<class name="NSToolbarItem" swt_gen="mixed" swt_gen_const="false">
 		<method selector="initWithItemIdentifier:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -3475,7 +3475,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTouch" swt_gen="true">
+	<class name="NSTouch" swt_gen="true" swt_gen_const="false">
 		<method selector="device" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -3489,7 +3489,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTrackingArea" swt_gen="mixed">
+	<class name="NSTrackingArea" swt_gen="mixed" swt_gen_const="false">
 		<method selector="owner" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -3497,7 +3497,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTypesetter" swt_gen="mixed">
+	<class name="NSTypesetter" swt_gen="mixed" swt_gen_const="false">
 		<method selector="baselineOffsetInLayoutManager:glyphIndex:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4527,7 +4527,7 @@
 		<arg swt_gen="true"></arg>
 		<retval></retval>
 	</function>
-	<informal_protocol name="NSAccessibility" swt_gen="true">
+	<informal_protocol name="NSAccessibility" swt_gen="true" swt_gen_const="false">
 		<method selector="accessibilityActionDescription:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
@@ -4574,20 +4574,20 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSAccessibilityAdditions" swt_gen="true">
+	<informal_protocol name="NSAccessibilityAdditions" swt_gen="true" swt_gen_const="false">
 		<method selector="accessibilitySetOverrideValue:forAttribute:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSAppearanceCustomization" swt_gen="mixed">
+	<informal_protocol name="NSAppearanceCustomization" swt_gen="mixed" swt_gen_const="false">
 		<method selector="setAppearance:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSApplicationDelegate" swt_gen="mixed">
+	<informal_protocol name="NSApplicationDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="application:openFile:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4628,13 +4628,13 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSColorPanelResponderMethod" swt_gen="true">
+	<informal_protocol name="NSColorPanelResponderMethod" swt_gen="true" swt_gen_const="false">
 		<method selector="changeColor:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSComboBoxDelegate" swt_gen="mixed">
+	<informal_protocol name="NSComboBoxDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="comboBoxSelectionDidChange:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -4648,7 +4648,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSDraggingDestination" swt_gen="mixed">
+	<informal_protocol name="NSDraggingDestination" swt_gen="mixed" swt_gen_const="false">
 		<method selector="draggingEntered:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
@@ -4669,7 +4669,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSDraggingSourceDeprecated" swt_gen="mixed">
+	<informal_protocol name="NSDraggingSourceDeprecated" swt_gen="mixed" swt_gen_const="false">
 		<method selector="draggedImage:beganAt:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4689,19 +4689,19 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSFontManagerResponderMethod" swt_gen="true">
+	<informal_protocol name="NSFontManagerResponderMethod" swt_gen="true" swt_gen_const="false">
 		<method selector="changeFont:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSFontPanelValidationAdditions" swt_gen="true">
+	<informal_protocol name="NSFontPanelValidationAdditions" swt_gen="true" swt_gen_const="false">
 		<method selector="validModesForFontPanel:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSMenuDelegate" swt_gen="mixed">
+	<informal_protocol name="NSMenuDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="menu:willHighlightItem:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4720,13 +4720,13 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSMenuValidation" swt_gen="true">
+	<informal_protocol name="NSMenuValidation" swt_gen="true" swt_gen_const="false">
 		<method selector="validateMenuItem:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSOpenSavePanelDelegate" swt_gen="mixed">
+	<informal_protocol name="NSOpenSavePanelDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="panel:shouldEnableURL:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4739,7 +4739,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSOutlineViewDataSource" swt_gen="mixed">
+	<informal_protocol name="NSOutlineViewDataSource" swt_gen="mixed" swt_gen_const="false">
 		<method selector="outlineView:acceptDrop:item:childIndex:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4790,7 +4790,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSOutlineViewDelegate" swt_gen="mixed">
+	<informal_protocol name="NSOutlineViewDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="outlineView:didClickTableColumn:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4825,14 +4825,14 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSPasteboardOwner" swt_gen="mixed">
+	<informal_protocol name="NSPasteboardOwner" swt_gen="mixed" swt_gen_const="false">
 		<method selector="pasteboard:provideDataForType:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSTabViewDelegate" swt_gen="mixed">
+	<informal_protocol name="NSTabViewDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="tabView:didSelectTabViewItem:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4844,7 +4844,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSTableViewDataSource" swt_gen="mixed">
+	<informal_protocol name="NSTableViewDataSource" swt_gen="mixed" swt_gen_const="false">
 		<method selector="numberOfRowsInTableView:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -4883,7 +4883,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSTableViewDelegate" swt_gen="mixed">
+	<informal_protocol name="NSTableViewDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="tableView:didClickTableColumn:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4924,7 +4924,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSTextDelegate" swt_gen="mixed">
+	<informal_protocol name="NSTextDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="textDidChange:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
@@ -4972,14 +4972,14 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSTextInputClient" swt_gen="mixed">
+	<informal_protocol name="NSTextInputClient" swt_gen="mixed" swt_gen_const="false">
 		<method selector="insertText:replacementRange:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSTextViewDelegate" swt_gen="mixed">
+	<informal_protocol name="NSTextViewDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="textView:clickedOnLink:atIndex:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -4997,7 +4997,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSToolTipOwner" swt_gen="true">
+	<informal_protocol name="NSToolTipOwner" swt_gen="true" swt_gen_const="false">
 		<method selector="view:stringForToolTip:point:userData:" swt_gen="true" swt_gen_custom_callback="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -5006,7 +5006,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSToolbarDelegate" swt_gen="true">
+	<informal_protocol name="NSToolbarDelegate" swt_gen="true" swt_gen_const="false">
 		<method selector="toolbar:itemForItemIdentifier:willBeInsertedIntoToolbar:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -5026,7 +5026,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="NSWindowDelegate" swt_gen="mixed">
+	<informal_protocol name="NSWindowDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="windowDidBecomeKey:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
