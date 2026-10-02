@@ -205,11 +205,6 @@ public Optional<String> openDialog () {
 		methodImpl_performKeyEquivalent = OS.method_setImplementation(method_performKeyEquivalent, proc);
 	}
 
-	/*
-	 * This line is intentionally commented. Don't show hidden files forcefully,
-	 * instead allow Directory dialog to use the system preference.
-	 */
-	//	OS.objc_msgSend(panel.id, OS.sel_setShowsHiddenFiles_, true);
 	panel.setCanCreateDirectories(true);
 	panel.setAllowsMultipleSelection((style & SWT.MULTI) != 0);
 	panel.setTitle(NSString.stringWith(title != null ? title : ""));
@@ -234,7 +229,6 @@ public Optional<String> openDialog () {
 		handleResponse(response);
 	}
 
-//	options.optionFlags = OS.kNavSupportPackages | OS.kNavAllowOpenPackages | OS.kNavAllowInvisibleFiles;
 	return Optional.ofNullable(directoryPath);
 }
 
