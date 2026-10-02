@@ -458,8 +458,6 @@ public void setSelection (int value) {
 
 @Override
 void setSmallSize () {
-	/* This code is intentionally comment */
-//	((NSScroller)view).setControlSize (OS.NSControlSizeSmall);
 }
 
 void updateBar (int selection, int minimum, int maximum, int thumb) {
