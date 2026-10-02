@@ -40,7 +40,7 @@ public class TreeItem extends Item {
 	Tree parent;
 	TreeItem parentItem;
 	TreeItem[] items;
-	int itemCount;
+	int itemCount, lastIndexOf;
 	String [] strings;
 	Image [] images;
 	boolean checked, grayed, cached, expanded;
@@ -912,8 +912,19 @@ public int indexOf (TreeItem item) {
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (item.parentItem != this) return -1;
-	for (int i = 0; i < itemCount; i++) {
-		if (item == items [i]) return i;
+	if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
+		if (items [lastIndexOf] == item) return lastIndexOf;
+		if (items [lastIndexOf + 1] == item) return ++lastIndexOf;
+		if (items [lastIndexOf - 1] == item) return --lastIndexOf;
+	}
+	if (lastIndexOf < itemCount / 2) {
+		for (int i = 0; i < itemCount; i++) {
+			if (items [i] == item) return lastIndexOf = i;
+		}
+	} else {
+		for (int i = itemCount - 1; i >= 0; --i) {
+			if (items [i] == item) return lastIndexOf = i;
+		}
 	}
 	return -1;
 }
