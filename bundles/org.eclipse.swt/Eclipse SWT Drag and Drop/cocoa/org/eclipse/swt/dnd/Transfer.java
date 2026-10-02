@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.swt.dnd;
 
+import java.util.*;
+
 
 /**
  * <code>Transfer</code> provides a mechanism for converting between a java
@@ -32,6 +34,7 @@ package org.eclipse.swt.dnd;
 public abstract class Transfer {
 
 static String[] TYPES = new String[4];
+static final Map<String, Integer> TYPE_ID_MAP = new HashMap<>();
 
 /**
  * Returns a list of the platform specific data types that can be converted using
@@ -131,22 +134,17 @@ abstract protected Object nativeToJava(TransferData transferData);
  *
  * @return the unique identifier associated with this data type
  */
-public static int registerType(String formatName) {
+public static synchronized int registerType(String formatName) {
+	if (formatName == null) throw new NullPointerException();
 	/* Note the type 0 is not used */
-	int index = 1;
-	while (index < TYPES.length) {
-		String type = TYPES[index];
-		if (type != null && formatName.equals(type)) {
-			return index;
-		}
-		index++;
-	}
-	if (index == TYPES.length) {
-		String[] newTypes = new String[TYPES.length + 4];
-		System.arraycopy(TYPES, 0, newTypes, 0, TYPES.length);
-		TYPES = newTypes;
-	}
+	Integer id = TYPE_ID_MAP.get(formatName);
+	if (id != null) return id.intValue();
+	int index = TYPES.length;
+	String[] newTypes = new String[TYPES.length + 4];
+	System.arraycopy(TYPES, 0, newTypes, 0, TYPES.length);
+	TYPES = newTypes;
 	TYPES[index] = formatName;
+	if (formatName != null) TYPE_ID_MAP.put(formatName, index);
 	return index;
 }
 

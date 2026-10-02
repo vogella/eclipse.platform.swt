@@ -39,6 +39,8 @@ public class URLTransfer extends ByteArrayTransfer {
 	static final String URL1 = OS.kUTTypeURL.getString();
 	static final int URL_ID = registerType(URL);
 	static final int URL_ID1 = registerType(URL1);
+	static final int[] TYPE_IDS = new int[] {URL_ID, URL_ID1};
+	static final String[] TYPE_NAMES = new String[] {URL, URL1};
 
 private URLTransfer() {}
 
@@ -93,12 +95,12 @@ public Object nativeToJava(TransferData transferData){
 
 @Override
 protected int[] getTypeIds(){
-	return new int[] {URL_ID, URL_ID1};
+	return TYPE_IDS;
 }
 
 @Override
 protected String[] getTypeNames(){
-	return new String[] {URL, URL1};
+	return TYPE_NAMES;
 }
 
 boolean checkURL(Object object) {

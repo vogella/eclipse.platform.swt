@@ -41,6 +41,8 @@ public class TextTransfer extends ByteArrayTransfer {
 
 	static final String ID_NAME = OS.NSPasteboardTypeString.getString();
 	static final int ID = registerType(ID_NAME);
+	static final int[] TYPE_IDS = new int[] {ID};
+	static final String[] TYPE_NAMES = new String[] {ID_NAME};
 
 TextTransfer() {}
 
@@ -89,12 +91,12 @@ public Object nativeToJava(TransferData transferData){
 
 @Override
 protected int[] getTypeIds() {
-	return new int[] {ID};
+	return TYPE_IDS;
 }
 
 @Override
 protected String[] getTypeNames() {
-	return new String[] {ID_NAME};
+	return TYPE_NAMES;
 }
 
 boolean checkText(Object object) {
