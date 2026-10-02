@@ -882,10 +882,16 @@ void createLayout () {
 }
 
 NSAttributedString createString(String string, int flags, boolean draw) {
-	NSMutableDictionary dict = ((NSMutableDictionary)new NSMutableDictionary().alloc()).initWithCapacity(5);
 	Font font = data.font;
-	dict.setObject(font.handle, OS.NSFontAttributeName);
-	font.addTraits(dict);
+	NSMutableDictionary dict;
+	if (!draw) {
+		// cached on the font, owned by it and never released here
+		dict = font.getTextAttributes((flags & SWT.DRAW_TAB) == 0 ? device.paragraphStyle : null);
+	} else {
+		dict = ((NSMutableDictionary)new NSMutableDictionary().alloc()).initWithCapacity(5);
+		dict.setObject(font.handle, OS.NSFontAttributeName);
+		font.addTraits(dict);
+	}
 	if (draw) {
 		Pattern pattern = data.foregroundPattern;
 		if (pattern != null) {
@@ -900,7 +906,7 @@ NSAttributedString createString(String string, int flags, boolean draw) {
 			dict.setObject(fg, OS.NSForegroundColorAttributeName);
 		}
 	}
-	if ((flags & SWT.DRAW_TAB) == 0) {
+	if (draw && (flags & SWT.DRAW_TAB) == 0) {
 		dict.setObject(device.paragraphStyle, OS.NSParagraphStyleAttributeName);
 	}
 	int length = string.length();
@@ -933,7 +939,7 @@ NSAttributedString createString(String string, int flags, boolean draw) {
 	}
 	NSString str = ((NSString)new NSString().alloc()).initWithCharacters(chars, length);
 	NSAttributedString attribStr = ((NSAttributedString)new NSAttributedString().alloc()).initWithString(str, dict);
-	dict.release();
+	if (draw) dict.release();
 	str.release();
 	return attribStr;
 }
