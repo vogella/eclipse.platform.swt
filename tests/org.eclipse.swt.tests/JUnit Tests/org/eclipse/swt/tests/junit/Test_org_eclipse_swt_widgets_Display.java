@@ -1231,7 +1231,7 @@ public void test_setCursorLocationII(TestInfo info) {
 				Screenshots.takeScreenshot(getClass(), info.getDisplayName()); // Bug 528968 This call causes crash on Wayland.
 				fail("\nExpected:"+location.toString()+"  Actual:"+actual.toString());
 			}
-		} else {
+		} else if (SwtTestUtil.verbose) {
 			System.out.println(getClass().getName() + "#" + info.getDisplayName() + ": actual == " + actual);
 		}
 
@@ -1262,7 +1262,7 @@ public void test_setCursorLocationLorg_eclipse_swt_graphics_Point(TestInfo info)
 				Screenshots.takeScreenshot(getClass(), info.getDisplayName()); // Bug 528968 This call causes crash on Wayland.
 				fail("\nExpected:"+location.toString()+"  Actual:"+actual.toString());
 			}
-		} else {
+		} else if (SwtTestUtil.verbose) {
 			System.out.println(getClass().getName() + "#" + info.getDisplayName() + ": actual == " + actual);
 		}
 	} finally {
@@ -1642,7 +1642,10 @@ public void test_setWarningsZ() {
 
 @Test
 public void test_isSystemDarkTheme() {
-	System.out.println("org.eclipse.swt.widgets.Display.isSystemDarkTheme(): " + Display.isSystemDarkTheme());
+	boolean isDarkTheme = Display.isSystemDarkTheme();
+	if (SwtTestUtil.verbose) {
+		System.out.println("org.eclipse.swt.widgets.Display.isSystemDarkTheme(): " + isDarkTheme);
+	}
 }
 
 }
