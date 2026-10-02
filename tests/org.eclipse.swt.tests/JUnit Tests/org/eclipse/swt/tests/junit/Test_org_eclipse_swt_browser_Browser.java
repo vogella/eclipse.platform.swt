@@ -181,11 +181,8 @@ public void setUp(TestInfo testInfo) {
 
 	String shellTitle = testInfo.getDisplayName();
 	if (SwtTestUtil.isGTK) {
-
 		// Note, webkitGtk version is only available once Browser is instantiated.
-		String webkitGtkVersionStr = System.getProperty("org.eclipse.swt.internal.webkitgtk.version"); //$NON-NLS-1$
-
-		shellTitle = shellTitle + " Webkit version: " + webkitGtkVersionStr;
+		shellTitle = shellTitle + " Webkit version: " + getWebKitGtkVersion();
 	}
 	shell.setText(shellTitle);
 	setWidget(browser); // For browser to occupy the whole shell, not just half of it.
@@ -2282,6 +2279,55 @@ public void test_evaluate_evaluation_failed_exception() {
 }
 
 /**
+ * Test that evaluate() fails fast once the WebKitGTK web process is gone and
+ * that JavaScript works again after a new page has been loaded.
+ */
+@Test
+public void test_evaluate_afterWebProcessTerminated() {
+	assumeTrue(SwtTestUtil.isGTK, "The web process is specific to WebKitGTK");
+	String[] webKitVersion = getWebKitGtkVersion().split("\\.");
+ 	int webKitMajor = Integer.parseInt(webKitVersion[0]);
+ 	int webKitMinor = Integer.parseInt(webKitVersion[1]);
+ 	assumeTrue(webKitMajor > 2 || webKitMajor == 2 && webKitMinor >= 20, "web-process-terminated requires WebKitGTK 2.20+");
+	AtomicBoolean loaded = new AtomicBoolean();
+	browser.addProgressListener(completedAdapter(event -> loaded.set(true)));
+	browser.setText("<html><body>HelloWorld</body></html>");
+	shell.open();
+	assertTrue(waitForPassCondition(loaded::get), "Initial page did not load");
+
+	List<ProcessHandle> webProcesses = ProcessHandle.current().descendants()
+			.filter(p -> p.info().command().orElse("").endsWith("WebKitWebProcess"))
+			.toList();
+	assumeFalse(webProcesses.isEmpty(), "No WebKitWebProcess found to terminate");
+	webProcesses.forEach(ProcessHandle::destroyForcibly);
+
+	SWTException terminationError = null;
+	Instant deadline = Instant.now().plusSeconds(secondsToWaitTillFail);
+	while (terminationError == null && Instant.now().isBefore(deadline)) {
+		processUiEvents();
+		try {
+			browser.evaluate("return 1;");
+		} catch (SWTException e) {
+			if (e.getMessage().startsWith("The web process")) {
+				terminationError = e;
+			}
+		}
+	}
+	assertNotNull(terminationError, "evaluate() did not report the terminated web process");
+	assertEquals(SWT.ERROR_FAILED_EVALUATE, terminationError.code);
+
+	Instant start = Instant.now();
+	assertThrows(SWTException.class, () -> browser.evaluate("return 1;"));
+	assertTrue(Duration.between(start, Instant.now()).toMillis() < 1000, "evaluate() should fail immediately");
+	assertFalse(browser.execute("1;"));
+
+	loaded.set(false);
+	browser.setText("<html><body>Reloaded</body></html>");
+	assertTrue(waitForPassCondition(loaded::get), "Page did not load after the web process terminated");
+	assertEquals(1.0, browser.evaluate("return 1;"));
+}
+
+/**
  * Test the evaluate() api that returns an array of numbers. Functionality based on Snippet308.
  * Only wait till success. Otherwise timeout after 3 seconds.
  */
@@ -3045,6 +3091,206 @@ public void test_BrowserFunction_availableOnLoad_concurrentInstances_issue20() {
 	assertTrue(browser2FuncAvailable.get(), "BrowserFunction for second browser missing when page load completed");
 }
 
+/**
+ * Regression test: a BrowserFunction created from <em>inside</em> another BrowserFunction's
+ * callback must be registered and available on a page that is navigated to from within that same
+ * callback.
+ * <p>
+ * On the Edge/WebView2 backend this exercises function creation while a WebView2 callback is on the
+ * stack. Registration must be issued (before the navigation queued in the same callback) without
+ * blocking, since blocking inside a callback would deadlock.
+ */
+@Test
+public void test_BrowserFunction_createFunctionInsideCallback() {
+	assumeTrue(isEdge, "BrowserFunction availability before the page's inline scripts is specific to the Edge/WebView2 implementation");
+	AtomicBoolean innerCalled = new AtomicBoolean(false);
+
+	// 'inner' is only created when 'outer' is invoked from JavaScript, i.e. inside a callback.
+	class Inner extends BrowserFunction {
+		Inner() {
+			super(browser, "inner");
+		}
+		@Override
+		public Object function(Object[] arguments) {
+			innerCalled.set(true);
+			return null;
+		}
+	}
+	class Outer extends BrowserFunction {
+		Outer() {
+			super(browser, "outer");
+		}
+		@Override
+		public Object function(Object[] arguments) {
+			new Inner(); // create a new BrowserFunction from inside a callback
+			// Navigate to a page whose inline script calls the just-created function.
+			browser.setText("<html><body><script>inner();</script></body></html>");
+			return null;
+		}
+	}
+	new Outer();
+
+	// Trigger outer() once, after the first page has loaded.
+	AtomicBoolean outerTriggered = new AtomicBoolean(false);
+	browser.addProgressListener(completedAdapter(e -> {
+		if (outerTriggered.compareAndSet(false, true)) {
+			browser.execute("outer();");
+		}
+	}));
+	browser.setText("<html><body>first page</body></html>");
+
+	shell.open();
+	assertTrue(waitForPassCondition(innerCalled::get),
+		"BrowserFunction created inside a callback was not available on the page navigated to from that callback");
+}
+
+/**
+ * Regression test for issue #20: a BrowserFunction created while the browser is still initializing
+ * must be available <em>before</em> the first loaded page's own inline scripts run - not merely
+ * after the page finished loading. This combines concurrent initialization (the browser is not
+ * awaited) with a page whose inline script immediately calls the function.
+ */
+@Test
+public void test_BrowserFunction_availableBeforePageScripts_concurrentInit_issue20() {
+	assumeTrue(isEdge, "BrowserFunction availability before the page's inline scripts is specific to the Edge/WebView2 implementation");
+	AtomicBoolean functionCalled = new AtomicBoolean(false);
+
+	// Use new Browser() directly (not the createBrowser() helper that waits for initialization) so
+	// the browser is still initializing while we navigate and register the function.
+	Browser b = new Browser(shell, SWT.NONE);
+	createdBroswers.add(b);
+	// Mirror the bug's order: request the navigation first, then create the function - both before
+	// initialization completes.
+	b.setText("<html><body><script>options();</script></body></html>");
+	new BrowserFunction(b, "options") {
+		@Override
+		public Object function(Object[] arguments) {
+			functionCalled.set(true);
+			return null;
+		}
+	};
+
+	shell.open();
+	assertTrue(waitForPassCondition(functionCalled::get),
+		"BrowserFunction 'options' was not available before the first page's inline script ran during concurrent initialization");
+}
+
+/**
+ * Regression test for issue #20: when multiple BrowserFunctions are created while the browser is
+ * still initializing, all of them must be available on the first loaded page.
+ */
+@Test
+public void test_BrowserFunction_multipleFunctionsDuringConcurrentInit_issue20() {
+	assumeFalse(SwtTestUtil.isCocoa, "BrowserFunction availability during concurrent initialization is not reliable on Cocoa");
+	AtomicReference<Object> result = new AtomicReference<>();
+	AtomicReference<SWTException> failure = new AtomicReference<>();
+
+	Browser b = new Browser(shell, SWT.NONE);
+	createdBroswers.add(b);
+	b.setUrl("about:blank");
+	new BrowserFunction(b, "f1") {
+		@Override
+		public Object function(Object[] arguments) {
+			return 1;
+		}
+	};
+	new BrowserFunction(b, "f2") {
+		@Override
+		public Object function(Object[] arguments) {
+			return 2;
+		}
+	};
+	b.addProgressListener(completedAdapter(e -> {
+		try {
+			result.set(b.evaluate("return f1() + f2();"));
+		} catch (SWTException ex) {
+			failure.set(ex);
+		}
+	}));
+
+	shell.open();
+	waitForPassCondition(() -> result.get() != null || failure.get() != null);
+	if (failure.get() != null) {
+		throw failure.get();
+	}
+	assertNotNull(result.get(), "Neither BrowserFunction was available on the first loaded page");
+	assertEquals(3.0, ((Number) result.get()).doubleValue(),
+		"Both BrowserFunctions created during concurrent initialization must be available on the first page");
+}
+
+/**
+ * Regression test: a disposed BrowserFunction must no longer be available (re-injected) after a
+ * subsequent navigation. This verifies that deregistration removes the persistent document-created
+ * script (whose ID is captured asynchronously on the Edge backend).
+ */
+@Test
+public void test_BrowserFunction_disposedFunctionRemovedAfterNavigation() {
+	BrowserFunction function = new BrowserFunction(browser, "disposableFunc") {
+		@Override
+		public Object function(Object[] arguments) {
+			return "alive";
+		}
+	};
+
+	AtomicBoolean firstPageLoaded = new AtomicBoolean(false);
+	ProgressListener firstPageListener = completedAdapter(e -> firstPageLoaded.set(true));
+	browser.addProgressListener(firstPageListener);
+	browser.setText("<html><body>first page</body></html>");
+	shell.open();
+	assertTrue(waitForPassCondition(firstPageLoaded::get), "First page did not load");
+	// The function is registered and usable now (this also ensures its registration has settled).
+	assertEquals("alive", browser.evaluate("return disposableFunc();"));
+	browser.removeProgressListener(firstPageListener);
+
+	// Dispose the function, then navigate: it must be gone on the new page.
+	function.dispose();
+	AtomicBoolean secondPageLoaded = new AtomicBoolean(false);
+	browser.addProgressListener(completedAdapter(e -> secondPageLoaded.set(true)));
+	browser.setText("<html><body>second page</body></html>");
+	assertTrue(waitForPassCondition(secondPageLoaded::get), "Second page did not load");
+
+	Object stillDefined = browser.evaluate("return typeof disposableFunc === 'function';");
+	assertEquals(Boolean.FALSE, stillDefined,
+		"A disposed BrowserFunction must not be re-injected on a subsequently loaded page");
+}
+
+/**
+ * Regression test: redefining a BrowserFunction with the same name (which deregisters the previous
+ * one and registers the new one) must take effect and survive navigations - the newest definition
+ * wins and the previous one is not resurrected.
+ */
+@Test
+public void test_BrowserFunction_redefineSameNameSurvivesNavigation() {
+	new BrowserFunction(browser, "f") {
+		@Override
+		public Object function(Object[] arguments) {
+			return "v1";
+		}
+	};
+	new BrowserFunction(browser, "f") {
+		@Override
+		public Object function(Object[] arguments) {
+			return "v2";
+		}
+	};
+
+	AtomicBoolean firstPageLoaded = new AtomicBoolean(false);
+	ProgressListener firstPageListener = completedAdapter(e -> firstPageLoaded.set(true));
+	browser.addProgressListener(firstPageListener);
+	browser.setText("<html><body>first page</body></html>");
+	shell.open();
+	assertTrue(waitForPassCondition(firstPageLoaded::get), "First page did not load");
+	assertEquals("v2", browser.evaluate("return f();"), "The most recent definition of 'f' must win");
+	browser.removeProgressListener(firstPageListener);
+
+	AtomicBoolean secondPageLoaded = new AtomicBoolean(false);
+	browser.addProgressListener(completedAdapter(e -> secondPageLoaded.set(true)));
+	browser.setText("<html><body>second page</body></html>");
+	assertTrue(waitForPassCondition(secondPageLoaded::get), "Second page did not load");
+	assertEquals("v2", browser.evaluate("return f();"),
+		"The redefined BrowserFunction must survive navigation and the previous definition must not be resurrected");
+}
+
 @Test
 @Disabled("Too fragile on CI, Display.getDefault().post(event) does not work reliably")
 public void test_TabTraversalOutOfBrowser() {
@@ -3303,6 +3549,10 @@ private static void processUiEvents() {
 	Display display = Display.getCurrent();
 	while (display != null && !display.isDisposed() && display.readAndDispatch()) {
 	}
+}
+
+private static String getWebKitGtkVersion() {
+	return System.getProperty("org.eclipse.swt.internal.webkitgtk.version"); //$NON-NLS-1$
 }
 
 }

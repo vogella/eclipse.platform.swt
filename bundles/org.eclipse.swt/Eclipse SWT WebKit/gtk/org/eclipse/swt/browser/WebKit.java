@@ -106,6 +106,9 @@ class WebKit extends WebBrowser {
 	URI tlsErrorUri;
 	String tlsErrorType;
 
+	/** Why the web process terminated, or {@code null} while it is running. */
+	String webProcessTerminationReason;
+
 	private final ControlListener browserMoveListener = ControlListener.controlMovedAdapter(this::browserShellMoved);
 	private Point searchShellLocation;
 	private Shell searchShell;
@@ -171,7 +174,7 @@ class WebKit extends WebBrowser {
 	static final String USER_AGENT = "user-agent"; //$NON-NLS-1$
 	static final int MAX_PORT = 65535;
 	static final int MAX_PROGRESS = 100;
-	static final int[] MIN_VERSION = {1, 2, 0};
+	static final int[] MIN_VERSION = {2, 6, 0};
 	static final int SENTINEL_KEYPRESS = -1;
 	static final char SEPARATOR_FILE = File.separatorChar;
 	static final int STOP_PROPOGATE = 1;
@@ -207,6 +210,7 @@ class WebKit extends WebBrowser {
 	static final int DOWNLOAD_STARTED = 14;
 	static final int WIDGET_EVENT = 15; // Used for events like keyboard/mouse input. See Bug 528549 and Bug 533833.
 	static final int LOAD_FAILED_TLS = 16;
+	static final int WEB_PROCESS_TERMINATED = 17;
 
 	static final String KEY_CHECK_SUBWINDOW = "org.eclipse.swt.internal.control.checksubwindow"; //$NON-NLS-1$
 
@@ -432,13 +436,53 @@ static long JSDOMEventProc (long arg0, long event, long user_data) {
 								}
 								return 1;
 							}
+							case GDK.GDK_Return:
+							case GDK.GDK_KP_Enter: {
+								/*
+								* Composite always reports Return as handled to suppress the GTK default
+								* button, so send the SWT events directly to learn whether SWT consumed it.
+								*/
+								Event keyEvent = new Event ();
+								keyEvent.widget = browser;
+								keyEvent.type = SWT.KeyDown;
+								keyEvent.time = GDK.gdk_event_get_time (event);
+								keyEvent.keyCode = key[0] == GDK.GDK_KP_Enter ? SWT.KEYPAD_CR : SWT.CR;
+								keyEvent.character = SWT.CR;
+								if (key[0] == GDK.GDK_KP_Enter) keyEvent.keyLocation = SWT.KEYPAD;
+								if ((state[0] & GDK.GDK_MOD1_MASK) != 0) keyEvent.stateMask |= SWT.ALT;
+								if ((state[0] & GDK.GDK_SHIFT_MASK) != 0) keyEvent.stateMask |= SWT.SHIFT;
+								if ((state[0] & GDK.GDK_CONTROL_MASK) != 0) keyEvent.stateMask |= SWT.CONTROL;
+								if ((state[0] & GDK.GDK_BUTTON1_MASK) != 0) keyEvent.stateMask |= SWT.BUTTON1;
+								if ((state[0] & GDK.GDK_BUTTON2_MASK) != 0) keyEvent.stateMask |= SWT.BUTTON2;
+								if ((state[0] & GDK.GDK_BUTTON3_MASK) != 0) keyEvent.stateMask |= SWT.BUTTON3;
+								boolean doit;
+								try { // evaluate() should not block during listener, see Escape above
+									nonBlockingEvaluate++;
+									doit = browser.webBrowser.sendKeyEvent (keyEvent);
+								} finally {
+									nonBlockingEvaluate--;
+								}
+								return doit && !browser.isDisposed () ? 0 : 1;
+							}
 						}
 					}
 					break;
 				}
 			}
 			if (browser != null) {
-				GTK3.gtk_widget_event (browser.handle, event);
+				boolean consumed = GTK3.gtk_widget_event (browser.handle, event);
+				/*
+				* A key press not consumed by the page is re-emitted by WebKitGTK to the
+				* focus widget, which is delivered to SWT a second time. Stop the key from
+				* reaching WebKit if SWT already consumed it (e.g. key binding or traversal).
+				* Return is handled above when the Browser has focus. Otherwise Composite's
+				* default button suppression is not a sign that SWT consumed it.
+				*/
+				if (consumed && GDK.gdk_event_get_event_type (event) == GDK.GDK_KEY_PRESS) {
+					int [] keyval = new int [1];
+					GDK.gdk_event_get_keyval (event, keyval);
+					if (keyval[0] != GDK.GDK_Return && keyval[0] != GDK.GDK_KP_Enter) return 1;
+				}
 			}
 		}
 		return 0;
@@ -625,6 +669,7 @@ long webViewProc (long handle, long arg0, long user_data) {
 		case NOTIFY_PROGRESS: return webkit_notify_progress (handle, arg0);
 		case NOTIFY_TITLE: return webkit_notify_title (handle, arg0);
 		case AUTHENTICATE: return webkit_authenticate (handle, arg0);
+		case WEB_PROCESS_TERMINATED: return webkit_web_process_terminated (handle, (int) arg0);
 		default: return 0;
 	}
 }
@@ -744,6 +789,11 @@ public void create (Composite parent, int style) {
 
 	// gboolean user_function (WebKitWebView *web_view,  WebKitAuthenticationRequest *request,  gpointer user_data)
 	OS.g_signal_connect (webView, WebKitGTK.authenticate, 					Proc3.getAddress (), AUTHENTICATE);
+
+	// void user_function (WebKitWebView *web_view, WebKitWebProcessTerminationReason reason, gpointer user_data)
+	if (WebKitGTK.webkit_get_minor_version() >= 20) {
+		OS.g_signal_connect (webView, WebKitGTK.web_process_terminated, Proc3.getAddress (), WEB_PROCESS_TERMINATED);
+	}
 
 	if (GTK.GTK4) {
 		// (!) Note this one's a 'NetworkSession' signal, not WebView. See:
@@ -1092,6 +1142,11 @@ private static class Webkit2AsyncToSync {
 	 * If in doubt, you should use nonBlockingExecute() where possible :-).
 	 */
 	static Object runjavascript(String script, Browser browser, long webView) {
+		String terminationReason = ((WebKit) browser.webBrowser).webProcessTerminationReason;
+		if (terminationReason != null) {
+			throw new SWTException(SWT.ERROR_FAILED_EVALUATE, "The web process " + terminationReason
+					+ ", JavaScript cannot be executed until a new page is loaded.\nScript that was evaluated:\n" + script);
+		}
 		if (nonBlockingEvaluate > 0) {
 			// Execute script, but do not wait for async call to complete. (assume it does). Bug 512001.
 			if (GTK.GTK4) {
@@ -2354,9 +2409,7 @@ static long webkit_download_decide_destination(long webKitDownload, long suggest
 			path = URI_FILEROOT + path;
 			byte[] uriBytes = Converter.wcsToMbcs (path, true);
 
-			if (WebKitGTK.webkit_get_minor_version() >= 6) {
-				WebKitGTK.webkit_download_set_allow_overwrite (webKitDownload, true);
-			}
+			WebKitGTK.webkit_download_set_allow_overwrite (webKitDownload, true);
 			WebKitGTK.webkit_download_set_destination (webKitDownload, uriBytes);
 			((WebKit)browser.webBrowser).openDownloadWindow(webKitDownload, fileName);
 		}
@@ -2503,6 +2556,8 @@ long webkit_decide_policy (long web_view, long decision, int decision_type, long
 long webkit_load_changed (long web_view, int status, long user_data) {
 	switch (status) {
 		case WebKitGTK.WEBKIT2_LOAD_COMMITTED: {
+			// A committed page implies a running web process, possibly a newly spawned one.
+			webProcessTerminationReason = null;
 			long uri = WebKitGTK.webkit_web_view_get_uri (webView);
 			return handleLoadCommitted (uri, true);
 		}
@@ -2592,6 +2647,25 @@ long webkit_load_failed_tls (long web_view, long failing_uri, long certificate, 
 		default -> SWT.getMessage("SWT_InvalidCert_GenericError");
 		};
 	}
+	return 0;
+}
+
+/**
+ * WebKitWebView 'web-process-terminated' signal (WebKitGTK 2.20+).
+ * - void user_function (WebKitWebView *web_view, WebKitWebProcessTerminationReason reason, gpointer user_data)
+ * - GTK3: https://webkitgtk.org/reference/webkit2gtk/stable/signal.WebView.web-process-terminated.html
+ * - GTK4: https://webkitgtk.org/reference/webkitgtk/stable/signal.WebView.web-process-terminated.html
+ * Until a new page is committed, evaluate() and execute() fail immediately instead of timing out.
+ */
+long webkit_web_process_terminated (long web_view, int reason) {
+	webProcessTerminationReason = switch (reason) {
+	case WebKitGTK.WEBKIT_WEB_PROCESS_CRASHED -> "crashed";
+	case WebKitGTK.WEBKIT_WEB_PROCESS_EXCEEDED_MEMORY_LIMIT -> "exceeded its memory limit";
+	case WebKitGTK.WEBKIT_WEB_PROCESS_TERMINATED_BY_API -> "was terminated by API";
+	default -> "terminated (reason " + reason + ")";
+	};
+	System.err.println("SWT WebKit: The web process " + webProcessTerminationReason + " (URL: " + getUrl() + ")."
+			+ " JavaScript cannot be executed until a new page is loaded.");
 	return 0;
 }
 

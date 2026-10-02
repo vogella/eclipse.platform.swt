@@ -29,7 +29,6 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -195,7 +194,19 @@ public void test_setEnabledZ() {
 	assertFalse(menuItem.getEnabled());
 }
 
-@Tag("gtk4-todo")
+@Test
+public void test_setEnabledZ_cascade() {
+	MenuItem cascadeItem = new MenuItem(menu, SWT.CASCADE);
+	Menu subMenu = new Menu(shell, SWT.DROP_DOWN);
+	cascadeItem.setMenu(subMenu);
+	assertTrue(cascadeItem.getEnabled());
+	cascadeItem.setEnabled(false);
+	assertFalse(cascadeItem.getEnabled());
+	cascadeItem.setEnabled(true);
+	assertTrue(cascadeItem.getEnabled());
+	cascadeItem.dispose();
+}
+
 @Override
 @Test
 public void test_setImageLorg_eclipse_swt_graphics_Image() {

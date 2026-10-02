@@ -20,6 +20,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
+import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
 import org.eclipse.swt.internal.gtk4.*;
@@ -1140,10 +1141,6 @@ long gtk_test_expand_row (long tree, long iter, long path) {
 }
 
 long gtk_text_buffer_insert_text (long widget, long iter, long text, long length) {
-	return 0;
-}
-
-long gtk_timer () {
 	return 0;
 }
 
@@ -2305,12 +2302,15 @@ void snapshotPaint (long handle, long snapshot) {
 	Graphene.graphene_rect_init(rect, 0, 0, allocation.width, allocation.height);
 
 	long cairo = GTK4.gtk_snapshot_append_cairo(snapshot, rect);
-	if (cairo != 0) {
-		Rectangle bounds = new Rectangle(0, 0, allocation.width, allocation.height);
-		gtk4_draw(handle, cairo, bounds);
+	try {
+		if (cairo != 0) {
+			Rectangle bounds = new Rectangle(0, 0, allocation.width, allocation.height);
+			gtk4_draw(handle, cairo, bounds);
+		}
+	} finally {
+		if (cairo != 0) Cairo.cairo_destroy(cairo);
+		Graphene.graphene_rect_free(rect);
 	}
-
-	Graphene.graphene_rect_free(rect);
 }
 
 /**

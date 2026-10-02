@@ -13,13 +13,18 @@
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
-
 import static org.eclipse.swt.tests.win32.SwtWin32TestUtil.assertImageDataEqualsIgnoringAlphaInData;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.internal.DPIUtil;
+import org.eclipse.swt.internal.win32.BITMAP;
+import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.widgets.Display;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -203,6 +208,70 @@ public class ImageWin32Tests {
 		ImageData copiedImageData = new Image(display, image, SWT.IMAGE_COPY).getImageData();
 		assertImageDataEqualsIgnoringAlphaInData(imageData, copiedImageData);
 		image.dispose();
+	}
+
+	@Test
+	public void test_copyOfImageForExistingHandleDoesNotShareTheHandle() {
+		long hBitmap = createBitmapHandle(20, 10);
+		Image image = Image.win32_new(display, SWT.BITMAP, hBitmap, 100);
+		try {
+			Image copy = new Image(display, image, SWT.IMAGE_COPY);
+			try {
+				assertEquals(hBitmap, Image.win32_getHandle(image, 100),
+						"The image the handle was created for must still own that handle");
+				assertNotEquals(hBitmap, Image.win32_getHandle(copy, 100),
+						"A copy of an image must not adopt the handle of the copied image");
+			} finally {
+				copy.dispose();
+			}
+		} finally {
+			image.dispose();
+		}
+	}
+
+	public void test_getImageDataOnDestroyedHandleFailsWithoutCrashing() {
+		long hBitmap = createBitmapHandle(20, 10);
+		Image image = Image.win32_new(display, SWT.BITMAP, hBitmap, 100);
+		try {
+			assertTrue(OS.DeleteObject(hBitmap), "Failed to destroy the bitmap for the test");
+			assumeTrue(OS.GetObject(hBitmap, BITMAP.sizeof, new BITMAP()) == 0,
+					"The destroyed handle value has already been reused by the OS");
+			SWTException exception = assertThrows(SWTException.class, () -> image.getImageData(100),
+					"Retrieving image data for a destroyed handle must fail with an exception");
+			assertEquals(SWT.ERROR_INVALID_IMAGE, exception.code, "Unexpected error code");
+		} finally {
+			image.dispose();
+		}
+	}
+
+	@Test
+	public void test_imageForExistingHandleStaysUsableAfterCopyIsDisposed() {
+		long hBitmap = createBitmapHandle(20, 10);
+		Image image = Image.win32_new(display, SWT.BITMAP, hBitmap, 100);
+		try {
+			new Image(display, image, SWT.IMAGE_COPY).dispose();
+			ImageData imageData = image.getImageData(100);
+			assertEquals(20, imageData.width, "Image data must still have the width of the wrapped bitmap");
+			assertEquals(10, imageData.height, "Image data must still have the height of the wrapped bitmap");
+		} finally {
+			image.dispose();
+		}
+	}
+
+	/**
+	 * Creates an OS bitmap handle that is not owned by any {@link Image} yet, so
+	 * that its ownership can be handed over to
+	 * {@link Image#win32_new(Device, int, long, int)}.
+	 */
+	private long createBitmapHandle(int width, int height) {
+		long hDC = display.internal_new_GC(null);
+		try {
+			long hBitmap = OS.CreateCompatibleBitmap(hDC, width, height);
+			assertNotEquals(0, hBitmap, "Failed to create a bitmap for the test");
+			return hBitmap;
+		} finally {
+			display.internal_dispose_GC(hDC, null);
+		}
 	}
 
 	private static void fillImage(Image image, Color fillColor) {

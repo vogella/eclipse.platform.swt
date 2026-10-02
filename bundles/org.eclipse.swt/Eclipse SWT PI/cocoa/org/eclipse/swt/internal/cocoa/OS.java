@@ -767,6 +767,7 @@ public static final long class_NSWindow = objc_getClass("NSWindow");
 public static final long class_NSWorkspace = objc_getClass("NSWorkspace");
 public static final long class_SFCertificatePanel = objc_getClass("SFCertificatePanel");
 public static final long class_SFCertificateTrustPanel = objc_getClass("SFCertificateTrustPanel");
+public static final long class_UTType = objc_getClass("UTType");
 public static final long class_WebDataSource = objc_getClass("WebDataSource");
 public static final long class_WebFrame = objc_getClass("WebFrame");
 public static final long class_WebFrameView = objc_getClass("WebFrameView");
@@ -830,9 +831,9 @@ public static final long sel_PMPrintSession = Selector.sel_PMPrintSession.value;
 public static final long sel_PMPrintSettings = Selector.sel_PMPrintSettings.value;
 public static final long sel_TIFFRepresentation = Selector.sel_TIFFRepresentation.value;
 public static final long sel_URL = Selector.sel_URL.value;
-public static final long sel_URLFromPasteboard_ = Selector.sel_URLFromPasteboard_.value;
-public static final long sel_URLForApplicationToOpenURL_ = Selector.sel_URLForApplicationToOpenURL_.value;
 public static final long sel_URLForApplicationToOpenContentType_ = Selector.sel_URLForApplicationToOpenContentType_.value;
+public static final long sel_URLForApplicationToOpenURL_ = Selector.sel_URLForApplicationToOpenURL_.value;
+public static final long sel_URLFromPasteboard_ = Selector.sel_URLFromPasteboard_.value;
 public static final long sel_URLWithString_ = Selector.sel_URLWithString_.value;
 public static final long sel_UTF8String = Selector.sel_UTF8String.value;
 public static final long sel_abortEditing = Selector.sel_abortEditing.value;
@@ -970,6 +971,8 @@ public static final long sel_canBecomeKeyView = Selector.sel_canBecomeKeyView.va
 public static final long sel_canBecomeKeyWindow = Selector.sel_canBecomeKeyWindow.value;
 public static final long sel_canDragRowsWithIndexes_atPoint_ = Selector.sel_canDragRowsWithIndexes_atPoint_.value;
 public static final long sel_canGoBack = Selector.sel_canGoBack.value;
+public static final long sel_makeTextLarger = Selector.sel_makeTextLarger.value;
+public static final long sel_makeTextSmaller = Selector.sel_makeTextSmaller.value;
 public static final long sel_canGoForward = Selector.sel_canGoForward.value;
 public static final long sel_canRedo = Selector.sel_canRedo.value;
 public static final long sel_canShowMIMEType_ = Selector.sel_canShowMIMEType_.value;
@@ -2143,6 +2146,9 @@ public static final long sel_zoom_ = Selector.sel_zoom_.value;
 /** Constants */
 public static final int NSAlertFirstButtonReturn = 1000;
 public static final int NSAlertSecondButtonReturn = 1001;
+public static final int NSAlertStyleCritical = 2;
+public static final int NSAlertStyleInformational = 1;
+public static final int NSAlertStyleWarning = 0;
 public static final int NSAlertThirdButtonReturn = 1002;
 public static final int NSAlphaFirstBitmapFormat = 1;
 public static final int NSAlphaNonpremultipliedBitmapFormat = 2;
@@ -2164,7 +2170,6 @@ public static final int NSBezelStylePush = 1;
 public static final int NSBezelStylePushDisclosure = 14;
 public static final int NSBezelStyleSmallSquare = 6;
 public static final int NSBoldFontMask = 2;
-
 public static final int NSBottomTabsBezelBorder = 2;
 public static final int NSBoxCustom = 4;
 public static final int NSBoxSeparator = 2;
@@ -2174,21 +2179,19 @@ public static final int NSButtonTypePushOnPushOff = 1;
 public static final int NSButtonTypeRadio = 4;
 public static final int NSButtonTypeSwitch = 3;
 public static final int NSCarriageReturnCharacter = 13;
-public static final int NSDatePickerStyleClockAndCalendar = 1;
-
 public static final int NSClosePathBezierPathElement = 3;
-public static final int NSCommandKeyMask = 1048576;
+public static final int NSColorSpaceModelRGB = 1;
 public static final int NSCompositingOperationClear = 0;
 public static final int NSCompositingOperationCopy = 1;
 public static final int NSCompositingOperationSourceAtop = 5;
 public static final int NSCompositingOperationSourceOver = 2;
 public static final int NSContentsCellMask = 1;
-public static final int NSControlKeyMask = 262144;
-public static final int NSCriticalAlertStyle = 2;
 public static final int NSCurveToBezierPathElement = 2;
+public static final int NSDatePickerStyleClockAndCalendar = 1;
+public static final int NSDatePickerStyleTextField = 2;
+public static final int NSDatePickerStyleTextFieldAndStepper = 0;
 public static final int NSDeleteCharacter = 127;
 public static final long NSDeviceIndependentModifierFlagsMask = 4294901760L;
-
 public static final int NSDragOperationCopy = 1;
 public static final int NSDragOperationDelete = 32;
 public static final long NSDragOperationEvery = -1L;
@@ -2197,6 +2200,10 @@ public static final int NSDragOperationMove = 16;
 public static final int NSDragOperationNone = 0;
 public static final int NSEnterCharacter = 3;
 public static final int NSEvenOddWindingRule = 1;
+public static final int NSEventModifierFlagCommand = 1048576;
+public static final int NSEventModifierFlagControl = 262144;
+public static final int NSEventModifierFlagHelp = 4194304;
+public static final int NSEventModifierFlagShift = 131072;
 public static final int NSEventPhaseBegan = 1;
 public static final int NSEventPhaseCancelled = 16;
 public static final int NSEventPhaseEnded = 8;
@@ -2212,9 +2219,7 @@ public static final int NSFlagsChanged = 12;
 public static final int NSFocusRingTypeNone = 1;
 public static final int NSFontPanelModeMaskAllEffects = 1048320;
 public static final int NSFontPanelModeMaskAllModes = -1;
-
 public static final int NSHelpFunctionKey = 63302;
-public static final int NSHelpKeyMask = 4194304;
 public static final int NSHourMinuteDatePickerElementFlag = 12;
 public static final int NSHourMinuteSecondDatePickerElementFlag = 14;
 public static final int NSImageAbove = 5;
@@ -2229,7 +2234,7 @@ public static final int NSImageInterpolationNone = 1;
 public static final int NSImageLeft = 2;
 public static final int NSImageOnly = 1;
 public static final int NSImageOverlaps = 6;
-public static final int NSInformationalAlertStyle = 1;
+public static final int NSImageScaleNone = 2;
 public static final int NSItalicFontMask = 1;
 public static final int NSKeyDown = 10;
 public static final int NSKeyUp = 11;
@@ -2246,10 +2251,13 @@ public static final int NSLineBreakByTruncatingTail = 4;
 public static final int NSLineBreakByWordWrapping = 0;
 public static final int NSLineToBezierPathElement = 1;
 public static final int NSControlSizeMini = 2;
-
+public static final int NSControlSizeRegular = 0;
+public static final int NSControlSizeSmall = 1;
+public static final int NSControlStateValueMixed = -1;
+public static final int NSControlStateValueOff = 0;
+public static final int NSControlStateValueOn = 1;
 public static final int NSMiterLineJoinStyle = 0;
 public static final int NSModalResponseCancel = 0;
-public static final int NSControlStateValueMixed = -1;
 public static final int NSMouseEntered = 8;
 public static final int NSMouseExited = 9;
 public static final int NSMouseMoved = 5;
@@ -2259,9 +2267,6 @@ public static final int NSNoBorder = 0;
 public static final int NSNoImage = 0;
 public static final int NSNoTitle = 0;
 public static final int NSNonZeroWindingRule = 0;
-
-public static final int NSControlStateValueOff = 0;
-public static final int NSControlStateValueOn = 1;
 public static final int NSOpenGLCPSurfaceOrder = 235;
 public static final int NSOpenGLPFAAccumSize = 14;
 public static final int NSOpenGLPFAAlphaSize = 11;
@@ -2280,9 +2285,6 @@ public static final int NSPageUpFunctionKey = 63276;
 public static final int NSPortraitOrientation = 0;
 public static final int NSPrintPanelShowsPageSetupAccessory = 256;
 public static final int NSPrintPanelShowsPrintSelection = 32;
-public static final int NSProgressIndicatorPreferredThickness = 14;
-public static final int NSColorSpaceModelRGB = 1;
-public static final int NSControlSizeRegular = 0;
 public static final int NSRegularSquareBezelStyle = 2;
 public static final int NSResizableWindowMask = 8;
 public static final int NSRightMouseDown = 3;
@@ -2290,19 +2292,14 @@ public static final int NSRightMouseDragged = 7;
 public static final int NSRightMouseUp = 4;
 public static final int NSRoundLineCapStyle = 1;
 public static final int NSRoundLineJoinStyle = 1;
-public static final int NSImageScaleNone = 2;
 public static final int NSScrollElasticityNone = 1;
 public static final int NSScrollWheel = 22;
-public static final int NSScrollerDecrementLine = 4;
 public static final int NSScrollerDecrementPage = 1;
-public static final int NSScrollerIncrementLine = 5;
 public static final int NSScrollerIncrementPage = 3;
 public static final int NSScrollerKnob = 2;
 public static final int NSScrollerKnobSlot = 6;
 public static final int NSScrollerStyleLegacy = 0;
 public static final int NSScrollerStyleOverlay = 1;
-public static final int NSShiftKeyMask = 131072;
-public static final int NSControlSizeSmall = 1;
 public static final int NSSquareLineCapStyle = 2;
 public static final int NSStatusWindowLevel = 25;
 public static final int NSStringDrawingUsesLineFragmentOrigin = 1;
@@ -2322,9 +2319,6 @@ public static final int NSTextAlignmentCenter = IS_X86_64 ? 2 : 1;
 public static final int NSTextAlignmentJustified = 3;
 public static final int NSTextAlignmentLeft = 0;
 public static final int NSTextAlignmentRight = IS_X86_64 ? 1 : 2;
-public static final int NSDatePickerStyleTextFieldAndStepper = 0;
-public static final int NSDatePickerStyleTextField = 2;
-
 public static final int NSToolbarDisplayModeIconOnly = 2;
 public static final long NSTouchPhaseAny = -1L;
 public static final int NSTouchPhaseBegan = 1;
@@ -2336,14 +2330,12 @@ public static final int NSUnderlineStyleDouble = 9;
 public static final int NSUnderlineStyleNone = 0;
 public static final int NSUnderlineStyleSingle = 1;
 public static final int NSUnderlineStyleThick = 2;
-
 public static final int NSViewHeightSizable = 16;
 public static final int NSViewMaxXMargin = 4;
 public static final int NSViewMaxYMargin = 32;
 public static final int NSViewMinXMargin = 1;
 public static final int NSViewMinYMargin = 8;
 public static final int NSViewWidthSizable = 2;
-public static final int NSWarningAlertStyle = 0;
 public static final int NSWindowAbove = 1;
 public static final int NSWindowBelow = -1;
 public static final int NSWindowCollectionBehaviorFullScreenAuxiliary = 256;
@@ -3184,12 +3176,6 @@ public static final native long CGImageGetWidth(long image);
  */
 public static final native void CGImageRelease(long image);
 /**
- * @param url cast=(CFURLRef)
- * @param mediaBox cast=(const CGRect *)
- * @param auxiliaryInfo cast=(CFDictionaryRef)
- */
-public static final native long CGPDFContextCreateWithURL(long url, CGRect mediaBox, long auxiliaryInfo);
-/**
  * @param context cast=(CGContextRef)
  * @param pageInfo cast=(CFDictionaryRef)
  */
@@ -3197,11 +3183,17 @@ public static final native void CGPDFContextBeginPage(long context, long pageInf
 /**
  * @param context cast=(CGContextRef)
  */
-public static final native void CGPDFContextEndPage(long context);
+public static final native void CGPDFContextClose(long context);
+/**
+ * @param url cast=(CFURLRef)
+ * @param mediaBox cast=(CGRect*)
+ * @param auxiliaryInfo cast=(CFDictionaryRef)
+ */
+public static final native long CGPDFContextCreateWithURL(long url, CGRect mediaBox, long auxiliaryInfo);
 /**
  * @param context cast=(CGContextRef)
  */
-public static final native void CGPDFContextClose(long context);
+public static final native void CGPDFContextEndPage(long context);
 /**
  * @param path cast=(CGMutablePathRef)
  * @param m cast=(CGAffineTransform*)

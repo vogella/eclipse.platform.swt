@@ -128,19 +128,33 @@ public class Display extends Device implements Executor {
 	long fds;
 	int allocated_nfds;
 	boolean wake;
-	boolean windowSizeSet;
 	int [] max_priority = new int [1], timeout = new int [1];
 	Callback eventCallback;
 	long eventProc, windowProc2, windowProc3, windowProc4, windowProc5, windowProc6;
 	long changeValueProc;
 	long snapshotDrawProc, keyPressReleaseProc, focusProc, windowActiveProc, enterMotionProc, leaveProc,
 		 scrollProc, resizeProc, layoutProc, activateProc, gesturePressReleaseProc;
+	long menuItemsChangedProc;
+	/** GTK4 only: System.nanoTime() of the last key event, see Menu#syncRowSelection. */
+	long lastKeyEventTime;
+	/**
+	 * GTK4 only: set while SWT is mutating a GMenu. The removal's synchronous
+	 * "items-changed" re-enters menu wiring, so position-based custom widget
+	 * injection must wait until the model is whole again (see MenuItem#refreshMenuModelGTK4).
+	 */
+	boolean menuModelMutating;
+	/** GTK4 only: menu row kept out of picking after its submenu was closed from the keyboard, see Shell#gtk_move_focus. */
+	long untargetableMenuRow;
+	/** GTK4 only: where the pointer was when that row was hidden from it; it is picked again once the pointer moves. */
+	double untargetableMenuRowX, untargetableMenuRowY;
+	boolean untargetableMenuRowSeen;
 	long notifyProc;
 	long computeSizeProc;
 	Callback windowCallback2, windowCallback3, windowCallback4, windowCallback5, windowCallback6;
 	Callback changeValue;
 	Callback snapshotDraw, keyPressReleaseCallback, focusCallback, windowActiveCallback, enterMotionCallback, computeSizeCallback,
 			 scrollCallback, leaveCallback, resizeCallback, layoutCallback, activateCallback, gesturePressReleaseCallback;
+	Callback menuItemsChangedCallback;
 	Callback notifyCallback;
 	EventTable eventTable, filterTable;
 	static String APP_NAME = "SWT"; //$NON-NLS-1$
@@ -184,7 +198,7 @@ public class Display extends Device implements Executor {
 	Control focusControl;
 	Shell activeShell;
 	boolean activePending;
-	boolean ignoreActivate, ignoreFocus;
+	boolean ignoreFocus;
 
 	Tracker tracker;
 
@@ -333,10 +347,6 @@ public class Display extends Device implements Executor {
 	/* Initialize color list */
 	ArrayList<String> colorList;
 
-	/* Placeholder color ints since SWT system colors is missing them */
-	final int SWT_COLOR_LIST_SELECTION_TEXT_INACTIVE = 38;
-	final int SWT_COLOR_LIST_SELECTION_INACTIVE = 39;
-
 	/* Theme related */
 	/** The name of the current theme, including the theme named by GTK_THEME. */
 	static String themeName;
@@ -350,9 +360,6 @@ public class Display extends Device implements Executor {
 
 	/* Click count*/
 	int clickCount = 1;
-
-	/* Entry inner border */
-	static final int INNER_BORDER = 2;
 
 	/* Timestamp of the Last Received Events */
 	int lastEventTime, lastUserEventTime;
@@ -509,14 +516,6 @@ public class Display extends Device implements Executor {
 
 	/* Package name */
 	static final String PACKAGE_PREFIX = "org.eclipse.swt.widgets."; //$NON-NLS-1$
-	/* This code is intentionally commented.
-	 * ".class" can not be used on CLDC.
-	 */
-//	static {
-//		String name = Display.class.getName ();
-//		int index = name.lastIndexOf ('.');
-//		PACKAGE_NAME = name.substring (0, index + 1);
-//	}
 
 	/* Minimum GTK version requirement */
 	static final int GTK3_MAJOR = 3;
@@ -577,9 +576,6 @@ public class Display extends Device implements Executor {
 	}
 
 	boolean ignoreTrim;
-
-	/* Window Manager */
-	String windowManager;
 
 	/*
 	* TEMPORARY CODE.  Install the runnable that
@@ -1196,7 +1192,6 @@ void createDisplay (DeviceData data) {
 		GDK.gdk_threads_enter ();
 	}
 	boolean init;
-	windowSizeSet = false;
 	if (GTK.GTK4) {
 		init = GTK4.gtk_init_check();
 	} else {
@@ -1261,31 +1256,25 @@ void createDisplay (DeviceData data) {
 		text_renderer_type = OS.g_type_register_static (GTK.GTK_TYPE_CELL_RENDERER_TEXT (), type_name, text_renderer_info_ptr, 0);
 	}
 
-	/*
-	 * In GTK4, GtkCellRendererPixbuf & GtkCellRendererToggle are final structs, and
-	 * we no longer have access to them in order to register our own type.
-	 */
-	if (!GTK.GTK4) {
-		if (pixbuf_renderer_type == 0) {
-			GTypeInfo renderer_info = new GTypeInfo();
-			renderer_info.class_size = (short) GTK.GtkCellRendererPixbufClass_sizeof();
-			renderer_info.class_init = rendererClassInitProc;
-			renderer_info.instance_size = (short) GTK.GtkCellRendererPixbuf_sizeof();
-			pixbuf_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
-			OS.memmove(pixbuf_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
-			byte[] type_name = Converter.wcsToMbcs("SwtPixbufRenderer", true); //$NON-NLS-1$
-			pixbuf_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_PIXBUF(), type_name, pixbuf_renderer_info_ptr, 0);
-		}
-		if (toggle_renderer_type == 0) {
-			GTypeInfo renderer_info = new GTypeInfo();
-			renderer_info.class_size = (short) GTK.GtkCellRendererToggleClass_sizeof();
-			renderer_info.class_init = rendererClassInitProc;
-			renderer_info.instance_size = (short) GTK.GtkCellRendererToggle_sizeof();
-			toggle_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
-			OS.memmove(toggle_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
-			byte[] type_name = Converter.wcsToMbcs("SwtToggleRenderer", true); //$NON-NLS-1$
-			toggle_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_TOGGLE (), type_name, toggle_renderer_info_ptr, 0);
-		}
+	if (pixbuf_renderer_type == 0) {
+		GTypeInfo renderer_info = new GTypeInfo();
+		renderer_info.class_size = (short) GTK.GtkCellRendererPixbufClass_sizeof();
+		renderer_info.class_init = rendererClassInitProc;
+		renderer_info.instance_size = (short) GTK.GtkCellRendererPixbuf_sizeof();
+		pixbuf_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
+		OS.memmove(pixbuf_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
+		byte[] type_name = Converter.wcsToMbcs("SwtPixbufRenderer", true); //$NON-NLS-1$
+		pixbuf_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_PIXBUF(), type_name, pixbuf_renderer_info_ptr, 0);
+	}
+	if (toggle_renderer_type == 0) {
+		GTypeInfo renderer_info = new GTypeInfo();
+		renderer_info.class_size = (short) GTK.GtkCellRendererToggleClass_sizeof();
+		renderer_info.class_init = rendererClassInitProc;
+		renderer_info.instance_size = (short) GTK.GtkCellRendererToggle_sizeof();
+		toggle_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
+		OS.memmove(toggle_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
+		byte[] type_name = Converter.wcsToMbcs("SwtToggleRenderer", true); //$NON-NLS-1$
+		toggle_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_TOGGLE (), type_name, toggle_renderer_info_ptr, 0);
 	}
 
 	GTK.gtk_widget_set_default_direction (GTK.GTK_TEXT_DIR_LTR);
@@ -1896,11 +1885,13 @@ int getCaretBlinkTime () {
 }
 
 long getClosure (int id) {
-	if (closures [id] != 0) OS.g_closure_unref (closures [id]);
-	closures [id] = OS.g_cclosure_new (closuresProc [id], id, 0);
-	OS.g_closure_ref (closures [id]);
-	OS.g_closure_sink (closures [id]);
-	closuresCount [id] = 0;
+	if (++closuresCount [id] >= 255) {
+		if (closures [id] != 0) OS.g_closure_unref (closures [id]);
+		closures [id] = OS.g_cclosure_new (closuresProc [id], id, 0);
+		OS.g_closure_ref (closures [id]);
+		OS.g_closure_sink (closures [id]);
+		closuresCount [id] = 0;
+	}
 	return closures [id];
 }
 
@@ -3633,6 +3624,10 @@ void initializeCallbacks () {
 		activateCallback = new Callback(this, "activateProc", void.class, new Type[] {long.class, long.class, long.class}); //$NON-NLS-1$
 		activateProc = activateCallback.getAddress();
 
+		menuItemsChangedCallback = new Callback(this, "menuItemsChangedProc", void.class, new Type[] {
+				long.class, int.class, int.class, int.class, long.class}); //$NON-NLS-1$
+		menuItemsChangedProc = menuItemsChangedCallback.getAddress();
+
 		computeSizeCallback = new Callback(this, "computeSizeProc", void.class, new Type[] {long.class, long.class, long.class}); //$NON-NLS-1$
 		computeSizeProc = computeSizeCallback.getAddress();
 	}
@@ -4636,6 +4631,7 @@ void releaseDisplay () {
 	changeValueProc = 0;
 
 	if (GTK.GTK4) {
+		restoreMenuRowTarget ();
 		keyPressReleaseCallback.dispose();
 		keyPressReleaseCallback = null;
 		keyPressReleaseProc = 0;
@@ -4670,6 +4666,10 @@ void releaseDisplay () {
 		activateCallback.dispose();
 		activateCallback = null;
 		activateProc = 0;
+
+		menuItemsChangedCallback.dispose();
+		menuItemsChangedCallback = null;
+		menuItemsChangedProc = 0;
 
 		computeSizeCallback.dispose();
 		computeSizeCallback = null;
@@ -4930,21 +4930,6 @@ public void removeFilter (int eventType, Listener listener) {
 	if (filterTable == null) return;
 	filterTable.unhook (eventType, listener);
 	if (filterTable.size () == 0) filterTable = null;
-}
-
-long removeGdkEvent () {
-	if (gdkEventCount == 0) return 0;
-	long event = gdkEvents [0];
-	--gdkEventCount;
-	System.arraycopy (gdkEvents, 1, gdkEvents, 0, gdkEventCount);
-	System.arraycopy (gdkEventWidgets, 1, gdkEventWidgets, 0, gdkEventCount);
-	gdkEvents [gdkEventCount] = 0;
-	gdkEventWidgets [gdkEventCount] = null;
-	if (gdkEventCount == 0) {
-		gdkEvents = null;
-		gdkEventWidgets = null;
-	}
-	return event;
 }
 
 void removeIdleProc () {
@@ -6112,7 +6097,29 @@ void windowActiveProc(long handle, long user_data) {;
 	if (widget != null) widget.windowActiveProc(handle, user_data);
 }
 
+/** GTK4 only: lets the pointer pick the menu row again, see Shell#gtk_move_focus. */
+void restoreMenuRowTarget () {
+	if (untargetableMenuRow == 0) return;
+	OS.g_object_set (untargetableMenuRow, Converter.javaStringToCString ("can-target"), true, 0);
+	OS.g_object_unref (untargetableMenuRow);
+	untargetableMenuRow = 0;
+	untargetableMenuRowSeen = false;
+}
+
+/** GTK4 only: restores the row once the pointer has moved; the first event after hiding the submenu is GTK's synthesized crossing. */
+void restoreMenuRowTargetOnMotion (double x, double y) {
+	if (untargetableMenuRow == 0) return;
+	if (!untargetableMenuRowSeen) {
+		untargetableMenuRowSeen = true;
+		untargetableMenuRowX = x;
+		untargetableMenuRowY = y;
+	} else if (x != untargetableMenuRowX || y != untargetableMenuRowY) {
+		restoreMenuRowTarget ();
+	}
+}
+
 boolean keyPressReleaseProc(long controller, int keyval, int keycode, int state, long user_data) {
+	lastKeyEventTime = System.nanoTime();
 	long handle = GTK.gtk_event_controller_get_widget(controller);
 	Widget widget = getWidget(handle);
 	if (widget == null) return false;
@@ -6143,6 +6150,11 @@ void activateProc(long action, long parameter, long user_data) {
 	if(widget == null) return;
 
 	widget.gtk_activate(user_data);
+}
+
+void menuItemsChangedProc(long model, int position, int removed, int added, long user_data) {
+	Widget widget = getWidget(user_data);
+	if (widget instanceof Menu menu) menu.modelItemsChanged();
 }
 
 void resizeProc(long handle, int width, int height) {

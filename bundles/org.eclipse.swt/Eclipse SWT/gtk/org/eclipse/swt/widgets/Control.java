@@ -57,11 +57,12 @@ public abstract class Control extends Widget implements Drawable {
 	static final boolean DISABLE_EMOJI = Boolean.getBoolean("SWT_GTK_INPUT_HINT_NO_EMOJI");
 
 	long fixedHandle;
-	long firstFixedHandle = 0;
 	long keyController;
+	/* GTK4: where the pointer last moved over this control, relative to it */
+	double pointerX, pointerY;
 	long redrawWindow, enableWindow, provider;
 	int drawCount, backgroundAlpha = 255;
-	long dragGesture, zoomGesture, rotateGesture, panGesture;
+	long dragGesture, zoomGesture, rotateGesture;
 	Composite parent;
 	Cursor cursor;
 	Menu menu;
@@ -329,10 +330,6 @@ long fontHandle () {
 	return handle;
 }
 
-long gestureHandle () {
-	return handle;
-}
-
 /**
  * Returns the orientation of the receiver, which will be one of the
  * constants <code>SWT.LEFT_TO_RIGHT</code> or <code>SWT.RIGHT_TO_LEFT</code>.
@@ -547,11 +544,9 @@ void snapshotToDrawAfterChildren (long handle, long snapshot) {
 long hoverProc (long widget) {
 	int[] x = new int[1], y = new int[1], mask = new int[1];
 	if (GTK.GTK4) {
-		double[] xDouble = new double[1], yDouble = new double[1];
-		display.getPointerPosition(xDouble, yDouble);
-
-		x[0] = (int)xDouble[0];
-		y[0] = (int)yDouble[0];
+		/* The pointer position GDK reports is relative to the surface, not to this control. */
+		x[0] = (int) pointerX;
+		y[0] = (int) pointerY;
 	} else {
 		display.getWindowPointerPosition(0, x, y, mask);
 	}
@@ -880,14 +875,14 @@ Point computeNativeSize (long h, int wHint, int hHint, boolean changed) {
 		int [] natural_size = new int [1];
 		if (wHint == SWT.DEFAULT) {
 			if (GTK.GTK4) {
-				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_HORIZONTAL, height>0?height:-1, null, natural_size, null, null);
+				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_HORIZONTAL, measureForSize (h, GTK.GTK_ORIENTATION_VERTICAL, height), null, natural_size, null, null);
 			} else {
 				GTK3.gtk_widget_get_preferred_width_for_height (h, height, null, natural_size);
 			}
 			width = natural_size [0];
 		} else {
 			if (GTK.GTK4) {
-				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_VERTICAL, width>0?width:-1, null, natural_size, null, null);
+				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_VERTICAL, measureForSize (h, GTK.GTK_ORIENTATION_HORIZONTAL, width), null, natural_size, null, null);
 			} else {
 				GTK3.gtk_widget_get_preferred_height_for_width (h, width, null, natural_size);
 			}
@@ -895,6 +890,14 @@ Point computeNativeSize (long h, int wHint, int hHint, boolean changed) {
 		}
 	}
 	return new Point(width, height);
+}
+
+/* gtk_widget_measure() warns when forSize is below the widget's minimum in that orientation, and measures for the minimum instead. */
+private static int measureForSize (long h, int orientation, int forSize) {
+	if (forSize <= 0) return -1;
+	int [] minimum_size = new int [1];
+	GTK4.gtk_widget_measure (h, orientation, -1, minimum_size, null, null, null);
+	return Math.max (forSize, minimum_size [0]);
 }
 
 void forceResize () {
@@ -1075,7 +1078,12 @@ Point resizeCalculationsGTK3 (long widget, int width, int height) {
 	 * Feature in GTK3.20+: size calculations take into account GtkCSSNode
 	 * elements which we cannot access. If the to-be-allocated size minus
 	 * these elements is < 0, allocate the preferred size instead. See bug 486068.
+	 *
+	 * On GTK4 the widget is sized via its own
+	 * gtk_widget_size_allocate(), which clamps to the minimum size internally,
+	 * so this adjustment is unnecessary. Return the requested size unchanged on GTK4.
 	 */
+	if (GTK.GTK4) return sizes;
 	GtkRequisition minimumSize = new GtkRequisition();
 	GtkRequisition naturalSize = new GtkRequisition();
 	GTK.gtk_widget_get_preferred_size(widget, minimumSize, naturalSize);
@@ -2496,7 +2504,9 @@ public void removePaintListener(PaintListener listener) {
 void removeRelation () {
 	if (!isDescribedByLabel ()) return;		/* there will not be any */
 	if (labelRelation != null) {
-		_getAccessible().removeRelation (ACC.RELATION_LABELLED_BY, labelRelation._getAccessible());
+		if (accessible != null && labelRelation.accessible != null) {
+			accessible.removeRelation (ACC.RELATION_LABELLED_BY, labelRelation.accessible);
+		}
 		labelRelation = null;
 	}
 }
@@ -3012,10 +3022,6 @@ GdkRGBA getContextColorGdkRGBA () {
 }
 
 GdkRGBA getBgGdkRGBA () {
-	return getContextBackgroundGdkRGBA ();
-}
-
-GdkRGBA getBaseGdkRGBA () {
 	return getContextBackgroundGdkRGBA ();
 }
 
@@ -3658,12 +3664,14 @@ void gtk4_enter_event(long controller, double x, double y, long event) {
 	long toolHandle = handle;
 	GTK.gtk_widget_set_tooltip_text (toolHandle, buffer);
 
+	pointerX = x;
+	pointerY = y;
 	if (display.currentControl == this) return;
 
 	// Disconnect previous current Control and send MouseExit event to it
 	if (display.currentControl != null && !display.currentControl.isDisposed()) {
 		display.removeMouseHoverTimeout(display.currentControl.handle);
-		display.currentControl.sendMouseEvent(SWT.MouseExit, 0, 0, x, y, false, 0);
+		display.currentControl.sendMouseEvent(SWT.MouseExit, 0, 0, display.currentControl.pointerX, display.currentControl.pointerY, false, 0);
 	}
 
 	// Set display's current control and send MouseEnter event
@@ -3892,8 +3900,12 @@ long gtk_draw (long widget, long cairo) {
 		}
 	}
 	if ((state & OBSCURED) != 0) return 0;
-	GdkRectangle rect = new GdkRectangle ();
-	GDK.gdk_cairo_get_clip_rectangle (cairo, rect);
+	boolean hooksPaint = hooksPaint ();
+	GdkRectangle rect = null;
+	if (hooksPaint) {
+		rect = new GdkRectangle ();
+		GDK.gdk_cairo_get_clip_rectangle (cairo, rect);
+	}
 	/*
 	 * Modify the drawing of the widget with cairo_clip.
 	 * Doesn't modify input handling at this time.
@@ -3902,7 +3914,7 @@ long gtk_draw (long widget, long cairo) {
 	if (drawRegion) {
 		cairoClipRegion(cairo);
 	}
-	if (!hooksPaint ()) return 0;
+	if (!hooksPaint) return 0;
 	Event event = new Event ();
 	event.count = 1;
 	Rectangle eventBounds = new Rectangle (rect.x, rect.y, rect.width, rect.height);
@@ -3962,17 +3974,15 @@ void gtk4_focus_enter_event(long controller, long event) {
 void gtk4_focus_window_event(long handle, long event) {
 	super.gtk4_focus_window_event(handle, event);
 
-	if(firstFixedHandle == 0) {
-		long child = handle;
-		//3rd child of shell will be SWTFixed
-		for(int i = 0; i<3; i++) {
-			child = GTK4.gtk_widget_get_first_child(child);
-		}
-		firstFixedHandle = child != 0 ? child:0;
-	}
-
-	if(firstFixedHandle !=0 && GTK.gtk_widget_has_focus(firstFixedHandle)) {
-		if(event == SWT.FocusIn)sendFocusEvent(SWT.FocusIn);
+	// Send the focus event when the receiver's focusable client-area SwtFixed
+	// (this.handle) holds the keyboard focus. Reference it directly rather than walking
+	// a fixed number of first-children from the window: that depth assumption is
+	// fragile, follows only first-children (so with a menu bar it reached the first menu
+	// bar item, not the content fixed), and a cached child handle would dangle once that
+	// widget was destroyed - the next window-active event then called
+	// gtk_widget_has_focus on freed memory (SIGSEGV).
+	if (this.handle != 0 && GTK.gtk_widget_has_focus(this.handle)) {
+		if (event == SWT.FocusIn) sendFocusEvent(SWT.FocusIn);
 		else sendFocusEvent(SWT.FocusOut);
 	}
 }
@@ -4074,7 +4084,8 @@ void gtk4_leave_event(long controller, long event) {
 	display.removeMouseHoverTimeout(handle);
 
 	if (sendLeaveNotify() || display.getCursorControl() == null) {
-		sendMouseEvent(SWT.MouseExit, 0, 0, 0, 0, false, 0);
+		/* GtkEventControllerMotion::leave has no coordinates */
+		sendMouseEvent(SWT.MouseExit, 0, 0, pointerX, pointerY, false, 0);
 		display.currentControl = null;
 	}
 }
@@ -4138,6 +4149,8 @@ long gtk_mnemonic_activate (long widget, long arg1) {
 
 @Override
 void gtk4_motion_event(long controller, double x, double y, long event) {
+	pointerX = x;
+	pointerY = y;
 	if (this == display.currentControl && (hooks(SWT.MouseHover) || filters(SWT.MouseHover))) {
 		display.addMouseHoverTimeout(handle);
 	}
@@ -4149,12 +4162,7 @@ void gtk4_motion_event(long controller, double x, double y, long event) {
 	if (this != display.currentControl) {
 		if (display.currentControl != null && !display.currentControl.isDisposed()) {
 			display.removeMouseHoverTimeout(display.currentControl.handle);
-			/*
-			 *  Note: for GTK4, the call to display.map function was removed due to the
-			 *  inability to get the origin of surfaces. Testing needs to be done to see if
-			 *  the x, y, coordinates suffice.
-			 */
-			display.currentControl.sendMouseEvent(SWT.MouseExit, 0, time, x, y, isHint, state);
+			display.currentControl.sendMouseEvent(SWT.MouseExit, 0, time, display.currentControl.pointerX, display.currentControl.pointerY, isHint, state);
 		}
 		if (!isDisposed()) {
 			display.currentControl = this;
@@ -4826,10 +4834,10 @@ void destroyWidget() {
 			// GTK windows don't have a parent, so destroy it now
 			GTK4.gtk_window_destroy(currHandle);
 		} else if (parent != null) {
-			if (fixedHandle != 0) {
-				// Remove widget from hierarchy by removing it from parent container
-				OS.swt_fixed_remove(parent.parentingHandle(), fixedHandle);
-			}
+			/* Use currHandle, not fixedHandle alone - widgets without a
+			 * separate fixedHandle wrapper were otherwise never actually
+			 * unparented here, leaving them alive and rendered natively. */
+			OS.swt_fixed_remove(parent.parentingHandle(), currHandle);
 		} else {
 			assert false : "widgets must have a parent or be a GtkWindow";
 		}
@@ -4863,7 +4871,7 @@ void flushQueueOnDnd() {
 }
 
 boolean sendDragEvent (int button, int stateMask, int x, int y, boolean isStateMask) {
-	if (OS.isWayland() && dragDetectionQueue != null) {
+	if (dragDetectionQueue != null && OS.isWayland()) {
 		// Flush events used to detect drag&drop just before sending `DragDetect` event.
 		// This is to maintain the same order of events as on other platforms.
 		flushQueueOnDnd();
@@ -5011,7 +5019,7 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 		 * event, similar to the way the caching logic does it when receiving a
 		 * MouseMove event. See bug 529126.
 		 */
-		if (OS.isWayland() && dragDetectionQueue != null) {
+		if (dragDetectionQueue != null && OS.isWayland()) {
 			/*
 			 * The first event in the queue will always be a MouseDown, as
 			 * the queue is only ever created if a MouseDown event is being cached.
@@ -5031,9 +5039,9 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 		 * hook these events. Without them queued a control with only a DragSource never detects
 		 * the drag (issue #1145).
 		 */
-		boolean waylandDragDetect = OS.isWayland()
-				&& ((type == SWT.MouseDown && button == 1 && (this.state & DRAG_DETECT) != 0 && wantDragDropDetection ())
-						|| dragDetectionQueue != null);
+		boolean waylandDragDetect = ((type == SWT.MouseDown && button == 1 && (this.state & DRAG_DETECT) != 0 && wantDragDropDetection ())
+				|| dragDetectionQueue != null)
+				&& OS.isWayland();
 		if (!waylandDragDetect) return true;
 	}
 	Event event = new Event ();
@@ -5668,10 +5676,6 @@ private void setDragGesture() {
 	return;
 }
 
-//private void setPanGesture () {
-///* TODO: Panning gesture requires a GtkOrientation object. Need to discuss what orientation should be default. */
-//}
-
 private void setRotateGesture() {
 	if (GTK.GTK4) {
 		rotateGesture = GTK4.gtk_gesture_rotate_new();
@@ -6148,6 +6152,20 @@ public void setVisible (boolean visible) {
 				if (enableWindow != 0) GDK.gdk_window_show_unraised(enableWindow);
 			}
 			gtk_widget_show (topHandle);
+			/*
+			 * On GTK4, a Composite laid out while it (or an ancestor) is hidden can end
+			 * up with its children sized against a stale 0x0 client area, because
+			 * gtk_widget_hide() resets allocations to 0x0 (issue #3330) and setBounds on a
+			 * hidden widget shows/allocates/re-hides it. The size given while hidden is
+			 * still stored in the parent's swt_fixed child list, so re-running the parent's
+			 * size allocation re-applies this control's real size (restoring its client
+			 * area), after which a re-layout of its own subtree lets the children pick up
+			 * the now-correct client area. See issue #3450.
+			 */
+			if (GTK.GTK4 && this instanceof Composite composite && composite.layout != null) {
+				parent.forceResize ();
+				composite.layout (true, true);
+			}
 		}
 	} else {
 		/*
@@ -6221,9 +6239,12 @@ void setZOrder (Control sibling, boolean above, boolean fixRelations, boolean fi
 
 	long topHandle = topHandle ();
 	long siblingHandle = sibling != null ? sibling.topHandle () : 0;
-	if (GTK.GTK4) {
-		//TODO: Test GTK3 behavior then implement, probably using gdk_toplevel_lower
-	} else {
+	/*
+	 * Nothing to restack on GTK4: its widgets have no GdkWindow of their own, so
+	 * the z-order is entirely determined by the position in the parent's child
+	 * list, which parent.moveAbove()/moveBelow() below takes care of.
+	 */
+	if (!GTK.GTK4) {
 		long window = gtk_widget_get_window (topHandle);
 		if (window != 0) {
 			long siblingWindow = 0;
@@ -6321,16 +6342,26 @@ boolean showMenu (int x, int y, int detail) {
 		if (menu != null && !menu.isDisposed ()) {
 			if (GTK.GTK4) {
 
+				/*
+				 * Parent the popover to the top handle: GtkTreeView keeps its header buttons'
+				 * CSS nodes under a node of its own, so gtk_widget_set_parent on it fails the
+				 * gtk_css_node_insert_after assertion. The location is relative to the
+				 * event handle, which the click gesture is attached to.
+				 */
+				long menuParent = topHandle ();
+				long eventHandle = eventHandle ();
+				double [] menuX = new double [] {x}, menuY = new double [] {y};
+				if (menuParent != eventHandle) GTK4.gtk_widget_translate_coordinates (eventHandle, menuParent, x, y, menuX, menuY);
 				long temp = 0;
 				if (GTK.gtk_widget_get_parent(menu.handle) != 0) {
 					temp = OS.g_object_ref(menu.handle);
 					GTK.gtk_widget_unparent(menu.handle);
 				}
-				GTK.gtk_widget_set_parent(menu.handle, this.handle);
+				GTK.gtk_widget_set_parent(menu.handle, menuParent);
 				if (temp != 0) OS.g_object_unref(temp);
 
 
-				menu.setLocation(x, y);
+				menu.setLocation((int) menuX [0], (int) menuY [0]);
 				menu.setVisible(true);
 
 				return true;
@@ -6367,18 +6398,11 @@ void showWidget () {
 }
 
 void sort (int [] items) {
-	/* Shell Sort from K&R, pg 108 */
-	int length = items.length;
-	for (int gap=length/2; gap>0; gap/=2) {
-		for (int i=gap; i<length; i++) {
-			for (int j=i-gap; j>=0; j-=gap) {
-				if (items [j] <= items [j + gap]) {
-					int swap = items [j];
-					items [j] = items [j + gap];
-					items [j + gap] = swap;
-				}
-			}
-		}
+	Arrays.sort (items);
+	for (int i = 0, j = items.length - 1; i < j; i++, j--) {
+		int swap = items [i];
+		items [i] = items [j];
+		items [j] = swap;
 	}
 }
 

@@ -44,8 +44,11 @@ import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -54,6 +57,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.ToolBar;
@@ -69,6 +73,7 @@ import org.junit.jupiter.api.Test;
  *
  * @see org.eclipse.swt.custom.CTabFolder
  */
+@SuppressWarnings("restriction")
 public class Test_org_eclipse_swt_custom_CTabFolder extends Test_org_eclipse_swt_widgets_Composite {
 
 @Override
@@ -520,6 +525,93 @@ public void test_topRightWrapOverflow() {
 	assertTrue(topRightBounds.y >= tabBounds.y + tabBounds.height,
 			"topRight should wrap below tabs when space is tight. "
 			+ "topRight.y=" + topRightBounds.y + " tab.bottom=" + (tabBounds.y + tabBounds.height));
+}
+
+/**
+ * A top right tool bar squeezed by a transient narrow layout must return to its place
+ * in the tab row once there is space again. Test for issue 3608.
+ */
+@Test
+public void test_topRightToolBarKeepsPlaceAfterTransientNarrowLayout() throws InterruptedException {
+	makeCleanEnvironment(SWT.BORDER);
+	shell.setSize(400, 300);
+
+	CTabItem item = new CTabItem(ctabFolder, SWT.CLOSE);
+	item.setText("Tab");
+	ctabFolder.setSelection(0);
+
+	Composite topRight = new Composite(ctabFolder, SWT.NONE);
+	topRight.setLayout(new FillLayout());
+	ToolBar toolbar = new ToolBar(topRight, SWT.FLAT | SWT.RIGHT | SWT.WRAP);
+	Image image = new Image(shell.getDisplay(), 16, 16);
+	try {
+		for (int i = 0; i < 3; i++) {
+			new ToolItem(toolbar, SWT.PUSH).setImage(image);
+		}
+		ctabFolder.setTopRight(topRight, SWT.RIGHT | SWT.WRAP);
+
+		SwtTestUtil.openShell(shell);
+		processEvents();
+		Rectangle initialBounds = topRight.getBounds();
+		Point initialSize = toolbar.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+
+		// GTK allocates the squeezed tool bar asynchronously
+		ctabFolder.setSize(60, 300);
+		SwtTestUtil.processEvents(500, null);
+		assertEquals(initialSize, toolbar.computeSize(SWT.DEFAULT, SWT.DEFAULT),
+				"a squeezed tool bar must keep its preferred size");
+
+		shell.layout(true);
+		SwtTestUtil.processEvents(500, null);
+		assertEquals(initialBounds, topRight.getBounds(), "topRight should return to its place in the tab row");
+	} finally {
+		image.dispose();
+	}
+}
+
+/**
+ * A tab control is rescaled after the folder itself, so the folder must recompute
+ * its tab height once a tab control reports a zoom change. Test for issue 3456.
+ */
+@Test
+public void test_tabHeightRecomputedOnTabControlZoomChange() {
+	makeCleanEnvironment();
+	shell.setSize(800, 400);
+
+	CTabItem item = new CTabItem(ctabFolder, SWT.NONE);
+	item.setText("Tab 1");
+	ctabFolder.setSelection(0);
+
+	int topRightHeight = 20;
+	Composite topRight = new Composite(ctabFolder, SWT.NONE);
+	FixedSizeLayout topRightLayout = new FixedSizeLayout(60, topRightHeight);
+	topRight.setLayout(topRightLayout);
+	ctabFolder.setTopRight(topRight, SWT.RIGHT | SWT.WRAP);
+
+	SwtTestUtil.openShell(shell);
+	processEvents();
+
+	int defaultTabHeight = ctabFolder.getTabHeight();
+
+	// A taller tab control makes the folder grow its tab height
+	topRightLayout.height = defaultTabHeight * 3;
+	ctabFolder.setTabHeight(SWT.DEFAULT);
+	processEvents();
+	int grownTabHeight = ctabFolder.getTabHeight();
+	assertTrue(grownTabHeight > defaultTabHeight, "tab height should grow with the tab control");
+
+	// Shrinking the tab control alone leaves the tab height stale, which is the state
+	// the folder ends up in after measuring a control that was not yet rescaled
+	topRightLayout.height = topRightHeight;
+	assertEquals(grownTabHeight, ctabFolder.getTabHeight(), "precondition: tab height is stale");
+
+	Event zoomChanged = new Event();
+	zoomChanged.detail = DPIUtil.getDeviceZoom();
+	topRight.notifyListeners(SWT.ZoomChanged, zoomChanged);
+	processEvents();
+
+	assertEquals(defaultTabHeight, ctabFolder.getTabHeight(),
+			"tab height should be recomputed after a zoom change of a tab control");
 }
 
 /**
@@ -1050,6 +1142,61 @@ public void test_dirtyIndicator_closesWhenCloseEnabled() {
 	}
 }
 
+/**
+ * All tabs are painted with the same GC, so the dirty indicator must not leave it in
+ * advanced graphics mode.
+ */
+@Test
+public void test_dirtyIndicator_doesNotChangeAdvancedGraphicsMode() {
+	makeCleanEnvironment(SWT.CLOSE);
+	shell.setLayout(new FillLayout());
+
+	for (int i = 0; i < 2; i++) {
+		CTabItem item = new CTabItem(ctabFolder, SWT.NONE);
+		item.setText("Tab " + i);
+	}
+	ctabFolder.setDirtyIndicatorStyle(true);
+	// the dirty item is painted before the selected one, which is painted last
+	ctabFolder.getItem(0).setShowDirty(true);
+	ctabFolder.setSelection(1);
+	shell.setSize(800, 400);
+	SwtTestUtil.openShell(shell);
+	processEvents();
+
+	assertTrue(getCloseRect(ctabFolder.getItem(0)).width > 0, "dirty indicator is not laid out");
+
+	// paint into an image so that the test does not depend on the display sending paint events
+	Rectangle bounds = ctabFolder.getBounds();
+	Image image = new Image(shell.getDisplay(), bounds.width, bounds.height);
+	GC gc = new GC(image);
+	try {
+		boolean advancedBefore = gc.getAdvanced();
+
+		Event paint = new Event();
+		paint.gc = gc;
+		paint.width = bounds.width;
+		paint.height = bounds.height;
+		ctabFolder.notifyListeners(SWT.Paint, paint);
+
+		assertEquals(advancedBefore, gc.getAdvanced(),
+				"Painting the dirty indicator must not change the advanced graphics mode of the GC");
+	} finally {
+		gc.dispose();
+		image.dispose();
+	}
+}
+
+private static Rectangle getCloseRect(CTabItem item) {
+	try {
+		Field closeRect = CTabItem.class.getDeclaredField("closeRect");
+		closeRect.setAccessible(true);
+		return (Rectangle) closeRect.get(item);
+	} catch (NoSuchFieldException | IllegalAccessException e) {
+		fail("Failed to access closeRect via reflection: " + e.getMessage());
+		return null;
+	}
+}
+
 @Test
 public void test_moveItem_forward() {
 	createTabFolder(null, 5);
@@ -1104,6 +1251,26 @@ public void test_moveItem_sameIndexIsNoOp() {
 }
 
 @Test
+public void test_setBackgroundColorClearsGradient() {
+	createTabFolder(null);
+	Composite topRight = new Composite(ctabFolder, SWT.NONE);
+	topRight.setLayout(new FixedSizeLayout(16, 8));
+	ctabFolder.setTopRight(topRight, SWT.RIGHT);
+	shell.setSize(400, 300);
+	shell.layout(true, true);
+	Color red = shell.getDisplay().getSystemColor(SWT.COLOR_RED);
+	Color blue = shell.getDisplay().getSystemColor(SWT.COLOR_BLUE);
+
+	ctabFolder.setBackground(new Color[] { red, blue }, new int[] { 100 }, true);
+	assertNotNull(topRight.getBackgroundImage(), "gradient must be handed to the top right control");
+
+	ctabFolder.setBackground(blue);
+	assertNull(topRight.getBackgroundImage(), "solid background must replace the gradient");
+	assertEquals(blue, topRight.getBackground());
+	assertEquals(blue, ctabFolder.getBackground());
+}
+
+@Test
 public void test_moveItem_errorCases() {
 	createTabFolder(null, 3);
 
@@ -1115,6 +1282,26 @@ public void test_moveItem_errorCases() {
 			"negative to index must be rejected");
 	assertThrows(IllegalArgumentException.class, () -> ctabFolder.moveItem(0, 3),
 			"out-of-range to index must be rejected");
+}
+
+/** Layout with a preferred size the test can change at will. */
+private static final class FixedSizeLayout extends Layout {
+	int width;
+	int height;
+
+	FixedSizeLayout(int width, int height) {
+		this.width = width;
+		this.height = height;
+	}
+
+	@Override
+	protected Point computeSize(Composite composite, int wHint, int hHint, boolean flushCache) {
+		return new Point(wHint == SWT.DEFAULT ? width : wHint, hHint == SWT.DEFAULT ? height : hHint);
+	}
+
+	@Override
+	protected void layout(Composite composite, boolean flushCache) {
+	}
 }
 
 }

@@ -30,6 +30,9 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,6 +62,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -71,6 +75,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class Test_org_eclipse_swt_graphics_GC {
 
 private static final int IMAGE_SIZE = 200;
+
+@TempDir
+static Path tempFolder;
 
 @BeforeEach
 public void setUp() {
@@ -241,7 +248,8 @@ public void test_copyAreaLorg_eclipse_swt_graphics_ImageII() {
 }
 
 private int scaleWithDeviceZoom(int value) {
-	return value * DPIUtil.getDeviceZoom() / 100;
+	// round like SWT does, truncating misses the pixel at fractional zoom
+	return pointToPixel(value, DPIUtil.getDeviceZoom());
 }
 
 @Test
@@ -290,7 +298,8 @@ public void test_drawImage_nonAutoScalableGC_bug_2504() throws InterruptedExcept
     gcCopy.copyArea(target, 0, 0);
     gcCopy.dispose();
 
-    ImageData data = target.getImageData();
+    // the canvas is not auto-scaled, so its pixels map 1:1 to the copy at device zoom
+    ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
 
     int bottomRightX = canvasWidth - 1;
     int bottomRightY = canvasHeight - 1;
@@ -380,6 +389,20 @@ public void test_drawImageLorg_eclipse_swt_graphics_ImageIIIIIIII() {
 	gc.drawImage(images.alpha, 10, 5, 20, 15, 100, 120, 20, 15);
 	assertThrows(IllegalArgumentException.class, () -> gc.drawImage(null, 10, 5, 20, 15, 100, 120, 50, 60));
 	images.dispose();
+}
+
+/**
+ * See https://github.com/eclipse-platform/eclipse.platform.swt/issues/3442
+ */
+@Test
+public void test_drawImage_emptyImage() {
+	Image emptyImage = new Image(display, IMAGE_SIZE, IMAGE_SIZE);
+	try {
+		gc.drawImage(emptyImage, 0, 0, IMAGE_SIZE, IMAGE_SIZE, 0, 0, IMAGE_SIZE / 3, IMAGE_SIZE / 3);
+		ImageDataTestHelper.assertImageDataEqual(image.getImageData(), emptyImage.getImageData(), image.getImageData());
+	} finally {
+		emptyImage.dispose();
+	}
 }
 
 
@@ -678,6 +701,44 @@ public void test_fillGradientRectangleIIIIZ() {
 	gc.fillGradientRectangle(0, 0, 0, 0, true);
 	gc.fillGradientRectangle(10, 0, 20, 30, false);
 	gc.fillGradientRectangle(0, 0, 0, 0, false);
+}
+
+@Test
+public void test_fillGradientRectangle_doesNotChangeLaterDrawing() {
+	int deviceZoom = DPIUtil.getDeviceZoom();
+	// the gradient scales the surface to the device zoom, which a 1:1 image does not have
+	DPIUtil.setDeviceZoom(200);
+	try {
+		ImageData gradientFirst = drawGradientAndRectangle(true);
+		ImageData rectangleFirst = drawGradientAndRectangle(false);
+		assertArrayEquals(rectangleFirst.data, gradientFirst.data,
+				"drawing after fillGradientRectangle must land where it lands before it");
+	} finally {
+		DPIUtil.setDeviceZoom(deviceZoom);
+	}
+}
+
+private ImageData drawGradientAndRectangle(boolean gradientFirst) {
+	Image image = new Image(display, 40, 40);
+	try {
+		if (gradientFirst) drawGradient(image);
+		GC rectangleGC = new GC(image);
+		rectangleGC.setBackground(display.getSystemColor(SWT.COLOR_RED));
+		rectangleGC.fillRectangle(10, 10, 5, 5);
+		rectangleGC.dispose();
+		if (!gradientFirst) drawGradient(image);
+		return image.getImageData(100);
+	} finally {
+		image.dispose();
+	}
+}
+
+private void drawGradient(Image image) {
+	GC gradientGC = new GC(image);
+	gradientGC.setForeground(display.getSystemColor(SWT.COLOR_BLUE));
+	gradientGC.setBackground(display.getSystemColor(SWT.COLOR_GREEN));
+	gradientGC.fillGradientRectangle(0, 0, 2, 2, false);
+	gradientGC.dispose();
 }
 
 @Test
@@ -1192,6 +1253,65 @@ RGB getRealRGB(Color color) {
 	colorImage.dispose();
 	int pixel = imageData.getPixel(0, 0);
 	return palette.getRGB(pixel);
+}
+
+/**
+ * Drawing reads the image dimensions from the image itself. Obtaining them through
+ * ImageData used to decode the file again on every draw at a device zoom other than 100.
+ */
+@Test
+public void test_drawImage_doesNotReReadImageFileAtNonDefaultZoom() throws IOException {
+	Path file = tempFolder.resolve("volatile-collapseall.png");
+	Files.copy(SwtTestUtil.getPath("collapseall.png", tempFolder), file);
+	int previousDeviceZoom = DPIUtil.getDeviceZoom();
+	Image fileImage = null;
+	try {
+		DPIUtil.setDeviceZoom(200);
+		gc.dispose();
+		gc = new GC(image);
+		fileImage = new Image(display, file.toString());
+		ImageData beforeDelete = drawToFreshTarget(fileImage);
+		assertFalse(Arrays.equals(blankTargetData(), beforeDelete.data), "the reference draw produced no pixels");
+
+		Files.delete(file);
+
+		ImageData afterDelete = drawToFreshTarget(fileImage);
+		ImageDataTestHelper.assertImageDataEqual(beforeDelete, afterDelete, beforeDelete);
+		gc.drawImage(fileImage, 0, 0);
+	} finally {
+		try {
+			// Windows GCs retain image operations and copy live sources when they are disposed.
+			gc.dispose();
+			if (fileImage != null) {
+				fileImage.dispose();
+			}
+		} finally {
+			DPIUtil.setDeviceZoom(previousDeviceZoom);
+			Files.deleteIfExists(file);
+		}
+	}
+}
+
+private byte[] blankTargetData() {
+	Image target = new Image(display, IMAGE_SIZE, IMAGE_SIZE);
+	try {
+		return target.getImageData().data;
+	} finally {
+		target.dispose();
+	}
+}
+
+private ImageData drawToFreshTarget(Image source) {
+	Rectangle bounds = source.getBounds();
+	Image target = new Image(display, IMAGE_SIZE, IMAGE_SIZE);
+	GC targetGc = new GC(target);
+	try {
+		targetGc.drawImage(source, 0, 0, bounds.width, bounds.height, 0, 0, bounds.width * 2, bounds.height * 2);
+		return target.getImageData();
+	} finally {
+		targetGc.dispose();
+		target.dispose();
+	}
 }
 
 private void executeWithNonDefaultDeviceZoom(Runnable executable) {

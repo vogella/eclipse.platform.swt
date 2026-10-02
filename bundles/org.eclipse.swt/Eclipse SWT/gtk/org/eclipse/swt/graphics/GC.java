@@ -913,9 +913,14 @@ void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, 
 	/* Refresh Image as per zoom level, if required. */
 	srcImage.refreshImageForZoom ();
 
-	ImageData srcImageData = srcImage.getImageData();
-	int imgWidth = srcImageData.width;
-	int imgHeight = srcImageData.height;
+	int imgWidth = srcImage.width;
+	int imgHeight = srcImage.height;
+	if (imgWidth == -1 || imgHeight == -1) {
+		/* Images wrapped around a native handle carry no dimensions, see Image.gtk_new. */
+		ImageData srcImageData = srcImage.getImageData();
+		imgWidth = srcImageData.width;
+		imgHeight = srcImageData.height;
+	}
 	if (srcWidth == 0 && srcHeight == 0) {
 		srcWidth = imgWidth;
 		srcHeight = imgHeight;
@@ -1604,7 +1609,6 @@ public void fillGradientRectangle(int x, int y, int width, int height, boolean v
 		toRGB   = foregroundRGB;
 	}
 	long cairo = data.cairo;
-	long pattern;
 
 	/*
 	 * Here the co-ordinates passed are in points for GTK3.
@@ -1613,15 +1617,26 @@ public void fillGradientRectangle(int x, int y, int width, int height, boolean v
 	 * to set the device scale to current scale factor
 	 */
 	long surface = Cairo.cairo_get_target(cairo);
+	double[] oldScaleX = new double[1], oldScaleY = new double[1];
 	if (surface != 0) {
+		Cairo.cairo_surface_get_device_scale(surface, oldScaleX, oldScaleY);
 		float scaleFactor = DPIUtil.getDeviceZoom() / 100f;
 		Cairo.cairo_surface_set_device_scale(surface, scaleFactor, scaleFactor);
 	}
+	try {
+		fillGradientRectangleInCairo(cairo, x, y, width, height, vertical, fromRGB, toRGB);
+	} finally {
+		// the surface outlives this call, later drawing must not inherit the scale
+		if (surface != 0) Cairo.cairo_surface_set_device_scale(surface, oldScaleX[0], oldScaleY[0]);
+	}
+}
 
+private void fillGradientRectangleInCairo(long cairo, int x, int y, int width, int height, boolean vertical, RGB fromRGB, RGB toRGB) {
 	if (fromRGB.equals(toRGB)) {
 		fillRectangle(x, y, width, height);
 		return;
 	}
+	long pattern;
 
 	if (vertical) {
 		pattern = Cairo.cairo_pattern_create_linear (0.0, 0.0, 0.0, 1.0);

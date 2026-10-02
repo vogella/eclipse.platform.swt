@@ -24,19 +24,9 @@ permissions:
   contents: read
 
 jobs:
-  event_file:
-    name: "Event File"
-    runs-on: ubuntu-latest
-    steps:
-    - name: Upload
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: Event File
-        path: ${{ github.event_path }}
-
   changes:
-    name: Detect changed paths
-    runs-on: ubuntu-latest
+    name: Detect changes and upload events
+    runs-on: ubuntu-slim
     outputs:
       # Lint warnings are expected in this block
       # https://github.com/dorny/paths-filter/issues/223#issuecomment-2463309889
@@ -46,9 +36,14 @@ jobs:
       md:    ${{ steps.filter.outputs.md     || 'false' }}
       other: ${{ steps.filter.outputs.other  || 'false' }}
     steps:
+      - name: Upload event file
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: 'event-file'
+          path: ${{ github.event_path }}
       - name: Paths filter (PRs only)
-        if: github.event.pull_request.base
-        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           predicate-quantifier: 'every'
@@ -80,7 +75,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['21']
+        java: ['25']
         gtk: [gtk3, gtk4]
         gdk_backend: [x11, wayland]
         exclude:
@@ -93,6 +88,8 @@ jobs:
       native: gtk.linux.x86_64
       gtk: ${{ matrix.gtk }}
       gdk_backend: ${{ matrix.gdk_backend }}
+      # All Linux jobs build the same Java sources, so check the API and javadoc only once
+      api_check: ${{ matrix.gtk == 'gtk3' && matrix.gdk_backend == 'x11' }}
       performance: ${{ contains(github.event.pull_request.labels.*.name, 'performance') }}
       runtodotests: ${{ contains(github.event.pull_request.labels.*.name, 'runtodotests') }}
 
@@ -104,12 +101,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['21']
+        java: ['25']
     uses: ./.github/workflows/build.yml
     with:
       runner: windows-latest
       java: ${{ matrix.java }}
       native: win32.win32.x86_64
+      api_check: true
       performance: ${{ contains(github.event.pull_request.labels.*.name, 'performance') }}
       runtodotests: ${{ contains(github.event.pull_request.labels.*.name, 'runtodotests') }}
 
@@ -121,12 +119,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['21']
+        java: ['25']
         arch: [x86_64, aarch64]
     uses: ./.github/workflows/build.yml
     with:
       runner: ${{ matrix.arch == 'x86_64' && 'macos-15-intel' || 'macos-latest' }}
       java: ${{ matrix.java }}
       native: cocoa.macosx.${{ matrix.arch }}
+      # Both macOS fragments compile the same Java sources, so check the API and javadoc only once
+      api_check: ${{ matrix.arch == 'aarch64' }}
       performance: ${{ contains(github.event.pull_request.labels.*.name, 'performance') }}
       runtodotests: ${{ contains(github.event.pull_request.labels.*.name, 'runtodotests') }}

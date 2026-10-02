@@ -43,6 +43,9 @@ public class GTK extends OS {
 	public static final int GTK_DIALOG_MODAL = 1 << 0;
 	public static final int GTK_DIR_TAB_FORWARD = 0;
 	public static final int GTK_DIR_TAB_BACKWARD = 1;
+	public static final int GTK_DIR_UP = 2;
+	public static final int GTK_DIR_LEFT = 4;
+	public static final int GTK_DIR_RIGHT = 5;
 	public static final int GTK_ENTRY_ICON_PRIMARY = 0;
 	public static final int GTK_ENTRY_ICON_SECONDARY = 1;
 	public static final int GTK_FILE_CHOOSER_ACTION_OPEN = 0;
@@ -207,7 +210,7 @@ public class GTK extends OS {
 	public static final native int GtkCellRendererTextClass_sizeof();
 	public static final native int GtkTreeIter_sizeof();
 
-	/** GTK3 sizeof() [if-def'd in os.h] */
+	/** On GTK4 these structs are private, os_custom.h asks GLib for their registered sizes */
 	public static final native int GtkCellRendererPixbuf_sizeof();
 	public static final native int GtkCellRendererPixbufClass_sizeof();
 	public static final native int GtkCellRendererToggle_sizeof();
@@ -258,6 +261,7 @@ public class GTK extends OS {
 
 
 	/* GtkButton */
+	public static final native long gtk_button_get_type();
 	public static final native long gtk_button_new();
 	/**
 	 * @method flags=dynamic
@@ -1799,6 +1803,12 @@ public class GTK extends OS {
 	 * @param parent cast=(GtkTreeIter *)
 	 */
 	public static final native boolean gtk_tree_model_iter_nth_child(long tree_model, long iter, long parent, int n);
+	/**
+	 * @param tree_model cast=(GtkTreeModel *)
+	 * @param iter cast=(GtkTreeIter *)
+	 * @param child cast=(GtkTreeIter *)
+	 */
+	public static final native boolean gtk_tree_model_iter_parent(long tree_model, long iter, long child);
 
 	/* GtkTreePath */
 	/** @param path cast=(GtkTreePath *) */
@@ -2270,6 +2280,16 @@ public class GTK extends OS {
 	public static final native void gtk_widget_set_margin_bottom(long widget, int margin);
 	/** @param self cast=(GtkWidget *) */
 	public static final native int gtk_widget_get_state_flags(long self);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param flags cast=(GtkStateFlags)
+	 */
+	public static final native void gtk_widget_unset_state_flags(long widget, int flags);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param flags cast=(GtkStateFlags)
+	 */
+	public static final native void gtk_widget_set_state_flags(long widget, int flags, boolean clear);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native boolean gtk_widget_has_default(long widget);
 

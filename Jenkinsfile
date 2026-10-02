@@ -21,10 +21,10 @@ def runOnNativeBuildAgent(String platform, Closure body) {
 	def dockerImage = null
 	switch (platform) {
 		case 'gtk.linux.x86_64':
-			dockerImage = 'eclipse/platformreleng-debian-swtgtk3nativebuild:10'
+			dockerImage = 'ghcr.io/eclipse-platform/platformreleng-debian-swtgtk3nativebuild:11'
 			break
 		case 'gtk4.linux.x86_64':
-			dockerImage = 'eclipse/platformreleng-debian-swtnativebuild:12'
+			dockerImage = 'ghcr.io/eclipse-platform/platformreleng-debian-swtnativebuild:12'
 			break
 	}
 	if (dockerImage != null) {
@@ -74,7 +74,7 @@ pipeline {
 		label 'ubuntu-latest'
 	}
 	tools {
-		jdk 'temurin-jdk21-latest'
+		jdk 'temurin-jdk25-latest'
 		maven 'apache-maven-latest'
 	}
 	environment {
@@ -329,7 +329,7 @@ pipeline {
 			post {
 				always {
 					junit allowEmptyResults: true, testResults: 'eclipse.platform.swt/tests/*.test*/target/surefire-reports/*.xml'
-					archiveArtifacts allowEmptyArchive: true, artifacts: '**/*.log,*/binaries/*/target/*.jar,*/bundles/*/target/*.jar', excludes: '**/*-sources.jar'
+					archiveArtifacts allowEmptyArchive: true, artifacts: '**/*.log,**/target/compilelogs/*.xml,*/binaries/*/target/*.jar,*/bundles/*/target/*.jar', excludes: '**/*-sources.jar'
 					discoverGitReferenceBuild referenceJob: 'eclipse.platform.swt/master'
 					// To accept unstable builds (test errors or new warnings introduced by third party changes) as reference using "ignoreQualityGate:true"
 					recordIssues enabledForFailure: true, publishAllIssues: true, ignoreQualityGate: true, tools: [

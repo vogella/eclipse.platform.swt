@@ -821,6 +821,33 @@ public void test_setSizeLorg_eclipse_swt_graphics_Point() {
 	}
 }
 
+// See https://github.com/eclipse-platform/eclipse.platform.swt/issues/3597
+@Test
+public void test_setSize_ownedShellNotConstrainedByOwnerBounds() throws InterruptedException {
+	shell.setSize(500, 500);
+	shell.open();
+
+	int ownerHeight = shell.getSize().y;
+	int ownerWidth = shell.getSize().x;
+	testShell.open();
+
+	// Make shell vertically exceed parent shell bounds
+	int requestedHeight = 100;
+	testShell.setLocation(0, ownerHeight - requestedHeight + 1);
+	testShell.setSize(200, requestedHeight);
+	SwtTestUtil.processEvents(10000, () -> testShell.getSize().y == requestedHeight);
+	assertEquals(requestedHeight, testShell.getSize().y,
+			"Owned Shell height must not be constrained by owner Shell bounds");
+
+	// Make shell horizontally exceed parent shell bounds
+	int requestedWidth = 100;
+	testShell.setLocation(ownerWidth - requestedWidth + 1, 0);
+	testShell.setSize(requestedWidth, 200);
+	SwtTestUtil.processEvents(10000, () -> testShell.getSize().x == requestedWidth);
+	assertEquals(requestedWidth, testShell.getSize().x,
+			"Owned Shell width must not be constrained by owner Shell bounds");
+}
+
 private void assertShellProperlySized(Shell shell, Point expectedSize) {
 	int tolerance = shell.getZoom() != 100 ? 1 : 0;
 	Point actualSize = shell.getSize();
@@ -1053,5 +1080,25 @@ public void test_setLocationII() {
 		return;
 	}
 	super.test_setLocationII();
+}
+
+@Test
+public void test_degenerateSizeDoesNotExpandShell() {
+	// A bordered popup asked for a height of 0 used to be allocated -1, which GTK rejects,
+	// so it fell back to its natural size with its content never laid out. See issue 3539.
+	// GTK4 backs these shells with a GtkPopover, which never went through that box maths
+	// and enforces a minimum height of its own.
+	assumeTrue(SwtTestUtil.isGTK && !SwtTestUtil.isGTK4());
+	Shell popup = new Shell(shell, SWT.TOOL | SWT.ON_TOP);
+	popup.setLayout(new FillLayout());
+	Button child = new Button(popup, SWT.PUSH);
+	child.setText("some content that is clearly taller than two pixels");
+	popup.setSize(228, 0);
+	popup.setVisible(true);
+	SwtTestUtil.processEvents();
+	Rectangle clientArea = popup.getClientArea();
+	popup.dispose();
+	assertTrue(clientArea.height >= 0, "negative client area: " + clientArea);
+	assertTrue(clientArea.height <= 2, "shell expanded to its natural size: " + clientArea);
 }
 }

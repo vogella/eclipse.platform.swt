@@ -13,6 +13,8 @@
  *******************************************************************************/
 package org.eclipse.swt.custom;
 
+import java.util.Arrays;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.accessibility.*;
 import org.eclipse.swt.events.*;
@@ -172,6 +174,7 @@ public class CTabFolder extends Composite {
 	int[] priority = new int[0];
 	boolean mru = false;
 	Listener listener;
+	Listener tabControlZoomListener;
 	boolean ignoreTraverse;
 	boolean useDefaultRenderer;
 
@@ -344,6 +347,10 @@ void init(int style) {
 			case SWT.ZoomChanged:	   onZoomChange(event); break;
 		}
 	};
+
+	// A tab control is rescaled after the folder itself, so its size can only be
+	// measured reliably once it has processed the zoom change on its own.
+	tabControlZoomListener = event -> updateFolder(UPDATE_TAB_HEIGHT | REDRAW);
 
 	int[] folderEvents = new int[]{
 		SWT.Dispose,
@@ -2057,6 +2064,8 @@ void onPageTraversal(Event event) {
 					if (e.doit && !isDisposed()) {
 						showList(chevronRect);
 					}
+				} else {
+					index = visible [(current + offset + idx) % idx];
 				}
 			}
 		}
@@ -2372,9 +2381,16 @@ public void reskin(int flags) {
 	}
 }
 
+/**
+ * Sets the background color of the unselected tabs, clearing any background
+ * gradient set by {@link #setBackground(Color[], int[], boolean)}.
+ */
 @Override
 public void setBackground (Color color) {
 	super.setBackground(color);
+	gradientColors = null;
+	gradientPercents = null;
+	gradientVertical = false;
 	updateBkImages(true);
 	redraw();
 }
@@ -2459,25 +2475,8 @@ public void setBackground(Color[] colors, int[] percents, boolean vertical) {
 	}
 
 	// Are these settings the same as before?
-	if ((gradientColors != null) && (colors != null) &&
-		(gradientColors.length == colors.length)) {
-		boolean same = false;
-		for (int i = 0; i < gradientColors.length; i++) {
-			if (gradientColors[i] == null) {
-			same = colors[i] == null;
-			} else {
-			same = gradientColors[i].equals(colors[i]);
-			}
-			if (!same) break;
-		}
-		if (same) {
-			for (int i = 0; i < gradientPercents.length; i++) {
-			same = gradientPercents[i] == percents[i];
-			if (!same) break;
-			}
-		}
-		if (same && this.gradientVertical == vertical) return;
-	}
+	if (colors != null && Arrays.equals(gradientColors, colors) && Arrays.equals(gradientPercents, percents)
+			&& gradientVertical == vertical) return;
 	// Store the new settings
 	if (colors == null) {
 		gradientColors = null;
@@ -2485,16 +2484,11 @@ public void setBackground(Color[] colors, int[] percents, boolean vertical) {
 		gradientVertical = false;
 		setBackground((Color)null);
 	} else {
-		gradientColors = new Color[colors.length];
-		for (int i = 0; i < colors.length; ++i) {
-			gradientColors[i] = colors[i];
-		}
-		gradientPercents = new int[percents.length];
-		for (int i = 0; i < percents.length; ++i) {
-			gradientPercents[i] = percents[i];
-		}
+		gradientColors = colors.clone();
+		gradientPercents = percents.clone();
 		gradientVertical = vertical;
-		setBackground(gradientColors[gradientColors.length-1]);
+		super.setBackground(gradientColors[gradientColors.length-1]);
+		updateBkImages(true);
 	}
 
 	// Refresh with the new settings
@@ -2678,7 +2672,7 @@ int getChevronCount() {
 private void updateChevronImage(boolean styleChange) {
 	if (styleChange && chevronImage == null) return;
 	int newCount = getChevronCount();
-	if (!styleChange && chevronCount == newCount) return;
+	if (!styleChange && chevronImage != null && chevronCount == newCount) return;
 	if (chevronImage != null) chevronImage.dispose();
 	chevronImage = createButtonImage(getDisplay(), CTabFolderRenderer.PART_CHEVRON_BUTTON);
 	chevronItem.setImage(chevronImage);
@@ -3449,25 +3443,10 @@ public void setSelectionBackground(Color[] colors, int[] percents, boolean verti
 
 	// Are these settings the same as before?
 	if (selectionBgImage == null) {
-		if ((selectionGradientColors != null) && (colors != null) &&
-			(selectionGradientColors.length == colorsLength)) {
-			boolean same = false;
-			for (int i = 0; i < selectionGradientColors.length; i++) {
-				if (selectionGradientColors[i] == null) {
-					same = colors[i] == null;
-				} else {
-					same = selectionGradientColors[i].equals(colors[i]);
-				}
-				if (!same) break;
-			}
-			if (same) {
-				for (int i = 0; i < selectionGradientPercents.length; i++) {
-					same = selectionGradientPercents[i] == percents[i];
-					if (!same) break;
-				}
-			}
-			if (same && this.selectionGradientVertical == vertical) return;
-		}
+		if (selectionGradientColors != null && colors != null
+				&& Arrays.equals(selectionGradientColors, 0, selectionGradientColors.length, colors, 0, colorsLength)
+				&& Arrays.equals(selectionGradientPercents, percents)
+				&& selectionGradientVertical == vertical) return;
 	} else {
 		selectionBgImage = null;
 	}
@@ -3478,14 +3457,8 @@ public void setSelectionBackground(Color[] colors, int[] percents, boolean verti
 		selectionGradientVertical = false;
 		setSelectionBackground((Color)null);
 	} else {
-		selectionGradientColors = new Color[colorsLength];
-		for (int i = 0; i < colorsLength; ++i) {
-			selectionGradientColors[i] = colors[i];
-		}
-		selectionGradientPercents = new int[percents.length];
-		for (int i = 0; i < percents.length; ++i) {
-			selectionGradientPercents[i] = percents[i];
-		}
+		selectionGradientColors = Arrays.copyOf(colors, colorsLength);
+		selectionGradientPercents = percents.clone();
 		selectionGradientVertical = vertical;
 		setSelectionBackground(selectionGradientColors[selectionGradientColors.length-1]);
 	}
@@ -3999,6 +3972,15 @@ boolean updateItems (int showIndex) {
 			changed |= setItemSize(gc);
 		}
 	}
+	if (showChevron) {
+		// Give the chevron its image (and thus its real preferred size) before
+		// setItemLocation decides how many tabs are showing. Both setItemLocation
+		// and computeControlBounds reserve space for the chevron via
+		// getRightItemEdge(); an image-less chevron measures much smaller than the
+		// final one, which would let an extra tab remain visible and make the
+		// chevron overlap the trailing controls (e.g. the min/max toolbar).
+		updateChevronImage(false);
+	}
 	changed |= setItemLocation(gc);
 	setButtonBounds();
 	changed |= chevronChanged;
@@ -4175,6 +4157,7 @@ void addTabControl(Control control, int flags, int index, boolean update) {
 	int length = controls.length;
 
 	control.addListener(SWT.Resize, listener);
+	control.addListener(SWT.ZoomChanged, tabControlZoomListener);
 
 	//Grow all 4 arrays
 	Control[] newControls = new Control [length + 1];
@@ -4236,6 +4219,7 @@ void removeTabControl (Control control, boolean update) {
 
 	if (!control.isDisposed()) {
 		control.removeListener(SWT.Resize, listener);
+		control.removeListener(SWT.ZoomChanged, tabControlZoomListener);
 		control.setBackground (null);
 		control.setBackgroundImage (null);
 		if (control instanceof Composite) ((Composite) control).setBackgroundMode(SWT.INHERIT_NONE);

@@ -471,6 +471,7 @@ private LineDrawInfo makeLineDrawInfo(int lineIndex) {
 }
 
 int drawLines(int startLine, int endLine, int begX, int begY, int endY, GC gc, Color widgetBackground, Color widgetForeground) {
+	final int[] selectionRanges = styledText.getBlockSelection() ? null : styledText.getSelectionRanges();
 	// When fixed line metrics is in effect, tall unicode characters
 	// will not always fit line's height. In this case, they will
 	// draw out of line's bounds. To prevent them from being clipped
@@ -503,7 +504,7 @@ int drawLines(int startLine, int endLine, int begX, int begY, int endY, GC gc, C
 		// Draw foreground
 		y = begY;
 		for (LineDrawInfo lineInfo : drawInfos) {
-			drawLineForeground(lineInfo, begX, y, gc, widgetForeground);
+			drawLineForeground(lineInfo, begX, y, gc, widgetForeground, selectionRanges);
 			y += lineInfo.height;
 		}
 
@@ -519,7 +520,7 @@ int drawLines(int startLine, int endLine, int begX, int begY, int endY, GC gc, C
 	for (int iLine = startLine; y < endY && iLine < endLine; iLine++) {
 		LineDrawInfo lineInfo = makeLineDrawInfo(iLine);
 		drawLineBackground(lineInfo, y, gc, widgetBackground);
-		drawLineForeground(lineInfo, begX, y, gc, widgetForeground);
+		drawLineForeground(lineInfo, begX, y, gc, widgetForeground, selectionRanges);
 		disposeTextLayout(lineInfo.layout);
 		y += lineInfo.height;
 	}
@@ -546,26 +547,31 @@ private void drawLineBackground(LineDrawInfo lineInfo, int paintY, GC gc, Color 
 	}
 }
 
-private void drawLineForeground(LineDrawInfo lineInfo, int paintX, int paintY, GC gc, Color widgetForeground) {
+private void drawLineForeground(LineDrawInfo lineInfo, int paintX, int paintY, GC gc, Color widgetForeground, int[] selectionRanges) {
 	int lineLength = lineInfo.text.length();
 	gc.setForeground(widgetForeground);
-	Point[] selection = intersectingRelativeNonEmptySelections(lineInfo.offset, lineInfo.offset + lineLength);
-	if (styledText.getBlockSelection() || selection.length == 0) {
-		lineInfo.layout.draw(gc, paintX, paintY);
-	} else {
-		Color selectionFg = styledText.getSelectionForeground();
-		Color selectionBg = styledText.getSelectionBackground();
-		final int baseFlags = (styledText.getStyle() & SWT.FULL_SELECTION) != 0 ? SWT.FULL_SELECTION : SWT.DELIMITER_SELECTION;
-		for (Point relativeSelection : selection) {
-			int start = Math.max(0, relativeSelection.x);
-			int end = Math.min(lineLength, relativeSelection.y);
-			int flags = baseFlags;
-			if (relativeSelection.x <= lineLength && lineLength < relativeSelection.y ) {
-				flags |= SWT.LAST_LINE_SELECTION;
+	// selectionRanges are null for block selection
+	if (selectionRanges != null) {
+		Point[] selection = intersectingRelativeNonEmptySelections(lineInfo.offset, lineInfo.offset + lineLength, selectionRanges);
+		if (selection.length == 0) {
+			lineInfo.layout.draw(gc, paintX, paintY);
+		} else {
+			Color selectionFg = styledText.getSelectionForeground();
+			Color selectionBg = styledText.getSelectionBackground();
+			final int baseFlags = (styledText.getStyle() & SWT.FULL_SELECTION) != 0 ? SWT.FULL_SELECTION : SWT.DELIMITER_SELECTION;
+			for (Point relativeSelection : selection) {
+				int start = Math.max(0, relativeSelection.x);
+				int end = Math.min(lineLength, relativeSelection.y);
+				int flags = baseFlags;
+				if (relativeSelection.x <= lineLength && lineLength < relativeSelection.y ) {
+					flags |= SWT.LAST_LINE_SELECTION;
+				}
+				// TODO calling draw multiple times here prints line multiple times, overriding some colors
+				lineInfo.layout.draw(gc, paintX, paintY, start, end - 1, selectionFg, selectionBg, flags);
 			}
-			// TODO calling draw multiple times here prints line multiple times, overriding some colors
-			lineInfo.layout.draw(gc, paintX, paintY, start, end - 1, selectionFg, selectionBg, flags);
 		}
+	} else {
+		lineInfo.layout.draw(gc, paintX, paintY);
 	}
 
 	// draw objects
@@ -614,16 +620,15 @@ private void drawLineForeground(LineDrawInfo lineInfo, int paintX, int paintY, G
 	}
 }
 
-private Point[] intersectingRelativeNonEmptySelections(int fromOffset, int toOffset) {
-	int[] selectionRanges = styledText.getSelectionRanges();
+private Point[] intersectingRelativeNonEmptySelections(int fromOffset, int toOffset, int[] selectionRanges) {
 	int lineLength = toOffset - fromOffset;
 	List<Point> res = new ArrayList<>();
 	for (int i = 0; i < selectionRanges.length; i += 2) {
-		// ranges are assumed to be sorted by start offset, then (positive)length or higher end offset
-		Point relativeSelection = new Point(selectionRanges[i] - fromOffset, selectionRanges[i] + selectionRanges[i + 1] - fromOffset);
-		if (relativeSelection.x != relativeSelection.y &&
-			relativeSelection.x <= lineLength  && relativeSelection.y >= 0) {
-			res.add(relativeSelection);
+		// ranges are assumed to be sorted by start offset, then (positive) length or higher end offset
+		final int x = selectionRanges[i] - fromOffset;
+		final int y = selectionRanges[i] + selectionRanges[i + 1] - fromOffset;
+		if (x != y && x <= lineLength  && y >= 0) {
+			res.add(new Point(x, y));
 		}
 	}
 	return res.toArray(new Point[res.size()]);
@@ -1411,28 +1416,33 @@ void reset() {
 void reset(int startLine, int lineCount) {
 	int endLine = startLine + lineCount;
 	if (startLine < 0 || endLine > lineSizes.length) return;
-	SortedSet<Integer> lines = new TreeSet<>();
-	for (int i = startLine; i < endLine; i++) {
-		lines.add(Integer.valueOf(i));
+	if (lineCount <= 0) return;
+	int resetLineCount = 0;
+	for (int i = startLine; i < endLine && i < this.lineCount; i++) {
+		resetLineCount++;
+		getLineSize(i).resetSize();
 	}
-	reset(lines);
+	resetLines(resetLineCount, startLine <= maxWidthLineIndex && maxWidthLineIndex < endLine);
 }
 void reset(Set<Integer> lines) {
 	if (lines == null || lines.isEmpty()) return;
 	int resetLineCount = 0;
 	for (Integer line : lines) {
-		if (line >= 0 || line < lineCount) {
+		if (line >= 0 && line < lineCount) {
 			resetLineCount++;
 			getLineSize(line.intValue()).resetSize();
 		}
 	}
+	resetLines(resetLineCount, lines.contains(Integer.valueOf(maxWidthLineIndex)));
+}
+private void resetLines(int resetLineCount, boolean maxWidthLineReset) {
 	if (linesInAverageLineHeight > resetLineCount) {
 		linesInAverageLineHeight -= resetLineCount;
 	} else {
 		linesInAverageLineHeight = 0;
 		averageLineHeight = 0.0f;
 	}
-	if (lines.contains(Integer.valueOf(maxWidthLineIndex))) {
+	if (maxWidthLineReset) {
 		maxWidth = 0;
 		maxWidthLineIndex = -1;
 		if (resetLineCount != this.lineCount) {
@@ -1543,10 +1553,8 @@ void setLineBullet(int startLine, int count, Bullet bullet) {
 	}
 	if (bullet != null) {
 		if (index == bullets.length) {
-			Bullet[] newBulletsList = new Bullet[bullets.length + 1];
-			System.arraycopy(bullets, 0, newBulletsList, 0, bullets.length);
-			newBulletsList[index] = bullet;
-			bullets = newBulletsList;
+			bullets = Arrays.copyOf(bullets, bullets.length + 1);
+			bullets[index] = bullet;
 		}
 		bullet.addIndices(startLine, count);
 	} else {
@@ -1656,9 +1664,7 @@ void setStyleRanges (int[] newRanges, StyleRange[] newStyles) {
 			}
 			if (index == stylesSetCount) {
 				if (stylesSetCount == stylesSet.length) {
-					StyleRange[] tmpStylesSet = new StyleRange[stylesSetCount + 4];
-					System.arraycopy(stylesSet, 0, tmpStylesSet, 0, stylesSetCount);
-					stylesSet = tmpStylesSet;
+					stylesSet = Arrays.copyOf(stylesSet, stylesSetCount + 4);
 				}
 				stylesSet[stylesSetCount++] = newStyle;
 			}
@@ -1785,6 +1791,24 @@ void setStyleRanges (int[] newRanges, StyleRange[] newStyles) {
 		}
 	}
 }
+private void shiftLayout(int i, int delta) {
+	if (0 <= i && i < layouts.length) {
+		int endIndex = i + delta;
+		if (0 <= endIndex && endIndex < layouts.length) {
+			layouts[endIndex] = layouts[i];
+			layouts[i] = null;
+			if (bullets != null && bulletsIndices != null) {
+				bullets[endIndex] = bullets[i];
+				bulletsIndices[endIndex] = bulletsIndices[i];
+				bullets[i] = null;
+			}
+		} else {
+			if (layouts[i] != null) layouts[i].dispose();
+			layouts[i] = null;
+			if (bullets != null && bulletsIndices != null) bullets[i] = null;
+		}
+	}
+}
 void textChanging(TextChangingEvent event) {
 	int start = event.start;
 	int newCharCount = event.newCharCount, replaceCharCount = event.replaceCharCount;
@@ -1839,41 +1863,11 @@ void textChanging(TextChangingEvent event) {
 			}
 			if (delta > 0) {
 				for (int i = layouts.length - 1; i >= layoutEndLine; i--) {
-					if (0 <= i && i < layouts.length) {
-						endIndex = i + delta;
-						if (0 <= endIndex && endIndex < layouts.length) {
-							layouts[endIndex] = layouts[i];
-							layouts[i] = null;
-							if (bullets != null && bulletsIndices != null) {
-								bullets[endIndex] = bullets[i];
-								bulletsIndices[endIndex] = bulletsIndices[i];
-								bullets[i] = null;
-							}
-						} else {
-							if (layouts[i] != null) layouts[i].dispose();
-							layouts[i] = null;
-							if (bullets != null && bulletsIndices != null) bullets[i] = null;
-						}
-					}
+					shiftLayout(i, delta);
 				}
 			} else if (delta < 0) {
 				for (int i = layoutEndLine; i < layouts.length; i++) {
-					if (0 <= i && i < layouts.length) {
-						endIndex = i + delta;
-						if (0 <= endIndex && endIndex < layouts.length) {
-							layouts[endIndex] = layouts[i];
-							layouts[i] = null;
-							if (bullets != null && bulletsIndices != null) {
-								bullets[endIndex] = bullets[i];
-								bulletsIndices[endIndex] = bulletsIndices[i];
-								bullets[i] = null;
-							}
-						} else {
-							if (layouts[i] != null) layouts[i].dispose();
-							layouts[i] = null;
-							if (bullets != null && bulletsIndices != null) bullets[i] = null;
-						}
-					}
+					shiftLayout(i, delta);
 				}
 			}
 		}

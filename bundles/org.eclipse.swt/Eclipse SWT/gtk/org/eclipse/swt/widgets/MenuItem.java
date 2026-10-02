@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2023 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -68,7 +68,42 @@ public class MenuItem extends Item {
 	/** GTK4 only fields */
 	long modelHandle, actionHandle, shortcutHandle;
 	Section section;
+	/**
+	 * The action's own name within the parent's action group, i.e. the name
+	 * g_simple_action_new() was given. Use this with the GActionMap API (e.g.
+	 * g_action_map_remove_action), which keys actions by their plain name.
+	 */
+	String actionId;
+	/**
+	 * The <em>detailed</em> action name: actionId qualified with the prefix the
+	 * action group was inserted under (see Menu#createHandle), plus a target for
+	 * SWT.RADIO. Use this where an action is referenced by name, such as
+	 * g_menu_item_new() or gtk_named_action_new(), and never with the GActionMap
+	 * API.
+	 */
 	String actionName;
+	/** GTK4 only: custom widget for icon+text display in GtkPopoverMenu */
+	long customWidgetHandle, customImageHandle, customLabelHandle, customAccelHandle;
+	/**
+	 * GTK4 only: leading GtkCheckButton of the custom row: the check indicator of a CHECK
+	 * row, bound to the item's action; an invisible check-column spacer for other rows.
+	 */
+	long customIndicatorHandle;
+	/**
+	 * GTK4 only: box holding the check indicator and the icon; shares a GtkSizeGroup with
+	 * the native rows' indicator boxes so all labels start in one column.
+	 */
+	long customLeadingBoxHandle;
+	String customId;
+	private static int customIdSeq = 0;
+	/** GTK4 only: pointer is over the custom widget, see gtk4_enter_event. */
+	private boolean customRowHovered;
+	/** GTK4 only: custom widget holds the keyboard focus, see gtk4_focus_enter_event. */
+	private boolean customRowFocused;
+	/** GTK4 only: identifies the latest hover timer, older ones are no-ops. */
+	private int hoverSerial;
+	/** Hover time (ms) before a custom row closes a sibling's open submenu. */
+	private static final int SUBMENU_CLOSE_DELAY = 100;
 
 /**
  * Constructs a new instance of this class given its parent
@@ -264,38 +299,63 @@ void createHandle(int index) {
 			case SWT.SEPARATOR:
 				modelHandle = OS.g_menu_new();
 				handle = OS.g_menu_item_new_section(null, modelHandle);
+				/*
+				 * A separator starts a new section GMenu; observe it for
+				 * "items-changed" too so submenus added into this section later get
+				 * wired (see Menu#hookItemsChanged and issue #3451).
+				 */
+				parent.hookItemsChanged(modelHandle);
 				break;
 			case SWT.RADIO:
 				long stringVariantType = OS.g_variant_type_new(OS.G_VARIANT_TYPE_STRING);
+				actionId = String.valueOf(this.hashCode());
 				actionHandle = OS.g_simple_action_new_stateful(
-					Converter.javaStringToCString(String.valueOf(this.hashCode())),
+					Converter.javaStringToCString(actionId),
 					stringVariantType,
 					OS.g_variant_new_string(Converter.javaStringToCString("untoggled")));
 				OS.g_action_map_add_action(parent.actionGroup, actionHandle);
-				actionName = String.valueOf(parent.hashCode()) + "." + String.valueOf(this.hashCode()) + "::toggled";
+				actionName = String.valueOf(parent.hashCode()) + "." + actionId + "::toggled";
 				handle = OS.g_menu_item_new(null, Converter.javaStringToCString(actionName));
 				OS.g_variant_type_free(stringVariantType);
 				break;
 			case SWT.CHECK:
 				long boolVariantType = OS.g_variant_type_new(OS.G_VARIANT_TYPE_BOOLEAN);
+				actionId = String.valueOf(this.hashCode());
 				actionHandle = OS.g_simple_action_new_stateful(
-					Converter.javaStringToCString(String.valueOf(this.hashCode())),
+					Converter.javaStringToCString(actionId),
 					0,
 					OS.g_variant_new_boolean(false));
 				OS.g_action_map_add_action(parent.actionGroup, actionHandle);
-				actionName = String.valueOf(parent.hashCode()) + "." + String.valueOf(this.hashCode());
+				actionName = String.valueOf(parent.hashCode()) + "." + actionId;
 				handle = OS.g_menu_item_new(null, Converter.javaStringToCString(actionName));
 				OS.g_variant_type_free(boolVariantType);
 				break;
 			case SWT.CASCADE:
 				modelHandle = OS.g_menu_new();
-				handle = OS.g_menu_item_new_submenu(Converter.javaStringToCString(""), modelHandle);
+				/*
+				 * Give the CASCADE item an action so it can be enabled/disabled like
+				 * on the other platforms and like GTK3. A plain submenu item created
+				 * via g_menu_item_new_submenu has no action, so its GtkModelButton is
+				 * always sensitive: setEnabled(false) would be a no-op and the (possibly
+				 * empty) submenu could still be opened. Attaching a SimpleAction makes
+				 * the item follow the action's enabled state. While the action is
+				 * enabled, activating the item still navigates into the submenu (the
+				 * action is not triggered); while disabled, the item is insensitive and
+				 * the submenu cannot be opened.
+				 */
+				actionId = String.valueOf(this.hashCode());
+				actionHandle = OS.g_simple_action_new(Converter.javaStringToCString(actionId), 0);
+				OS.g_action_map_add_action(parent.actionGroup, actionHandle);
+				actionName = String.valueOf(parent.hashCode()) + "." + actionId;
+				handle = OS.g_menu_item_new(Converter.javaStringToCString(""), Converter.javaStringToCString(actionName));
+				OS.g_menu_item_set_submenu(handle, modelHandle);
 				break;
 			case SWT.PUSH:
 			default:
-				actionHandle = OS.g_simple_action_new(Converter.javaStringToCString(String.valueOf(this.hashCode())), 0);
+				actionId = String.valueOf(this.hashCode());
+				actionHandle = OS.g_simple_action_new(Converter.javaStringToCString(actionId), 0);
 				OS.g_action_map_add_action(parent.actionGroup, actionHandle);
-				actionName = String.valueOf(parent.hashCode()) + "." + String.valueOf(this.hashCode());
+				actionName = String.valueOf(parent.hashCode()) + "." + actionId;
 				handle = OS.g_menu_item_new(null, Converter.javaStringToCString(actionName));
 				break;
 		}
@@ -317,18 +377,33 @@ void createHandle(int index) {
 			section = parent.new Section(this);
 
 			int itemsToMove = selectedSection.sectionItems.size() - sectionRelativeIndex;
-			for (int i = 0; i < itemsToMove; i++) {
-				MenuItem removedItem = selectedSection.sectionItems.remove(sectionRelativeIndex);
-				section.sectionItems.add(removedItem);
+			/* Moving items walks the model out of step; hold off injection until the split completes. */
+			boolean wasMutating = display.menuModelMutating;
+			display.menuModelMutating = true;
+			try {
+				for (int i = 0; i < itemsToMove; i++) {
+					MenuItem removedItem = selectedSection.sectionItems.remove(sectionRelativeIndex);
+					section.sectionItems.add(removedItem);
 
-				OS.g_menu_remove(selectedSection.getSectionHandle(), sectionRelativeIndex);
-				OS.g_menu_insert_item(modelHandle, section.sectionItems.indexOf(removedItem), removedItem.handle);
-				removedItem.section = section;
+					OS.g_menu_remove(selectedSection.getSectionHandle(), sectionRelativeIndex);
+					/*
+					 * The moved row is rebuilt from scratch; give it a fresh id. A stale one
+					 * can still match the destroyed slot in GtkMenuSectionBox's id table
+					 * ("Duplicate custom ID"), leaving the new row without a slot.
+					 */
+					if (removedItem.customWidgetHandle != 0) removedItem.reassignCustomId();
+					OS.g_menu_insert_item(modelHandle, section.sectionItems.indexOf(removedItem), removedItem.handle);
+					removedItem.section = section;
+				}
+
+				int sectionInsertIndex = parent.sections.indexOf(selectedSection) + 1;
+				parent.sections.add(sectionInsertIndex, section);
+				OS.g_menu_insert_item(parent.modelHandle, sectionInsertIndex, handle);
+			} finally {
+				display.menuModelMutating = wasMutating;
 			}
-
-			int sectionInsertIndex = parent.sections.indexOf(selectedSection) + 1;
-			parent.sections.add(sectionInsertIndex, section);
-			OS.g_menu_insert_item(parent.modelHandle, sectionInsertIndex, handle);
+			/* The split destroyed the moved rows' custom widgets; re-inject now that the model is whole. */
+			parent.injectCustomMenuIcons();
 		} else {
 			section = selectedSection;
 			selectedSection.sectionItems.add(sectionRelativeIndex, this);
@@ -517,10 +592,6 @@ public boolean getEnabled () {
 	checkWidget();
 
 	if (GTK.GTK4) {
-		if ((style & SWT.CASCADE) != 0) {
-			return true;
-		}
-
 		return OS.g_action_get_enabled(actionHandle);
 	} else {
 		return GTK.gtk_widget_get_sensitive(handle);
@@ -653,6 +724,10 @@ long gtk_activate (long widget) {
 		}
 	}
 
+	if (GTK.GTK4 && (style & SWT.CHECK) != 0) {
+		OS.g_simple_action_set_state(actionHandle, OS.g_variant_new_boolean(!getSelection()));
+	}
+
 	sendSelectionEvent (SWT.Selection);
 	return 0;
 }
@@ -684,7 +759,7 @@ void hookEvents() {
 	super.hookEvents();
 
 	if (GTK.GTK4) {
-		if ((style & SWT.PUSH) != 0 || (style & SWT.RADIO) != 0) {
+		if ((style & SWT.PUSH) != 0 || (style & SWT.RADIO) != 0 || (style & SWT.CHECK) != 0) {
 			OS.g_signal_connect(actionHandle, OS.activate, display.activateProc, handle);
 		}
 	} else {
@@ -739,7 +814,13 @@ void releaseWidget() {
 	super.releaseWidget();
 
 	if (GTK.GTK4) {
-		if (parent.actionGroup != 0 && actionName != null) OS.g_action_map_remove_action(parent.actionGroup, Converter.javaStringToCString(actionName));
+		/*
+		 * Remove by actionId, not actionName: GActionMap keys actions by their own
+		 * name, so passing the prefixed detailed name silently removes nothing and
+		 * leaks the action for the lifetime of the parent's action group.
+		 */
+		if (parent.actionGroup != 0 && actionId != null) OS.g_action_map_remove_action(parent.actionGroup, Converter.javaStringToCString(actionId));
+		if (customWidgetHandle != 0) destroyCustomMenuWidget();
 	} else {
 		long accelGroup = getAccelGroup();
 		if (accelGroup != 0) removeAccelerator(accelGroup);
@@ -757,22 +838,38 @@ void releaseWidget() {
 @Override
 void destroyWidget() {
 	if (GTK.GTK4) {
-		if ((style & SWT.SEPARATOR) != 0) {
-			Section aboveSection = parent.sections.get(parent.sections.indexOf(section) - 1);
-			aboveSection.sectionItems.addAll(section.sectionItems);
+		/*
+		 * Removing this item (or merging its section away) walks the model out of
+		 * step with SWT's bookkeeping; hold off custom widget injection until the
+		 * model is whole again (see refreshMenuModelGTK4).
+		 */
+		boolean wasMutating = display.menuModelMutating;
+		display.menuModelMutating = true;
+		try {
+			if ((style & SWT.SEPARATOR) != 0) {
+				Section aboveSection = parent.sections.get(parent.sections.indexOf(section) - 1);
+				aboveSection.sectionItems.addAll(section.sectionItems);
 
-			for (MenuItem item : section.sectionItems) {
-				item.section = aboveSection;
-				OS.g_menu_insert_item(aboveSection.getSectionHandle(), aboveSection.sectionItems.indexOf(item), item.handle);
+				/* Drop the old section before re-inserting its items, so old rows are gone before new ones are built. */
+				OS.g_menu_remove(parent.modelHandle, parent.sections.indexOf(section));
+
+				for (MenuItem item : section.sectionItems) {
+					item.section = aboveSection;
+					/* Fresh id for the rebuilt row, see the SEPARATOR split in createHandle. */
+					if (item.customWidgetHandle != 0) item.reassignCustomId();
+					OS.g_menu_insert_item(aboveSection.getSectionHandle(), aboveSection.sectionItems.indexOf(item), item.handle);
+				}
+
+				parent.sections.remove(section);
+			} else {
+				OS.g_menu_remove(section.getSectionHandle(), section.sectionItems.indexOf(this));
+				section.sectionItems.remove(this);
 			}
-
-			OS.g_menu_remove(parent.modelHandle, parent.sections.indexOf(section));
-
-			parent.sections.remove(section);
-		} else {
-			OS.g_menu_remove(section.getSectionHandle(), section.sectionItems.indexOf(this));
-			section.sectionItems.remove(this);
+		} finally {
+			display.menuModelMutating = wasMutating;
 		}
+		/* The merge destroyed the moved rows' custom widgets; re-inject now that the model is whole. */
+		parent.injectCustomMenuIcons();
 
 		parent.items.remove(this);
 		parent = null;
@@ -1029,9 +1126,6 @@ public void setID (int id) {
  */
 @Override
 public void setImage (Image image) {
-	//TODO: GTK4 Menu images with text are no longer supported
-	if (GTK.GTK4) return;
-
 	checkWidget();
 	if (this.image == image) return;
 	if ((style & SWT.SEPARATOR) != 0) return;
@@ -1042,6 +1136,10 @@ public void setImage (Image image) {
 }
 
 private void _setImage (Image image) {
+	if (GTK.GTK4) {
+		_setImageGTK4(image);
+		return;
+	}
 	if (image != null) {
 		ImageList imageList = parent.imageList;
 		if (imageList == null) imageList = parent.imageList = new ImageList ();
@@ -1085,6 +1183,385 @@ private void _setImage (Image image) {
 			}
 		}
 	}
+}
+
+private void _setImageGTK4(Image image) {
+	// Only PUSH and CHECK items use a custom icon+label row; CASCADE and RADIO keep
+	// their native GtkModelButton. CASCADE never gets a custom slot (its submenu link
+	// wins), and RADIO needs a detailed action name a lone GtkCheckButton cannot give.
+	if ((style & (SWT.CASCADE | SWT.RADIO)) != 0) {
+		return;
+	}
+	if (image != null) {
+		long pixbuf = ImageList.createPixbuf(image);
+		if (pixbuf != 0) {
+			long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
+			OS.g_object_unref(pixbuf);
+			if (texture != 0) {
+				boolean firstTime = customWidgetHandle == 0;
+				if (firstTime) {
+					createCustomMenuWidget();
+				}
+				/* Size the icon by the image's logical bounds, not its backing pixels, like the other GTK4 image paths. */
+				Rectangle bounds = image.getBounds();
+				long paintable = OS.swt_scaled_paintable_new(texture, bounds.width, bounds.height);
+				OS.g_object_unref(texture);
+				GTK4.gtk_image_set_from_paintable(customImageHandle, paintable);
+				OS.g_object_unref(paintable);
+				if (firstTime) {
+					// Inject now in case the menu is already open; otherwise
+					// Menu.injectCustomMenuIcons() retries when the menu is shown.
+					injectCustomWidgetGTK4();
+				}
+			}
+		}
+	} else {
+		if (customWidgetHandle != 0) {
+			destroyCustomMenuWidget();
+			refreshMenuModelGTK4();
+		}
+	}
+}
+
+private void createCustomMenuWidget() {
+	/*
+	 * Use the "modelbutton" node name, not "button", so the menu row rules give the
+	 * custom row the same padding, border and height as the native rows. The name is
+	 * construct-only, hence g_object_new instead of gtk_button_new.
+	 */
+	customWidgetHandle = OS.g_object_new(GTK.gtk_button_get_type(),
+			Converter.javaStringToCString("css-name"), Converter.javaStringToCString("modelbutton"), 0);
+	OS.g_object_ref_sink(customWidgetHandle);
+	GTK.gtk_widget_add_css_class(customWidgetHandle, Converter.javaStringToCString("flat"));
+	/* Announce the row as a menu item, as GtkModelButton does, not as a button. */
+	OS.g_object_set(customWidgetHandle, Converter.javaStringToCString("accessible-role"),
+			(style & SWT.CHECK) != 0 ? GTK4.GTK_ACCESSIBLE_ROLE_MENU_ITEM_CHECKBOX : GTK4.GTK_ACCESSIBLE_ROLE_MENU_ITEM, 0);
+
+	long hbox = GTK.gtk_box_new(GTK.GTK_ORIENTATION_HORIZONTAL, 0);
+	/*
+	 * Indicator and icon share one leading box; Menu.alignRowLabels() size-groups it with
+	 * the native rows, so a native CHECK row's mark and the icons share one column. While
+	 * the menu has a CHECK row with an icon, every custom row reserves the check column
+	 * in front of the icon instead, so that the icons line up.
+	 */
+	customLeadingBoxHandle = GTK.gtk_box_new(GTK.GTK_ORIENTATION_HORIZONTAL, 0);
+	/* An inert GtkCheckButton, excluded from hit testing and focus so clicks reach the enclosing button. */
+	customIndicatorHandle = GTK.gtk_check_button_new();
+	OS.g_object_set(customIndicatorHandle, Converter.javaStringToCString("can-target"), false, 0);
+	/* Decoration of the row, not a second control, like GtkModelButton's own indicator. */
+	OS.g_object_set(customIndicatorHandle, Converter.javaStringToCString("accessible-role"), GTK4.GTK_ACCESSIBLE_ROLE_PRESENTATION, 0);
+	/* can-focus, not just focusable: GtkCheckButton's focus handler claims a traversal step whether or not it may take the focus. */
+	GTK.gtk_widget_set_can_focus(customIndicatorHandle, false);
+	GTK.gtk_widget_set_margin_end(customIndicatorHandle, 4);
+	if ((style & SWT.CHECK) != 0) {
+		if (actionName != null) {
+			GTK4.gtk_actionable_set_action_name(customIndicatorHandle, Converter.javaStringToCString(actionName));
+		}
+	} else {
+		/* Only reserves the check column, shown by Menu.alignRowLabels() when needed. */
+		GTK.gtk_widget_set_opacity(customIndicatorHandle, 0);
+		GTK.gtk_widget_set_visible(customIndicatorHandle, false);
+	}
+	GTK4.gtk_box_append(customLeadingBoxHandle, customIndicatorHandle);
+	customImageHandle = GTK.gtk_image_new();
+	GTK.gtk_widget_set_margin_end(customImageHandle, 4);
+	GTK4.gtk_box_append(customLeadingBoxHandle, customImageHandle);
+	GTK4.gtk_box_append(hbox, customLeadingBoxHandle);
+
+	customLabelHandle = GTK.gtk_label_new_with_mnemonic(null);
+	GTK.gtk_label_set_xalign(customLabelHandle, 0.0f);
+	// Expand the label so the accelerator is pushed to the trailing edge, as in a native row.
+	GTK.gtk_widget_set_hexpand(customLabelHandle, true);
+	GTK4.gtk_box_append(hbox, customLabelHandle);
+
+	// Same "accelerator" node name as GtkModelButton's accel label, so it is spaced alike.
+	customAccelHandle = OS.g_object_new(GTK.gtk_label_get_type(),
+			Converter.javaStringToCString("css-name"), Converter.javaStringToCString("accelerator"), 0);
+	GTK.gtk_label_set_xalign(customAccelHandle, 1.0f);
+	GTK4.gtk_box_append(hbox, customAccelHandle);
+
+	GTK4.gtk_button_set_child(customWidgetHandle, hbox);
+	updateCustomWidgetLabels();
+
+	if (actionName != null) {
+		GTK4.gtk_actionable_set_action_name(customWidgetHandle, Converter.javaStringToCString(actionName));
+	}
+
+	/*
+	 * A plain GtkButton does not pop down its popover when clicked, so do it from
+	 * gtk_clicked() (the action, dispatching SWT.Selection, has already run by then).
+	 */
+	display.addWidget(customWidgetHandle, this);
+	OS.g_signal_connect_closure(customWidgetHandle, OS.clicked, display.getClosure(CLICKED), false);
+	if ((style & SWT.CHECK) != 0) {
+		/* Space toggles a native CHECK row and keeps the menu open; see gtk4_key_press_event. */
+		long keyController = GTK4.gtk_event_controller_key_new();
+		GTK.gtk_event_controller_set_propagation_phase(keyController, GTK.GTK_PHASE_CAPTURE);
+		OS.g_signal_connect(keyController, OS.key_pressed, display.keyPressReleaseProc, KEY_PRESSED);
+		GTK4.gtk_widget_add_controller(customWidgetHandle, keyController);
+	}
+
+	/*
+	 * A plain GtkButton does not close a sibling's open submenu on hover as
+	 * GtkModelButton does; track enter/leave and mirror that from gtk4_enter_event().
+	 */
+	long motionController = GTK4.gtk_event_controller_motion_new();
+	OS.g_signal_connect(motionController, OS.enter, display.enterMotionProc, ENTER);
+	OS.g_signal_connect(motionController, OS.motion, display.enterMotionProc, MOTION);
+	OS.g_signal_connect(motionController, OS.leave, display.leaveProc, LEAVE);
+	GTK4.gtk_widget_add_controller(customWidgetHandle, motionController);
+	/* Give the custom row the "selected" look while focused, as GtkPopoverMenu does its native rows. */
+	long focusController = GTK4.gtk_event_controller_focus_new();
+	OS.g_signal_connect(focusController, OS.enter, display.focusProc, FOCUS_IN);
+	OS.g_signal_connect(focusController, OS.leave, display.focusProc, FOCUS_OUT);
+	GTK4.gtk_widget_add_controller(customWidgetHandle, focusController);
+
+	// Mark this GMenuItem slot as "custom" so GtkPopoverMenu creates a placeholder.
+	// injectCustomWidgetGTK4() reassigns a fresh id before actually embedding.
+	reassignCustomId();
+	parent.alignRowLabels();
+}
+
+/*
+ * Only connected on a custom CHECK row (GTK4), see createCustomMenuWidget. GtkModelButton
+ * binds Space to a toggle that leaves the menu open, while a GtkButton would take Space
+ * as a click and pop the menu down from gtk_clicked; run the action alone instead.
+ */
+@Override
+boolean gtk4_key_press_event(long controller, int keyval, int keycode, int state, long event) {
+	if (keyval != GDK.GDK_space && keyval != GDK.GDK_KP_Space) return false;
+	if ((state & (GDK.GDK_SHIFT_MASK | GDK.GDK_CONTROL_MASK | GDK.GDK_MOD1_MASK)) != 0) return false;
+	if (actionName != null) GTK4.gtk_widget_activate_action(customWidgetHandle, Converter.javaStringToCString(actionName), null);
+	return true;
+}
+
+@Override
+long gtk_clicked (long widget) {
+	/* Only ever connected on the custom menu row (GTK4), see createCustomMenuWidget. */
+	long popover = getParentPopoverHandle();
+	if (popover != 0) GTK.gtk_popover_popdown(popover);
+	return 0;
+}
+
+/**
+ * Pointer entered the custom menu row (GTK4). Like GtkModelButton, close a sibling's
+ * open submenu once the pointer has rested here briefly; the delay lets a diagonal
+ * move from a CASCADE row into its submenu cross this row without closing it.
+ */
+@Override
+void gtk4_enter_event(long controller, double x, double y, long event) {
+	customRowHovered = true;
+	setCustomRowSelected(true);
+	armSubmenuCloseTimer();
+}
+
+@Override
+void gtk4_motion_event(long controller, double x, double y, long event) {
+	/* Like GtkModelButton, restart the delay on every motion: only a pointer that
+	 * rests on the row closes the submenu, one merely passing through does not. */
+	armSubmenuCloseTimer();
+}
+
+private void armSubmenuCloseTimer() {
+	int serial = ++hoverSerial;
+	display.timerExec(SUBMENU_CLOSE_DELAY, () -> {
+		if (serial != hoverSerial || !customRowHovered || isDisposed()) return;
+		parent.hideOpenSubmenus();
+		/* Hiding the submenu hands the focus back and may leave a stray row selected. */
+		long popover = getParentPopoverHandle();
+		if (popover != 0) parent.syncRowSelection(popover);
+	});
+}
+
+@Override
+void gtk4_leave_event(long controller, long event) {
+	customRowHovered = false;
+	/* Drop the highlight unless the row still holds the keyboard focus. */
+	if (!customRowFocused) setCustomRowSelected(false);
+}
+
+@Override
+void gtk4_focus_enter_event(long controller, long event) {
+	// Highlight the focused row like a focused native row. A stray focus (e.g. after
+	// a submenu hides) is swept by Menu.syncRowSelection. GTK focuses the first row as
+	// it shows a menu; like a native row, that shows only when a key put it there.
+	customRowFocused = true;
+	if (System.nanoTime() - display.lastKeyEventTime < 500_000_000L) setCustomRowSelected(true);
+	/*
+	 * GtkPopoverMenu drops the previous row's highlight only when a GtkModelButton
+	 * takes the focus (its focus handler makes it the active item); do it here.
+	 */
+	long popover = getParentPopoverHandle();
+	if (popover != 0) parent.deselectOtherRows(popover, customWidgetHandle);
+}
+
+@Override
+void gtk4_focus_leave_event(long controller, long event) {
+	customRowFocused = false;
+	/* Keep the highlight if the pointer is still over the row. */
+	if (!customRowHovered) setCustomRowSelected(false);
+}
+
+/**
+ * GTK4 only: shows or hides the custom row's selection highlight through the
+ * "selected" state, which the theme paints on a modelbutton like on a native row.
+ */
+void setCustomRowSelected(boolean selected) {
+	if (customWidgetHandle == 0) return;
+	if (((GTK.gtk_widget_get_state_flags(customWidgetHandle) & GTK.GTK_STATE_FLAG_SELECTED) != 0) == selected) return;
+	if (selected) {
+		GTK.gtk_widget_set_state_flags(customWidgetHandle, GTK.GTK_STATE_FLAG_SELECTED, false);
+	} else {
+		GTK.gtk_widget_unset_state_flags(customWidgetHandle, GTK.GTK_STATE_FLAG_SELECTED);
+	}
+	// A widget in a custom popover slot does not repaint on its own style change, so
+	// force it - the state change would otherwise stay invisible until a later redraw.
+	GTK.gtk_widget_queue_draw(customWidgetHandle);
+}
+
+/**
+ * Updates the custom widget's label and accelerator sub-labels from {@link #text}.
+ * SWT menu text carries the accelerator display after a tab (e.g. "Run\tCtrl+F11");
+ * a GtkModelButton renders that via its "accel" property, but our custom GtkButton
+ * must render it explicitly in a trailing, right-aligned label.
+ */
+private void updateCustomWidgetLabels() {
+	if (customLabelHandle == 0) return;
+	String full = text != null ? text : "";
+	String label = full;
+	String accel = "";
+	int tab = full.indexOf('\t');
+	if (tab != -1) {
+		label = full.substring(0, tab);
+		accel = full.substring(tab + 1);
+	}
+	char[] chars = fixMnemonic(label);
+	GTK.gtk_label_set_text_with_mnemonic(customLabelHandle, Converter.wcsToMbcs(chars, true));
+	if (customAccelHandle != 0) {
+		GTK.gtk_label_set_text(customAccelHandle, Converter.wcsToMbcs(accel, true));
+		GTK.gtk_widget_set_visible(customAccelHandle, !accel.isEmpty());
+	}
+}
+
+private void destroyCustomMenuWidget() {
+	// Clear the "custom" attribute so the next model rebuild shows a normal model button
+	OS.g_menu_item_set_attribute_value(handle, Converter.javaStringToCString("custom"), 0);
+	detachCustomMenuWidget();
+	if (customWidgetHandle != 0) {
+		display.removeWidget(customWidgetHandle);
+		OS.g_object_unref(customWidgetHandle);
+	}
+	customWidgetHandle = 0;
+	customImageHandle = 0;
+	customLabelHandle = 0;
+	customAccelHandle = 0;
+	customIndicatorHandle = 0;
+	customLeadingBoxHandle = 0;
+	customId = null;
+	/* The row's pointer and focus state go with it, so a replacement row starts clean and no pending close timer fires. */
+	customRowHovered = false;
+	customRowFocused = false;
+	hoverSerial++;
+	/* A CHECK row leaving takes the check column with it. */
+	if (parent != null && !parent.isDisposed()) parent.alignRowLabels();
+}
+
+/**
+ * Detaches an injected custom widget from its GtkPopoverMenu slot via
+ * gtk_popover_menu_remove_child() before its last reference is dropped. Detaching
+ * first matters: unreffing while GTK still holds the widget would leave the popover
+ * pointing at freed memory.
+ */
+private void detachCustomMenuWidget() {
+	if (customWidgetHandle == 0) return;
+	if (GTK.gtk_widget_get_parent(customWidgetHandle) == 0) return;
+	/* Walk up from the widget itself; the cached popover handle can be stale after a rebuild. */
+	long popover = GTK.gtk_widget_get_parent(customWidgetHandle);
+	while (popover != 0 && !GTK4.GTK_IS_POPOVER_MENU(popover)) {
+		popover = GTK.gtk_widget_get_parent(popover);
+	}
+	if (popover != 0) {
+		GTK4.gtk_popover_menu_remove_child(popover, customWidgetHandle);
+	}
+	/* Defensive: if no owning popover was found, at least unparent. */
+	if (GTK.gtk_widget_get_parent(customWidgetHandle) != 0) {
+		GTK.gtk_widget_unparent(customWidgetHandle);
+	}
+}
+
+/**
+ * Pushes this item's current GMenuItem attributes into the parent GMenu by
+ * removing and re-inserting it (GMenu snapshots attributes on insertion). Injection
+ * is held off meanwhile: the removal's synchronous "items-changed" re-enters wiring,
+ * and while this item is out every later position is shifted, so a nested
+ * position-based refresh would remove the wrong item.
+ */
+void refreshMenuModelGTK4() {
+	boolean wasMutating = display.menuModelMutating;
+	display.menuModelMutating = true;
+	try {
+		OS.g_menu_remove(section.getSectionHandle(), section.getItemPosition(this));
+		OS.g_menu_insert_item(section.getSectionHandle(), section.getItemPosition(this), handle);
+	} finally {
+		display.menuModelMutating = wasMutating;
+	}
+}
+
+/**
+ * Ensures this item's custom widget is embedded into its GtkPopoverMenu slot. Safe
+ * to call repeatedly (e.g. every time the menu is shown).
+ *
+ * A GTK "custom" id is single-use: destroying the placeholder (on any model
+ * remove+reinsert) unparents our widget without freeing the id, and reusing that id
+ * hits "Duplicate custom ID" with no new slot, so the row renders empty. Hence
+ * "widget has no parent" triggers a (re)embed under a FRESH id: set the id, refresh
+ * the model so a new placeholder materialises, then embed.
+ */
+void injectCustomWidgetGTK4() {
+	if (customWidgetHandle == 0 || customId == null) return;
+	if (display.menuModelMutating) return;
+	long popoverHandle = getParentPopoverHandle();
+	if (popoverHandle == 0) return;
+	// Already embedded in a live slot: nothing to do.
+	if (GTK.gtk_widget_get_parent(customWidgetHandle) != 0) return;
+	// Fresh id and a new placeholder; the previous id is burned in GTK's custom_slots.
+	reassignCustomId();
+	refreshMenuModelGTK4();
+	boolean added = GTK4.gtk_popover_menu_add_child(popoverHandle, customWidgetHandle,
+			Converter.javaStringToCString(customId));
+	if (!added) {
+		// No placeholder slot was created (e.g. a cascade item, whose submenu link
+		// wins over the custom attribute). Fall back to a plain GtkModelButton so the
+		// item stays visible (label only, no icon) rather than an empty placeholder.
+		fallbackToModelButtonGTK4();
+	}
+}
+
+/**
+ * Assigns a fresh "custom" id to this item and writes it onto the GMenuItem's
+ * "custom" attribute, at creation and whenever a stale id must be replaced.
+ */
+private void reassignCustomId() {
+	customId = "swt-menu-" + (++customIdSeq);
+	long variant = OS.g_variant_new_string(Converter.javaStringToCString(customId));
+	OS.g_menu_item_set_attribute_value(handle, Converter.javaStringToCString("custom"), variant);
+	// g_menu_item_set_attribute_value sinks the floating ref; do not unref variant
+}
+
+/**
+ * Reverts this item to a plain GtkModelButton after a failed custom-widget injection,
+ * so that it does not show as an empty placeholder slot.
+ */
+private void fallbackToModelButtonGTK4() {
+	destroyCustomMenuWidget();
+	refreshMenuModelGTK4();
+}
+
+long getParentPopoverHandle() {
+	if ((parent.style & SWT.POP_UP) != 0) {
+		return parent.handle;
+	}
+	return parent.popoverHandle;
 }
 
 /**
@@ -1142,8 +1619,19 @@ public void setMenu (Menu menu) {
 			OS.g_menu_item_set_submenu(handle, 0);
 		}
 
-		OS.g_menu_remove(section.getSectionHandle(), section.getItemPosition(this));
-		OS.g_menu_insert_item(section.getSectionHandle(), section.getItemPosition(this), handle);
+		refreshMenuModelGTK4();
+
+		/*
+		 * If a DROP_DOWN is attached while its parent is already mapped (contributions
+		 * added/rebuilt after the parent was shown, e.g. workspace restore), wire its
+		 * SHOW/HIDE now; otherwise SWT.Show never fires and the submenu appears empty
+		 * (issue #3451). The g_menu calls above already emit "items-changed" on the
+		 * section model, so this is normally redundant; go through modelItemsChanged()
+		 * anyway so both paths re-wire from the same (root) menu.
+		 */
+		if (menu != null) {
+			parent.modelItemsChanged();
+		}
 	} else {
 		long accelGroup = getAccelGroup ();
 		if (accelGroup != 0) removeAccelerators (accelGroup);
@@ -1277,8 +1765,12 @@ public void setText (String string) {
 					GTK.gtk_accelerator_name(maskKeysym.keysym, maskKeysym.mask)
 				);
 		}
-		OS.g_menu_remove(section.getSectionHandle(), section.getItemPosition(this));
-		OS.g_menu_insert_item(section.getSectionHandle(), section.getItemPosition(this), handle);
+		if (customWidgetHandle != 0) {
+			/* The custom widget renders the label itself; a model refresh would burn its "custom" id. */
+			updateCustomWidgetLabels();
+		} else {
+			refreshMenuModelGTK4();
+		}
 	} else {
 		if (labelHandle != 0 && GTK.GTK_IS_LABEL (labelHandle)) {
 			GTK.gtk_label_set_text_with_mnemonic (labelHandle, buffer);

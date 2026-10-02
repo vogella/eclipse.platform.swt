@@ -97,7 +97,7 @@ public class Table extends Composite {
 	int pixbufHeight, pixbufWidth;
 	int headerHeight;
 	boolean boundsChangedSinceLastDraw, headerVisible, wasScrolled;
-	boolean rowActivated;
+	boolean defaultSelectionPending;
 
 	private long headerCSSProvider;
 
@@ -648,13 +648,7 @@ void createColumn (TableColumn column, int index) {
 		column.handle = columnHandle;
 		column.modelIndex = modelIndex;
 	}
-	if (!searchEnabled ()) {
-		GTK.gtk_tree_view_set_search_column (handle, -1);
-	} else {
-		/* Set the search column whenever the model changes */
-		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
-		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
-	}
+	updateSearchColumn ();
 }
 
 @Override
@@ -710,6 +704,13 @@ void createHandle (int index) {
 	}
 	if (!searchEnabled ()) {
 		GTK.gtk_tree_view_set_search_column (handle, -1);
+	}
+	if (GTK.GTK4) {
+		// Required before TableDropTargetEffect may use
+		// gtk_tree_view_set_drag_dest_row(), see Tree.createHandle() for details.
+		long formats = GTK4.gdk_content_formats_builder_free_to_formats(GTK4.gdk_content_formats_builder_new());
+		GTK4.gtk_tree_view_enable_model_drag_dest(handle, formats, 0);
+		GTK4.gdk_content_formats_unref(formats);
 	}
 }
 
@@ -842,12 +843,8 @@ void createRenderers (long columnHandle, int modelIndex, boolean check, int colu
 			GTK.gtk_tree_view_column_add_attribute (columnHandle, checkRenderer, OS.cell_background_rgba, BACKGROUND_COLUMN);
 		}
 	}
-	long pixbufRenderer ;
-	if (GTK.GTK4) {
-		pixbufRenderer = GTK.gtk_cell_renderer_pixbuf_new ();
-	} else {
-		pixbufRenderer = ownerDraw ? OS.g_object_new (display.gtk_cell_renderer_pixbuf_get_type (), 0) : GTK.gtk_cell_renderer_pixbuf_new ();
-	}
+	long pixbufType = display.gtk_cell_renderer_pixbuf_get_type ();
+	long pixbufRenderer = ownerDraw && pixbufType != 0 ? OS.g_object_new (pixbufType, 0) : GTK.gtk_cell_renderer_pixbuf_new ();
 	if (pixbufRenderer == 0) {
 		error (SWT.ERROR_NO_HANDLES);
 	} else {
@@ -1115,13 +1112,7 @@ void destroyItem (TableColumn column) {
 			createRenderers (checkColumn.handle, checkColumn.modelIndex, true, checkColumn.style);
 		}
 	}
-	if (!searchEnabled ()) {
-		GTK.gtk_tree_view_set_search_column (handle, -1);
-	} else {
-		/* Set the search column whenever the model changes */
-		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
-		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
-	}
+	updateSearchColumn ();
 }
 
 void destroyItem (TableItem item) {
@@ -2103,14 +2094,14 @@ long gtk3_button_press_event (long widget, long event) {
 
 	/*
 	 * Bug 312568: If mouse double-click pressed, manually send a DefaultSelection.
-	 * Bug 518414: Added rowActivated guard flag to only send a DefaultSelection when the
+	 * Bug 518414: Added defaultSelectionPending guard flag to only send a DefaultSelection when the
 	 * double-click triggers a 'row-activated' signal. Note that this relies on the fact
 	 * that 'row-activated' signal comes before double-click event. This prevents
 	 * opening of the current highlighted item when double clicking on any expander arrow.
 	 */
-	if (eventType == GDK.GDK_2BUTTON_PRESS && rowActivated) {
+	if (eventType == GDK.GDK_2BUTTON_PRESS && defaultSelectionPending) {
 		sendTreeDefaultSelection ();
-		rowActivated = false;
+		defaultSelectionPending = false;
 	}
 
 	return result;
@@ -2118,22 +2109,52 @@ long gtk3_button_press_event (long widget, long event) {
 
 @Override
 int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long event) {
-	if (n_press == 1) return  GTK4.GTK_EVENT_SEQUENCE_NONE;
-	int result = super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+	/*
+	 * GtkTreeView activates the row for a double-click in its own click gesture, which runs
+	 * after this one: send the DefaultSelection from gtk_row_activated.
+	 */
+	defaultSelectionPending = n_press == 2;
 
 	// TODO: GTK4 replicate gtk_button_press_event functions
 
-	if (n_press == 2 && rowActivated) {
-		sendTreeDefaultSelection ();
-		rowActivated = false;
-	}
+	return super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+}
 
-	return result;
+@Override
+boolean gtk4_key_press_event (long controller, int keyval, int keycode, int state, long event) {
+	/* Space and Enter activate the row too, see gtk_gesture_press_event. */
+	defaultSelectionPending = false;
+	switch (keyval) {
+		case GDK.GDK_Return:
+		case GDK.GDK_KP_Enter:
+			// Send DefaultSelection as gtk3_key_press_event does, for the keypad Enter too.
+			if ((state & (GDK.GDK_SUPER_MASK | GDK.GDK_META_MASK | GDK.GDK_HYPER_MASK | GDK.GDK_MOD1_MASK)) == 0) {
+				sendTreeDefaultSelection ();
+				if (isDisposed ()) return true;
+			}
+			break;
+	}
+	return super.gtk4_key_press_event(controller, keyval, keycode, state, event);
 }
 
 @Override
 long gtk_row_activated (long tree, long path, long column) {
-	rowActivated = true;
+	if (GTK.GTK4) {
+		if (defaultSelectionPending) sendTreeDefaultSelection ();
+		defaultSelectionPending = false;
+		return 0;
+	}
+	/*
+	 * Enter, Space and accessibility tools activate the row too, but only the second press of a double-click is
+	 * followed by the GDK_2BUTTON_PRESS that sends the DefaultSelection, see gtk3_button_press_event.
+	 */
+	defaultSelectionPending = false;
+	long eventPtr = GTK3.gtk_get_current_event ();
+	if (eventPtr != 0) {
+		int eventType = GDK.gdk_event_get_event_type (eventPtr);
+		defaultSelectionPending = eventType == GDK.GDK_BUTTON_PRESS || eventType == GDK.GDK_2BUTTON_PRESS;
+		GDK.gdk_event_free (eventPtr);
+	}
 	return 0;
 }
 
@@ -2541,11 +2562,8 @@ void recreateRenderers () {
 	if (checkRenderer != 0) {
 		display.removeWidget (checkRenderer);
 		OS.g_object_unref (checkRenderer);
-		if (GTK.GTK4) {
-			checkRenderer = GTK.gtk_cell_renderer_toggle_new ();
-		} else {
-			checkRenderer = ownerDraw ? OS.g_object_new (display.gtk_cell_renderer_toggle_get_type(), 0) : GTK.gtk_cell_renderer_toggle_new ();
-		}
+		long toggleType = display.gtk_cell_renderer_toggle_get_type ();
+		checkRenderer = ownerDraw && toggleType != 0 ? OS.g_object_new (toggleType, 0) : GTK.gtk_cell_renderer_toggle_new ();
 		if (checkRenderer == 0) error (SWT.ERROR_NO_HANDLES);
 		OS.g_object_ref (checkRenderer);
 		display.addWidget (checkRenderer, this);
@@ -2791,13 +2809,7 @@ public void removeAll () {
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 
 	resetCustomDraw ();
-	if (!searchEnabled ()) {
-		GTK.gtk_tree_view_set_search_column (handle, -1);
-	} else {
-		/* Set the search column whenever the model changes */
-		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
-		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
-	}
+	updateSearchColumn ();
 }
 
 /**
@@ -2899,7 +2911,12 @@ long rendererSnapshotProc (long cell, long snapshot, long widget, long backgroun
 	OS.memmove(gdkRectangle, background_area, GdkRectangle.sizeof);
 	Graphene.graphene_rect_init(rect, gdkRectangle.x, gdkRectangle.y, gdkRectangle.width, gdkRectangle.height);
 	long cairo = GTK4.gtk_snapshot_append_cairo(snapshot, rect);
-	rendererRender (cell, cairo, snapshot, widget, background_area, cell_area, 0, flags);
+	try {
+		rendererRender (cell, cairo, snapshot, widget, background_area, cell_area, 0, flags);
+	} finally {
+		Cairo.cairo_destroy(cairo);
+		Graphene.graphene_rect_free(rect);
+	}
 	return 0;
 }
 
@@ -3019,14 +3036,7 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 				}
 				gc.setFont (item.getFont (columnIndex));
 				if ((style & SWT.MIRRORED) != 0) rect.x = getClientWidth () - rect.width - rect.x;
-				if (cr != 0) {
-					GdkRectangle r = new GdkRectangle();
-					GDK.gdk_cairo_get_clip_rectangle(cr, r);
-					gc.setClipping(rect.x, rect.y, rect.width, rect.height);
-				} else {
-					gc.setClipping(rect.x, rect.y, rect.width, rect.height);
-
-				}
+				gc.setClipping(rect.x, rect.y, rect.width, rect.height);
 
 				// SWT.PaintItem/SWT.EraseItem often expect that event.y matches
 				// what 'event.item.getBounds()' returns. The workaround is to
@@ -3099,14 +3109,19 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 		}
 	}
 	if (item != null) {
-		if (GTK.GTK_IS_CELL_RENDERER_TEXT (cell)) {
+		/*
+		 * GTK4 clips each renderer to its own cell, so the image cell gets the PaintItem of the
+		 * text cell too, and each cell shows its part of what the listener draws.
+		 */
+		long textCell = GTK.GTK4 && GTK.GTK_IS_CELL_RENDERER_PIXBUF (cell) ? getTextRenderer (columnHandle) : cell;
+		if (GTK.GTK_IS_CELL_RENDERER_TEXT (textCell)) {
 			if (hooks (SWT.PaintItem)) {
 				if (wasSelected) drawState |= SWT.SELECTED;
 				Rectangle rect = columnRect.toRectangle ();
 				ignoreSize = true;
 				int [] contentX = new int [1], contentWidth = new int [1];
-				gtk_cell_renderer_get_preferred_size (cell, handle, contentWidth, null);
-				gtk_tree_view_column_cell_get_position (columnHandle, cell, contentX, null);
+				gtk_cell_renderer_get_preferred_size (textCell, handle, contentWidth, null);
+				gtk_tree_view_column_cell_get_position (columnHandle, textCell, contentX, null);
 				ignoreSize = false;
 				Image image = item.getImage (columnIndex);
 				int imageWidth = 0;
@@ -3210,8 +3225,17 @@ void reskinChildren (int flags) {
 
 boolean searchEnabled () {
 	/* Disable searching when using VIRTUAL or NO_SEARCH */
-	if ((style & SWT.VIRTUAL) != 0 || (style & SWT.NO_SEARCH) != 0) return false;
-	return true;
+	return (style & (SWT.VIRTUAL | SWT.NO_SEARCH)) == 0;
+}
+
+private void updateSearchColumn () {
+	if (!searchEnabled ()) {
+		GTK.gtk_tree_view_set_search_column (handle, -1);
+	} else {
+		/* Set the search column whenever the model changes */
+		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
+		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
+	}
 }
 
 /**
@@ -3589,6 +3613,34 @@ public void setHeaderVisible (boolean show) {
 	this.headerVisible = show;
 }
 
+/* Restores what GTK drops when the model is detached; the CHANGED signal stays blocked so no events are sent */
+void restoreViewState (int [] selection, int focusIndex, int topIndex, double hValue) {
+	long treeSelection = GTK.gtk_tree_view_get_selection (handle);
+	OS.g_signal_handlers_block_matched (treeSelection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+	if (0 <= focusIndex && focusIndex < itemCount) {
+		long focusIter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+		if (focusIter == 0) error (SWT.ERROR_NO_HANDLES);
+		GTK.gtk_tree_model_iter_nth_child (modelHandle, focusIter, 0, focusIndex);
+		long path = GTK.gtk_tree_model_get_path (modelHandle, focusIter);
+		GTK.gtk_tree_view_set_cursor (handle, path, 0, false);
+		GTK.gtk_tree_path_free (path);
+		OS.g_free (focusIter);
+		// set_cursor selects the focus row only
+		GTK.gtk_tree_selection_unselect_all (treeSelection);
+	}
+	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+	if (iter == 0) error (SWT.ERROR_NO_HANDLES);
+	for (int index : selection) {
+		if (index < itemCount && GTK.gtk_tree_model_iter_nth_child (modelHandle, iter, 0, index)) {
+			GTK.gtk_tree_selection_select_iter (treeSelection, iter);
+		}
+	}
+	OS.g_free (iter);
+	OS.g_signal_handlers_unblock_matched (treeSelection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+	if (topIndex < itemCount) setTopIndex (topIndex);
+	GTK.gtk_adjustment_set_value (GTK.gtk_scrolled_window_get_hadjustment (scrolledHandle), hValue);
+}
+
 /**
  * Sets the number of items contained in the receiver.
  *
@@ -3607,22 +3659,51 @@ public void setItemCount (int count) {
 	if (count == itemCount) return;
 	boolean isVirtual = (style & SWT.VIRTUAL) != 0;
 	if (!isVirtual) setRedraw (false);
-	remove (count, itemCount - 1);
-	int length = Math.max (4, (count + 3) / 4 * 4);
-	TableItem [] newItems = new TableItem [length];
-	System.arraycopy (items, 0, newItems, 0, itemCount);
-	items = newItems;
-	if (isVirtual) {
-		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
-		if (iter == 0) error (SWT.ERROR_NO_HANDLES);
-		for (int i=itemCount; i<count; i++) {
-			GTK.gtk_list_store_append (modelHandle, iter);
+	// Removing many rows from an attached model is far slower than detaching it first
+	boolean detachModel = isVirtual && count > 0 && itemCount - count >= itemCount / 10;
+	int [] selection = null;
+	int focusIndex = -1, topIndex = -1;
+	double hValue = 0;
+	if (detachModel) {
+		selection = getSelectionIndices ();
+		long [] path = new long [1];
+		GTK.gtk_tree_view_get_cursor (handle, path, null);
+		if (path [0] != 0) {
+			long indices = GTK.gtk_tree_path_get_indices (path [0]);
+			if (indices != 0) {
+				int [] index = new int [1];
+				C.memmove (index, indices, 4);
+				focusIndex = index [0];
+			}
+			GTK.gtk_tree_path_free (path [0]);
 		}
-		OS.g_free (iter);
-		itemCount = count;
-	} else {
-		for (int i=itemCount; i<count; i++) {
-			new TableItem (this, SWT.NONE, i, true);
+		topIndex = getTopIndex ();
+		hValue = GTK.gtk_adjustment_get_value (GTK.gtk_scrolled_window_get_hadjustment (scrolledHandle));
+		GTK.gtk_tree_view_set_model (handle, 0);
+	}
+	try {
+		remove (count, itemCount - 1);
+		int length = Math.max (4, (count + 3) / 4 * 4);
+		TableItem [] newItems = new TableItem [length];
+		System.arraycopy (items, 0, newItems, 0, itemCount);
+		items = newItems;
+		if (isVirtual) {
+			long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+			if (iter == 0) error (SWT.ERROR_NO_HANDLES);
+			for (int i=itemCount; i<count; i++) {
+				GTK.gtk_list_store_append (modelHandle, iter);
+			}
+			OS.g_free (iter);
+			itemCount = count;
+		} else {
+			for (int i=itemCount; i<count; i++) {
+				new TableItem (this, SWT.NONE, i, true);
+			}
+		}
+	} finally {
+		if (detachModel) {
+			GTK.gtk_tree_view_set_model (handle, modelHandle);
+			restoreViewState (selection, focusIndex, topIndex, hValue);
 		}
 	}
 	if (!isVirtual) setRedraw (true);

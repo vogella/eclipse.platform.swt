@@ -241,6 +241,8 @@ public class OS extends C {
 	public static final int G_LOG_FLAG_FATAL = 0x2;
 	public static final int G_LOG_FLAG_RECURSION = 0x1;
 	public static final int G_LOG_LEVEL_MASK = 0xfffffffc;
+	public static final int G_LOG_LEVEL_INFO = 1 << 6;
+	public static final int G_LOG_LEVEL_DEBUG = 1 << 7;
 	public static final int G_APP_INFO_CREATE_NONE = 0;
 	public static final int G_APP_INFO_CREATE_SUPPORTS_URIS  = (1 << 1);
 	public static final int G_OUTPUT_STREAM_SPLICE_NONE = 0;
@@ -383,14 +385,17 @@ public class OS extends C {
 	public static final byte[] delete_text = ascii("delete-text");
 	public static final byte[] direction_changed = ascii("direction-changed");
 	public static final byte[] dpi_changed = ascii("notify::scale-factor");
+	public static final byte[] accept = ascii("accept");
 	public static final byte[] drag_begin = ascii("drag-begin");
 	public static final byte[] drag_data_delete = ascii("drag-data-delete");
 	public static final byte[] drag_data_get = ascii("drag-data-get");
 	public static final byte[] drag_data_received = ascii("drag-data-received");
 	public static final byte[] drag_drop = ascii("drag-drop");
 	public static final byte[] drag_end = ascii("drag-end");
+	public static final byte[] drag_enter = ascii("drag-enter");
 	public static final byte[] drag_leave = ascii("drag-leave");
 	public static final byte[] drag_motion = ascii("drag-motion");
+	public static final byte[] drop = ascii("drop");
 	public static final byte[] prepare = ascii("prepare");
 	public static final byte[] draw = ascii("draw");
 	public static final byte[] end = ascii("end");
@@ -408,6 +413,7 @@ public class OS extends C {
 	public static final byte[] hide = ascii("hide");
 	public static final byte[] icon_release = ascii("icon-release");
 	public static final byte[] insert_text = ascii("insert-text");
+	public static final byte[] items_changed = ascii("items-changed");
 	public static final byte[] key_press_event = ascii("key-press-event");
 	public static final byte[] key_release_event = ascii("key-release-event");
 	public static final byte[] key_pressed = ascii("key-pressed");
@@ -578,6 +584,12 @@ public class OS extends C {
 
 	/** @category custom */
 	public static final native long swt_fixed_get_type();
+
+	/**
+	 * @param texture cast=(GdkTexture*)
+	 * @category custom
+	 */
+	public static final native long swt_scaled_paintable_new(long texture, int width, int height);
 
 	/** @category custom */
 	public static final native long swt_fixed_accessible_get_type();
@@ -1243,6 +1255,19 @@ public static final native void g_log_remove_handler(byte[] log_domain, int hand
  * @param user_data cast=(gpointer)
  */
 public static final native int g_log_set_handler(byte[] log_domain, int log_levels, long log_func, long user_data);
+/**
+ * @param func cast=(GLogWriterFunc)
+ * @param user_data cast=(gpointer)
+ * @param user_data_free cast=(GDestroyNotify)
+ */
+public static final native void g_log_set_writer_func(long func, long user_data, long user_data_free);
+/**
+ * @param log_level cast=(GLogLevelFlags)
+ * @param fields cast=(const GLogField *)
+ * @param n_fields cast=(gsize)
+ * @param user_data cast=(gpointer)
+ */
+public static final native int g_log_writer_default(int log_level, long fields, long n_fields, long user_data);
 /** @param size cast=(gulong) */
 public static final native long g_malloc(long size);
 /**
@@ -1267,6 +1292,13 @@ public static final native long g_object_get_qdata(long object, int quark);
  * @param first_property_name cast=(const gchar *)
  */
 public static final native long g_object_new(long type, long first_property_name);
+/**
+ * @param type cast=(GType)
+ * @param first_property_name cast=(const gchar *),flags=no_out
+ * @param value cast=(const gchar *),flags=no_out
+ * @param terminator cast=(const gchar *),flags=sentinel
+ */
+public static final native long g_object_new(long type, byte[] first_property_name, byte[] value, long terminator);
 /**
  * @param object cast=(GObject *)
  * @param property_name cast=(const gchar *)
@@ -2407,6 +2439,12 @@ public static final native void g_menu_item_set_label(long menu_item, byte[] lab
  * @param data cast=(const gchar *)
  */
 public static final native void g_menu_item_set_attribute(long menu_item, byte[] attribute, byte[] format_string, long data);
+/**
+ * @param menu_item cast=(GMenuItem *)
+ * @param attribute cast=(const gchar *)
+ * @param value cast=(GVariant *)
+ */
+public static final native void g_menu_item_set_attribute_value(long menu_item, byte[] attribute, long value);
 
 /* GSimpleActionGroup */
 public static final native long g_simple_action_group_new();

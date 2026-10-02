@@ -21,6 +21,10 @@ import org.eclipse.swt.internal.gtk.*;
 public class GTK4 {
 
 	public static final int GTK_POPOVER_MENU_NESTED = 1 << 0;
+	public static final int GTK_SIZE_GROUP_HORIZONTAL = 1;
+	public static final int GTK_ACCESSIBLE_ROLE_MENU_ITEM = 36;
+	public static final int GTK_ACCESSIBLE_ROLE_MENU_ITEM_CHECKBOX = 37;
+	public static final int GTK_ACCESSIBLE_ROLE_PRESENTATION = 43;
 
 	/*
 	 * GdkDragAction values. Note that GTK4 redefined these compared to GTK3
@@ -74,6 +78,13 @@ public class GTK4 {
 	 * @param v cast=(float *)
 	 */
 	public static final native void gtk_rgb_to_hsv(float r, float g, float b, float[] h, float[] s, float[] v);
+
+	/* GtkActionable */
+	/**
+	 * @param actionable cast=(GtkActionable *)
+	 * @param action_name cast=(const char *)
+	 */
+	public static final native void gtk_actionable_set_action_name(long actionable, byte[] action_name);
 
 	/* GtkBox */
 	/**
@@ -228,6 +239,38 @@ public class GTK4 {
 	public static final native void gdk_content_formats_builder_add_mime_type(long builder, byte[] mime_type);
 	/** @param builder cast=(GdkContentFormatsBuilder *) */
 	public static final native long gdk_content_formats_builder_free_to_formats(long builder);
+	/**
+	 * @param formats cast=(GdkContentFormats *)
+	 * @param type cast=(GType)
+	 */
+	public static final native boolean gdk_content_formats_contain_gtype(long formats, long type);
+	/** @param formats cast=(GdkContentFormats *) */
+	public static final native void gdk_content_formats_unref(long formats);
+
+	/* GdkDrop */
+	/**
+	 * @param drop cast=(GdkDrop *)
+	 * @param action cast=(GdkDragAction)
+	 */
+	public static final native void gdk_drop_finish(long drop, int action);
+	/** @param drop cast=(GdkDrop *) */
+	public static final native int gdk_drop_get_actions(long drop);
+	/** @param drop cast=(GdkDrop *) */
+	public static final native long gdk_drop_get_formats(long drop);
+	/**
+	 * @param drop cast=(GdkDrop *)
+	 * @param type cast=(GType)
+	 * @param cancellable cast=(GCancellable *)
+	 * @param callback cast=(GAsyncReadyCallback)
+	 * @param user_data cast=(gpointer)
+	 */
+	public static final native void gdk_drop_read_value_async(long drop, long type, int io_priority, long cancellable, long callback, long user_data);
+	/**
+	 * @param drop cast=(GdkDrop *)
+	 * @param result cast=(GAsyncResult *)
+	 * @param error cast=(GError **)
+	 */
+	public static final native long gdk_drop_read_value_finish(long drop, long result, long[] error);
 
 	/* GtkFileChooser */
 	/**
@@ -501,6 +544,15 @@ public class GTK4 {
 	/** @param window cast=(GtkWindow *) */
 	public static final native void gtk_window_present(long window) ;
 
+	/* GtkSizeGroup */
+	/** @param mode cast=(GtkSizeGroupMode) */
+	public static final native long gtk_size_group_new(int mode);
+	/**
+	 * @param size_group cast=(GtkSizeGroup *)
+	 * @param widget cast=(GtkWidget *)
+	 */
+	public static final native void gtk_size_group_add_widget(long size_group, long widget);
+
 	/* GtkShortcutController */
 	public static final native long gtk_shortcut_controller_new();
 	/**
@@ -558,6 +610,17 @@ public class GTK4 {
 	public static final native void gtk_text_set_tabs(long entry, long tabs);
 
 	/* GtkPopoverMenu */
+	/**
+	 * @param popover cast=(GtkPopoverMenu *)
+	 * @param child cast=(GtkWidget *)
+	 * @param id cast=(const char *)
+	 */
+	public static final native boolean gtk_popover_menu_add_child(long popover, long child, byte[] id);
+	/**
+	 * @param popover cast=(GtkPopoverMenu *)
+	 * @param child cast=(GtkWidget *)
+	 */
+	public static final native boolean gtk_popover_menu_remove_child(long popover, long child);
 	/**
 	 * @param model cast=(GMenuModel *)
 	 * @param flags cast=(GtkPopoverMenuFlags)
@@ -705,6 +768,11 @@ public class GTK4 {
 	 * @param controller cast=(GtkEventController *)
 	 */
 	public static final native void gtk_widget_add_controller(long widget, long controller);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param controller cast=(GtkEventController *)
+	 */
+	public static final native void gtk_widget_remove_controller(long widget, long controller);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native long gtk_widget_get_first_child(long widget);
 	/** @param widget cast=(GtkWidget *) */
@@ -862,6 +930,14 @@ public class GTK4 {
 	/* GtkMenuButton */
 	/** @param menu_button cast=(GtkMenuButton *) */
 	public static final native void gtk_menu_button_set_use_underline(long menu_button, boolean use_underline);
+
+	/* GtkTreeView */
+	/**
+	 * @param tree_view cast=(GtkTreeView *)
+	 * @param formats cast=(GdkContentFormats *)
+	 * @param actions cast=(GdkDragAction)
+	 */
+	public static final native void gtk_tree_view_enable_model_drag_dest(long tree_view, long formats, int actions);
 
 	/* GtkTreeViewColumn */
 	/**

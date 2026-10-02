@@ -261,6 +261,9 @@ void createHandle (int index) {
 
 			GTK4.gtk_box_append(handle, labelHandle);
 			GTK4.gtk_box_append(handle, imageHandle);
+			/* Let presses target the box, see eventHandle. */
+			OS.g_object_set(labelHandle, Converter.javaStringToCString("can-target"), false, 0);
+			OS.g_object_set(imageHandle, Converter.javaStringToCString("can-target"), false, 0);
 			gtk_box_set_child_packing(handle, labelHandle, true, true, 0, GTK.GTK_PACK_START);
 			gtk_box_set_child_packing(handle, imageHandle, true, true, 0, GTK.GTK_PACK_START);
 		} else {
@@ -334,6 +337,8 @@ void deregister () {
 
 @Override
 long eventHandle () {
+	/* GTK4 mouse controllers only see presses that target their widget, and the box covers the fixed. */
+	if (GTK.GTK4 && labelHandle != 0) return handle;
 	return fixedHandle;
 }
 
@@ -570,7 +575,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 	* This part of the fix forces the label to be
 	* resized so that it will draw wrapped.
 	*/
-	if (fixWrap) {
+	if (fixWrap && (state & (ZERO_WIDTH | ZERO_HEIGHT)) == 0) {
 		GtkAllocation allocation = new GtkAllocation();
 		GTK.gtk_widget_get_allocation (handle, allocation);
 		int labelWidth = allocation.width;
@@ -650,8 +655,11 @@ public void setImage (Image image) {
 			long pixbuf = ImageList.createPixbuf(image);
 			long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
 			OS.g_object_unref(pixbuf);
-			GTK4.gtk_picture_set_paintable(imageHandle, texture);
+			Rectangle bounds = image.getBounds();
+			long paintable = OS.swt_scaled_paintable_new(texture, bounds.width, bounds.height);
 			OS.g_object_unref(texture);
+			GTK4.gtk_picture_set_paintable(imageHandle, paintable);
+			OS.g_object_unref(paintable);
 		} else {
 			GTK3.gtk_image_set_from_surface(imageHandle, image.surface);
 		}

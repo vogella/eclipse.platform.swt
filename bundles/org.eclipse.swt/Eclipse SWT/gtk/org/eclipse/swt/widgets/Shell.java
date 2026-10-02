@@ -124,12 +124,13 @@ import org.eclipse.swt.internal.gtk4.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Shell extends Decorations {
-	long shellHandle, tooltipsHandle, tooltipWindow, group, modalGroup;
+	long shellHandle, tooltipsHandle, group, modalGroup;
 	boolean mapped, moved, resized, opened, fullScreen, showWithParent, modified, center;
 	/**
 	 * On GTK4 an ON_TOP child Shell is backed by a GtkPopover to enable positioning by the client.
 	 */
 	boolean popover;
+	long activateGesture;
 	int oldX, oldY, oldWidth, oldHeight;
 	GeometryInterface geometry;
 	Control lastActive;
@@ -1061,6 +1062,19 @@ void hookEvents () {
 		OS.g_signal_connect(focusController, OS.enter, display.focusProc, FOCUS_IN);
 		OS.g_signal_connect(focusController, OS.leave, display.focusProc, FOCUS_OUT);
 
+		if (popover) {
+			/*
+			 * A press inside a popover moves the keyboard focus into it, and the previous focus
+			 * control gets FocusOut before this shell is focused. Activate it first, like a click
+			 * activates an ON_TOP shell on X11, so that listeners see it as the active shell.
+			 */
+			activateGesture = GTK4.gtk_gesture_click_new();
+			GTK.gtk_event_controller_set_propagation_phase(activateGesture, GTK.GTK_PHASE_CAPTURE);
+			GTK.gtk_gesture_single_set_button(activateGesture, 0);
+			GTK4.gtk_widget_add_controller(shellHandle, activateGesture);
+			OS.g_signal_connect(activateGesture, OS.pressed, display.gesturePressReleaseProc, GESTURE_PRESSED);
+		}
+
 		long enterLeaveController = GTK4.gtk_event_controller_motion_new();
 		GTK4.gtk_widget_add_controller(shellHandle, enterLeaveController);
 
@@ -1557,6 +1571,15 @@ public Shell [] getShells () {
 }
 
 @Override
+int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long event) {
+	if (gesture == activateGesture) {
+		if ((style & SWT.NO_FOCUS) == 0) bringToTop (true);
+		return GTK4.GTK_EVENT_SEQUENCE_NONE;
+	}
+	return super.gtk_gesture_press_event (gesture, n_press, x, y, event);
+}
+
+@Override
 long gtk3_button_press_event (long widget, long event) {
 	if (widget == shellHandle) {
 		if (isCustomResize ()) {
@@ -1694,8 +1717,20 @@ long gtk_focus_in_event (long widget, long event) {
 	} else {
 		ignoreFocusIn = false;
 	}
-	restoreFocus();
+	/*
+	 * An opening menu popover takes the keyboard, which the window sees as losing and
+	 * regaining its focus; restoring the saved focus then would take it out of the menu.
+	 */
+	if (!(GTK.GTK4 && focusInMenu ())) restoreFocus();
 	return 0;
+}
+
+/** GTK4: whether the window's focus is inside a menu popover. */
+boolean focusInMenu () {
+	for (long focus = GTK.gtk_window_get_focus (shellHandle); focus != 0; focus = GTK.gtk_widget_get_parent (focus)) {
+		if (GTK4.GTK_IS_POPOVER_MENU (focus)) return true;
+	}
+	return false;
 }
 
 @Override
@@ -1745,6 +1780,22 @@ long gtk_map (long widget) {
 
 @Override
 long gtk_move_focus (long widget, long directionType) {
+	if (GTK.GTK4) {
+		/*
+		 * With the focus inside an open menu, move it within the menu. The focus control's
+		 * handle is the wrong target (it takes the focus out of the menu), and so is GTK's
+		 * own traversal from the window: it passes through the menu's parent widget, and a
+		 * GtkTreeView (Tree, Table) then grabs the focus itself instead of forwarding to
+		 * its child popover.
+		 */
+		for (long focus = GTK.gtk_window_get_focus (shellHandle); focus != 0; focus = GTK.gtk_widget_get_parent (focus)) {
+			if (GTK4.GTK_IS_POPOVER_MENU (focus) && display.getWidget (focus) instanceof Menu menu) {
+				if (!menu.moveFocus (focus, (int)directionType)) return 0;
+				OS.g_signal_stop_emission_by_name (shellHandle, OS.move_focus);
+				return 1;
+			}
+		}
+	}
 	Control control = display.getFocusControl ();
 	if (control != null) {
 		long focusHandle = control.focusHandle ();
@@ -2361,8 +2412,10 @@ void resizeBounds (int width, int height, boolean notify) {
 			GDK.gdk_window_resize (enableWindow, width, height);
 		}
 	}
-	int boxWidth = width - 2*border;
-	int boxHeight = height - 2*border;
+	// GTK rejects negative allocations; a shell smaller than its own border must not
+	// leak a negative size into gtk_widget_size_allocate().
+	int boxWidth = Math.max (0, width - 2*border);
+	int boxHeight = Math.max (0, height - 2*border);
 	if ((style & SWT.RESIZE) == 0) {
 		GTK.gtk_widget_set_size_request (vboxHandle, boxWidth, boxHeight);
 	}
@@ -2763,7 +2816,7 @@ public void setMinimumSize (int width, int height) {
 		/*
 		 * Account for headerbar if one is there (CSD on wayland and non-CST on x11/xwayland).
 		 */
-		long header = GTK4.gtk_window_get_titlebar(shellHandle);
+		long header = popover ? 0 : GTK4.gtk_window_get_titlebar(shellHandle);
 		int[] headerNaturalHeight = new int[1];
 		if (header != 0) {
 			GTK4.gtk_widget_measure(header, GTK.GTK_ORIENTATION_VERTICAL, -1, null, headerNaturalHeight, null, null);
@@ -3055,8 +3108,6 @@ void setVisiblePopover (boolean visible) {
 		GTK.gtk_popover_popup (shellHandle);
 		mapped = true;
 		opened = true;
-		display.activeShell = this;
-		display.activePending = true;
 		if (!resized) {
 			resized = true;
 			sendEvent (SWT.Resize);
@@ -3263,11 +3314,8 @@ void showWidget () {
 			display.activePending = true;
 		}
 
-		if (GTK.GTK4) {
-			for (long child = GTK4.gtk_widget_get_first_child(shellHandle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-				GTK.gtk_widget_unparent(child);
-			}
-		} else {
+		/* GTK4 drops the previous child in gtk_window_set_child() below. */
+		if (!GTK.GTK4) {
 			long list = GTK3.gtk_container_get_children (shellHandle);
 			long listIterator = list;
 			while (listIterator != 0) {
@@ -3345,6 +3393,8 @@ int trimHeight () {
 	// Shells with both ON_TOP and RESIZE set only use border, not trim.
 	// See bug 319612.
 	if (isCustomResize()) return 0;
+	/* A popover-backed shell is not a GtkWindow and carries no decoration. */
+	if (popover) return 0;
 	if (GTK.GTK4 && OS.isWayland()) {
 		/*
 		 * On GTK4 Wayland, window decorations are implemented as GTK CSD widgets. The
@@ -3403,6 +3453,8 @@ int trimWidth () {
 
 void updateModal () {
 	if (!GTK.GTK4 && OS.isX11() && GTK.GTK_IS_PLUG (shellHandle)) return;
+	/* A popover is not a GtkWindow and cannot join a window group. */
+	if (popover) return;
 	long group = 0;
 	boolean isModalShell = false;
 	if (display.getModalDialog () == null) {

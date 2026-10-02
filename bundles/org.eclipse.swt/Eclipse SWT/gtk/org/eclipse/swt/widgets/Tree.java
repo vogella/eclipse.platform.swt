@@ -109,7 +109,7 @@ public class Tree extends Composite {
 	double cachedAdjustment, currentAdjustment;
 	Color headerBackground, headerForeground;
 	boolean boundsChangedSinceLastDraw, wasScrolled;
-	boolean rowActivated;
+	boolean defaultSelectionPending;
 
 	private long headerCSSProvider;
 
@@ -816,13 +816,7 @@ void createColumn (TreeColumn column, int index) {
 		column.handle = columnHandle;
 		column.modelIndex = modelIndex;
 	}
-	if (!searchEnabled ()) {
-		GTK.gtk_tree_view_set_search_column (handle, -1);
-	} else {
-		/* Set the search column whenever the model changes */
-		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
-		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
-	}
+	updateSearchColumn ();
 }
 
 @Override
@@ -881,7 +875,23 @@ void createHandle (int index) {
 		GTK.gtk_tree_view_set_search_column (handle, -1);
 	}
 
-	if (GTK.GTK4) bindArrowKeyBindings();
+	if (GTK.GTK4) {
+		bindArrowKeyBindings();
+		/*
+		 * GTK renders the drop highlight requested through
+		 * gtk_tree_view_set_drag_dest_row() from the private TreeViewDragInfo struct,
+		 * but only gtk_tree_view_enable_model_drag_dest() ever allocates it and the
+		 * snapshot code dereferences it without a NULL check. Driving the highlight
+		 * ourselves, as setInsertMark() and TreeDropTargetEffect do, would therefore
+		 * crash on the next repaint, so allocate the struct up front. The drop target
+		 * GTK installs alongside it gets an empty format list and no actions, which
+		 * makes it reject every drag so that GTK's own tree view drag handlers never
+		 * compete with SWT's DropTarget.
+		 */
+		long formats = GTK4.gdk_content_formats_builder_free_to_formats(GTK4.gdk_content_formats_builder_new());
+		GTK4.gtk_tree_view_enable_model_drag_dest(handle, formats, 0);
+		GTK4.gdk_content_formats_unref(formats);
+	}
 }
 
 /**
@@ -1039,12 +1049,14 @@ void createItem (TreeItem item, long parentIter, int index) {
 	items [id] = item;
 	modelChanged = true;
 
-	if (parentIter == 0 ) {
+	if (parentIter == 0 && (hooks (SWT.EmptinessChanged) || filters (SWT.EmptinessChanged))) {
 		/*
 		 If this was the first root item fire an EmptinessChanged event.
 		 */
-		int roots = GTK.gtk_tree_model_iter_n_children (modelHandle, 0);
-		if (roots == 1) {
+		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+		boolean onlyRoot = GTK.gtk_tree_model_get_iter_first (modelHandle, iter) && !GTK.gtk_tree_model_iter_next (modelHandle, iter);
+		OS.g_free (iter);
+		if (onlyRoot) {
 			Event event = new Event ();
 			event.detail = 0;
 			sendEvent (SWT.EmptinessChanged, event);
@@ -1065,12 +1077,8 @@ void createRenderers (long columnHandle, int modelIndex, boolean check, int colu
 		}
 	}
 
-	long pixbufRenderer;
-	if (GTK.GTK4) {
-		pixbufRenderer = GTK.gtk_cell_renderer_pixbuf_new();
-	} else {
-		pixbufRenderer = isOwnerDrawn ? OS.g_object_new (display.gtk_cell_renderer_pixbuf_get_type (), 0) : GTK.gtk_cell_renderer_pixbuf_new ();
-	}
+	long pixbufType = display.gtk_cell_renderer_pixbuf_get_type ();
+	long pixbufRenderer = isOwnerDrawn && pixbufType != 0 ? OS.g_object_new (pixbufType, 0) : GTK.gtk_cell_renderer_pixbuf_new ();
 
 	if (pixbufRenderer == 0) {
 		error (SWT.ERROR_NO_HANDLES);
@@ -1287,13 +1295,7 @@ void destroyItem (TreeColumn column) {
 			createRenderers (firstColumn.handle, firstColumn.modelIndex, true, firstColumn.style);
 		}
 	}
-	if (!searchEnabled ()) {
-		GTK.gtk_tree_view_set_search_column (handle, -1);
-	} else {
-		/* Set the search column whenever the model changes */
-		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
-		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
-	}
+	updateSearchColumn ();
 }
 
 
@@ -1304,14 +1306,18 @@ void destroyItem (TreeItem item) {
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	modelChanged = true;
 
-	/*
-	 If this was the last root item fire an EmptinessChanged event.
-	 */
-	int roots = GTK.gtk_tree_model_iter_n_children (modelHandle, 0);
-	if (roots == 0) {
-		Event event = new Event ();
-		event.detail = 1;
-		sendEvent (SWT.EmptinessChanged, event);
+	if (hooks (SWT.EmptinessChanged) || filters (SWT.EmptinessChanged)) {
+		/*
+		 If this was the last root item fire an EmptinessChanged event.
+		 */
+		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+		boolean noRoots = !GTK.gtk_tree_model_get_iter_first (modelHandle, iter);
+		OS.g_free (iter);
+		if (noRoots) {
+			Event event = new Event ();
+			event.detail = 1;
+			sendEvent (SWT.EmptinessChanged, event);
+		}
 	}
 }
 
@@ -2012,31 +2018,50 @@ public TreeItem[] getSelection () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	long list = GTK.gtk_tree_selection_get_selected_rows (selection, null);
-	if (list != 0) {
-		long originalList = list;
-		int count = OS.g_list_length (list);
-		TreeItem [] treeSelection = new TreeItem [count];
-		int length = 0;
-		for (int i=0; i<count; i++) {
-			long data = OS.g_list_data (list);
-			long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
-			if (GTK.gtk_tree_model_get_iter (modelHandle, iter, data)) {
-				treeSelection [length] = _getItem (iter);
-				length++;
+	if (list == 0) return new TreeItem [0];
+	int count = OS.g_list_length (list);
+	TreeItem [] treeSelection = new TreeItem [count];
+	int length = 0;
+	// Paths come in tree order, so advance the previous iterators instead of the linear gtk_tree_model_get_iter()
+	long [] iters = new long [4];
+	int [] previous = new int [0];
+	for (long l = list; l != 0; l = OS.g_list_next (l)) {
+		long path = OS.g_list_data (l);
+		int depth = GTK.gtk_tree_path_get_depth (path);
+		int [] indices = new int [depth];
+		C.memmove (indices, GTK.gtk_tree_path_get_indices (path), 4 * depth);
+		GTK.gtk_tree_path_free (path);
+		if (depth > iters.length) iters = Arrays.copyOf (iters, depth);
+		int level = 0;
+		while (level < depth && level < previous.length && indices [level] == previous [level]) level++;
+		boolean found = true;
+		for (int i = level; i < depth && found; i++) {
+			if (iters [i] == 0) iters [i] = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+			if (i == level && i < previous.length && indices [i] > previous [i]) {
+				for (int j = previous [i]; j < indices [i] && found; j++) {
+					found = GTK.gtk_tree_model_iter_next (modelHandle, iters [i]);
+				}
+			} else {
+				found = GTK.gtk_tree_model_iter_nth_child (modelHandle, iters [i], i == 0 ? 0 : iters [i - 1], indices [i]);
 			}
-			list = OS.g_list_next (list);
-			OS.g_free (iter);
-			GTK.gtk_tree_path_free (data);
 		}
-		OS.g_list_free (originalList);
-		if (length < count) {
-			TreeItem [] temp = new TreeItem [length];
-			System.arraycopy(treeSelection, 0, temp, 0, length);
-			treeSelection = temp;
+		if (found) {
+			treeSelection [length++] = _getItem (iters [depth - 1]);
+			previous = indices;
+		} else {
+			previous = new int [0];
 		}
-		return treeSelection;
 	}
-	return new TreeItem [0];
+	for (long iter : iters) {
+		if (iter != 0) OS.g_free (iter);
+	}
+	OS.g_list_free (list);
+	if (length < count) {
+		TreeItem [] temp = new TreeItem [length];
+		System.arraycopy(treeSelection, 0, temp, 0, length);
+		treeSelection = temp;
+	}
+	return treeSelection;
 }
 
 /**
@@ -2304,14 +2329,14 @@ long gtk3_button_press_event (long widget, long event) {
 
 	/*
 	 * Bug 312568: If mouse double-click pressed, manually send a DefaultSelection.
-	 * Bug 518414: Added rowActivated guard flag to only send a DefaultSelection when the
+	 * Bug 518414: Added defaultSelectionPending guard flag to only send a DefaultSelection when the
 	 * double-click triggers a 'row-activated' signal. Note that this relies on the fact
 	 * that 'row-activated' signal comes before double-click event. This prevents
 	 * opening of the current highlighted item when double clicking on any expander arrow.
 	 */
-	if (eventType == GDK.GDK_2BUTTON_PRESS && rowActivated) {
+	if (eventType == GDK.GDK_2BUTTON_PRESS && defaultSelectionPending) {
 		sendTreeDefaultSelection ();
-		rowActivated = false;
+		defaultSelectionPending = false;
 	}
 
 	return result;
@@ -2319,19 +2344,50 @@ long gtk3_button_press_event (long widget, long event) {
 
 @Override
 int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long event) {
-	int result = super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+	/*
+	 * GtkTreeView activates the row for a double-click in its own click gesture, which runs
+	 * after this one, and activates nothing for a double-click on an expander: send the
+	 * DefaultSelection from gtk_row_activated.
+	 */
+	defaultSelectionPending = n_press == 2;
+	return super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+}
 
-	if (n_press == 2 && rowActivated) {
-		sendTreeDefaultSelection ();
-		rowActivated = false;
+@Override
+boolean gtk4_key_press_event (long controller, int keyval, int keycode, int state, long event) {
+	/* Space and Enter activate the row too, see gtk_gesture_press_event. */
+	defaultSelectionPending = false;
+	switch (keyval) {
+		case GDK.GDK_Return:
+		case GDK.GDK_KP_Enter:
+			// Send DefaultSelection as gtk3_key_press_event does, for the keypad Enter too.
+			if ((state & (GDK.GDK_SUPER_MASK | GDK.GDK_META_MASK | GDK.GDK_HYPER_MASK | GDK.GDK_MOD1_MASK)) == 0) {
+				sendTreeDefaultSelection ();
+				if (isDisposed ()) return true;
+			}
+			break;
 	}
-
-	return result;
+	return super.gtk4_key_press_event(controller, keyval, keycode, state, event);
 }
 
 @Override
 long gtk_row_activated (long tree, long path, long column) {
-	rowActivated = true;
+	if (GTK.GTK4) {
+		if (defaultSelectionPending) sendTreeDefaultSelection ();
+		defaultSelectionPending = false;
+		return 0;
+	}
+	/*
+	 * Enter, Space and accessibility tools activate the row too, but only the second press of a double-click is
+	 * followed by the GDK_2BUTTON_PRESS that sends the DefaultSelection, see gtk3_button_press_event.
+	 */
+	defaultSelectionPending = false;
+	long eventPtr = GTK3.gtk_get_current_event ();
+	if (eventPtr != 0) {
+		int eventType = GDK.gdk_event_get_event_type (eventPtr);
+		defaultSelectionPending = eventType == GDK.GDK_BUTTON_PRESS || eventType == GDK.GDK_2BUTTON_PRESS;
+		GDK.gdk_event_free (eventPtr);
+	}
 	return 0;
 }
 
@@ -2828,11 +2884,8 @@ void recreateRenderers () {
 	if (checkRenderer != 0) {
 		display.removeWidget (checkRenderer);
 		OS.g_object_unref (checkRenderer);
-		if (GTK.GTK4) {
-			checkRenderer = GTK.gtk_cell_renderer_toggle_new ();
-		} else {
-			checkRenderer = isOwnerDrawn ? OS.g_object_new (display.gtk_cell_renderer_toggle_get_type(), 0) : GTK.gtk_cell_renderer_toggle_new ();
-		}
+		long toggleType = display.gtk_cell_renderer_toggle_get_type ();
+		checkRenderer = isOwnerDrawn && toggleType != 0 ? OS.g_object_new (toggleType, 0) : GTK.gtk_cell_renderer_toggle_new ();
 		if (checkRenderer == 0) error (SWT.ERROR_NO_HANDLES);
 		OS.g_object_ref (checkRenderer);
 		display.addWidget (checkRenderer, this);
@@ -2977,7 +3030,15 @@ public void removeAll () {
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 
-	GTK.gtk_tree_store_clear (modelHandle);
+    // Disconnect the model from the view before clearing it.
+    // gtk_tree_store_clear fires cell-data / row-changed callbacks for every
+    // row it removes. Those callbacks re-enter SWT (cellDataProc -> checkData
+    // -> getParentItem -> gtk_tree_model_get_path) with iterators that are
+    // already being freed, causing a SIGSEGV. With no model attached the view
+    // has nothing to render, so no callbacks are fired during the clear.
+    GTK.gtk_tree_view_set_model (handle, 0);
+    GTK.gtk_tree_store_clear (modelHandle);
+    GTK.gtk_tree_view_set_model (handle, modelHandle);
 
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 
@@ -2987,13 +3048,7 @@ public void removeAll () {
 	}
 	items = new TreeItem[4];
 
-	if (!searchEnabled ()) {
-		GTK.gtk_tree_view_set_search_column (handle, -1);
-	} else {
-		/* Set the search column whenever the model changes */
-		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
-		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
-	}
+	updateSearchColumn ();
 }
 
 /**
@@ -3114,7 +3169,12 @@ long rendererSnapshotProc (long cell, long snapshot, long widget, long backgroun
 	OS.memmove(gdkRectangle, background_area, GdkRectangle.sizeof);
 	Graphene.graphene_rect_init(rect, gdkRectangle.x, gdkRectangle.y, gdkRectangle.width, gdkRectangle.height);
 	long cairo = GTK4.gtk_snapshot_append_cairo(snapshot, rect);
-	rendererRender (cell, cairo, snapshot, widget, background_area, cell_area, 0, flags);
+	try {
+		rendererRender (cell, cairo, snapshot, widget, background_area, cell_area, 0, flags);
+	} finally {
+		Cairo.cairo_destroy(cairo);
+		Graphene.graphene_rect_free(rect);
+	}
 	return 0;
 }
 
@@ -3188,7 +3248,12 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 			// Use the x and width information from the Cairo context. See bug 535124.
 			if (cr != 0) {
 				GdkRectangle r2 = new GdkRectangle ();
-				GDK.gdk_cairo_get_clip_rectangle (cr, r2);
+				if (GTK.GTK4) {
+					/* gdk_cairo_get_clip_rectangle() does not exist, and cr is clipped to background_area */
+					r2 = rendererRect;
+				} else {
+					GDK.gdk_cairo_get_clip_rectangle (cr, r2);
+				}
 				rect.x = r2.x;
 				rect.width = r2.width;
 			}
@@ -3304,14 +3369,19 @@ void rendererRender (long cell, long cr, long snapshot, long widget, long backgr
 		}
 	}
 	if (item != null) {
-		if (GTK.GTK_IS_CELL_RENDERER_TEXT (cell)) {
+		/*
+		 * GTK4 clips each renderer to its own cell, so the image cell gets the PaintItem of the
+		 * text cell too, and each cell shows its part of what the listener draws.
+		 */
+		long textCell = GTK.GTK4 && GTK.GTK_IS_CELL_RENDERER_PIXBUF (cell) ? getTextRenderer (columnHandle) : cell;
+		if (GTK.GTK_IS_CELL_RENDERER_TEXT (textCell)) {
 			if (hooks (SWT.PaintItem)) {
 				if (wasSelected) drawState |= SWT.SELECTED;
 				Rectangle rect = columnRect.toRectangle ();
 				ignoreSize = true;
 				int [] contentX = new int [1], contentWidth = new int [1];
-				gtk_cell_renderer_get_preferred_size (cell, handle, contentWidth, null);
-				gtk_tree_view_column_cell_get_position (columnHandle, cell, contentX, null);
+				gtk_cell_renderer_get_preferred_size (textCell, handle, contentWidth, null);
+				gtk_tree_view_column_cell_get_position (columnHandle, textCell, contentX, null);
 				ignoreSize = false;
 				Image image = item.getImage (columnIndex);
 				int imageWidth = 0;
@@ -3423,8 +3493,17 @@ void reskinChildren (int flags) {
 }
 boolean searchEnabled () {
 	/* Disable searching when using VIRTUAL or NO_SEARCH */
-	if ((style & SWT.VIRTUAL) != 0 || (style & SWT.NO_SEARCH) != 0) return false;
-	return true;
+	return (style & (SWT.VIRTUAL | SWT.NO_SEARCH)) == 0;
+}
+
+private void updateSearchColumn () {
+	if (!searchEnabled ()) {
+		GTK.gtk_tree_view_set_search_column (handle, -1);
+	} else {
+		/* Set the search column whenever the model changes */
+		int firstColumn = columnCount == 0 ? FIRST_COLUMN : columns [0].modelIndex;
+		GTK.gtk_tree_view_set_search_column (handle, firstColumn + CELL_TEXT);
+	}
 }
 /**
  * Display a mark indicating the point at which an item will be inserted.
@@ -3946,27 +4025,65 @@ public void setSelection (TreeItem item) {
 public void setSelection (TreeItem [] items) {
 	checkWidget ();
 	if (items == null) error (SWT.ERROR_NULL_ARGUMENT);
-	deselectAll ();
 	int length = items.length;
-	if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1)) return;
-	boolean fixColumn = showFirstColumn ();
-	long selection = GTK.gtk_tree_view_get_selection (handle);
-	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
-	boolean first = true;
-	for (int i = 0; i < length; i++) {
-		TreeItem item = items [i];
+	if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1)) {
+		deselectAll ();
+		return;
+	}
+	Set<TreeItem> wanted = Collections.newSetFromMap (new IdentityHashMap<> ());
+	java.util.List<TreeItem> toSelect = new ArrayList<> (length);
+	for (TreeItem item : items) {
 		if (item == null) continue;
 		if (item.isDisposed ()) break;
 		if (item.parent != this) continue;
-		long path = GTK.gtk_tree_model_get_path (modelHandle, item.handle);
-		showItem (path, false);
-		if (first) {
-			GTK.gtk_tree_view_set_cursor (handle, path, 0, false);
+		if (wanted.add (item)) toSelect.add (item);
+	}
+	if (toSelect.isEmpty ()) {
+		deselectAll ();
+		return;
+	}
+	boolean fixColumn = showFirstColumn ();
+	long selection = GTK.gtk_tree_view_get_selection (handle);
+	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+	// Each toggle is linear in the row index and set_cursor unselects all rows, so avoid both where possible
+	long firstPath = GTK.gtk_tree_model_get_path (modelHandle, toSelect.get (0).handle);
+	showItem (firstPath, false);
+	long [] cursorPath = new long [1];
+	GTK.gtk_tree_view_get_cursor (handle, cursorPath, null);
+	boolean cursorOnFirst = cursorPath [0] != 0 && GTK.gtk_tree_path_compare (cursorPath [0], firstPath) == 0;
+	if (cursorPath [0] != 0) GTK.gtk_tree_path_free (cursorPath [0]);
+	if (cursorOnFirst) {
+		if (GTK.gtk_widget_get_realized (handle)) GTK.gtk_tree_view_scroll_to_cell (handle, firstPath, 0, false, 0, 0);
+	} else {
+		deselectAll ();
+		GTK.gtk_tree_view_set_cursor (handle, firstPath, 0, false);
+	}
+	GTK.gtk_tree_path_free (firstPath);
+	Set<TreeItem> selected = Collections.newSetFromMap (new IdentityHashMap<> ());
+	for (TreeItem item : getSelection ()) {
+		if (wanted.contains (item)) {
+			selected.add (item);
+		} else {
+			GTK.gtk_tree_selection_unselect_iter (selection, item.handle);
+		}
+	}
+	long parentIter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+	TreeItem expandedParent = null;
+	for (TreeItem item : toSelect) {
+		if (selected.contains (item)) continue;
+		if (GTK.gtk_tree_model_iter_parent (modelHandle, parentIter, item.handle)) {
+			TreeItem parentItem = _getItem (parentIter);
+			if (parentItem != expandedParent) {
+				long path = GTK.gtk_tree_model_get_path (modelHandle, parentIter);
+				showItem (path, false);
+				GTK.gtk_tree_view_expand_row (handle, path, false);
+				GTK.gtk_tree_path_free (path);
+				expandedParent = parentItem;
+			}
 		}
 		GTK.gtk_tree_selection_select_iter (selection, item.handle);
-		GTK.gtk_tree_path_free (path);
-		first = false;
 	}
+	OS.g_free (parentIter);
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	if (fixColumn) hideFirstColumn ();
 }
