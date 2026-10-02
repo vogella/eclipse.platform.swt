@@ -41,24 +41,28 @@ public class Test_Memory_Leak {
 	@Test
 	public void test_Browser() {
 		Display display = new Display ();
-		Shell shell = new Shell(display);
-		shell.setLayout(new FillLayout());
-		shell.open ();
+		try {
+			Shell shell = new Shell(display);
+			shell.setLayout(new FillLayout());
+			shell.open ();
 
-		Browser browser;
-		int count = 50_000;
+			Browser browser;
+			int count = 50_000;
 
-		for (int i = 1; i <= count; i++) {
-			browser = new Browser(shell, SWT.None);
-			browser.setUrl("https://www.google.com");
-			while (display.readAndDispatch()) {
-				// This loop is needed because some disposal is delayed and done asynchronously in main loop.
-				// This loop typically performs ~12 iterations.
+			for (int i = 1; i <= count; i++) {
+				browser = new Browser(shell, SWT.None);
+				browser.setUrl("https://www.google.com");
+				while (display.readAndDispatch()) {
+					// This loop is needed because some disposal is delayed and done asynchronously in main loop.
+					// This loop typically performs ~12 iterations.
+				}
+				if (i != count) browser.dispose();
+				if (i % (COUNT_PRINT_PER_ROW) == 0) System.out.println();
+				System.out.print(i+ " ");
 			}
-			if (i != count) browser.dispose();
-			if (i % (COUNT_PRINT_PER_ROW) == 0) System.out.println();
-			System.out.print(i+ " ");
+			System.out.println();
+		} finally {
+			display.dispose();
 		}
-		System.out.println();
 	}
 }
