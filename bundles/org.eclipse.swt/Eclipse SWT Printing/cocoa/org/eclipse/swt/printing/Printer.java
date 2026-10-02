@@ -379,16 +379,6 @@ public boolean isAutoScalable() {
 	return false;
 }
 
-/**
- * Releases any internal state prior to destroying this printer.
- * This method is called internally by the dispose
- * mechanism of the <code>Device</code> class.
- */
-@Override
-protected void release () {
-	super.release();
-}
-
 float scalingFactor() {
 	NSNumber scale = new NSNumber(printInfo.dictionary().objectForKey(OS.NSPrintScalingFactor));
 	return scale.floatValue();

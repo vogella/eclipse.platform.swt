@@ -289,13 +289,7 @@ NSSize cellSize (long id, long sel) {
 		TreeItem item = (TreeItem) display.getWidget (outValue [0]);
 		OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 		long tableColumn = outValue[0];
-		int columnIndex = 0;
-		for (int i=0; i<columnCount; i++) {
-			if (columns [i].nsColumn.id == tableColumn) {
-				columnIndex = i;
-				break;
-			}
-		}
+		int columnIndex = Math.max (0, indexOfColumn (tableColumn));
 		sendMeasureItem (item, cell.isHighlighted(), columnIndex, size);
 	}
 	return size;
@@ -1035,13 +1029,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 	OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 	long tableColumn = outValue[0];
 	long nsColumnIndex = widget.tableColumns().indexOfObjectIdenticalTo(new id(tableColumn));
-	int columnIndex = 0;
-	for (int i=0; i<columnCount; i++) {
-		if (columns [i].nsColumn.id == tableColumn) {
-			columnIndex = i;
-			break;
-		}
-	}
+	int columnIndex = Math.max (0, indexOfColumn (tableColumn));
 
 	Color background = item.cellBackground != null ? item.cellBackground [columnIndex] : null;
 	if (background == null) background = item.background;
@@ -1412,12 +1400,15 @@ public Rectangle getClientArea () {
 }
 
 TreeColumn getColumn (id id) {
+	int index = indexOfColumn (id.id);
+	return index == -1 ? null : columns[index];
+}
+
+int indexOfColumn (long nsColumnId) {
 	for (int i = 0; i < columnCount; i++) {
-		if (columns[i].nsColumn.id == id.id) {
-			return columns[i];
-		}
+		if (columns[i].nsColumn.id == nsColumnId) return i;
 	}
-	return null;
+	return -1;
 }
 
 /**
@@ -2226,12 +2217,7 @@ long outlineView_objectValueForTableColumn_byItem (long id, long sel, long outli
 		}
 		return value.id;
 	}
-	for (int i=0; i<columnCount; i++) {
-		if (columns [i].nsColumn.id == tableColumn) {
-			return item.createString (i).id;
-		}
-	}
-	return item.createString (0).id;
+	return item.createString (Math.max (0, indexOfColumn (tableColumn))).id;
 }
 
 @Override
@@ -2261,11 +2247,8 @@ boolean outlineView_shouldReorderColumn_toColumn(long id, long sel, long aTableV
 
 	NSOutlineView widget = new NSOutlineView(aTableView);
 	id nsColumn = widget.tableColumns().objectAtIndex(currentColIndex);
-	for (int i = 0; i < columnCount; i++) {
-		if (columns[i].nsColumn.id == nsColumn.id) {
-			return columns[i].movable;
-		}
-	}
+	int index = indexOfColumn (nsColumn.id);
+	if (index != -1) return columns[index].movable;
 
 	return true;
 }
@@ -2284,13 +2267,7 @@ boolean outlineView_shouldTrackCell_forTableColumn_item(long id, long sel, long 
 void outlineView_willDisplayCell_forTableColumn_item (long id, long sel, long outlineView, long cell, long tableColumn, long itemID) {
 	if (checkColumn != null && tableColumn == checkColumn.id) return;
 	TreeItem item = (TreeItem) display.getWidget(itemID);
-	int index = 0;
-	for (int i=0; i<columnCount; i++) {
-		if (columns [i].nsColumn.id == tableColumn) {
-			index = i;
-			break;
-		}
-	}
+	int index = Math.max (0, indexOfColumn (tableColumn));
 	NSTextFieldCell textCell = new NSTextFieldCell (cell);
 	OS.object_setInstanceVariable(cell, Display.SWT_ROW, itemID);
 	OS.object_setInstanceVariable(cell, Display.SWT_COLUMN, tableColumn);
@@ -2350,14 +2327,8 @@ void outlineView_willDisplayCell_forTableColumn_item (long id, long sel, long ou
 void outlineViewColumnDidMove (long id, long sel, long aNotification) {
 	NSNotification notification = new NSNotification (aNotification);
 	NSDictionary userInfo = notification.userInfo ();
-	NSString nsstring = (NSString) new NSString().alloc();
-	nsstring = nsstring.initWithString("NSOldColumn"); //$NON-NLS-1$
-	id nsOldIndex = userInfo.valueForKey (nsstring);
-	nsstring.release();
-	nsstring = (NSString) new NSString().alloc();
-	nsstring = nsstring.initWithString("NSNewColumn"); //$NON-NLS-1$
-	id nsNewIndex = userInfo.valueForKey (nsstring);
-	nsstring.release();
+	id nsOldIndex = userInfo.valueForKey (NSString.stringWith ("NSOldColumn")); //$NON-NLS-1$
+	id nsNewIndex = userInfo.valueForKey (NSString.stringWith ("NSNewColumn")); //$NON-NLS-1$
 	int oldIndex = new NSNumber (nsOldIndex).intValue ();
 	int newIndex = new NSNumber (nsNewIndex).intValue ();
 	NSOutlineView outlineView = (NSOutlineView)view;
@@ -2379,10 +2350,7 @@ void outlineViewColumnDidMove (long id, long sel, long aNotification) {
 void outlineViewColumnDidResize (long id, long sel, long aNotification) {
 	NSNotification notification = new NSNotification (aNotification);
 	NSDictionary userInfo = notification.userInfo ();
-	NSString nsstring = (NSString) new NSString().alloc();
-	nsstring = nsstring.initWithString("NSTableColumn"); //$NON-NLS-1$
-	id columnId = userInfo.valueForKey (nsstring);
-	nsstring.release();
+	id columnId = userInfo.valueForKey (NSString.stringWith ("NSTableColumn")); //$NON-NLS-1$
 	TreeColumn column = getColumn (columnId);
 	if (column == null) return; /* either CHECK column or firstColumn in 0-column Tree */
 
@@ -3136,16 +3104,6 @@ void setItemCount (TreeItem parentItem, int count) {
 				ignoreExpand = false;
 			}
 		}
-	}
-}
-
-/*public*/ void setItemHeight (int itemHeight) {
-	checkWidget ();
-	if (itemHeight < -1) error (SWT.ERROR_INVALID_ARGUMENT);
-	if (itemHeight == -1) {
-		setItemHeight (null, null, true);
-	} else {
-		((NSOutlineView)view).setRowHeight (itemHeight);
 	}
 }
 
