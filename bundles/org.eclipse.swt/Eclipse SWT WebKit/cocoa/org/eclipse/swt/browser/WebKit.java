@@ -37,8 +37,6 @@ class WebKit extends WebBrowser {
 	Point size;
 	boolean statusBar = true, toolBar = true, ignoreDispose;
 	int lastMouseMoveX, lastMouseMoveY;
-	//TEMPORARY CODE
-//	boolean doit;
 
 	static long delegateClass;
 	static boolean Initialized;
@@ -46,7 +44,6 @@ class WebKit extends WebBrowser {
 	// the following Callbacks are never freed
 	static Callback Callback3, Callback4, Callback5, Callback6, Callback7;
 
-	static final int MIN_SIZE = 16;
 	static final int MAX_PROGRESS = 100;
 	static final String WebElementLinkURLKey = "WebElementLinkURL"; //$NON-NLS-1$
 	static final String AGENT_STRING = "Safari/522.0"; /* Safari version on OSX 10.5 initial release */ //$NON-NLS-1$
@@ -899,10 +896,6 @@ void webView_didStartProvisionalLoadForFrame(long sender, long frameID) {
 	* WebFrameLoadDelegate:didCommitLoadForFrame.  The resource count is reset when didCommitLoadForFrame
 	* is received for the top frame.
 	*/
-//	if (frameID == webView.mainFrame().id) {
-//		/* reset resource status variables */
-//		resourceCount= 0;
-//	}
 }
 
 void webView_didCommitLoadForFrame(long sender, long frameID) {
@@ -1006,8 +999,6 @@ void webView_resource_didFinishLoadingFromDataSource(long sender, long identifie
 	* when the top frame has either finished loading (didFinishLoadForFrame
 	* event) or failed (didFailProvisionalLoadWithError).
 	*/
-	// this code is intentionally commented
-	//if (this.identifier == identifier) this.identifier = 0;
 }
 
 void webView_resource_didFailLoadingWithError_fromDataSource(long sender, long identifier, long error, long dataSource) {
@@ -1024,8 +1015,6 @@ void webView_resource_didFailLoadingWithError_fromDataSource(long sender, long i
 	* when the top frame has either finished loading (didFinishLoadForFrame
 	* event) or failed (didFailProvisionalLoadWithError).
 	*/
-	// this code is intentionally commented
-	//if (this.identifier == identifier) this.identifier = 0;
 }
 
 void webView_resource_didReceiveAuthenticationChallenge_fromDataSource (long sender, long identifier, long challenge, long dataSource) {

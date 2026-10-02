@@ -532,8 +532,6 @@ void createHandle () {
 		NSCell cell = widget.cell();
 		cell.setWraps(false);
 		cell.setScrollable(true);
-//		widget.setTarget(widget);
-//		widget.setAction(OS.sel_sendSelection);
 		view = widget;
 	} else {
 		NSScrollView scrollWidget = (NSScrollView) new SWTScrollView ().alloc ();
@@ -566,8 +564,6 @@ void createHandle () {
 		if ((style & SWT.CENTER) != 0) align = OS.NSTextAlignmentCenter;
 		if ((style & SWT.RIGHT) != 0) align = OS.NSTextAlignmentRight;
 		widget.setAlignment (align);
-//		widget.setTarget(widget);
-//		widget.setAction(OS.sel_sendSelection);
 		widget.setRichText (false);
 		widget.setDelegate(widget);
 		widget.setFont (display.getSystemFont ().handle);
@@ -1115,7 +1111,6 @@ public String getMessage () {
 }
 
 long getPosition (long x, long y) {
-//	checkWidget ();
 	if ((style & SWT.MULTI) != 0) {
 		NSTextView widget = (NSTextView) view;
 		NSPoint viewLocation = new NSPoint();

@@ -235,13 +235,7 @@ NSSize cellSize (long id, long sel) {
 		TableItem item = _getItem((int)rowIndex);
 		OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 		long tableColumn = outValue[0];
-		int columnIndex = 0;
-		for (int i=0; i<columnCount; i++) {
-			if (columns [i].nsColumn.id == tableColumn) {
-				columnIndex = i;
-				break;
-			}
-		}
+		int columnIndex = Math.max (0, indexOfColumn (tableColumn));
 		sendMeasureItem (item, columnIndex, size, cell.isHighlighted());
 	}
 	return size;
@@ -280,7 +274,7 @@ boolean checkData (TableItem item, int index) {
 		item.cached = true;
 		Event event = new Event ();
 		event.item = item;
-		event.index = indexOf (item);
+		event.index = index;
 		currentItem = item;
 		sendEvent (SWT.SetData, event);
 		//widget could be disposed at this point
@@ -964,13 +958,7 @@ void drawInteriorWithFrame_inView (long id, long sel, NSRect rect, long view) {
 	OS.object_getInstanceVariable(id, Display.SWT_COLUMN, outValue);
 	long tableColumn = outValue[0];
 	long nsColumnIndex = widget.tableColumns().indexOfObjectIdenticalTo(new id(tableColumn));
-	int columnIndex = 0;
-	for (int i=0; i<columnCount; i++) {
-		if (columns [i].nsColumn.id == tableColumn) {
-			columnIndex = i;
-			break;
-		}
-	}
+	int columnIndex = Math.max (0, indexOfColumn (tableColumn));
 
 	Color background = item.cellBackground != null ? item.cellBackground [columnIndex] : null;
 	if (background == null) background = item.background;
@@ -1332,12 +1320,15 @@ public Rectangle getClientArea () {
 }
 
 TableColumn getColumn (id id) {
+	int index = indexOfColumn (id.id);
+	return index == -1 ? null : columns[index];
+}
+
+int indexOfColumn (long nsColumnId) {
 	for (int i = 0; i < columnCount; i++) {
-		if (columns[i].nsColumn.id == id.id) {
-			return columns[i];
-		}
+		if (columns[i].nsColumn.id == nsColumnId) return i;
 	}
-	return null;
+	return -1;
 }
 
 /**
@@ -2790,16 +2781,6 @@ public void setItemCount (int count) {
 	updateRowCount();
 }
 
-/*public*/ void setItemHeight (int itemHeight) {
-	checkWidget ();
-	if (itemHeight < -1) error (SWT.ERROR_INVALID_ARGUMENT);
-	if (itemHeight == -1) {
-		//TODO - reset item height, ensure other API's such as setFont don't do this
-	} else {
-		((NSTableView)view).setRowHeight (itemHeight);
-	}
-}
-
 void setItemHeight (Image image, NSFont font, boolean set) {
 	if (font == null) font = getFont ().handle;
 	double ascent = font.ascender ();
@@ -3374,14 +3355,8 @@ void sendMeasureItem (TableItem item, int columnIndex, NSSize size, boolean isSe
 void tableViewColumnDidMove (long id, long sel, long aNotification) {
 	NSNotification notification = new NSNotification (aNotification);
 	NSDictionary userInfo = notification.userInfo ();
-	NSString nsstring = (NSString) new NSString().alloc();
-	nsstring = nsstring.initWithString("NSOldColumn"); //$NON-NLS-1$
-	id nsOldIndex = userInfo.valueForKey (nsstring);
-	nsstring.release();
-	nsstring = (NSString) new NSString().alloc();
-	nsstring = nsstring.initWithString("NSNewColumn"); //$NON-NLS-1$
-	id nsNewIndex = userInfo.valueForKey (nsstring);
-	nsstring.release();
+	id nsOldIndex = userInfo.valueForKey (NSString.stringWith ("NSOldColumn")); //$NON-NLS-1$
+	id nsNewIndex = userInfo.valueForKey (NSString.stringWith ("NSNewColumn")); //$NON-NLS-1$
 	int oldIndex = new NSNumber (nsOldIndex).intValue ();
 	int newIndex = new NSNumber (nsNewIndex).intValue ();
 	NSTableView tableView = (NSTableView)view;
@@ -3403,10 +3378,7 @@ void tableViewColumnDidMove (long id, long sel, long aNotification) {
 void tableViewColumnDidResize (long id, long sel, long aNotification) {
 	NSNotification notification = new NSNotification (aNotification);
 	NSDictionary userInfo = notification.userInfo ();
-	NSString nsstring = (NSString) new NSString().alloc();
-	nsstring = nsstring.initWithString("NSTableColumn"); //$NON-NLS-1$
-	id columnId = userInfo.valueForKey (nsstring);
-	nsstring.release();
+	id columnId = userInfo.valueForKey (NSString.stringWith ("NSTableColumn")); //$NON-NLS-1$
 	TableColumn column = getColumn (columnId);
 	if (column == null) return; /* either CHECK column or firstColumn in 0-column Table */
 
@@ -3481,12 +3453,7 @@ long tableView_objectValueForTableColumn_row (long id, long sel, long aTableView
 		}
 		return value.id;
 	}
-	for (int i=0; i<columnCount; i++) {
-		if (columns [i].nsColumn.id == aTableColumn) {
-			return item.createString (i).id;
-		}
-	}
-	return item.createString (0).id;
+	return item.createString (Math.max (0, indexOfColumn (aTableColumn))).id;
 }
 
 @Override
@@ -3499,11 +3466,8 @@ boolean tableView_shouldReorderColumn_toColumn(long id, long sel, long aTableVie
 
 	NSTableView widget = new NSTableView(aTableView);
 	id nsColumn = widget.tableColumns().objectAtIndex(currentColIndex);
-	for (int i = 0; i < columnCount; i++) {
-		if (columns[i].nsColumn.id == nsColumn.id) {
-			return columns[i].movable;
-		}
-	}
+	int index = indexOfColumn (nsColumn.id);
+	if (index != -1) return columns[index].movable;
 
 	return true;
 }
@@ -3552,13 +3516,7 @@ private void toggleCheckedItem (TableItem item, long rowIndex) {
 void tableView_willDisplayCell_forTableColumn_row (long id, long sel, long aTableView, long cell, long tableColumn, long rowIndex) {
 	if (checkColumn != null && tableColumn == checkColumn.id) return;
 	TableItem item = items [(int)rowIndex];
-	int index = 0;
-	for (int i=0; i<columnCount; i++) {
-		if (columns [i].nsColumn.id == tableColumn) {
-			index = i;
-			break;
-		}
-	}
+	int index = Math.max (0, indexOfColumn (tableColumn));
 	NSTextFieldCell textCell = new NSTextFieldCell (cell);
 	OS.object_setInstanceVariable(cell, Display.SWT_ROW, rowIndex);
 	OS.object_setInstanceVariable(cell, Display.SWT_COLUMN, tableColumn);

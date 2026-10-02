@@ -84,8 +84,6 @@ public final class GC extends Resource {
 	double[] points;
 	double [] point;
 
-	static final int TAB_COUNT = 32;
-
 	final static int FOREGROUND = 1 << 0;
 	final static int BACKGROUND = 1 << 1;
 	final static int FONT = 1 << 2;
@@ -175,20 +173,11 @@ public final class GC extends Resource {
 			NSSize size = new NSSize();
 			size.width = OS.MAX_TEXT_CONTAINER_SIZE;
 			size.height = OS.MAX_TEXT_CONTAINER_SIZE;
-			NSTextStorage textStorage = (NSTextStorage) new NSTextStorage().alloc().init();
-			NSLayoutManager layoutManager = (NSLayoutManager) new NSLayoutManager().alloc().init();
-			layoutManager.setBackgroundLayoutEnabled(NSThread.isMainThread());
-			NSTextContainer textContainer = (NSTextContainer) new NSTextContainer().alloc();
-			textContainer = textContainer.initWithContainerSize(size);
-			textContainer.setLineFragmentPadding(0);
-			textStorage.addLayoutManager(layoutManager);
-			layoutManager.addTextContainer(textContainer);
-			layoutManager.release();
-			textContainer.release();
-			this.layoutManager = layoutManager;
-			this.textStorage = textStorage;
+			TextLayout.TextSystem system = new TextLayout.TextSystem(size);
+			this.layoutManager = system.layoutManager;
+			this.textStorage = system.textStorage;
 			textStorage.setAttributedString(attribStr);
-			this.range = layoutManager.glyphRangeForTextContainer(textContainer);
+			this.range = layoutManager.glyphRangeForTextContainer(system.textContainer);
 		}
 
 		public void release() {
@@ -866,19 +855,10 @@ void createLayout () {
 	NSSize size = new NSSize();
 	size.width = OS.MAX_TEXT_CONTAINER_SIZE;
 	size.height = OS.MAX_TEXT_CONTAINER_SIZE;
-	NSTextStorage textStorage = (NSTextStorage)new NSTextStorage().alloc().init();
-	NSLayoutManager layoutManager = (NSLayoutManager)new NSLayoutManager().alloc().init();
-	layoutManager.setBackgroundLayoutEnabled(NSThread.isMainThread());
-	NSTextContainer textContainer = (NSTextContainer)new NSTextContainer().alloc();
-	textContainer = textContainer.initWithContainerSize(size);
-	textContainer.setLineFragmentPadding(0);
-	textStorage.addLayoutManager(layoutManager);
-	layoutManager.addTextContainer(textContainer);
-	layoutManager.release();
-	textContainer.release();
-	data.textContainer = textContainer;
-	data.layoutManager = layoutManager;
-	data.textStorage = textStorage;
+	TextLayout.TextSystem system = new TextLayout.TextSystem(size);
+	data.textContainer = system.textContainer;
+	data.layoutManager = system.layoutManager;
+	data.textStorage = system.textStorage;
 }
 
 NSAttributedString createString(String string, int flags, boolean draw) {
@@ -1294,9 +1274,6 @@ void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, 
 		srcWidth = destWidth = imgWidth;
 		srcHeight = destHeight = imgHeight;
 	} else {
-		simple = srcX == 0 && srcY == 0 &&
-			srcWidth == destWidth && destWidth == imgWidth &&
-			srcHeight == destHeight && destHeight == imgHeight;
 		if (srcX + srcWidth > imgWidth || srcY + srcHeight > imgHeight) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}

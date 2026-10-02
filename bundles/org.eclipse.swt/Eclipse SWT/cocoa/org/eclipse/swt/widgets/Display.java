@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import java.lang.Runtime.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -329,7 +328,6 @@ public class Display extends Device implements Executor {
 	static String APP_VERSION = ""; //$NON-NLS-1$
 	static final String ADD_WIDGET_KEY = "org.eclipse.swt.internal.addWidget"; //$NON-NLS-1$
 	static final byte[] SWT_OBJECT = {'S', 'W', 'T', '_', 'O', 'B', 'J', 'E', 'C', 'T', '\0'};
-	static final byte[] SWT_EMBED_FRAMES = {'S', 'W', 'T', '_', 'E', 'M', 'B', 'E', 'D', '_', 'F', 'R', 'A', 'M', 'E', 'S', '\0'};
 	static final byte[] SWT_IMAGE = {'S', 'W', 'T', '_', 'I', 'M', 'A', 'G', 'E', '\0'};
 	static final byte[] SWT_ROW = {'S', 'W', 'T', '_', 'R', 'O', 'W', '\0'};
 	static final byte[] SWT_COLUMN = {'S', 'W', 'T', '_', 'C', 'O', 'L', 'U', 'M', 'N', '\0'};
@@ -810,34 +808,6 @@ static void checkDisplay (Thread thread, boolean multiple) {
 			}
 		}
 	}
-}
-
-static String convertToLf(String text) {
-	char Cr = '\r';
-	char Lf = '\n';
-	int length = text.length ();
-	if (length == 0) return text;
-
-	/* Check for an LF or CR/LF.  Assume the rest of the string
-	 * is formated that way.  This will not work if the string
-	 * contains mixed delimiters. */
-	int i = text.indexOf (Lf, 0);
-	if (i == -1 || i == 0) return text;
-	if (text.charAt (i - 1) != Cr) return text;
-
-	/* The string is formatted with CR/LF.
-	 * Create a new string with the LF line delimiter. */
-	i = 0;
-	StringBuilder result = new StringBuilder ();
-	while (i < length) {
-		int j = text.indexOf (Cr, i);
-		if (j == -1) j = length;
-		String s = text.substring (i, j);
-		result.append (s);
-		i = j + 2;
-		result.append (Lf);
-	}
-	return result.toString ();
 }
 
 void clearModal (Shell shell) {
@@ -1444,7 +1414,6 @@ public static Display getCurrent () {
 }
 
 int getCaretBlinkTime () {
-//	checkDevice ();
 	return blinkTime;
 }
 
@@ -2504,50 +2473,33 @@ private boolean initUseNativeItemHeight() {
 	return Boolean.parseBoolean(System.getProperty("org.eclipse.swt.internal.cocoa.useNativeItemHeight", "true"));
 }
 
-private static NSString getAwtRunLoopMode() {
+private static NSString awtRunLoopMode;
+
+private static synchronized NSString getAwtRunLoopMode() {
+	if (awtRunLoopMode != null) return awtRunLoopMode;
 	// Special run loop mode mode used by AWT enters when it only wants related messages processed.
 	// The name of this mode is a defacto contract established by the JavaNativeFoundation (JNF) library.
 	// It could be accessed via OS.objc_lookUpClass("JNFRunLoop").
 	//
-	// However, in JDK 11.0.12 / 13.0.8 / 15.0.4 / 17 this broke:
-	// 1) JNF was dropped from JDK:
-	//    https://bugs.openjdk.java.net/browse/JDK-8260616
-	//    https://bugs.openjdk.java.net/browse/JDK-8261693
-	// 2) The contract was broken, since the name was changed from "AWTRunLoopMode" to "jnfRunLoopMode":
-	//    https://www.mail-archive.com/awt-dev@openjdk.java.net/msg17946.html
+	// JNF was dropped from JDK (https://bugs.openjdk.java.net/browse/JDK-8260616) and is not available
+	// in arm64, in newer JDKs the name is "AWTRunLoopMode" (https://bugs.openjdk.java.net/browse/JDK-8270216).
 	//
-	// JNF is also not available in arm64.
-	//
-	// In JDK 11.0.14 / 13.0.9 / 15.0.5 / 17.0.0.1 the name was changed back to "AWTRunLoopMode":
-	// https://bugs.openjdk.java.net/browse/JDK-8270216
-	// There is no concept yet to update this:
-	// https://bugs.openjdk.java.net/browse/JDK-8270211
-	//
-	// Therefore, for now, we follow this approach:
-
-	// 1) If JNFRunLoop is available, we keep using it
+	// Therefore, if JNFRunLoop is available, we keep using it, otherwise we use the fixed name.
+	NSString mode = null;
 	long cls = OS.objc_lookUpClass("JNFRunLoop");
 	if (cls != 0) {
-		long mode = OS.objc_msgSend(cls, OS.sel_javaRunLoopMode);
-		if (mode != 0) {
-			return new NSString(mode);
+		long modeId = OS.objc_msgSend(cls, OS.sel_javaRunLoopMode);
+		if (modeId != 0) {
+			mode = new NSString(modeId);
 		}
 	}
-
-	// 2) If the version is new enough to contain the fix https://bugs.openjdk.java.net/browse/JDK-8270216
-	//    we are optimistic
-	Version version = Runtime.version();
-	if (version.feature() > 17 //
-			|| version.feature() == 17 && Version.parse("17.0.1").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 11 && Version.parse("11.0.14").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 15 && Version.parse("15.0.5").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 13 && Version.parse("13.0.9").compareToIgnoreOptional(version) <= 0) {
-		return NSString.stringWith("AWTRunLoopMode");
+	if (mode == null) {
+		mode = NSString.stringWith("AWTRunLoopMode");
 	}
-
-	// 3) Otherwise, for the few broken Java versions inbetween, we are pessimistic to avoid any immediate
-	//    deadlocks in calling code (although deadlocks will probably still occurr later down the road).
-	return null;
+	// The cached string must outlive the autorelease pool of the calling thread
+	mode.retain();
+	awtRunLoopMode = mode;
+	return awtRunLoopMode;
 }
 
 void addEventMethods (long cls, long proc2, long proc3, long drawRectProc, long hitTestProc, long needsDisplayInRectProc) {
@@ -3388,11 +3340,6 @@ public long internal_new_GC (GCData data) {
 		context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
 		rep.release();
 	}
-//	NSAffineTransform transform = NSAffineTransform.transform();
-//	NSSize size = handle.size();
-//	transform.translateXBy(0, size.height);
-//	transform.scaleXBy(1, -1);
-//	transform.set();
 	if (data != null) {
 		int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 		if ((data.style & mask) == 0) {
@@ -3999,7 +3946,7 @@ public boolean readAndDispatch () {
 	try {
 		events |= runSettings ();
 		events |= runTimers ();
-		events |= runContexts ();
+		runContexts ();
 		events |= runPopups ();
 		NSEvent event = application.nextEventMatchingMask(OS.NSAnyEventMask, null, OS.NSDefaultRunLoopMode, true);
 		if ((event != null) && (application != null)) {
@@ -4400,7 +4347,7 @@ boolean runAWTInvokeLater() {
 	return true;
 }
 
-boolean runContexts () {
+void runContexts () {
 	if (contexts != null) {
 		for (int i = 0; i < contexts.length; i++) {
 			if (contexts[i] != null && contexts[i].flippedContext != null) {
@@ -4408,7 +4355,6 @@ boolean runContexts () {
 			}
 		}
 	}
-	return false;
 }
 
 boolean runDeferredEvents () {
@@ -4582,26 +4528,6 @@ void setAppAppearance (APPEARANCE newMode) {
 		appAppearance = newMode;
 		resetSelectedControlColors();
 	 }
-}
-
-void setWindowAppearance (NSWindow window, NSAppearance appearance) {
-	if (window != null && appearance != null) {
-		OS.objc_msgSend(window.id, OS.sel_setAppearance_, appearance.id);
-	}
-}
-
-void setWindowsAppearance (APPEARANCE newMode) {
-	NSAppearance appearance = getAppearance(newMode);
-	if (appearance != null) {
-		Shell [] shells = getShells ();
-		for (int i=0; i<shells.length; i++) {
-			Shell shell = shells [i];
-			if (!shell.isDisposed ()) {
-				setWindowAppearance (shell.window, appearance);
-			}
-		}
-		appAppearance = newMode;
-	}
 }
 
 boolean runSkin () {
@@ -5041,7 +4967,6 @@ void setMenuBar (Menu menu) {
 	* the menu right away when the menu bar is set in a stacked
 	* event loop. The fix is to use CancelMenuTracking() instead.
 	*/
-//	menubar.cancelTracking();
 	cancelRootMenuTracking ();
 	long count = menubar.numberOfItems();
 	while (count > 1) {
@@ -5251,10 +5176,6 @@ public boolean sleep () {
 	}
 	sendPostExternalEventDispatchEvent ();
 	return true;
-}
-
-int sourceProc (int info) {
-	return 0;
 }
 
 /**
@@ -5750,7 +5671,7 @@ void applicationWillFinishLaunching (long id, long sel, long notification) {
 	NSLocale englishLocale = (NSLocale) new NSLocale().alloc();
 	englishLocale = new NSLocale(englishLocale.initWithLocaleIdentifier(NSString.stringWith("en_US")));
 	NSString languageDisplayName = englishLocale.displayNameForKey(OS.NSLocaleLanguageCode, NSString.stringWith(languageISOValue));
-	if (englishLocale != null) englishLocale.release();
+	englishLocale.release();
 
 	/* To find the nib look for each of these paths, in order, until one is found:
 	 * 		/System/Library/..../Resources/<display name>.lproj/DefaultApp.nib
@@ -5891,7 +5812,6 @@ static long applicationProc(long id, long sel, long arg0) {
 			return returnVal;
 		}
 		case sel_orderFrontStandardAboutPanel_: {
-	//		application.orderFrontStandardAboutPanel(application);
 			return 0;
 		}
 		case sel_hideOtherApplications_: {

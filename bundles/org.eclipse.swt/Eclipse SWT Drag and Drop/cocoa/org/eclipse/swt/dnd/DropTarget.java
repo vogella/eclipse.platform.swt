@@ -251,54 +251,7 @@ protected void checkSubclass () {
 }
 
 int draggingEntered(long id, long sel, NSObject sender) {
-	if (sender == null) return OS.NSDragOperationNone;
-
-	DNDEvent event = new DNDEvent();
-	if (!setEventData(sender, event)) {
-		keyOperation = -1;
-		setDropNotAllowed();
-		return OS.NSDragOperationNone;
-	}
-
-	int allowedOperations = event.operations;
-	TransferData[] allowedDataTypes = new TransferData[event.dataTypes.length];
-	System.arraycopy(event.dataTypes, 0, allowedDataTypes, 0, allowedDataTypes.length);
-
-	selectedDataType = null;
-	selectedOperation = DND.DROP_NONE;
-	notifyListeners(DND.DragEnter, event);
-
-	if (event.detail == DND.DROP_DEFAULT) {
-		event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
-	}
-
-	if (event.dataType != null) {
-		for (int i = 0; i < allowedDataTypes.length; i++) {
-			if (allowedDataTypes[i].type == event.dataType.type) {
-				selectedDataType = allowedDataTypes[i];
-				break;
-			}
-		}
-	}
-
-	if (selectedDataType != null && (allowedOperations & event.detail) != 0) {
-		selectedOperation = event.detail;
-	}
-
-	if (selectedOperation == DND.DROP_NONE) {
-		setDropNotAllowed();
-	} else {
-		if(((Boolean)control.getData(IS_ACTIVE)).booleanValue() == false) {
-			setDropNotAllowed();
-		} else {
-			clearDropNotAllowed();
-		}
-	}
-
-	if (new NSObject(id).isKindOfClass(OS.class_NSTableView)) {
-		return (int)dndCallSuper(id, sel, sender.id);
-	}
-	return opToOsOp(selectedOperation);
+	return dragOver(id, sel, sender, true);
 }
 
 void draggingExited(long id, long sel, NSObject sender) {
@@ -318,6 +271,10 @@ void draggingExited(long id, long sel, NSObject sender) {
 }
 
 int draggingUpdated(long id, long sel, NSObject sender) {
+	return dragOver(id, sel, sender, false);
+}
+
+int dragOver(long id, long sel, NSObject sender, boolean entered) {
 	if (sender == null) return OS.NSDragOperationNone;
 	int oldKeyOperation = keyOperation;
 
@@ -332,18 +289,21 @@ int draggingUpdated(long id, long sel, NSObject sender) {
 	TransferData[] allowedDataTypes = new TransferData[event.dataTypes.length];
 	System.arraycopy(event.dataTypes, 0, allowedDataTypes, 0, allowedDataTypes.length);
 
-	if (keyOperation == oldKeyOperation) {
-		event.type = DND.DragOver;
-		event.dataType = selectedDataType;
-		event.detail = selectedOperation;
-	} else {
-		event.type = DND.DragOperationChanged;
-		event.dataType = selectedDataType;
+	int eventType = DND.DragEnter;
+	if (!entered) {
+		if (keyOperation == oldKeyOperation) {
+			eventType = DND.DragOver;
+			event.dataType = selectedDataType;
+			event.detail = selectedOperation;
+		} else {
+			eventType = DND.DragOperationChanged;
+			event.dataType = selectedDataType;
+		}
 	}
 
 	selectedDataType = null;
 	selectedOperation = DND.DROP_NONE;
-	notifyListeners(event.type, event);
+	notifyListeners(eventType, event);
 	if (event.detail == DND.DROP_DEFAULT) {
 		event.detail = (allowedOperations & DND.DROP_MOVE) != 0 ? DND.DROP_MOVE : DND.DROP_NONE;
 	}

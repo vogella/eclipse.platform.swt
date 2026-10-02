@@ -324,17 +324,21 @@ Rectangle [] computeProportions (Rectangle [] rects) {
 	return result;
 }
 
+NSGraphicsContext createBitmapContext (NSWindow window) {
+	NSRect frame = window.frame();
+	long width = (long) frame.width;
+	long height = (long) frame.height;
+	NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
+	rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
+			OS.NSAlphaFirstBitmapFormat, width * 4, 32);
+	NSGraphicsContext context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+	rep.release();
+	return context;
+}
+
 void drawRectangles (NSWindow window, Rectangle [] rects, boolean erase) {
 	NSGraphicsContext context = window.graphicsContext();
-	if (context == null) {
-		long width = (long) window.frame().width;
-		long height = (long) window.frame().height;
-		NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
-		rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
-				OS.NSAlphaFirstBitmapFormat, width * 4, 32);
-		context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
-		rep.release();
-	}
+	if (context == null) context = createBitmapContext(window);
 	NSGraphicsContext.static_saveGraphicsState();
 	NSGraphicsContext.setCurrentContext(context);
 	context.saveGraphicsState();
@@ -771,15 +775,7 @@ public boolean open () {
 		window.setContentView(null);
 		window.setBackgroundColor(NSColor.clearColor());
 		NSGraphicsContext context = window.graphicsContext();
-		if (context == null) {
-			long width = (long) window.frame().width;
-			long height = (long) window.frame().height;
-			NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
-			rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
-					OS.NSAlphaFirstBitmapFormat, width * 4, 32);
-			context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
-			rep.release();
-		}
+		if (context == null) context = createBitmapContext(window);
 		NSGraphicsContext.static_saveGraphicsState();
 		NSGraphicsContext.setCurrentContext(context);
 		context.setCompositingOperation(OS.NSCompositingOperationClear);
