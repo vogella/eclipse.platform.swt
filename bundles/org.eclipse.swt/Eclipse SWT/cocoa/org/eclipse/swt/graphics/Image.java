@@ -467,6 +467,10 @@ private void createRepFromSourceAndApplyFlag(NSBitmapImageRep srcRep, int srcWid
 		switch (flag) {
 		case SWT.IMAGE_DISABLE: {
 			byte[] line = new byte[(int)srcBpr];
+			// the transformation is a pure function of the pixel, so runs of identical pixels share the result
+			int lastPixel = 0;
+			byte lastRed = 0, lastGreen = 0, lastBlue = 0, lastAlpha = 0;
+			boolean hasLast = false;
 			for (int y=0; y<srcHeight; y++) {
 				C.memmove(line, data + (y * srcBpr), srcBpr);
 				int offset = 0;
@@ -475,11 +479,20 @@ private void createRepFromSourceAndApplyFlag(NSBitmapImageRep srcRep, int srcWid
 					int green = line[offset+greenOffset] & 0xFF;
 					int blue = line[offset+blueOffset] & 0xFF;
 					int alpha = line[offset+alphaOffset] & 0xFF;
-					RGBA result = DEFAULT_DISABLED_IMAGE_TRANSFORMER.adaptPixelValue(red, green, blue, alpha);
-					line[offset+redOffset] = (byte) result.rgb.red;
-					line[offset+greenOffset] = (byte) result.rgb.green;
-					line[offset+blueOffset] = (byte) result.rgb.blue;
-					line[offset+alphaOffset] = (byte) result.alpha;
+					int pixel = (alpha << 24) | (red << 16) | (green << 8) | blue;
+					if (!hasLast || pixel != lastPixel) {
+						RGBA result = DEFAULT_DISABLED_IMAGE_TRANSFORMER.adaptPixelValue(red, green, blue, alpha);
+						lastPixel = pixel;
+						lastRed = (byte) result.rgb.red;
+						lastGreen = (byte) result.rgb.green;
+						lastBlue = (byte) result.rgb.blue;
+						lastAlpha = (byte) result.alpha;
+						hasLast = true;
+					}
+					line[offset+redOffset] = lastRed;
+					line[offset+greenOffset] = lastGreen;
+					line[offset+blueOffset] = lastBlue;
+					line[offset+alphaOffset] = lastAlpha;
 					offset += 4;
 				}
 				C.memmove(data + (y * srcBpr), line, srcBpr);
