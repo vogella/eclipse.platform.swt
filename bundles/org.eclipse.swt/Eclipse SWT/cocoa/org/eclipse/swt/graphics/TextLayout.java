@@ -570,6 +570,13 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 				layoutManager.removeTemporaryAttribute(OS.NSForegroundColorAttributeName, range);
 			}
 			NSPoint point = new NSPoint();
+			int lineCount = lineOffsets.length - 1;
+			int[] lineStarts = new int[lineCount];
+			int[] lineEnds = new int[lineCount];
+			for (int i = 0; i < lineCount; i++) {
+				lineStarts[i] = untranslateOffset(lineOffsets[i]);
+				lineEnds[i] = untranslateOffset(lineOffsets[i + 1] - 1);
+			}
 			for (int j = 0; j < stylesCount; j++) {
 				StyleItem run = styles[j];
 				TextStyle style = run.style;
@@ -580,15 +587,28 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 				drawBorder = drawBorder && (j + 1 == stylesCount || !style.isAdherentBorder(styles[j + 1].style));
 				if (!drawUnderline && !drawBorder) continue;
 				int end = j + 1 < stylesCount ? translateOffset(styles[j + 1].start - 1) : length;
-				for (int i = 0; i < lineOffsets.length - 1; i++) {
-					int lineStart = untranslateOffset(lineOffsets[i]);
-					int lineEnd = untranslateOffset(lineOffsets[i + 1] - 1);
+				int underlineStart = 0, borderStart = 0;
+				if (drawUnderline) {
+					int start = run.start;
+					for (int k = j; k > 0 && style.isAdherentUnderline(styles[k - 1].style); k--) {
+						start = styles[k - 1].start;
+					}
+					underlineStart = translateOffset(start);
+				}
+				if (drawBorder) {
+					int start = run.start;
+					for (int k = j; k > 0 && style.isAdherentBorder(styles[k - 1].style); k--) {
+						start = styles[k - 1].start;
+					}
+					borderStart = translateOffset(start);
+				}
+				for (int i = 0; i < lineCount; i++) {
+					int lineStart = lineStarts[i];
+					int lineEnd = lineEnds[i];
+					// the lines are ordered, so no later line can intersect the style either
+					if (end < lineStart) break;
 					if (drawUnderline) {
-						int start = run.start;
-						for (int k = j; k > 0 && style.isAdherentUnderline(styles[k - 1].style); k--) {
-							start = styles[k - 1].start;
-						}
-						start = translateOffset(start);
+						int start = underlineStart;
 						if (!(start > lineEnd || end < lineStart)) {
 							range.location = Math.max(lineStart, start);
 							range.length = Math.min(lineEnd, end) + 1 - range.location;
@@ -652,11 +672,7 @@ public void draw(GC gc, int x, int y, int selectionStart, int selectionEnd, Colo
 						}
 					}
 					if (drawBorder) {
-						int start = run.start;
-						for (int k = j; k > 0 && style.isAdherentBorder(styles[k - 1].style); k--) {
-							start = styles[k - 1].start;
-						}
-						start = translateOffset(start);
+						int start = borderStart;
 						if (!(start > lineEnd || end < lineStart)) {
 							range.location = Math.max(lineStart, start);
 							range.length = Math.min(lineEnd, end) + 1 - range.location;
