@@ -24,7 +24,8 @@ import org.junit.platform.suite.api.Suite;
 	Test_cocoa_TransferRegisterType.class,
 	Test_cocoa_GC.class,
 	Test_cocoa_Canvas.class,
-	Test_cocoa_Table.class
+	Test_cocoa_Table.class,
+	Test_org_eclipse_swt_internal_cocoa_Smoke.class
 })
 
 public class AllCocoaTests {
