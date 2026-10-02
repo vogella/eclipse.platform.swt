@@ -289,7 +289,6 @@ public void test_copy() throws InterruptedException {
 	text.setSelection(2);
 	assertEquals("", text.getSelectionText());
 
-	System.out.println(text.getText());
 	text.setText("");
 	pasteFromClipboard(text);
 	assertEquals("00000", text.getText());

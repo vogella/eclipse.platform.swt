@@ -219,7 +219,6 @@ protected void hookExpectedEvents(Widget w, String[] types, final java.util.List
 				else if(e.type == SWT.Selection)
 					temp += ":"+ConsistencyUtility.getSelectionType(e.detail);
 				events.add(temp);
-				System.out.println(temp + e.widget);
 			});
 }
 
@@ -282,8 +281,7 @@ protected static Widget[] getWidgetTable(Display display) {
 		Widget[] widgetTable = (Widget[]) field.get(display);
 		return widgetTable;
 	} catch (Throwable t) {
-		t.printStackTrace();
-		return null;
+		throw new AssertionError("Could not access Display.widgetTable", t);
 	}
 }
 

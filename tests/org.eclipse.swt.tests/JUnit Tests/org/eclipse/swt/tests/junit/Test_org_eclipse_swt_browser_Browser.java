@@ -29,11 +29,13 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -3389,7 +3391,7 @@ private boolean waitForPassCondition(final Supplier<Boolean> passTest, int milli
 
 	// This thread tests the pass-condition periodically.
 	// Triggers fail if timeout occurs.
-	new Thread(() -> {
+	Thread poller = new Thread(() -> {
 		while (Instant.now().isBefore(timeOut)) {
 			if (passTest.get()) {
 				passed.set(true);
@@ -3403,7 +3405,8 @@ private boolean waitForPassCondition(final Supplier<Boolean> passTest, int milli
 			try {Thread.sleep(500);} catch (InterruptedException e) {e.printStackTrace();}
 		}
 		display.wake(); // timeout. Test failed by default.
-	}).start();
+	});
+	poller.start();
 
 	while (Instant.now().isBefore(timeOut)) {
 		if (passed.get()) { // Logic to show browser window for longer if enabled.
@@ -3414,6 +3417,18 @@ private boolean waitForPassCondition(final Supplier<Boolean> passTest, int milli
 		if (!shell.isDisposed()) {
 			if (!display.readAndDispatch()) {
 				display.sleep();
+			}
+		}
+	}
+	// Make sure the thread does not outlive this method, otherwise its
+	// final wake() may run against an already disposed display
+	while (poller.isAlive()) {
+		if (shell.isDisposed() || !display.readAndDispatch()) {
+			try {
+				poller.join(10);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				break;
 			}
 		}
 	}
@@ -3473,10 +3488,14 @@ private static void printThreadsInfo() {
 }
 
 private static void printSystemEnv() throws Exception {
+    // The full environment may contain secrets (tokens etc.), so print it only on explicit request.
+    boolean fullEnv = Boolean.getBoolean("org.eclipse.swt.tests.printFullEnv");
     Set<Entry<String, String>> set = new TreeMap<>(System.getenv()).entrySet();
-    StringBuilder sb = new StringBuilder("\n###################### System environment ######################\n");
+    StringBuilder sb = new StringBuilder("\n###################### System environment" + (fullEnv ? "" : " (filtered)") + " ######################\n");
     for (Entry<String, String> entry : set) {
-        sb.append(" ").append(entry.getKey()).append("=").append(entry.getValue()).append("\n");
+        if (fullEnv || isDisplayRelatedEnvVariable(entry.getKey())) {
+            sb.append(" ").append(entry.getKey()).append("=").append(entry.getValue()).append("\n");
+        }
     }
 
     sb.append("\n###################### System properties ######################\n");
@@ -3491,6 +3510,13 @@ private static void printSystemEnv() throws Exception {
     	System.out.println("/proc/sys/kernel/threads-max: " + new String(Files.readAllBytes(Paths.get("/proc/sys/kernel/threads-max"))));
     	System.out.println("/proc/self/limits: " + new String(Files.readAllBytes(Paths.get("/proc/self/limits"))));
     }
+}
+
+private static boolean isDisplayRelatedEnvVariable(String name) {
+    return name.startsWith("SWT_") || name.startsWith("GTK") || name.startsWith("GDK_") || name.startsWith("WEBKIT")
+            || name.startsWith("MOZ") || name.startsWith("XDG_") || name.startsWith("JAVA")
+            || name.equals("DISPLAY") || name.equals("WAYLAND_DISPLAY") || name.equals("LANG")
+            || name.startsWith("LC_") || name.equals("LD_LIBRARY_PATH") || name.equals("DBUS_SESSION_BUS_ADDRESS");
 }
 
 /**
@@ -3519,7 +3545,7 @@ private static List<String> getOpenedDescriptors() {
 			}
 		});
 	} catch (IOException e1) {
-		e1.printStackTrace();
+		throw new UncheckedIOException(e1);
 	}
 	Collections.sort(paths);
 	if(initialOpenedDescriptors.size() == 0) {
@@ -3539,8 +3565,10 @@ private static boolean isTestRelatedFileDescriptor(String fileDescriptorPath) {
 private static String resolveSymLink(Path path) {
 	try {
 		return Files.isSymbolicLink(path) ? Files.readSymbolicLink(path).toString() : path.toString();
+	} catch (NoSuchFileException e) {
+		// descriptor was closed in the meantime
 	} catch (IOException e) {
-		e.printStackTrace();
+		throw new UncheckedIOException(e);
 	}
 	return null;
 }
