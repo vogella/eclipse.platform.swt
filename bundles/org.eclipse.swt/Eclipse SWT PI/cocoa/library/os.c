@@ -4969,36 +4969,6 @@ JNIEXPORT jint JNICALL OS_NATIVE(getpid)
 }
 #endif
 
-#ifndef NO_instrumentObjcMessageSends
-JNIEXPORT void JNICALL OS_NATIVE(instrumentObjcMessageSends)
-	(JNIEnv *env, jclass that, jboolean arg0)
-{
-	OS_NATIVE_ENTER(env, that, instrumentObjcMessageSends_FUNC);
-/*
-	instrumentObjcMessageSends(arg0);
-*/
-	{
-		OS_LOAD_FUNCTION(fp, instrumentObjcMessageSends)
-		if (fp) {
-			((void (CALLING_CONVENTION*)(jboolean))fp)(arg0);
-		}
-	}
-	OS_NATIVE_EXIT(env, that, instrumentObjcMessageSends_FUNC);
-}
-#endif
-
-#ifndef NO_kCFAllocatorDefault
-JNIEXPORT jlong JNICALL OS_NATIVE(kCFAllocatorDefault)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	OS_NATIVE_ENTER(env, that, kCFAllocatorDefault_FUNC);
-	rc = (jlong)kCFAllocatorDefault;
-	OS_NATIVE_EXIT(env, that, kCFAllocatorDefault_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_kCFRunLoopCommonModes
 JNIEXPORT jlong JNICALL OS_NATIVE(kCFRunLoopCommonModes)
 	(JNIEnv *env, jclass that)
@@ -5195,16 +5165,6 @@ fail:
 	if (arg1 && lparg1) (*env)->ReleaseStringUTFChars(env, arg1, lparg1);
 	OS_NATIVE_EXIT(env, that, objc_1allocateClassPair_FUNC);
 	return rc;
-}
-#endif
-
-#ifndef NO_objc_1disposeClassPair
-JNIEXPORT void JNICALL OS_NATIVE(objc_1disposeClassPair)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	OS_NATIVE_ENTER(env, that, objc_1disposeClassPair_FUNC);
-	objc_disposeClassPair((Class)arg0);
-	OS_NATIVE_EXIT(env, that, objc_1disposeClassPair_FUNC);
 }
 #endif
 
@@ -7539,18 +7499,6 @@ JNIEXPORT jlong JNICALL OS_NATIVE(object_1getClass)
 	OS_NATIVE_ENTER(env, that, object_1getClass_FUNC);
 	rc = (jlong)object_getClass((id)arg0);
 	OS_NATIVE_EXIT(env, that, object_1getClass_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_object_1getClassName
-JNIEXPORT jlong JNICALL OS_NATIVE(object_1getClassName)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	OS_NATIVE_ENTER(env, that, object_1getClassName_FUNC);
-	rc = (jlong)object_getClassName((id)arg0);
-	OS_NATIVE_EXIT(env, that, object_1getClassName_FUNC);
 	return rc;
 }
 #endif

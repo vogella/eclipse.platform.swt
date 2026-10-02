@@ -496,20 +496,14 @@ public static final native long method_setImplementation(long method, long imp);
 public static final native long class_createInstance(long cls, long extraBytes);
 /** @method flags=no_gen */
 public static final native String class_getName(long cls);
-/** @method flags=dynamic */
-public static final native void instrumentObjcMessageSends(boolean val);
 /** @param superclass cast=(Class) */
 public static final native long objc_allocateClassPair(long superclass, String name, long extraBytes);
-/** @param klass cast=(Class) */
-public static final native void objc_disposeClassPair(long klass);
 public static final native long objc_getClass(String className);
 public static final native long objc_getMetaClass(String name);
 public static final native long objc_getProtocol(String name);
 public static final native long objc_lookUpClass(String className);
 /** @param cls cast=(Class) */
 public static final native void objc_registerClassPair(long cls);
-/** @param obj cast=(id) */
-public static final native long object_getClassName(long obj);
 /** @param obj cast=(id) */
 public static final native long object_getClass(long obj);
 
@@ -2750,8 +2744,6 @@ public static final NSString NSWindowDidResizeNotification = new NSString(NSWind
 /** @method flags=const */
 public static final native long NSWindowWillCloseNotification();
 public static final NSString NSWindowWillCloseNotification = new NSString(NSWindowWillCloseNotification());
-/** @method flags=const */
-public static final native long kCFAllocatorDefault();
 /** @method flags=const */
 public static final native long kCFRunLoopCommonModes();
 /** @method flags=const */
