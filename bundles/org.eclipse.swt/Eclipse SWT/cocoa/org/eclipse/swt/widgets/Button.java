@@ -209,7 +209,7 @@ public Point computeSize (int wHint, int hHint, boolean changed) {
 		int height = hHint != SWT.DEFAULT ? hHint : 14;
 		return new Point (width, height);
 	}
-	NSSize size = null;
+	NSSize size;
 	NSCell cell = ((NSButton)view).cell ();
 	if ((style & SWT.WRAP) != 0 && wHint != SWT.DEFAULT) {
 		NSRect rect = new NSRect ();
@@ -725,17 +725,8 @@ void selectRadio () {
 	* of radio buttons with the same parent are separated by
 	* another control, the correct behavior should be that
 	* the two groups act independently.  This is consistent
-	* with radio tool and menu items.  The commented code
-	* implements this behavior.
+	* with radio tool and menu items.
 	*/
-//	int index = 0;
-//	Control [] children = parent._getChildren ();
-//	while (index < children.length && children [index] != this) index++;
-//	int i = index - 1;
-//	while (i >= 0 && children [i].setRadioSelection (false)) --i;
-//	int j = index + 1;
-//	while (j < children.length && children [j].setRadioSelection (false)) j++;
-//	setSelection (true);
 	Control [] children = parent._getChildren ();
 	for (int i=0; i<children.length; i++) {
 		Control child = children [i];

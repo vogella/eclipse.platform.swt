@@ -89,22 +89,6 @@ public List (Composite parent, int style) {
 }
 
 @Override
-long accessibilityAttributeValue (long id, long sel, long arg0) {
-//	if (attributeName.isEqualToString(OS.NSAccessibilityHeaderAttribute)) {
-//		/*
-//		* Bug in the Macintosh.  Even when the header is not visible,
-//		* VoiceOver still reports each column header's role for every row.
-//		* This is confusing and overly verbose.  The fix is to return
-//		* "no header" when the screen reader asks for the header, by
-//		* returning noErr without setting the event parameter.
-//		*/
-//		return 0;
-//	}
-
-	return super.accessibilityAttributeValue(id, sel, arg0);
-}
-
-@Override
 boolean acceptsFirstResponder (long id, long sel) {
 	return true;
 }
@@ -1506,27 +1490,6 @@ long tableView_objectValueForTableColumn_row(long id, long sel, long aTableView,
 	NSAttributedString attribStr = createString(items[(int)rowIndex], null, fg, SWT.LEFT, false, getEnabled(), false);
 	attribStr.autorelease();
 	return attribStr.id;
-}
-
-long tableView_selectionIndexesForProposedSelection (long id, long sel, long aTableView, long indexSet) {
-	if ((style & SWT.SINGLE) != 0) {
-		/*
-		 * Feature in Cocoa.  Calling setAllowsEmptySelection will automatically select the first row of the list.
-		 * And, single-selection NSTable/OutlineViews allow the user to de-select the selected item via command-click.
-		 * This is normal platform behavior, but for compatibility with other platforms, if the SINGLE style is in use,
-		 * force a selection by seeing if the proposed selection set is empty, and if so, put back the currently selected row.
-		 */
-		NSIndexSet indexes = new NSIndexSet(indexSet);
-		NSTableView table = new NSTableView(aTableView);
-		if (indexes.count() != 1 && table.selectedRow() != -1) {
-			NSIndexSet newSelection = (NSIndexSet)new NSIndexSet().alloc();
-			newSelection = newSelection.initWithIndex(table.selectedRow());
-			newSelection.autorelease();
-			return newSelection.id;
-		}
-	}
-
-	return indexSet;
 }
 
 void updateRowCount() {
