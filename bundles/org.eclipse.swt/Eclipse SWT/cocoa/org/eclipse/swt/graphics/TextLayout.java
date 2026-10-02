@@ -250,6 +250,10 @@ void computeRuns() {
 	attrStr.addAttribute(OS.NSParagraphStyleAttributeName, paragraph, range);
 	paragraph.release();
 	long textLength = attrStr.length();
+	// NSColor and NSNumber instances shared by consecutive styles of this call
+	Color lastForeground = null, lastBackground = null;
+	NSColor lastForegroundColor = null, lastBackgroundColor = null;
+	NSNumber singleStyle = null;
 	for (int i = 0; i < stylesCount - 1; i++) {
 		StyleItem run = styles[i];
 		if (run.style == null) continue;
@@ -263,16 +267,23 @@ void computeRuns() {
 		}
 		Color foreground = style.foreground;
 		if (foreground != null && !foreground.isDisposed()) {
-			NSColor color = NSColor.colorWithDeviceRed(foreground.handle[0], foreground.handle[1], foreground.handle[2], 1);
-			attrStr.addAttribute(OS.NSForegroundColorAttributeName, color, range);
+			if (foreground != lastForeground) {
+				lastForeground = foreground;
+				lastForegroundColor = NSColor.colorWithDeviceRed(foreground.handle[0], foreground.handle[1], foreground.handle[2], 1);
+			}
+			attrStr.addAttribute(OS.NSForegroundColorAttributeName, lastForegroundColor, range);
 		}
 		Color background = style.background;
 		if (background != null && !background.isDisposed()) {
-			NSColor color = NSColor.colorWithDeviceRed(background.handle[0], background.handle[1], background.handle[2], 1);
-			attrStr.addAttribute(OS.NSBackgroundColorAttributeName, color, range);
+			if (background != lastBackground) {
+				lastBackground = background;
+				lastBackgroundColor = NSColor.colorWithDeviceRed(background.handle[0], background.handle[1], background.handle[2], 1);
+			}
+			attrStr.addAttribute(OS.NSBackgroundColorAttributeName, lastBackgroundColor, range);
 		}
 		if (style.strikeout) {
-			attrStr.addAttribute(OS.NSStrikethroughStyleAttributeName, NSNumber.numberWithInt(OS.NSUnderlineStyleSingle), range);
+			if (singleStyle == null) singleStyle = NSNumber.numberWithInt(OS.NSUnderlineStyleSingle);
+			attrStr.addAttribute(OS.NSStrikethroughStyleAttributeName, singleStyle, range);
 			Color strikeColor = style.strikeoutColor;
 			if (strikeColor != null && !strikeColor.isDisposed()) {
 				NSColor color = NSColor.colorWithDeviceRed(strikeColor.handle[0], strikeColor.handle[1], strikeColor.handle[2], 1);
@@ -301,7 +312,14 @@ void computeRuns() {
 				}
 			}
 			if (underlineStyle != 0) {
-				attrStr.addAttribute(OS.NSUnderlineStyleAttributeName, NSNumber.numberWithInt(underlineStyle), range);
+				NSNumber underlineNumber;
+				if (underlineStyle == OS.NSUnderlineStyleSingle) {
+					if (singleStyle == null) singleStyle = NSNumber.numberWithInt(OS.NSUnderlineStyleSingle);
+					underlineNumber = singleStyle;
+				} else {
+					underlineNumber = NSNumber.numberWithInt(underlineStyle);
+				}
+				attrStr.addAttribute(OS.NSUnderlineStyleAttributeName, underlineNumber, range);
 				Color underlineColor = style.underlineColor;
 				if (underlineColor != null && !underlineColor.isDisposed()) {
 					NSColor color = NSColor.colorWithDeviceRed(underlineColor.handle[0], underlineColor.handle[1], underlineColor.handle[2], 1);
