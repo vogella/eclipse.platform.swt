@@ -42,6 +42,7 @@ class WebKit extends WebBrowser {
 
 	static long delegateClass;
 	static boolean Initialized;
+	static NSString webElementLinkURLKey;
 	// the following Callbacks are never freed
 	static Callback Callback3, Callback4, Callback5, Callback6, Callback7;
 
@@ -1401,7 +1402,12 @@ void webView_setToolbarsVisible(long sender, boolean visible) {
 void webView_mouseDidMoveOverElement_modifierFlags (long sender, long elementInformationID, long modifierFlags) {
 	if (elementInformationID == 0) return;
 
-	NSString key = NSString.stringWith(WebElementLinkURLKey);
+	if (webElementLinkURLKey == null) {
+		/* retained once, this is called for every mouse move */
+		webElementLinkURLKey = NSString.stringWith(WebElementLinkURLKey);
+		webElementLinkURLKey.retain();
+	}
+	NSString key = webElementLinkURLKey;
 	NSDictionary elementInformation = new NSDictionary(elementInformationID);
 	id value = elementInformation.valueForKey(key);
 	if (value == null) {
@@ -1652,6 +1658,13 @@ void handleEvent(long evtId) {
 	Point position = new Point(screenX, screenY);
 	position = browser.getDisplay().map(null, browser, position);
 
+	/*
+	* Bug in WebKit.  Spurious and redundant mousemove events are received in
+	* various contexts, including following every MouseUp.  The workaround is
+	* to not fire MouseMove events whose x and y values match the last MouseMove
+	*/
+	if (DOMEVENT_MOUSEMOVE.equals (type) && position.x == lastMouseMoveX && position.y == lastMouseMoveY) return;
+
 	int detail = event.detail();
 	int button = event.button();
 	boolean ctrl = event.ctrlKey();
@@ -1679,12 +1692,6 @@ void handleEvent(long evtId) {
 			case 5: mouseEvent.stateMask |= SWT.BUTTON5; break;
 		}
 	} else if (DOMEVENT_MOUSEMOVE.equals (type)) {
-		/*
-		* Bug in WebKit.  Spurious and redundant mousemove events are received in
-		* various contexts, including following every MouseUp.  The workaround is
-		* to not fire MouseMove events whose x and y values match the last MouseMove
-		*/
-		if (mouseEvent.x == lastMouseMoveX && mouseEvent.y == lastMouseMoveY) return;
 		mouseEvent.type = SWT.MouseMove;
 		lastMouseMoveX = mouseEvent.x; lastMouseMoveY = mouseEvent.y;
 	}
