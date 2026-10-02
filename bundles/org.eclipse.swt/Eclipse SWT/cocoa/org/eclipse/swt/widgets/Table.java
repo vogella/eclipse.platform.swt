@@ -659,8 +659,7 @@ void createItem (TableColumn column, int index) {
 void createItem (TableItem item, int index) {
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
-		/* Grow the array faster when redraw is off */
-		int length = getDrawing () ? items.length + 4 : Math.max (4, items.length * 3 / 2);
+		int length = Math.max (4, items.length * 3 / 2);
 		TableItem [] newItems = new TableItem [length];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
@@ -917,11 +916,8 @@ void destroyItem (TableColumn column) {
 }
 
 void destroyItem (TableItem item) {
-	int index = 0;
-	while (index < itemCount) {
-		if (items [index] == item) break;
-		index++;
-	}
+	int index = findItem (item);
+	if (index == -1) index = itemCount;
 	if (index != itemCount - 1) fixSelection (index, false);
 	System.arraycopy (items, index + 1, items, index, --itemCount - index);
 	items [itemCount] = null;
@@ -1977,6 +1973,10 @@ public int indexOf (TableColumn column) {
 public int indexOf (TableItem item) {
 	checkWidget ();
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
+	return findItem (item);
+}
+
+int findItem (TableItem item) {
 	if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
 		if (items [lastIndexOf] == item) return lastIndexOf;
 		if (items [lastIndexOf + 1] == item) return ++lastIndexOf;
