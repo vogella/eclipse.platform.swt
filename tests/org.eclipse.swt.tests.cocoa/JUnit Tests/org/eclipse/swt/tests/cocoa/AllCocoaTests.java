@@ -21,7 +21,10 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
 	Test_cocoa_AccessibleRoles.class,
 	Test_cocoa_AccessibleAttributes.class,
-	Test_cocoa_TransferRegisterType.class
+	Test_cocoa_TransferRegisterType.class,
+	Test_cocoa_GC.class,
+	Test_cocoa_Canvas.class,
+	Test_cocoa_Table.class
 })
 
 public class AllCocoaTests {

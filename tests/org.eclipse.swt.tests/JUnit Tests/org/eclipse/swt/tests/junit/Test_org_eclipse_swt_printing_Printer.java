@@ -118,6 +118,19 @@ public void test_getDPI() {
 }
 
 @Test
+public void test_getDPI_isPlausible() {
+	PrinterData data = Printer.getDefaultPrinterData();
+	assumeTrue (data != null, "if there aren't any printers, don't do this test");
+	Printer printer = new Printer(data);
+	try {
+		Point dpi = printer.getDPI();
+		assertTrue(dpi.x >= 72 && dpi.y >= 72, "printer dpi must be at least 72, was " + dpi);
+	} finally {
+		printer.dispose();
+	}
+}
+
+@Test
 public void test_getPrinterData() {
 	PrinterData data = Printer.getDefaultPrinterData();
 	assumeTrue (data != null, "if there aren't any printers, don't do this test");
