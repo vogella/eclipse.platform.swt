@@ -238,7 +238,6 @@ public void addArc(float x, float y, float width, float height, float startAngle
 		float eAngle = -(startAngle + arcAngle);
 		path.appendBezierPathWithArcWithCenter(center, 1, sAngle,  eAngle, arcAngle>0);
 		path.transformUsingAffineTransform(transform);
-//		handle.appendBezierPath(path);
 		appendBezierPath(path);
 		if (closed = (Math.abs(arcAngle) >= 360)) {
 			handle.closePath();

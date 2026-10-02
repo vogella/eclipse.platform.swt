@@ -2317,10 +2317,6 @@ public boolean isEnabled () {
 	return getEnabled () && parent.isEnabled ();
 }
 
-boolean isEnabledCursor () {
-	return isEnabled ();
-}
-
 boolean isFocusAncestor (Control control) {
 	while (control != null && control != this && !(control instanceof Shell)) {
 		control = control.parent;
@@ -2876,7 +2872,6 @@ public void redraw () {
 }
 
 void redraw (boolean children) {
-//	checkWidget();
 	view.setNeedsDisplay(true);
 }
 
@@ -5203,7 +5198,6 @@ boolean update (boolean all) {
 			return false;
 		}
  	}
-//	checkWidget();
 	NSArray isPainting = display.isPainting;
 	if (isPainting.containsObject(view)) return false;
 	for (int i = 0, length = (int)isPainting.count(); i < length; i++) {

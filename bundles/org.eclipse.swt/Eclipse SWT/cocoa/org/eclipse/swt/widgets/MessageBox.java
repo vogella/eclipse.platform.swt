@@ -195,7 +195,6 @@ public int open () {
 			alert.addButtonWithTitle(title);
 			title = getLabelForButton(SWT.NO, "SWT_No");
 			alert.addButtonWithTitle(title);
-//			no.setKeyEquivalent(NSString.stringWith("\033"));
 			break;
 		case SWT.YES | SWT.NO | SWT.CANCEL:
 			title = getLabelForButton(SWT.YES, "SWT_Yes");
