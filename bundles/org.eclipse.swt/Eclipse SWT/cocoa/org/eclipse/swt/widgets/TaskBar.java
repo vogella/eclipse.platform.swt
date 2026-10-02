@@ -137,8 +137,6 @@ public TaskItem getItem (Shell shell) {
 		item = new TaskItem (this, SWT.NONE);
 	} else {
 		// on the Mac only the application item is supported
-//		TaskBarItem item = new TaskBarItem (this, SWT.NONE);
-//		item.setShell (shell);
 	}
 	return item;
 }

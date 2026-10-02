@@ -368,7 +368,7 @@ void reskinChildren (int flags) {
 void scrollClipViewToPoint (long id, long sel, long clipView, NSPoint point) {
 	if ((state & CANVAS) == 0 && scrollView != null) {
 		NSClipView clip = new NSClipView (clipView);
-		boolean oldCopies = clip.copiesOnScroll (), copies = oldCopies;
+		boolean copies = clip.copiesOnScroll ();
 		if (visibleRgn == 0) copies = !isObscured ();
 		if (copies) copies = !hasRegion ();
 		clip.setCopiesOnScroll (copies);
