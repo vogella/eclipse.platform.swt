@@ -1711,6 +1711,39 @@ public void test_Virtual() {
 }
 
 @Test
+public void test_setItemCountI_virtualKeepsSelectionFocusAndTopIndex() {
+	Table table = new Table(shell, SWT.VIRTUAL | SWT.MULTI);
+	table.addListener(SWT.SetData, e -> ((TableItem) e.item).setText("item"));
+	table.setSize(200, 200);
+	shell.open();
+	table.setItemCount(1000);
+	table.setSelection(new int[] { 10, 20, 700, 900 });
+	table.setTopIndex(30);
+	int top = table.getTopIndex();
+	int[] events = new int[1];
+	table.addListener(SWT.Selection, e -> events[0]++);
+
+	// shrinking by 10% or more takes the detached-model path
+	table.setItemCount(800);
+	assertEquals(800, table.getItemCount());
+	assertArrayEquals(new int[] { 10, 20, 700 }, table.getSelectionIndices());
+	assertEquals(top, table.getTopIndex());
+
+	table.setItemCount(2000);
+	assertArrayEquals(new int[] { 10, 20, 700 }, table.getSelectionIndices());
+	assertEquals(top, table.getTopIndex());
+	assertEquals(0, events[0]);
+
+	table.deselectAll();
+	table.setSelection(5);
+	table.setItemCount(100);
+	assertArrayEquals(new int[] { 5 }, table.getSelectionIndices());
+	table.setItemCount(1);
+	assertEquals(0, table.getSelectionCount());
+	assertEquals(0, events[0]);
+}
+
+@Test
 public void test_setTopIndex() {
 	for (int i = 0; i < 10; i++) {
 		new TableItem(table, 0);

@@ -3613,6 +3613,34 @@ public void setHeaderVisible (boolean show) {
 	this.headerVisible = show;
 }
 
+/* Restores what GTK drops when the model is detached; the CHANGED signal stays blocked so no events are sent */
+void restoreViewState (int [] selection, int focusIndex, int topIndex, double hValue) {
+	long treeSelection = GTK.gtk_tree_view_get_selection (handle);
+	OS.g_signal_handlers_block_matched (treeSelection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+	if (0 <= focusIndex && focusIndex < itemCount) {
+		long focusIter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+		if (focusIter == 0) error (SWT.ERROR_NO_HANDLES);
+		GTK.gtk_tree_model_iter_nth_child (modelHandle, focusIter, 0, focusIndex);
+		long path = GTK.gtk_tree_model_get_path (modelHandle, focusIter);
+		GTK.gtk_tree_view_set_cursor (handle, path, 0, false);
+		GTK.gtk_tree_path_free (path);
+		OS.g_free (focusIter);
+		// set_cursor selects the focus row only
+		GTK.gtk_tree_selection_unselect_all (treeSelection);
+	}
+	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+	if (iter == 0) error (SWT.ERROR_NO_HANDLES);
+	for (int index : selection) {
+		if (index < itemCount && GTK.gtk_tree_model_iter_nth_child (modelHandle, iter, 0, index)) {
+			GTK.gtk_tree_selection_select_iter (treeSelection, iter);
+		}
+	}
+	OS.g_free (iter);
+	OS.g_signal_handlers_unblock_matched (treeSelection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+	if (topIndex < itemCount) setTopIndex (topIndex);
+	GTK.gtk_adjustment_set_value (GTK.gtk_scrolled_window_get_hadjustment (scrolledHandle), hValue);
+}
+
 /**
  * Sets the number of items contained in the receiver.
  *
@@ -3631,22 +3659,51 @@ public void setItemCount (int count) {
 	if (count == itemCount) return;
 	boolean isVirtual = (style & SWT.VIRTUAL) != 0;
 	if (!isVirtual) setRedraw (false);
-	remove (count, itemCount - 1);
-	int length = Math.max (4, (count + 3) / 4 * 4);
-	TableItem [] newItems = new TableItem [length];
-	System.arraycopy (items, 0, newItems, 0, itemCount);
-	items = newItems;
-	if (isVirtual) {
-		long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
-		if (iter == 0) error (SWT.ERROR_NO_HANDLES);
-		for (int i=itemCount; i<count; i++) {
-			GTK.gtk_list_store_append (modelHandle, iter);
+	// Removing many rows from an attached model is far slower than detaching it first
+	boolean detachModel = isVirtual && count > 0 && itemCount - count >= itemCount / 10;
+	int [] selection = null;
+	int focusIndex = -1, topIndex = -1;
+	double hValue = 0;
+	if (detachModel) {
+		selection = getSelectionIndices ();
+		long [] path = new long [1];
+		GTK.gtk_tree_view_get_cursor (handle, path, null);
+		if (path [0] != 0) {
+			long indices = GTK.gtk_tree_path_get_indices (path [0]);
+			if (indices != 0) {
+				int [] index = new int [1];
+				C.memmove (index, indices, 4);
+				focusIndex = index [0];
+			}
+			GTK.gtk_tree_path_free (path [0]);
 		}
-		OS.g_free (iter);
-		itemCount = count;
-	} else {
-		for (int i=itemCount; i<count; i++) {
-			new TableItem (this, SWT.NONE, i, true);
+		topIndex = getTopIndex ();
+		hValue = GTK.gtk_adjustment_get_value (GTK.gtk_scrolled_window_get_hadjustment (scrolledHandle));
+		GTK.gtk_tree_view_set_model (handle, 0);
+	}
+	try {
+		remove (count, itemCount - 1);
+		int length = Math.max (4, (count + 3) / 4 * 4);
+		TableItem [] newItems = new TableItem [length];
+		System.arraycopy (items, 0, newItems, 0, itemCount);
+		items = newItems;
+		if (isVirtual) {
+			long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
+			if (iter == 0) error (SWT.ERROR_NO_HANDLES);
+			for (int i=itemCount; i<count; i++) {
+				GTK.gtk_list_store_append (modelHandle, iter);
+			}
+			OS.g_free (iter);
+			itemCount = count;
+		} else {
+			for (int i=itemCount; i<count; i++) {
+				new TableItem (this, SWT.NONE, i, true);
+			}
+		}
+	} finally {
+		if (detachModel) {
+			GTK.gtk_tree_view_set_model (handle, modelHandle);
+			restoreViewState (selection, focusIndex, topIndex, hValue);
 		}
 	}
 	if (!isVirtual) setRedraw (true);
