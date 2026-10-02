@@ -128,11 +128,6 @@ public final class Image extends Resource implements Drawable {
 	int height = -1;
 
 	/**
-	 * Specifies the default scanline padding.
-	 */
-	static final int DEFAULT_SCANLINE_PAD = 4;
-
-	/**
 	 * ImageFileNameProvider to provide file names at various Zoom levels
 	 */
 	private ImageFileNameProvider imageFileNameProvider;
@@ -428,8 +423,7 @@ private void copyAlphaInfo(AlphaInfo src_alphaInfo, AlphaInfo dest_alphaInfo) {
 	dest_alphaInfo.transparentPixel = src_alphaInfo.transparentPixel;
 	dest_alphaInfo.alpha = src_alphaInfo.alpha;
 	if (src_alphaInfo.alphaData != null) {
-		dest_alphaInfo.alphaData = new byte[src_alphaInfo.alphaData.length];
-		System.arraycopy(src_alphaInfo.alphaData, 0, dest_alphaInfo.alphaData, 0, dest_alphaInfo.alphaData.length);
+		dest_alphaInfo.alphaData = src_alphaInfo.alphaData.clone();
 	}
 }
 
@@ -1019,8 +1013,7 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 		}
 		data.alpha = info.alpha;
 		if (info.alpha == -1 && info.alphaData != null) {
-			data.alphaData = new byte[info.alphaData.length];
-			System.arraycopy(info.alphaData, 0, data.alphaData, 0, info.alphaData.length);
+			data.alphaData = info.alphaData.clone();
 		}
 	}
 	if (bpp == 32) {
@@ -1191,8 +1184,7 @@ private NSBitmapImageRep createRepresentation(ImageData imageData, AlphaInfo alp
 			}
 		} else if (imageData.alphaData != null) {
 			hasAlpha = true;
-			alphaInfo.alphaData = new byte[imageData.alphaData.length];
-			System.arraycopy(imageData.alphaData, 0, alphaInfo.alphaData, 0, alphaInfo.alphaData.length);
+			alphaInfo.alphaData = imageData.alphaData.clone();
 			int offset = 0, alphaOffset = 0;
 			for (int y = 0; y<imageData.height; y++) {
 				for (int x = 0; x<imageData.width; x++) {
@@ -1602,27 +1594,6 @@ void initAlpha_200(NSBitmapImageRep nativeRep) {
 
 }
 
-void initAlpha_100(NSBitmapImageRep nativeRep) {
-	NSAutoreleasePool pool = null;
-	if (!NSThread.isMainThread()) pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-	try {
-		int width = (int)nativeRep.pixelsWide();
-		int height = (int)nativeRep.pixelsHigh();
-
-		boolean hasAlpha = nativeRep.hasAlpha();
-		int bpr = width * 4;
-		NSBitmapImageRep rep = (NSBitmapImageRep)new NSBitmapImageRep().alloc();
-		rep = rep.initWithBitmapDataPlanes(0, width, height, 8, hasAlpha ? 4 : 3, hasAlpha, false, OS.NSDeviceRGBColorSpace, OS.NSAlphaFirstBitmapFormat | OS.NSAlphaNonpremultipliedBitmapFormat, bpr, 32);
-
-		if (alphaInfo_100 == null) alphaInfo_100 = new AlphaInfo();
-		alphaInfo_100.init(nativeRep, rep);
-		rep.release();
-	} finally {
-		if (pool != null) pool.release();
-	}
-
-}
-
 void initNative(String filename) {
 	NSAutoreleasePool pool = null;
 	NSImage nativeImage = null;
@@ -1772,7 +1743,6 @@ public void internal_dispose_GC (long hDC, GCData data) {
 			NSGraphicsContext contextObj = new NSGraphicsContext(context);
 			contextObj.release();
 		}
-//		handle.setCacheMode(OS.NSImageCacheDefault);
 	} finally {
 		if (pool != null) pool.release();
 	}
