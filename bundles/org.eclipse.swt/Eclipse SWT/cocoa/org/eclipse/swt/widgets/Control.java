@@ -4720,7 +4720,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 	// Process removed/cancelled touches first.
 	NSArray endedTouches = nsEvent.touchesMatchingPhase(OS.NSTouchPhaseEnded | OS.NSTouchPhaseCancelled, null).allObjects();
 
-	for (int i = 0; i < endedTouches.count(); i++) {
+	for (int i = 0, endedCount = (int)endedTouches.count(); i < endedCount; i++) {
 		NSTouch touch = new NSTouch(endedTouches.objectAtIndex(i).id);
 		NSObject identity = new NSObject(OS.objc_msgSend(touch.id, OS.sel_identity));
 		NSTouch endedTouch = findTouchWithId(currentTouches, identity);
@@ -4733,7 +4733,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 	// Process touches in progress or starting.
 	NSArray activeTouches = nsEvent.touchesMatchingPhase(OS.NSTouchPhaseBegan | OS.NSTouchPhaseMoved | OS.NSTouchPhaseStationary, null).allObjects();
 
-	for (int i = 0; i < activeTouches.count(); i++) {
+	for (int i = 0, activeCount = (int)activeTouches.count(); i < activeCount; i++) {
 		NSTouch touch = new NSTouch(activeTouches.objectAtIndex(i).id);
 		NSObject identity = new NSObject(OS.objc_msgSend(touch.id, OS.sel_identity));
 		NSTouch activeTouch = findTouchWithId(currentTouches, identity);
@@ -5272,7 +5272,7 @@ void updateCursorRects (boolean enabled, NSView widget) {
 	} else {
 		widget.discardCursorRects ();
 		NSArray areas = widget.trackingAreas ();
-		for (int i = 0; i < areas.count(); i++) {
+		for (int i = 0, length = (int)areas.count(); i < length; i++) {
 			widget.removeTrackingArea (new NSTrackingArea (areas.objectAtIndex (i)));
 		}
 	}
