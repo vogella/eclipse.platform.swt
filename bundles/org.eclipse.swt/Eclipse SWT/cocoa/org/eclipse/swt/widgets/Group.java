@@ -141,7 +141,6 @@ void createHandle () {
 
 	NSView contentWidget = (NSView)new SWTView().alloc();
 	contentWidget.init();
-//	contentWidget.setDrawsBackground(false);
 	widget.setContentView(contentWidget);
 	contentView = contentWidget;
 	view = widget;

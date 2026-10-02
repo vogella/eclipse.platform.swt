@@ -793,8 +793,6 @@ void menu_willHighlightItem(long id, long sel, long menu, long itemID) {
 
 @Override
 void menuNeedsUpdate(long id, long sel, long menu) {
-	//This code is intentionally commented
-	//sendEvent (SWT.Show);
 }
 
 @Override
