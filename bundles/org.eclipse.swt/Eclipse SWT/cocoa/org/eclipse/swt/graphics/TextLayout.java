@@ -348,43 +348,53 @@ void computeRuns() {
 	textStorage.setAttributedString(attrStr);
 	attrStr.release();
 
-	int numberOfLines;
 	layoutManager.glyphRangeForTextContainer(textContainer);
 	long numberOfGlyphs = layoutManager.numberOfGlyphs(), index;
 	long rangePtr = C.malloc(NSRange.sizeof);
-	NSRange lineRange = new NSRange();
-	for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
-		layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
-		OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-		index = lineRange.location + lineRange.length;
-	}
-	if (numberOfLines == 0) numberOfLines++;
-	int[] offsets = new int[numberOfLines + 1];
-	NSRect[] bounds = new NSRect[numberOfLines];
-	for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
-		bounds[numberOfLines] = layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
-		if (numberOfLines < bounds.length - 1) bounds[numberOfLines].height -= spacing;
-		OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-		offsets[numberOfLines] = (int)lineRange.location;
-		index = lineRange.location + lineRange.length;
-		if (fixedLineMetrics != null) {
-			// Preserve baseline location for best visual results
-			final int lineOffset = untranslateOffset(offsets[numberOfLines]);
-			final double realHeight = bounds[numberOfLines].height;
-			final double realDescent = layoutManager.typesetter().baselineOffsetInLayoutManager(layoutManager, lineOffset);
-			final double realAscent = realHeight - realDescent;
-			final double wantAscent = fixedLineMetrics.ascent;
-			fixedLineMetricsDy = wantAscent - realAscent;
-			bounds[numberOfLines].height = fixedLineMetrics.height;
+	int numberOfLines;
+	int[] offsets;
+	NSRect[] bounds;
+	try {
+		NSRange lineRange = new NSRange();
+		int capacity = 16;
+		offsets = new int[capacity + 1];
+		bounds = new NSRect[capacity];
+		for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
+			if (numberOfLines == capacity) {
+				capacity *= 2;
+				offsets = Arrays.copyOf(offsets, capacity + 1);
+				bounds = Arrays.copyOf(bounds, capacity);
+			}
+			NSRect lineBound = layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
+			bounds[numberOfLines] = lineBound;
+			OS.memmove(lineRange, rangePtr, NSRange.sizeof);
+			index = lineRange.location + lineRange.length;
+			// the last line does not get the line spacing
+			if (index < numberOfGlyphs) lineBound.height -= spacing;
+			offsets[numberOfLines] = (int)lineRange.location;
+			if (fixedLineMetrics != null) {
+				// Preserve baseline location for best visual results
+				final int lineOffset = untranslateOffset(offsets[numberOfLines]);
+				final double realHeight = lineBound.height;
+				final double realDescent = layoutManager.typesetter().baselineOffsetInLayoutManager(layoutManager, lineOffset);
+				final double realAscent = realHeight - realDescent;
+				final double wantAscent = fixedLineMetrics.ascent;
+				fixedLineMetricsDy = wantAscent - realAscent;
+				lineBound.height = fixedLineMetrics.height;
+			}
 		}
+		if (numberOfLines == 0) {
+			Font font = this.font != null ? this.font : device.systemFont;
+			NSFont nsFont = font.handle;
+			bounds[0] = new NSRect();
+			bounds[0].height = Math.max(layoutManager.defaultLineHeightForFont(nsFont), ascent + descent);
+		}
+	} finally {
+		C.free(rangePtr);
 	}
-	if (numberOfLines == 0) {
-		Font font = this.font != null ? this.font : device.systemFont;
-		NSFont nsFont = font.handle;
-		bounds[0] = new NSRect();
-		bounds[0].height = Math.max(layoutManager.defaultLineHeightForFont(nsFont), ascent + descent);
-	}
-	C.free(rangePtr);
+	int lineCount = Math.max(numberOfLines, 1);
+	offsets = Arrays.copyOf(offsets, lineCount + 1);
+	bounds = Arrays.copyOf(bounds, lineCount);
 	offsets[numberOfLines] = (int)textStorage.length();
 	this.lineOffsets = offsets;
 	this.lineBounds = bounds;
