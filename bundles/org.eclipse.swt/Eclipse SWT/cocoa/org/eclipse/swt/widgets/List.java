@@ -115,7 +115,7 @@ public void add (String string) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (itemCount == items.length) {
-		String [] newItems = new String [itemCount + 4];
+		String [] newItems = new String [Math.max (4, items.length * 3 / 2)];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
@@ -155,7 +155,7 @@ public void add (String string, int index) {
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (!(0 <= index && index <= itemCount)) error (SWT.ERROR_INVALID_RANGE);
 	if (itemCount == items.length) {
-		String [] newItems = new String [itemCount + 4];
+		String [] newItems = new String [Math.max (4, items.length * 3 / 2)];
 		System.arraycopy (items, 0, newItems, 0, items.length);
 		items = newItems;
 	}
