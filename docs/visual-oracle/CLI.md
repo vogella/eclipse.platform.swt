@@ -96,7 +96,7 @@ CI case and is intentionally not behind a guard.
 An empty result is a usage error (exit 2), because a typo'd family name would
 otherwise look like a green run over zero specimens.
 
-The catalog currently carries 169 specimens over 21 families; `--list` prints
+The catalog currently carries 218 specimens over 22 families; `--list` prints
 what a selection would run without capturing anything.
 
 States live inside specimen ids, so select them with `--prefix`, e.g.
