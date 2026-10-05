@@ -147,7 +147,9 @@ public final class DiffCheck {
 		require(mixed.probableClass() == DefectClass.UNKNOWN,
 				"mixed defects forced into class " + mixed.probableClass());
 
-		DiffResult scattered = compareWithVariant(capture, antiAliased(plain, 48));
+		// halved contrast puts every edge within reach of the jitter, whatever the platform's widget style
+		ImageData soft = softened(plain, 128);
+		DiffResult scattered = compare(soft, antiAliased(soft, 48));
 		require(scattered.verdict() == Verdict.DIFFERENT,
 				"AA disagreement beyond the envelope verdict is " + scattered.verdict());
 		require(scattered.probableClass() == DefectClass.UNKNOWN,
@@ -243,9 +245,14 @@ public final class DiffCheck {
 				result.changedPixels(), (long) square.w() * square.h(), result.probableClass());
 	}
 
-	/** Whole-image translation: DIFFERENT and classified SHIFTED. */
+	/**
+	 * Whole-image translation: DIFFERENT and classified SHIFTED. The shifted
+	 * content is stamped bars, so the check does not depend on how much
+	 * high-contrast ink the platform's button happens to carry.
+	 */
 	public static void checkShiftedContentClassified(CapturedImage capture) {
-		DiffResult result = compareWithVariant(capture, shifted(capture.imageData(), 2, 0));
+		ImageData bars = patternBars(capture.imageData(), false);
+		DiffResult result = compare(bars, shifted(bars, 2, 0));
 		require(result.verdict() == Verdict.DIFFERENT, "shifted image verdict is " + result.verdict());
 		require(result.probableClass() == DefectClass.SHIFTED,
 				"shifted image classified as " + result.probableClass());
@@ -416,6 +423,19 @@ public final class DiffCheck {
 	private static int tintDeltaFor(ImageData data, Rect region) {
 		return channelRange(data, region.x(), region.y(), region.w(), region.h())[0] >= TINT_DELTA
 				? -TINT_DELTA : TINT_DELTA;
+	}
+
+	/** Compresses every channel into {@code range} levels around mid-grey, halving contrast for range 128. */
+	static ImageData softened(ImageData source, int range) {
+		int low = (255 - range) / 2;
+		ImageData out = copy(source);
+		for (int y = 0; y < source.height; y++)
+			for (int x = 0; x < source.width; x++) {
+				RGB c = rgbAt(source, x, y);
+				setRgb(out, x, y, low + c.red * range / 255, low + c.green * range / 255,
+						low + c.blue * range / 255);
+			}
+		return out;
 	}
 
 	/** Adds delta to every channel of every pixel, clamped. */

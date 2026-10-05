@@ -20,6 +20,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.CaptureFailedException;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
@@ -106,6 +107,14 @@ public interface PlatformSupport {
 	default boolean acceptsExtent(int width, int height, Point wanted) {
 		return width == wanted.x && height == wanted.y
 				|| allowsNativeSizeClamp() && width <= wanted.x && height <= wanted.y;
+	}
+
+	/**
+	 * Called on the reused capture shell before a specimen is created and again once it is open,
+	 * so the platform can pin where the keyboard focus rests; without it the focus lands on
+	 * whichever control the shell history favours and focus rendering varies with specimen order.
+	 */
+	default void parkFocus(Shell host) {
 	}
 
 	/** True if fully native controls (sliders, separators) may never send SWT.Paint, so settling must not require one. */

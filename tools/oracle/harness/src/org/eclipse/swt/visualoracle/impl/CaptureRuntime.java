@@ -183,6 +183,7 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 					+ "' declared an invalid preferred size " + preferred);
 
 		host.setSize(preferred.x + 2 * MARGIN, preferred.y + 2 * MARGIN);
+		PlatformSupport.current().parkFocus(host);
 		Control control;
 		try {
 			control = specimen.create(host, ctx);
@@ -202,8 +203,10 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		control.setBounds(MARGIN, MARGIN, preferred.x, preferred.y);
 		host.layout();
 		host.redraw();
-		if (!host.isVisible())
+		if (!host.isVisible()) {
 			host.open();
+			PlatformSupport.current().parkFocus(host);
+		}
 		requireControlWithinShell(host, control, preferred);
 		return control;
 	}

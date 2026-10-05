@@ -468,8 +468,19 @@ public class SelfTest {
 			requireExpectedExtent(other, label);
 			after = shared.capture(specimen, nativeBackend, env);
 		}
-		require(imageDatasEqual(before.imageData(), after.imageData()),
-				"specimen changed after another specimen ran in between (shell cross-talk)");
+		if (!imageDatasEqual(before.imageData(), after.imageData())) {
+			String evidence = "";
+			try {
+				Path dir = Files.createDirectories(Path.of(SCRATCH_ROOT, "cross-talk"));
+				Files.write(dir.resolve("before.png"), before.pngBytes());
+				Files.write(dir.resolve("after.png"), after.pngBytes());
+				evidence = " (" + pixelDiff(dir.resolve("before.png"), dir.resolve("after.png")) + " pixels differ, see " + dir + ")";
+			} catch (IOException | AssertionError e) {
+				evidence = " (" + e + ")";
+			}
+			throw new AssertionError("specimen changed after another specimen ran in between (shell cross-talk)"
+					+ evidence);
+		}
 		try (CaptureRuntime fresh = new CaptureRuntime()) {
 			CapturedImage freshCapture = fresh.capture(specimen, nativeBackend, env);
 			require(Arrays.equals(before.pngBytes(), freshCapture.pngBytes()),
@@ -966,6 +977,11 @@ public class SelfTest {
 		command.addAll(PlatformSupport.current().jvmArguments());
 		command.add("-Djava.library.path=" + System.getProperty("java.library.path", ""));
 		command.add("-Doracle.repoRoot=" + repoRoot);
+		// the settings every launched child carries, such as Win32's fixed-zoom switch
+		List<String> platformProperties = new ArrayList<>();
+		PlatformSupport.current().applyTheme(Theme.PLATFORM_DEFAULT, new java.util.HashMap<>(),
+				new java.util.HashSet<>(), platformProperties);
+		command.addAll(platformProperties);
 		for (String option : jvmOptions)
 			command.add(option);
 		command.add("-cp");

@@ -34,7 +34,9 @@ import org.eclipse.swt.visualoracle.spi.Direction;
 import org.eclipse.swt.visualoracle.spi.RenderEnv;
 import org.eclipse.swt.visualoracle.spi.Theme;
 import org.eclipse.swt.visualoracle.spi.UnsupportedEnvironmentException;
+import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Shell;
 
 /**
  * Win32 support: children run on the interactive desktop, the platform
@@ -57,6 +59,7 @@ public final class Win32PlatformSupport implements PlatformSupport {
 	private static final String BASH_VARIABLE = "ORACLE_BASH";
 	/** Without this SWT refuses a fixed swt.autoScale value while monitor-specific scaling is on. */
 	private static final String FIXED_ZOOM_PROPERTY = "-Dswt.autoScale.updateOnRuntime=false";
+	private static final String FOCUS_SINK = "oracle.focusSink";
 	private static final String REFERENCE_SPECIMEN = "button.push.default";
 
 	@Override
@@ -76,6 +79,32 @@ public final class Win32PlatformSupport implements PlatformSupport {
 		// no focus rectangles and no underlined mnemonics until a key is pressed
 		long shell = control.getShell().handle;
 		OS.SendMessage(shell, OS.WM_CHANGEUISTATE, OS.UIS_SET | ((OS.UISF_HIDEFOCUS | OS.UISF_HIDEACCEL) << 16), 0);
+	}
+
+	/** A one pixel control outside the client area holds the focus, so no specimen shows a focused state by chance. */
+	@Override
+	public void parkFocus(Shell host) {
+		Canvas sink = null;
+		for (Control child : host.getChildren())
+			if (child.getData(FOCUS_SINK) != null)
+				sink = (Canvas) child;
+		if (sink == null) {
+			sink = new Canvas(host, SWT.NONE);
+			sink.setData(FOCUS_SINK, Boolean.TRUE);
+			sink.setBounds(-2, -2, 1, 1);
+		}
+		if (host.isVisible())
+			sink.forceFocus();
+	}
+
+	@Override
+	public boolean paintEventOptional() {
+		return true;
+	}
+
+	@Override
+	public boolean allowsNativeSizeClamp() {
+		return true;
 	}
 
 	@Override

@@ -15,7 +15,7 @@ The scripts and the harness are portable across GTK (Linux), Cocoa (macOS) and W
 On the Java side `impl/PlatformSupport` hides everything platform specific: focus suppression, the native handle check, the grab fallback, child process wrapping and the theme mapping.
 `build-harness.sh` compiles `harness/src` plus exactly one of `harness/src-gtk`, `src-cocoa` or `src-win32`.
 The Cocoa implementation is complete and passes the selftest; see the macOS section below.
-The Win32 implementation is complete but has only been compiled, not run, until the Windows workflow has passed; see the Windows section below.
+The Win32 implementation passes the selftest and a strict same-ref run in the Windows workflow; see the Windows section below.
 `tools/oracle/compile-check.sh <fragment>` compiles the harness for any platform on any machine.
 The Skia and Skija backends remain Linux only.
 
