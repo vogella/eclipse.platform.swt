@@ -14,7 +14,7 @@
 package org.eclipse.swt.widgets;
 
 import static org.eclipse.swt.internal.DPIUtil.setMonitorSpecificScaling;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.swt.*;
@@ -40,11 +40,10 @@ class ControlWin32Tests {
 		setMonitorSpecificScaling(true);
 		Display display = Display.getDefault();
 
-		assertTrue("Autoscale property is not set to true", display.isRescalingAtRuntime());
+		assertTrue(display.isRescalingAtRuntime(), "Autoscale property is not set to true");
 		int scalingFactor = 2;
 		FontComparison fontComparison = updateFont(scalingFactor);
-		assertEquals("Font height in pixels is not adjusted according to the scale factor",
-				fontComparison.originalFontHeight * scalingFactor, fontComparison.currentFontHeight);
+		assertEquals(fontComparison.originalFontHeight * scalingFactor, fontComparison.currentFontHeight, "Font height in pixels is not adjusted according to the scale factor");
 	}
 
 	@Test
@@ -63,11 +62,10 @@ class ControlWin32Tests {
 		setMonitorSpecificScaling(false);
 		Display display = Display.getDefault();
 
-		assertFalse("Autoscale property is not set to false", display.isRescalingAtRuntime());
+		assertFalse(display.isRescalingAtRuntime(), "Autoscale property is not set to false");
 		int scalingFactor = 2;
 		FontComparison fontComparison = updateFont(scalingFactor);
-		assertEquals("Font height in pixels is different when setting the same font again",
-				fontComparison.originalFontHeight, fontComparison.currentFontHeight);
+		assertEquals(fontComparison.originalFontHeight, fontComparison.currentFontHeight, "Font height in pixels is different when setting the same font again");
 	}
 
 	@Test
@@ -78,11 +76,10 @@ class ControlWin32Tests {
 		try {
 			Display display = Display.getDefault();
 
-			assertFalse("Autoscale property is not set to false", display.isRescalingAtRuntime());
+			assertFalse(display.isRescalingAtRuntime(), "Autoscale property is not set to false");
 			int scalingFactor = 2;
 			FontComparison fontComparison = updateFont(scalingFactor);
-			assertEquals("Font height in pixels is different when setting the same font again",
-					fontComparison.originalFontHeight, fontComparison.currentFontHeight);
+			assertEquals(fontComparison.originalFontHeight, fontComparison.currentFontHeight, "Font height in pixels is different when setting the same font again");
 		} finally {
 			if (originalValue != null) {
 				System.setProperty("swt.fontRegistry", originalValue);
@@ -103,12 +100,10 @@ class ControlWin32Tests {
 		DPITestUtil.changeDPIZoom(shell, 175);
 
 		button.setBounds(new Rectangle(0, 47, 200, 47));
-		assertEquals("Control::setBounds(Rectangle) doesn't scale up correctly",
-				new Rectangle(0, 82, 350, 83), button.getBoundsInPixels());
+		assertEquals(new Rectangle(0, 82, 350, 83), button.getBoundsInPixels(), "Control::setBounds(Rectangle) doesn't scale up correctly");
 
 		button.setBounds(0, 47, 200, 47);
-		assertEquals("Control::setBounds(int, int, int, int) doesn't scale up correctly",
-				new Rectangle(0, 82, 350, 83), button.getBoundsInPixels());
+		assertEquals(new Rectangle(0, 82, 350, 83), button.getBoundsInPixels(), "Control::setBounds(int, int, int, int) doesn't scale up correctly");
 	}
 
 	@ParameterizedTest
@@ -150,8 +145,8 @@ class ControlWin32Tests {
 		FontData currentFontData = newFont.getFontData()[0];
 		int heightInPixels = fontData.data.lfHeight;
 		int currentHeightInPixels = currentFontData.data.lfHeight;
-		assertEquals("Font height in points is different on different zoom levels", fontData.getHeight(),
-				currentFontData.getHeight());
+		assertEquals(fontData.getHeight(),
+				currentFontData.getHeight(), "Font height in points is different on different zoom levels");
 
 		return new FontComparison(heightInPixels, currentHeightInPixels);
 	}
