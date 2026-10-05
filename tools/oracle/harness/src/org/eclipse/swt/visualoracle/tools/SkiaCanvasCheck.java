@@ -293,6 +293,7 @@ public final class SkiaCanvasCheck {
 		command.addAll(PlatformSupport.current().headlessPrefix(gdkScale ? new String[] {"GDK_SCALE=2"} : new String[0]));
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
+		command.addAll(PlatformSupport.current().jvmArguments());
 		command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(backendId));
 		command.add("-Doracle.repoRoot=" + BackendClasspaths.repoRoot());
 		if (skiaActivationProperties)
@@ -340,6 +341,7 @@ public final class SkiaCanvasCheck {
 		command.addAll(PlatformSupport.current().headlessPrefix());
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
+		command.addAll(PlatformSupport.current().jvmArguments());
 		command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(SkiaCanvasBackend.ID));
 		command.add("-Doracle.repoRoot=" + BackendClasspaths.repoRoot());
 		for (String property : SkiaCanvasBackend.activationJvmProperties())

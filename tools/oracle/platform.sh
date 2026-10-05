@@ -12,6 +12,7 @@
 #   oracle_native_libs_glob                glob matching every native library there
 #   oracle_native_path <path>              the path in the form javac and java take (Windows form on Git Bash)
 #   oracle_timeout_cmd                     prints the name of a GNU timeout(1), fails if there is none
+#   ORACLE_TIMEOUT                         array prefix taking "<seconds> <cmd...>", with a perl fallback
 #   oracle_link_dir <target> <link>        makes <link> show <target> (a copy on Windows, where ln -s copies)
 #   oracle_run_headless <cmd...>           runs a command with the display setup the platform needs
 #   oracle_require_linux_gtk <what>        dies unless on Linux/GTK (Skia and Skija backends)
@@ -52,9 +53,12 @@ else
 fi
 
 # JVM options every oracle JVM gets on this platform. Children share the one interactive desktop on
-# Windows, where overlapping windows and focus changes would reach the captures, so they run one at a time.
+# Windows and macOS, where concurrent children change window state and native control rendering
+# (measured on macOS, ADR-003), so they run one at a time.
 ORACLE_PLATFORM_JAVA_OPTS=()
 [ "$ORACLE_WS" = win32 ] && ORACLE_PLATFORM_JAVA_OPTS=(-Doracle.children.parallelism=1)
+# Cocoa only runs its event loop on the first thread; mirrors CocoaPlatformSupport.jvmArguments.
+[ "$ORACLE_WS" = cocoa ] && ORACLE_PLATFORM_JAVA_OPTS=(-XstartOnFirstThread -Doracle.children.parallelism=1)
 
 # On Windows an unrelated timeout.exe (the DOS pause command) can precede the GNU one on PATH.
 oracle_timeout_cmd() {
@@ -67,6 +71,14 @@ oracle_timeout_cmd() {
 	done
 	return 1
 }
+
+# Command prefix taking "<seconds> <cmd...>": GNU timeout where present, else a perl alarm (stock macOS).
+# alarm survives exec, so the command itself receives SIGALRM when time is up.
+if timeout_bin="$(oracle_timeout_cmd)"; then
+	ORACLE_TIMEOUT=("$timeout_bin")
+else
+	ORACLE_TIMEOUT=(perl -e 'alarm shift; exec @ARGV or die "exec: $!\n"')
+fi
 
 oracle_link_dir() {
 	local target="$1" link="$2"
@@ -124,7 +136,7 @@ oracle_run_headless() {
 				xvfb-run -a -s "-screen 0 ${ORACLE_XVFB_SCREEN:-1600x1200x24}" "$@"
 			;;
 		*)
-			# TODO(cocoa): decide whether children need an isolated session or a fixed display.
+			# macOS: children draw on the login session's WindowServer; there is no virtual display to start.
 			# Windows: children use the interactive desktop; CI runners have one.
 			exec "$@"
 			;;

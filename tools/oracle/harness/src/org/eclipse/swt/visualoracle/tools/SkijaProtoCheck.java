@@ -155,6 +155,7 @@ public final class SkijaProtoCheck {
 		command.addAll(PlatformSupport.current().headlessPrefix());
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
+		command.addAll(PlatformSupport.current().jvmArguments());
 		command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(SkijaProtoBackend.ID));
 		command.add("-Doracle.repoRoot=" + BackendClasspaths.repoRoot());
 		command.add("-cp");

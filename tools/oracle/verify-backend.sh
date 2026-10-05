@@ -69,10 +69,7 @@ fi
 
 log_file="$BUILD_TMP/$backend/run.log"
 probe_cmd=("${java_cmd[@]}" "${run_flags[@]}" -cp "$BUILD_TMP/$backend$ORACLE_CP_SEP$classpath" "$probe_class")
-# timeout(1) is absent on stock macOS
-if timeout_cmd="$(oracle_timeout_cmd)"; then
-	probe_cmd=("$timeout_cmd" 60 "${probe_cmd[@]}")
-fi
+probe_cmd=("${ORACLE_TIMEOUT[@]}" 60 "${probe_cmd[@]}")
 if [ "$ORACLE_WS" = gtk ]; then
 	probe_cmd=(env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
 		xvfb-run -a -s "-screen 0 1024x768x24" "${probe_cmd[@]}")

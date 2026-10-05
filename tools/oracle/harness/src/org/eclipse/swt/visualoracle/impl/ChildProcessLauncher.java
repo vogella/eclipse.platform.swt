@@ -232,6 +232,7 @@ public final class ChildProcessLauncher {
 		command.addAll(PlatformSupport.current().childLauncherPrefix());
 		command.add(javaCommand());
 		command.add("--enable-native-access=ALL-UNNAMED");
+		command.addAll(PlatformSupport.current().jvmArguments());
 		if (isolated)
 			command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(request.backendId()));
 		else {

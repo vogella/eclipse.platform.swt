@@ -70,6 +70,8 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	private static final int MARGIN = 12;
 	private static final int SETTLE_TIMEOUT_MILLIS = 5000;
 	private static final int MAX_SETTLE_CYCLES = 50;
+	/** How long a platform whose controls may never paint waits for a first Paint event. */
+	private static final int OPTIONAL_PAINT_MILLIS = 500;
 	/**
 	 * How long the grabbed bytes must persist unchanged, while the event loop
 	 * stays live, before they are accepted as the settled rendering. Must
@@ -233,7 +235,9 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 			boolean contained = bounds.x >= 0 && bounds.y >= 0
 					&& bounds.x + bounds.width <= client.width
 					&& bounds.y + bounds.height <= client.height
-					&& bounds.width == preferred.x && bounds.height == preferred.y;
+					&& (bounds.width == preferred.x && bounds.height == preferred.y
+							|| PlatformSupport.current().allowsNativeSizeClamp()
+									&& bounds.width <= preferred.x && bounds.height <= preferred.y);
 			if (contained)
 				return;
 			if (System.currentTimeMillis() >= end)
@@ -301,14 +305,16 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		control.addListener(SWT.Resize, recorder);
 		control.addListener(SWT.Move, recorder);
 
+		boolean paintOptional = PlatformSupport.current().paintEventOptional();
 		long deadline = System.currentTimeMillis() + SETTLE_TIMEOUT_MILLIS;
-		while (!activity.paint && System.currentTimeMillis() < deadline && !control.isDisposed()) {
+		long firstPaintDeadline = paintOptional ? System.currentTimeMillis() + OPTIONAL_PAINT_MILLIS : deadline;
+		while (!activity.paint && System.currentTimeMillis() < firstPaintDeadline && !control.isDisposed()) {
 			if (!display.readAndDispatch())
 				sleepBriefly();
 		}
 		if (control.isDisposed())
 			throw new CaptureFailedException("control disposed while waiting for its first paint");
-		if (!activity.paint)
+		if (!activity.paint && !paintOptional)
 			throw new CaptureFailedException("no paint event observed for '"
 					+ control.getClass().getSimpleName() + "' within " + SETTLE_TIMEOUT_MILLIS + " ms");
 

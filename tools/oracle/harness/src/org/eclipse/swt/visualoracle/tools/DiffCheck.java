@@ -82,8 +82,8 @@ public final class DiffCheck {
 	 */
 	public static void checkWrongColorClassified(CapturedImage capture, PrintStream out) {
 		ImageData plain = capture.imageData();
-		Rect region = new Rect(plain.width / 2 - 15, plain.height / 2 - 8, 30, 16);
-		DiffResult bounded = compare(plain, tintRegion(plain, region, -48));
+		Rect region = structuredRegion(plain, 30, 16);
+		DiffResult bounded = compare(plain, featheredTint(plain, region, tintDeltaFor(plain, region)));
 		require(bounded.verdict() == Verdict.DIFFERENT, "bounded recolour verdict is " + bounded.verdict());
 		require(bounded.probableClass() == DefectClass.WRONG_COLOR,
 				"bounded recolour classified as " + bounded.probableClass());
@@ -362,9 +362,83 @@ public final class DiffCheck {
 		return out;
 	}
 
+	/**
+	 * The wanted-size window with the most edge pixels in which a uniform
+	 * shift by TINT_DELTA cannot clamp (so the geometry survives intact),
+	 * nearest the centre on ties; the centre if no window qualifies.
+	 */
+	static Rect structuredRegion(ImageData data, int w, int h) {
+		w = Math.min(w, data.width);
+		h = Math.min(h, data.height);
+		Rect best = new Rect((data.width - w) / 2, (data.height - h) / 2, w, h);
+		long bestScore = Long.MIN_VALUE;
+		for (int y = 0; y + h <= data.height; y += 2) {
+			for (int x = 0; x + w <= data.width; x += 2) {
+				int[] range = channelRange(data, x, y, w, h);
+				if (range[0] < TINT_DELTA && range[1] > 255 - TINT_DELTA)
+					continue;
+				long edges = edgePixels(data, x, y, w, h);
+				long distance = Math.abs(x + w / 2 - data.width / 2) + Math.abs(y + h / 2 - data.height / 2);
+				long score = edges * 10000L - distance;
+				if (score > bestScore) {
+					bestScore = score;
+					best = new Rect(x, y, w, h);
+				}
+			}
+		}
+		return best;
+	}
+
+	private static final int TINT_DELTA = 48;
+
+	private static int[] channelRange(ImageData data, int x0, int y0, int w, int h) {
+		int min = 255;
+		int max = 0;
+		for (int y = y0; y < y0 + h; y++)
+			for (int x = x0; x < x0 + w; x++) {
+				RGB c = rgbAt(data, x, y);
+				min = Math.min(min, Math.min(c.red, Math.min(c.green, c.blue)));
+				max = Math.max(max, Math.max(c.red, Math.max(c.green, c.blue)));
+			}
+		return new int[] { min, max };
+	}
+
+	private static long edgePixels(ImageData data, int x0, int y0, int w, int h) {
+		long edges = 0;
+		for (int y = y0; y < y0 + h; y++)
+			for (int x = x0; x < x0 + w; x++)
+				if (localContrast(data, x, y) >= 24)
+					edges++;
+		return edges;
+	}
+
+	/** A delta that cannot clamp inside the region: darker unless its darkest channel is below the delta. */
+	private static int tintDeltaFor(ImageData data, Rect region) {
+		return channelRange(data, region.x(), region.y(), region.w(), region.h())[0] >= TINT_DELTA
+				? -TINT_DELTA : TINT_DELTA;
+	}
+
 	/** Adds delta to every channel of every pixel, clamped. */
 	static ImageData tinted(ImageData source, int delta) {
 		return tintRegion(source, new Rect(0, 0, source.width, source.height), delta);
+	}
+
+	/**
+	 * Adds delta inside the rect, fading in over the outer 3 pixels so the
+	 * recolouring creates no hard step that would read as a new edge: only
+	 * the colours move, the geometry stays intact.
+	 */
+	static ImageData featheredTint(ImageData source, Rect rect, int delta) {
+		ImageData out = copy(source);
+		for (int y = rect.y(); y < rect.y() + rect.h(); y++)
+			for (int x = rect.x(); x < rect.x() + rect.w(); x++) {
+				int border = Math.min(Math.min(x - rect.x(), rect.x() + rect.w() - 1 - x),
+						Math.min(y - rect.y(), rect.y() + rect.h() - 1 - y));
+				int d = delta * Math.min(border + 1, 3) / 3;
+				RGB c = rgbAt(source, x, y);
+				setRgb(out, x, y, clamp(c.red + d), clamp(c.green + d), clamp(c.blue + d));
+			}
+		return out;
 	}
 
 	/** Adds delta to every channel inside the rect, clamped. */
@@ -394,7 +468,9 @@ public final class DiffCheck {
 		for (int y = y0; y < y0 + bh && y < source.height; y++)
 			for (int x = x0; x < x0 + bw && x < source.width; x++)
 				setRgb(out, x, y, bg);
-		RGB ink = new RGB(clamp(bg.red - 120), clamp(bg.green - 120), clamp(bg.blue - 120));
+		// ink must contrast with the background whatever its brightness
+		int inkShift = bg.red + bg.green + bg.blue >= 3 * 128 ? -120 : 120;
+		RGB ink = new RGB(clamp(bg.red + inkShift), clamp(bg.green + inkShift), clamp(bg.blue + inkShift));
 		int spacing = (bw - 12) / 7;
 		for (int i = 0; i < 7; i++) {
 			int bx = x0 + 4 + i * spacing + (displaced ? (i % 2 == 0 ? -2 : 2) : 0);

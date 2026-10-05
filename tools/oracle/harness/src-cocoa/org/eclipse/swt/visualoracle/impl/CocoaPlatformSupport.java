@@ -13,19 +13,33 @@ package org.eclipse.swt.visualoracle.impl;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import org.eclipse.swt.internal.cocoa.NSAppearance;
+import org.eclipse.swt.internal.cocoa.NSApplication;
+import org.eclipse.swt.internal.cocoa.NSView;
+import org.eclipse.swt.internal.cocoa.NSWindow;
+import org.eclipse.swt.internal.cocoa.OS;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
 import org.eclipse.swt.visualoracle.spi.Theme;
 import org.eclipse.swt.visualoracle.spi.UnsupportedEnvironmentException;
 
 /**
- * Cocoa support stub: no process wrapper and the platform default theme.
- * Every method that still needs a native implementation throws
- * {@link UnsupportedEnvironmentException}; each is marked {@code TODO(cocoa)}.
+ * macOS support. Captures are taken in-process by {@code GC.copyArea}, which on
+ * Cocoa renders the view hierarchy into a bitmap ({@code cacheDisplayInRect}),
+ * so no screen grab, no Screen Recording permission and no window ordering is
+ * involved; see ADR-003. Children never activate (prohibited activation policy),
+ * so they cannot steal focus and every window renders in its inactive state.
  */
 public final class CocoaPlatformSupport implements PlatformSupport {
+
+	/** JVM property carrying the pinned appearance, Light or Dark, into a child. */
+	static final String APPEARANCE_PROPERTY = "oracle.cocoa.appearance";
+	private static final long ACTIVATION_POLICY_PROHIBITED = 2;
 
 	@Override
 	public String id() {
@@ -38,49 +52,122 @@ public final class CocoaPlatformSupport implements PlatformSupport {
 	}
 
 	@Override
+	public List<String> jvmArguments() {
+		return List.of("-XstartOnFirstThread");
+	}
+
+	@Override
+	public boolean paintEventOptional() {
+		return true;
+	}
+
+	@Override
+	public boolean allowsNativeSizeClamp() {
+		return true;
+	}
+
+	@Override
 	public void suppressFocus(Control control) {
-		// TODO(cocoa): stop text controls from taking focus or showing a caret; a no-op until captures need it
+		control.view.setFocusRingType(OS.NSFocusRingTypeNone);
 	}
 
 	@Override
 	public void requireRealizedHandle(Control probe) {
-		// TODO(cocoa): prove the probe owns a realized native view through a real native call
-		throw notImplemented("the activation probe");
+		// view.window() is a real Objective-C message send into the loaded natives
+		NSView view = probe.view;
+		if (view == null || view.id == 0)
+			throw new BackendUnavailableException("the probe control owns no native view; SWT natives are not working");
+		NSWindow window = view.window();
+		if (window == null || window.id == 0)
+			throw new BackendUnavailableException("the probe control's view is not in a native window");
 	}
 
 	@Override
 	public boolean supportsGrabFallback() {
-		// TODO(cocoa): return true once grabFallback is implemented, if a native grab is worthwhile here
 		return false;
 	}
 
 	@Override
 	public CapturedImage grabFallback(Control control, Path scratchDir) {
-		// TODO(cocoa): optional native grab of the control's own window, device pixels at the process zoom
-		throw notImplemented("the native grab fallback");
+		throw new UnsupportedEnvironmentException(
+				"visual oracle: Cocoa has no grab fallback; copyArea already renders the view itself (ADR-003)");
 	}
 
-	// TODO(cocoa): override childLauncherPrefix, prepareChildEnvironment, headlessPrefix and
-	// killProcessTree if children need a wrapper, an isolated session or a different kill (none is used now)
+	@Override
+	public void prepareDisplay(Display display) {
+		NSApplication app = NSApplication.sharedApplication();
+		app.setActivationPolicy(ACTIVATION_POLICY_PROHIBITED);
+		String appearance = System.getProperty(APPEARANCE_PROPERTY, "");
+		if (appearance.isEmpty())
+			return;
+		try {
+			display.setDarkThemePreferred("Dark".equals(appearance));
+		} catch (LinkageError e) {
+			throw new UnsupportedEnvironmentException(
+					"visual oracle: this SWT cannot pin the appearance (Display.setDarkThemePreferred missing)");
+		}
+	}
+
+	/** Measured: no catalog specimen renders differently under RIGHT_TO_LEFT on Cocoa. */
+	@Override
+	public String mirrorSpecimenId() {
+		return null;
+	}
+
+	@Override
+	public Optional<Theme> alternateTheme() {
+		return Optional.of(new Theme(Display.isSystemDarkTheme() ? "Light" : "Dark"));
+	}
+
+	@Override
+	public Theme mappingTestTheme() {
+		return new Theme("Dark");
+	}
 
 	@Override
 	public void applyTheme(Theme theme, Map<String, String> variables, Set<String> removedVariables,
 			List<String> jvmProperties) {
-		if (!theme.isPlatformDefault())
-			// TODO(cocoa): map a named theme or appearance to environment variables or JVM properties
-			throw notImplemented("theme '" + theme.id() + "'");
+		if (theme.isPlatformDefault())
+			return;
+		if (!theme.id().equals("Light") && !theme.id().equals("Dark"))
+			throw new UnsupportedEnvironmentException(
+					"visual oracle: Cocoa knows the themes Light and Dark, not '" + theme.id() + "'");
+		jvmProperties.add("-D" + APPEARANCE_PROPERTY + "=" + theme.id());
 	}
 
 	@Override
 	public Theme currentTheme() {
-		// TODO(cocoa): read back the pinned theme once applyTheme supports named themes
-		return Theme.PLATFORM_DEFAULT;
+		if (System.getProperty(APPEARANCE_PROPERTY, "").isEmpty())
+			return Theme.PLATFORM_DEFAULT;
+		// read back what the application really renders with, not what was requested
+		long appearance = OS.objc_msgSend(NSApplication.sharedApplication().id,
+				OS.sel_registerName("effectiveAppearance"));
+		String name = appearance == 0 ? "" : new NSAppearance(appearance).name().getString();
+		return new Theme(name.contains("Dark") ? "Dark" : "Light");
 	}
 
-	// TODO(cocoa): override selfTestChecks for checks that only make sense on this platform
+	@Override
+	public void verifyThemeMapping(LaunchConfig themed, LaunchConfig platformDefault) {
+		require(themed.jvmProperties().contains("-D" + APPEARANCE_PROPERTY + "=Dark"),
+				"theme Dark did not map to the appearance property: " + themed.jvmProperties());
+		require(platformDefault.jvmProperties().stream().noneMatch(p -> p.startsWith("-D" + APPEARANCE_PROPERTY)),
+				"the platform default theme must not pin an appearance");
+	}
 
-	private static UnsupportedEnvironmentException notImplemented(String what) {
-		return new UnsupportedEnvironmentException(
-				"visual oracle: Cocoa support for " + what + " is not implemented yet");
+	@Override
+	public List<NamedCheck> selfTestChecks(SelfTestHost host) {
+		return List.of(new NamedCheck("cocoa-app-never-activates", CocoaPlatformSupport::checkNeverActivates));
+	}
+
+	/** Children must not be able to take the focus, or active-window rendering would leak into captures. */
+	private static void checkNeverActivates() {
+		NSApplication app = NSApplication.sharedApplication();
+		long policy = OS.objc_msgSend(app.id, OS.sel_registerName("activationPolicy"));
+		require(policy == ACTIVATION_POLICY_PROHIBITED, "activation policy is " + policy + ", not prohibited");
+	}
+
+	private static void require(boolean condition, String message) {
+		if (!condition)
+			throw new AssertionError(message);
 	}
 }

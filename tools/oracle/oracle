@@ -40,12 +40,7 @@ case "$verb" in
 		exec "${java_cmd[@]}" "$@"
 		;;
 	selftest)
-		# timeout(1) is absent on stock macOS; the selftest's own child timeouts still apply there
-		selftest_cmd=("${java_cmd[@]}")
-		if timeout_cmd="$(oracle_timeout_cmd)"; then
-			selftest_cmd=("$timeout_cmd" 900 "${java_cmd[@]}")
-		fi
-		oracle_run_headless "${selftest_cmd[@]}" "$@"
+		oracle_run_headless "${ORACLE_TIMEOUT[@]}" 900 "${java_cmd[@]}" "$@"
 		;;
 	run|triage)
 		oracle_run_headless "${java_cmd[@]}" "$@"

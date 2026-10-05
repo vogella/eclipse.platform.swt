@@ -192,7 +192,7 @@ public final class NativeCheck {
 		DiffResult disagreement = null;
 		for (int captures = 1; captures <= MAX_WARMUP_CAPTURES; captures++) {
 			CapturedImage image = runtime.capture(specimen, backend, env);
-			if (image.width() != wanted.x || image.height() != wanted.y)
+			if (!PlatformSupport.current().acceptsExtent(image.width(), image.height(), wanted))
 				throw new IllegalStateException(specimen.id() + " captured " + image.width() + "x"
 						+ image.height() + ", preferred is " + wanted.x + "x" + wanted.y);
 			if (prev != null) {

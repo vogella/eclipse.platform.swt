@@ -14,7 +14,7 @@ The scripts and the harness are portable across GTK (Linux), Cocoa (macOS) and W
 `tools/oracle/platform.sh` maps `uname` to the SWT binary fragment, the classpath separator and the headless wrapper.
 On the Java side `impl/PlatformSupport` hides everything platform specific: focus suppression, the native handle check, the grab fallback, child process wrapping and the theme mapping.
 `build-harness.sh` compiles `harness/src` plus exactly one of `harness/src-gtk`, `src-cocoa` or `src-win32`.
-The Cocoa implementation is a stub that throws "not implemented yet" where real work is missing, marked `TODO(cocoa)`.
+The Cocoa implementation is complete and passes the selftest; see the macOS section below.
 The Win32 implementation is complete but has only been compiled, not run, until the Windows workflow has passed; see the Windows section below.
 `tools/oracle/compile-check.sh <fragment>` compiles the harness for any platform on any machine.
 The Skia and Skija backends remain Linux only.
@@ -344,6 +344,35 @@ Only the platform default theme is pinned; a named theme is rejected as unsuppor
 **Fonts.**
 ClearType makes text pixels depend on the machine and its settings, so a baseline and a candidate must run on the same machine in the same session, which `oracle run` already does.
 Compare results across machines only through a run that includes both sides.
+
+## macOS
+
+Run the scripts from a shell with a JDK 21 or newer and the `binaries/org.eclipse.swt.cocoa.macosx.<arch>` natives resolved.
+`oracle` adds `-XstartOnFirstThread` to every JVM, which Cocoa needs to create a Display, and `oracle.children.parallelism=1`, see below.
+Graphical verbs run on the logged-in desktop session, with no wrapper, and need no Screen Recording permission.
+`timeout(1)` is not part of macOS, so `oracle` uses a perl fallback (`ORACLE_TIMEOUT`).
+
+**Capture.**
+`GC.copyArea` is the only strategy: it renders the view hierarchy into a bitmap, so it needs no screen grab, no window ordering and no permission.
+`Control.print(GC)` is rejected because it drops the label of a push button.
+There is no grab fallback.
+See ADR-003 for the measurements.
+
+**Activation.**
+Every JVM sets the activation policy to prohibited, so no child can take the focus or the Dock icon, and every window renders in its inactive state.
+The selftest check `cocoa-app-never-activates` reads the policy back.
+
+**Parallelism.**
+Children run one at a time (`--children 1` is the default through `oracle`).
+Concurrent children change the rendering of native combos, progress bars, scales, password and read-only texts, so a same-ref run is not bit-identical above one child.
+Use `--children N` only for exploratory runs.
+
+**Zoom.**
+Zoom 100 and 200 come from `-Dswt.autoScale=<zoom>`; 200 renders at true 2x (a 140x40 specimen captures as 280x80).
+
+**Theme.**
+`--theme Light` and `--theme Dark` pin the application appearance through `Display.setDarkThemePreferred`; the platform default follows the system.
+Other theme names are rejected as unsupported.
 
 ## Known limitations
 

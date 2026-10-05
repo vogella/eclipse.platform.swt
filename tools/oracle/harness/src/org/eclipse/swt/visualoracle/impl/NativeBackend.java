@@ -132,6 +132,7 @@ public class NativeBackend implements Backend {
 		if (display == null || display.isDisposed())
 			throw new BackendUnavailableException("native backend needs a live Display");
 		PlatformSupport platform = PlatformSupport.current();
+		platform.prepareDisplay(display);
 		this.env = SwtRenderEnvs.current(display);
 
 		Shell shell = new Shell(display);

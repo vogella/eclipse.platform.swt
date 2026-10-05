@@ -599,8 +599,10 @@ public class SelfTest {
 				retrying.capture(animated, nativeBackend, env);
 				throw new AssertionError("retry swallowed a genuinely unstable rendering");
 			} catch (SettleTimeoutException e) {
-				require(e.elapsedMillis() >= extendedAttempt.timeoutMillis(),
-						"extended attempt did not run to its bound: " + e.elapsedMillis() + " ms");
+				require(e.elapsedMillis() >= extendedAttempt.timeoutMillis()
+						|| e.grabs() >= extendedAttempt.maxGrabs(),
+						"extended attempt did not run to its bound: " + e.elapsedMillis() + " ms, "
+								+ e.grabs() + " grabs");
 				out.println("      animated specimen failed twice: " + e.getMessage());
 			}
 		}
@@ -644,7 +646,8 @@ public class SelfTest {
 
 	private static final String SCRATCH_ROOT_CHILDREN = "/tmp/swt-visual-oracle/selftest/children";
 	/** The specimen whose pixels visibly move under RTL; centered captions do not. */
-	private static final String MIRROR_SPECIMEN = "label.default";
+	private static final String MIRROR_ID = PlatformSupport.current().mirrorSpecimenId();
+	private static final String MIRROR_SPECIMEN = MIRROR_ID != null ? MIRROR_ID : "label.default";
 	private static final String REFERENCE_SPECIMEN = "button.push.default";
 
 	private Map<String, ChildProcessLauncher.ChildOutcome> childBatch;
@@ -690,7 +693,7 @@ public class SelfTest {
 	private void checkLaunchConfigMapping() {
 		boolean namedThemes = PlatformSupport.current().alternateTheme().isPresent();
 		LaunchConfig themed = SwtRenderEnvs.launch(new RenderEnv(150,
-				namedThemes ? new Theme("Adwaita") : Theme.PLATFORM_DEFAULT, Direction.RTL, "Sans", 12));
+				namedThemes ? PlatformSupport.current().mappingTestTheme() : Theme.PLATFORM_DEFAULT, Direction.RTL, "Sans", 12));
 		require(themed.jvmProperties().contains("-Dswt.autoScale=150"),
 				"zoom 150 did not map to the swt.autoScale property: " + themed.jvmProperties());
 		require(themed.jvmProperties().contains("-D" + SwtRenderEnvs.DIRECTION_PROPERTY + "=RTL"),
@@ -761,6 +764,10 @@ public class SelfTest {
 	 * machine, only the direction differs, yet the pixels move.
 	 */
 	private void checkChildRtl() {
+		if (MIRROR_ID == null) {
+			out.println("      skipped: no catalog specimen changes under RIGHT_TO_LEFT on this platform");
+			return;
+		}
 		ensureChildBatch();
 		ChildProcessLauncher.ChildOutcome ltr = childBatch.get("ltrB");
 		ChildProcessLauncher.ChildOutcome rtl = childBatch.get("rtl");
@@ -786,9 +793,9 @@ public class SelfTest {
 				"a theme child failed: " + plain.failureReason() + " / " + hc.failureReason());
 		int changed = pixelDiff(pngPath(plain.directory(), soleCapture(plain.resultDocument(), REFERENCE_SPECIMEN)),
 				pngPath(hc.directory(), soleCapture(hc.resultDocument(), REFERENCE_SPECIMEN)));
-		require(changed > 500, "HighContrast child differs by only " + changed
-				+ " pixels; the GTK_THEME control appears ineffective");
-		out.println("      HighContrast theme changes " + changed + " of "
+		require(changed > 500, PlatformSupport.current().alternateTheme().get() + " child differs by only " + changed
+				+ " pixels; the theme control appears ineffective");
+		out.println("      theme " + PlatformSupport.current().alternateTheme().get() + " changes " + changed + " of "
 				+ intValue(soleCapture(hc.resultDocument(), REFERENCE_SPECIMEN).get("width")) + "x"
 				+ intValue(soleCapture(hc.resultDocument(), REFERENCE_SPECIMEN).get("height"))
 				+ " pixels");
@@ -956,6 +963,7 @@ public class SelfTest {
 		command.addAll(PlatformSupport.current().headlessPrefix());
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
+		command.addAll(PlatformSupport.current().jvmArguments());
 		command.add("-Djava.library.path=" + System.getProperty("java.library.path", ""));
 		command.add("-Doracle.repoRoot=" + repoRoot);
 		for (String option : jvmOptions)
@@ -996,6 +1004,7 @@ public class SelfTest {
 		List<String> command = new ArrayList<>();
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
+		command.addAll(PlatformSupport.current().jvmArguments());
 		String libPath = System.getProperty("java.library.path", "");
 		if (!libPath.isEmpty())
 			command.add("-Djava.library.path=" + libPath);

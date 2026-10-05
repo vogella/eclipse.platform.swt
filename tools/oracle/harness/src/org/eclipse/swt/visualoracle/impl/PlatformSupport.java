@@ -19,6 +19,7 @@ import java.util.Set;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.CaptureFailedException;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
@@ -85,6 +86,41 @@ public interface PlatformSupport {
 	/** Command prefix that precedes the JVM when the launcher starts a child. Empty means no wrapper. */
 	default List<String> childLauncherPrefix() {
 		return List.of();
+	}
+
+	/** JVM options every SWT child needs on this platform, such as {@code -XstartOnFirstThread} on macOS. */
+	default List<String> jvmArguments() {
+		return List.of();
+	}
+
+	/** Called once on a fresh Display, before the environment is measured; pins process-wide state such as the appearance. */
+	default void prepareDisplay(Display display) {
+	}
+
+	/** True if the native toolkit may size a control smaller than requested (fixed-height widgets on macOS). */
+	default boolean allowsNativeSizeClamp() {
+		return false;
+	}
+
+	/** Whether a capture of {@code width}x{@code height} is acceptable for a specimen that declared {@code wanted}. */
+	default boolean acceptsExtent(int width, int height, Point wanted) {
+		return width == wanted.x && height == wanted.y
+				|| allowsNativeSizeClamp() && width <= wanted.x && height <= wanted.y;
+	}
+
+	/** True if fully native controls (sliders, separators) may never send SWT.Paint, so settling must not require one. */
+	default boolean paintEventOptional() {
+		return false;
+	}
+
+	/** A catalog specimen whose pixels change under right-to-left orientation, or null if the platform mirrors none. */
+	default String mirrorSpecimenId() {
+		return "label.default";
+	}
+
+	/** A named theme whose launch mapping {@link #verifyThemeMapping} asserts. */
+	default Theme mappingTestTheme() {
+		return new Theme("Adwaita");
 	}
 
 	/** Adjusts the environment of a launcher child before its theme variables are applied. */
