@@ -11,20 +11,15 @@
 package org.eclipse.swt.visualoracle.impl;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.ImageDataProvider;
 import org.eclipse.swt.internal.DPIUtil;
-import org.eclipse.swt.internal.gtk.GDK;
-import org.eclipse.swt.internal.gtk3.GTK3;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
@@ -68,7 +63,7 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	public enum Strategy {
 		/** {@code GC.copyArea} from the on-screen control (primary). */
 		COPY_AREA,
-		/** X11 grab of the control's own window by id via ImageMagick import (fallback). */
+		/** Platform grab of the control's own native window (fallback; X11 via ImageMagick import on GTK). */
 		X11_GRAB
 	}
 
@@ -604,112 +599,12 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		}
 	}
 
-	/**
-	 * Grabs the control's own X window by id, so the crop is done by the X
-	 * server itself and needs no coordinate arithmetic. This is the fix for
-	 * the ADR-001 defect: reconstructing device coordinates from scaled
-	 * logical ones overshoots whenever the screen density does not match the
-	 * reported zoom, which shifted the crop region at zoom 200.
-	 *
-	 * The grabbed pixels are physical. Their zoom basis follows from the
-	 * ratio between physical and logical width; SWT's own DPI machinery then
-	 * produces exactly the representation copyArea would deliver, verified
-	 * byte-identical at zoom 100 and 200.
-	 */
 	private CapturedImage grabByX11(Control control) {
-		if (!"gtk".equals(SWT.getPlatform()))
+		PlatformSupport platform = PlatformSupport.current();
+		if (!platform.supportsGrabFallback())
 			throw new UnsupportedEnvironmentException(
-					"the X11 grab fallback requires gtk/X11, found platform: " + SWT.getPlatform());
-		long window = GTK3.gtk_widget_get_window(control.handle);
-		if (window == 0)
-			throw new CaptureFailedException("'" + control.getClass().getSimpleName()
-					+ "' owns no native window, there is nothing to grab");
-		long xid = GDK.gdk_x11_window_get_xid(window);
-
-		Path png = scratchDir().resolve("xgrab-" + Long.toHexString(xid) + "-"
-				+ Long.toString(System.nanoTime(), 36) + ".png");
-		runImport(xid, png);
-		ImageData raw;
-		try {
-			raw = new ImageData(png.toString());
-		} catch (RuntimeException e) {
-			throw new CaptureFailedException("cannot decode the grabbed image " + png + ": " + e, e);
-		} finally {
-			try {
-				Files.deleteIfExists(png);
-			} catch (IOException e) {
-				// best effort; the file lives in scratch space only
-			}
-		}
-		if (raw.width <= 0 || raw.height <= 0)
-			throw new CaptureFailedException("grabbed image of '"
-					+ control.getClass().getSimpleName() + "' has invalid extent "
-					+ raw.width + "x" + raw.height);
-
-		int logicalWidth = Math.max(1, control.getSize().x);
-		int logicalHeight = Math.max(1, control.getSize().y);
-		int basis = Math.max(100, Math.round(raw.width * 100f / logicalWidth));
-		requireConsistentExtent(raw.width, logicalWidth, basis, "width");
-		requireConsistentExtent(raw.height, logicalHeight, basis, "height");
-
-		// Declaring the true basis lets SWT scale (or not) exactly as it
-		// would scale its own captures.
-		Image wrap = new Image(control.getDisplay(), (ImageDataProvider) zoom -> zoom == basis ? raw : null);
-		try {
-			return new BasicCapturedImage(wrap.getImageData(DPIUtil.getDeviceZoom()));
-		} finally {
-			wrap.dispose();
-		}
-	}
-
-	private void requireConsistentExtent(int actual, int logical, int basis, String dimension) {
-		int expected = Math.round(logical * basis / 100f);
-		if (Math.abs(actual - expected) > 1)
-			throw new CaptureFailedException("grabbed " + dimension + " " + actual
-					+ " matches neither the logical extent " + logical
-					+ " nor the device extent " + expected);
-	}
-
-	private void runImport(long xid, Path png) {
-		Path log = png.resolveSibling(png.getFileName() + ".log");
-		Process process;
-		try {
-			process = new ProcessBuilder("import", "-window", "0x" + Long.toHexString(xid),
-					png.toString())
-					.redirectOutput(log.toFile())
-					.redirectErrorStream(true)
-					.start();
-		} catch (IOException e) {
-			throw new CaptureFailedException(
-					"could not start ImageMagick 'import' (needed for the X11 grab fallback): " + e, e);
-		}
-		try {
-			if (!process.waitFor(GRAB_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-				process.destroyForcibly();
-				throw new CaptureFailedException("'import' timed out after " + GRAB_TIMEOUT_SECONDS + " s");
-			}
-			if (process.exitValue() != 0) {
-				String stderr = "";
-				try {
-					stderr = Files.readString(log, StandardCharsets.UTF_8).strip();
-				} catch (IOException e) {
-					// detail unavailable; the exit code still carries the failure
-				}
-				throw new CaptureFailedException("'import' failed with exit code " + process.exitValue()
-						+ (stderr.isEmpty() ? "" : ": " + stderr));
-			}
-			if (!Files.isRegularFile(png))
-				throw new CaptureFailedException("'import' reported success but wrote no image");
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new CaptureFailedException("interrupted while waiting for 'import'", e);
-		} finally {
-			try {
-				Files.deleteIfExists(log);
-			} catch (IOException e) {
-				// best effort
-			}
-		}
+					"the grab fallback is not supported on platform: " + SWT.getPlatform());
+		return platform.grabFallback(control, scratchDir());
 	}
 
 	/**

@@ -7,6 +7,10 @@
 # Usage:
 #   build.sh <backend-id>    build one backend, print its classpath
 #   build.sh --all           build every backend declared available
+#   build.sh fragment-classes <fragment>
+#                            compile the SWT classes of any binary fragment (for
+#                            example win32.win32.x86_64) and print the classes
+#                            directory; needs no natives, used by compile-check.sh
 #
 # Backends: native | skia-canvas | skija-proto | native-baseline | native-candidate
 #
@@ -28,10 +32,17 @@ MAVEN_DIR="$CACHE_ROOT/maven"
 CHECKOUT_DIR="$CACHE_ROOT/checkouts"
 BUILD_DIR="$CACHE_ROOT/build"
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=platform.sh
+. "$SCRIPT_DIR/platform.sh"
+
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 WORKTREE_ID="$(printf '%s' "$(realpath "$REPO_ROOT")" | sha256sum | cut -c1-12)"
 OUT_BASE="$BUILD_DIR/$WORKTREE_ID"
 
+# the fragment of the machine running the script (native backends)
+NATIVE_BIN_DIR="$(oracle_binaries_dir "$REPO_ROOT")"
+# Skia and Skija backends exist for GTK on Linux only
 GTK_BIN_DIR="$REPO_ROOT/binaries/org.eclipse.swt.gtk.linux.x86_64"
 SKIA_SRC_DIR="$REPO_ROOT/bundles/org.eclipse.swt.skia"
 
@@ -47,12 +58,7 @@ need_java() {
 	command -v javac >/dev/null 2>&1 || die "javac not found in PATH, install a JDK (21 or newer recommended)"
 }
 
-require_gtk_linux_x86_64() {
-	local what="${1:-this backend}"
-	if [ "$(uname -s)-$(uname -m)" != "Linux-x86_64" ]; then
-		die "$what needs Linux on x86_64 (prebuilt GTK binaries), found $(uname -s)-$(uname -m)"
-	fi
-}
+require_gtk_linux_x86_64() { oracle_require_linux_gtk "$@"; }
 
 # Emit the source folders of an Eclipse bundle build.properties, one per line.
 # Accepts either the build.properties file or its bundle directory.
@@ -108,6 +114,16 @@ copy_resources() {
 	done < <(parse_source_folders "$bp_dir")
 }
 
+# One "<relative path> <size> <mtime>" line per file below $1; GNU find prints
+# them directly, BSD find (macOS) needs stat.
+file_stats() {
+	if find "$1" -maxdepth 0 -printf '' >/dev/null 2>&1; then
+		find "$1" -type f -printf '%P %s %T@\n'
+	else
+		(cd "$1" && find . -type f -exec stat -f '%N %z %m' {} + | sed 's|^\./||')
+	fi
+}
+
 # Fingerprint over every file below the source folders plus caller-supplied
 # extra strings (jar checksums, git sha). Cheap enough to run per invocation.
 compute_fingerprint() {
@@ -115,7 +131,7 @@ compute_fingerprint() {
 	shift
 	local fp
 	fp="$(while IFS= read -r folder; do
-			find "$bp_dir/$folder" -type f -printf '%P %s %T@\n'
+			file_stats "$bp_dir/$folder"
 		done < <(parse_source_folders "$bp_dir") | LC_ALL=C sort | sha256sum | cut -d' ' -f1)"
 	for extra in "$@"; do
 		fp="$(printf '%s\n%s\n' "$fp" "$extra" | sha256sum | cut -d' ' -f1)"
@@ -186,7 +202,7 @@ svg_classpath() {
 	if ! up_to_date "$out" "$out.fingerprint" "$fp"; then
 		info "compiling org.eclipse.swt.svg from $src against $(basename "$jar")"
 		rm -rf "$out"
-		compile_bundle "$svg_dir" "$out" "$swt_classes:$jar" || die "compiling org.eclipse.swt.svg from $src failed"
+		compile_bundle "$svg_dir" "$out" "$swt_classes$ORACLE_CP_SEP$jar" || die "compiling org.eclipse.swt.svg from $src failed"
 		copy_resources "$svg_dir" "$out"
 		# older fragments register the rasterizer from the bundle root instead of a source folder
 		if [ -d "$svg_dir/META-INF/services" ]; then
@@ -195,7 +211,7 @@ svg_classpath() {
 		fi
 		printf '%s' "$fp" > "$out.fingerprint"
 	fi
-	printf ':%s:%s' "$out" "$jar"
+	printf '%s%s%s%s' "$ORACLE_CP_SEP" "$out" "$ORACLE_CP_SEP" "$jar"
 }
 
 ensure_fork_checkout() {
@@ -219,26 +235,25 @@ ensure_fork_checkout() {
 }
 
 check_natives_present() {
-	local bin_dir="$1" so
-	so="$(ls "$bin_dir"/libswt-pi3-gtk-*.so 2>/dev/null | head -1 || true)"
-	[ -n "$so" ] || die "no libswt-pi3-gtk-*.so in $bin_dir; install git-lfs and restore binaries (git lfs pull)"
+	local bin_dir="$1" so glob="${2:-$(oracle_native_glob)}"
+	so="$(ls "$bin_dir"/$glob 2>/dev/null | head -1 || true)"
+	[ -n "$so" ] || die "no $glob in $bin_dir; install git-lfs and restore binaries (git lfs pull)"
 	if grep -q '^version https://git-lfs' "$so" 2>/dev/null; then
 		die "$so is an unresolved git-lfs pointer; run: git lfs install && git lfs pull"
 	fi
 }
 
 build_native() {
-	require_gtk_linux_x86_64 "native"
-	check_natives_present "$GTK_BIN_DIR"
+	check_natives_present "$NATIVE_BIN_DIR"
 	need_java
 	local out="$OUT_BASE/native/classes"
 	local fp
-	fp="$(compute_fingerprint "$GTK_BIN_DIR" "recipe-v2")"
+	fp="$(compute_fingerprint "$NATIVE_BIN_DIR" "recipe-v2")"
 	if ! up_to_date "$out" "$out/../.fingerprint-native" "$fp"; then
-		info "compiling native backend (stock SWT GTK bundle)"
+		info "compiling native backend (stock SWT $ORACLE_FRAGMENT bundle)"
 		rm -rf "$out"
-		compile_bundle "$GTK_BIN_DIR" "$out" ""
-		copy_resources "$GTK_BIN_DIR" "$out"
+		compile_bundle "$NATIVE_BIN_DIR" "$out" ""
+		copy_resources "$NATIVE_BIN_DIR" "$out"
 		printf '%s' "$fp" > "$out/../.fingerprint-native"
 	else
 		info "native backend up to date"
@@ -263,13 +278,14 @@ resolve_swt_source() {
 		info "extracting SWT at $spec ($sha) into cache"
 		mkdir -p "$CHECKOUT_DIR/swt-v2"
 		tmp="$(mktemp -d "$CHECKOUT_DIR/swt-v2/.extract-XXXXXX")"
-		local paths=(bundles/org.eclipse.swt binaries/legal_files binaries/org.eclipse.swt.gtk.linux.x86_64)
+		local paths=(bundles/org.eclipse.swt binaries/legal_files "binaries/org.eclipse.swt.$ORACLE_FRAGMENT")
 		git -C "$REPO_ROOT" cat-file -e "$sha:bundles/org.eclipse.swt.svg" 2>/dev/null \
 			&& paths+=(bundles/org.eclipse.swt.svg)
 		# git archive applies the LFS smudge filter, so natives arrive as real binaries
 		git -C "$REPO_ROOT" archive "$sha" "${paths[@]}" | tar -x -C "$tmp" \
 			|| { rm -rf "$tmp"; die "git archive of $sha failed"; }
-		mv -T "$tmp" "$dir" 2>/dev/null || rm -rf "$tmp"
+		[ -d "$dir" ] || mv "$tmp" "$dir" 2>/dev/null || rm -rf "$tmp"
+		[ ! -d "$tmp" ] || rm -rf "$tmp"
 	fi
 	printf '%s' "$dir"
 }
@@ -277,17 +293,16 @@ resolve_swt_source() {
 # Build stock SWT from the source named by $2 under backend id $1.
 build_native_from() {
 	local id="$1" spec="$2"
-	require_gtk_linux_x86_64 "$id"
 	need_java
 	local src bin_dir key out_base out fp
 	src="$(resolve_swt_source "$spec")" || exit 1
-	bin_dir="$src/binaries/org.eclipse.swt.gtk.linux.x86_64"
+	bin_dir="$src/binaries/org.eclipse.swt.$ORACLE_FRAGMENT"
 	[ -f "$bin_dir/build.properties" ] || die "$src is not an SWT checkout (no $bin_dir/build.properties)"
 	check_natives_present "$bin_dir"
 	key="$(printf '%s' "$src" | sha256sum | cut -c1-12)"
 	out_base="$BUILD_DIR/$id/$key"
 	out="$out_base/classes"
-	fp="$(compute_fingerprint "$bin_dir" "recipe-v2" "$(cd "$bin_dir" && sha256sum libswt-*.so | sha256sum)")"
+	fp="$(compute_fingerprint "$bin_dir" "recipe-v2" "$(cd "$bin_dir" && sha256sum $(oracle_native_libs_glob) | sha256sum)")"
 	if ! up_to_date "$out" "$out_base/.fingerprint" "$fp"; then
 		info "compiling $id backend (stock SWT from $spec)"
 		rm -rf "$out"
@@ -374,10 +389,30 @@ build_skija_proto() {
 		"$proto_bin/lib/types-0.1.1.jar"
 }
 
+# Compile the SWT Java sources of fragment $1 without natives or SVG, so the
+# harness variants for other platforms can be compile-checked on this machine.
+build_fragment_classes() {
+	local fragment="$1" bin_dir out fp
+	bin_dir="$REPO_ROOT/binaries/org.eclipse.swt.$fragment"
+	[ -f "$bin_dir/build.properties" ] || die "no fragment $fragment (missing $bin_dir/build.properties)"
+	need_java
+	out="$OUT_BASE/fragment-$fragment/classes"
+	fp="$(compute_fingerprint "$bin_dir" "recipe-v2")"
+	if ! up_to_date "$out" "$out/../.fingerprint" "$fp"; then
+		info "compiling SWT classes of fragment $fragment"
+		rm -rf "$out"
+		compile_bundle "$bin_dir" "$out" ""
+		copy_resources "$bin_dir" "$out"
+		printf '%s' "$fp" > "$out/../.fingerprint"
+	fi
+	printf '%s' "$out"
+}
+
 usage() {
 	cat >&2 <<'USAGE'
 usage: build.sh <backend-id>   build one backend, print its classpath on stdout
        build.sh --all          build all backends, print "<id> <classpath>" lines
+       build.sh fragment-classes <fragment>   compile one fragment's SWT classes only
 
 backends: native, skia-canvas, skija-proto, native-baseline, native-candidate
 environment:
@@ -393,6 +428,10 @@ main() {
 	local target="${1:-}"
 	[ -n "$target" ] || usage
 	case "$target" in
+		fragment-classes)
+			[ -n "${2:-}" ] || usage
+			printf '%s\n' "$(build_fragment_classes "$2")"
+			;;
 		native|skia-canvas|skija-proto|native-baseline|native-candidate)
 			local cp
 			case "$target" in

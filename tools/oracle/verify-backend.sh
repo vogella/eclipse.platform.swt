@@ -5,8 +5,9 @@
 # Usage: verify-backend.sh <backend-id>
 #
 # Builds the backend via build.sh, compiles its probe program, and runs it
-# headless under Xvfb (Wayland variables unset, GDK pinned to X11, software
-# GL). Exits zero only when the backend's activation marker was observed:
+# headless where the platform needs it: under Xvfb on Linux (Wayland variables
+# unset, GDK pinned to X11, software GL), directly on macOS and Windows. The
+# Skia and Skija backends exist on Linux only. Exits zero only when the backend's activation marker was observed:
 #
 #   native        NATIVE-ACTIVE=true            (natives load, paint events fire)
 #   skia-canvas   "External canvas activated."  (ExternalCanvasHandler log line,
@@ -15,6 +16,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=platform.sh
+. "$SCRIPT_DIR/platform.sh"
 CACHE_ROOT="${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}"
 BUILD_TMP="$CACHE_ROOT/verify-probes"
 
@@ -27,7 +30,12 @@ case "$backend" in
 	*) die "unknown backend '$backend', expected native, skia-canvas or skija-proto" ;;
 esac
 
-command -v xvfb-run >/dev/null 2>&1 || die "xvfb-run not found, install xvfb"
+case "$backend" in
+	skia-canvas|skija-proto) oracle_require_linux_gtk "$backend" ;;
+esac
+if [ "$ORACLE_WS" = gtk ]; then
+	command -v xvfb-run >/dev/null 2>&1 || die "xvfb-run not found, install xvfb"
+fi
 
 classpath="$("$SCRIPT_DIR/build.sh" "$backend")" \
 	|| die "building backend '$backend' failed"
@@ -51,7 +59,7 @@ if [ "$backend" = "skija-proto" ]; then
 	java_library_path="$fork_binaries"
 else
 	worktree_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
-	java_library_path="$worktree_root/binaries/org.eclipse.swt.gtk.linux.x86_64"
+	java_library_path="$(oracle_binaries_dir "$worktree_root")"
 fi
 
 run_flags=(-Djava.library.path="$java_library_path")
@@ -60,10 +68,14 @@ if [ "$backend" = "skia-canvas" ]; then
 fi
 
 log_file="$BUILD_TMP/$backend/run.log"
-env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
-	xvfb-run -a -s "-screen 0 1024x768x24" \
-	timeout 60 "${java_cmd[@]}" "${run_flags[@]}" \
-	-cp "$BUILD_TMP/$backend:$classpath" "$probe_class" > "$log_file" 2>&1 \
+probe_cmd=("${java_cmd[@]}" "${run_flags[@]}" -cp "$BUILD_TMP/$backend$ORACLE_CP_SEP$classpath" "$probe_class")
+# timeout(1) is absent on stock macOS
+command -v timeout >/dev/null 2>&1 && probe_cmd=(timeout 60 "${probe_cmd[@]}")
+if [ "$ORACLE_WS" = gtk ]; then
+	probe_cmd=(env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
+		xvfb-run -a -s "-screen 0 1024x768x24" "${probe_cmd[@]}")
+fi
+"${probe_cmd[@]}" > "$log_file" 2>&1 \
 	|| { cat "$log_file" >&2; die "probe for '$backend' crashed or timed out"; }
 
 echo "--- probe output ($backend) ---"

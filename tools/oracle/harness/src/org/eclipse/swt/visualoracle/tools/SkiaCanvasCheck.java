@@ -32,6 +32,7 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.ToolBar;
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.visualoracle.impl.BackendClasspaths;
 import org.eclipse.swt.visualoracle.impl.ChildProcessLauncher;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
@@ -289,13 +290,7 @@ public final class SkiaCanvasCheck {
 				"zoom-" + backendId + "-" + tag + "-" + Long.toString(System.nanoTime(), 36));
 		Files.createDirectories(dir);
 		List<String> command = new ArrayList<>();
-		command.add("env");
-		command.addAll(List.of("-u", "WAYLAND_DISPLAY", "-u", "XDG_SESSION_TYPE", "-u", "DISPLAY",
-				"GDK_BACKEND=x11", "LIBGL_ALWAYS_SOFTWARE=1"));
-		if (gdkScale)
-			command.add("GDK_SCALE=2");
-		command.add("xvfb-run");
-		command.addAll(List.of("-a", "-s", "-screen 0 1600x1200x24"));
+		command.addAll(PlatformSupport.current().headlessPrefix(gdkScale ? new String[] {"GDK_SCALE=2"} : new String[0]));
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
 		command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(backendId));
@@ -342,11 +337,7 @@ public final class SkiaCanvasCheck {
 
 	private static CoverageResult runCoverageProbe() throws Exception {
 		List<String> command = new ArrayList<>();
-		command.add("env");
-		command.addAll(List.of("-u", "WAYLAND_DISPLAY", "-u", "XDG_SESSION_TYPE", "-u", "DISPLAY",
-				"GDK_BACKEND=x11", "LIBGL_ALWAYS_SOFTWARE=1"));
-		command.add("xvfb-run");
-		command.addAll(List.of("-a", "-s", "-screen 0 1600x1200x24"));
+		command.addAll(PlatformSupport.current().headlessPrefix());
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
 		command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(SkiaCanvasBackend.ID));

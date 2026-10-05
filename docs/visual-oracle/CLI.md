@@ -6,8 +6,17 @@ machine-readable verdict without a person looking at an image.
 
 Entry point: `tools/oracle/oracle <verb> [args]`.
 The wrapper compiles the harness, resolves the backend classpaths, and runs
-graphical verbs headless under Xvfb with the Wayland variables unset and
-`GDK_BACKEND=x11`, so callers never apply that incantation themselves.
+graphical verbs headless where the platform needs it, so callers never apply that incantation themselves.
+On Linux that means Xvfb with the Wayland variables unset and `GDK_BACKEND=x11`.
+On macOS and Windows the verbs run directly in the user session.
+
+The scripts and the harness are portable across GTK (Linux), Cocoa (macOS) and Win32 (Windows).
+`tools/oracle/platform.sh` maps `uname` to the SWT binary fragment, the classpath separator and the headless wrapper.
+On the Java side `impl/PlatformSupport` hides everything platform specific: focus suppression, the native handle check, the grab fallback, child process wrapping and the theme mapping.
+`build-harness.sh` compiles `harness/src` plus exactly one of `harness/src-gtk`, `src-cocoa` or `src-win32`.
+The Cocoa and Win32 implementations are stubs that throw "not implemented yet" where real work is missing, each marked `TODO(cocoa)` or `TODO(win32)`.
+`tools/oracle/compile-check.sh <fragment>` compiles the harness for any platform on any machine.
+The Skia and Skija backends remain Linux only.
 
 Verbs:
 
@@ -68,7 +77,7 @@ Per decision D6, one JVM serves exactly one backend and one environment, so
 through `impl/ChildProcessLauncher`, one per backend and batch of specimens,
 merges their schema-v1 documents at the JSON level (`impl/ResultMerger`), and
 compares the referenced PNG evidence with the diff engine
-(`impl/ClusterDiffer`). Each child runs under its own Xvfb display.
+(`impl/ClusterDiffer`). Each child runs under its own Xvfb display on Linux.
 
 ### Selection filters
 
@@ -97,7 +106,7 @@ States live inside specimen ids, so select them with `--prefix`, e.g.
 | Flag | Meaning | Default |
 |---|---|---|
 | `--dpi N` | zoom percentage of the rendering environment | 100 |
-| `--theme ID` | GTK theme id; empty means platform default | platform default |
+| `--theme ID` | platform theme id (the `GTK_THEME` value on Linux); empty means platform default | platform default |
 | `--direction LTR\|RTL` | base text direction | LTR |
 | `--font-family NAME` | base font family; empty means system font | system font |
 | `--font-size N` | points if positive, pixels if negative (FontData convention) | -1 |
@@ -132,7 +141,7 @@ The `svg` family does the same for SVG icons: file, `ImageFileNameProvider` and 
 Every stock SWT build includes its own `org.eclipse.swt.svg` fragment and the JSVG version that fragment's manifest asks for (1.7.2, 2.0.0 or 2.1.0, pinned by checksum), so comparing two refs also compares the JSVG each of them ships with.
 A specimen whose SWT API is missing on one side, such as `ImageDataAtSizeProvider` on a baseline older than 2025-09 or SVG before 2024-09, is reported UNSUPPORTED rather than FAILED.
 
-The harness itself is still compiled against this worktree's SWT, so a candidate that changes the internals the harness calls (`GTK`, `GDK`, `DPIUtil`, `Control.handle`) fails at activation rather than rendering.
+The harness itself is still compiled against this worktree's SWT, so a candidate that changes the internals the harness calls (`DPIUtil`, `Control.handle` and the platform internals behind `PlatformSupport`) fails at activation rather than rendering.
 
 | Flag | Meaning | Default |
 |---|---|---|
@@ -315,5 +324,5 @@ rebuilt because its fingerprint changed. Iteration continues until `pass` is
 * The two quarantined scrollbar specimens remain part of runs; the quarantine
   governs determinism judging only, and their diff numbers can legitimately
   alternate between two faithful renderings.
-* `run` needs the same JDK everywhere and Linux GTK today, matching the
-  backends' own constraints (ADR-002).
+* `run` needs the same JDK everywhere.
+  Only Linux GTK is complete today; the Cocoa and Win32 platform layers are stubs, and the Skia and Skija backends are Linux only (ADR-002).

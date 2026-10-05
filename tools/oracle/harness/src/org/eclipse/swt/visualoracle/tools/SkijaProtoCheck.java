@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.visualoracle.impl.BackendClasspaths;
 import org.eclipse.swt.visualoracle.impl.ChildProcessLauncher;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
@@ -151,11 +152,7 @@ public final class SkijaProtoCheck {
 
 	private static CoverageResult runCoverageProbe() throws Exception {
 		List<String> command = new ArrayList<>();
-		command.add("env");
-		command.addAll(List.of("-u", "WAYLAND_DISPLAY", "-u", "XDG_SESSION_TYPE", "-u", "DISPLAY",
-				"GDK_BACKEND=x11", "LIBGL_ALWAYS_SOFTWARE=1"));
-		command.add("xvfb-run");
-		command.addAll(List.of("-a", "-s", "-screen 0 1600x1200x24"));
+		command.addAll(PlatformSupport.current().headlessPrefix());
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
 		command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(SkijaProtoBackend.ID));

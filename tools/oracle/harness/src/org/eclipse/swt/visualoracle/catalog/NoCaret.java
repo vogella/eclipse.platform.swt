@@ -10,10 +10,7 @@
  *******************************************************************************/
 package org.eclipse.swt.visualoracle.catalog;
 
-import org.eclipse.swt.internal.gtk.GTK;
-import org.eclipse.swt.internal.gtk3.GTK3;
-import org.eclipse.swt.internal.gtk4.GTK4;
-import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.widgets.Control;
 
 /**
@@ -27,7 +24,7 @@ import org.eclipse.swt.widgets.Control;
  * caret would depend on its position in the run unless something removes the
  * possibility.
  *
- * Clearing GTK's can-focus on the widget closes both problems at the source:
+ * Clearing the platform's can-focus on the widget (GTK) closes both problems at the source:
  * no focus can land on it when the shell opens, and no later grab-focus call
  * can succeed either. The control always renders its unfocused state, so the
  * captured pixels are deterministic by construction, independent of specimen
@@ -41,13 +38,6 @@ final class NoCaret {
 
 	/** Applies before the shell realizes the control, in the specimen factory. */
 	static void ensure(Control control) {
-		GTK.gtk_widget_set_can_focus(control.handle, false);
-		if (control instanceof Combo combo) {
-			// An editable combo focuses through its inner GtkEntry, not the box.
-			long child = GTK.GTK4 ? GTK4.gtk_combo_box_get_child(combo.handle)
-					: GTK3.gtk_bin_get_child(combo.handle);
-			if (child != 0 && child != combo.handle)
-				GTK.gtk_widget_set_can_focus(child, false);
-		}
+		PlatformSupport.current().suppressFocus(control);
 	}
 }

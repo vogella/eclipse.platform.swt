@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Build recipe for the visual oracle harness.
 #
-# Compiles the plain-Java harness sources in harness/src against a real
-# backend classpath obtained from build.sh. Prints the harness classes
-# directory on stdout;
-# diagnostics go to stderr.
+# Compiles the plain-Java harness sources in harness/src, plus the one
+# platform folder harness/src-<gtk|cocoa|win32> for the machine it runs on,
+# against a real backend classpath obtained from build.sh. Prints the harness
+# classes directory on stdout; diagnostics go to stderr.
 #
 # Always recompiles: the harness is a few dozen files, a full javac run takes
 # about a second, and skipping fingerprints avoids staleness bugs.
@@ -15,7 +15,10 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# shellcheck source=platform.sh
+. "$SCRIPT_DIR/platform.sh"
 SRC_DIR="$SCRIPT_DIR/harness/src"
+PLATFORM_SRC_DIR="$SCRIPT_DIR/harness/src-$ORACLE_WS"
 
 CACHE_ROOT="${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}"
 WORKTREE_ID="$(printf '%s' "$(realpath "$REPO_ROOT")" | sha256sum | cut -c1-12)"
@@ -26,6 +29,7 @@ die() { printf 'build-harness.sh: %s\n' "$*" >&2; exit 1; }
 command -v java >/dev/null 2>&1 || die "java not found in PATH"
 command -v javac >/dev/null 2>&1 || die "javac not found in PATH, install a JDK (21 or newer)"
 [ -d "$SRC_DIR/org/eclipse/swt/visualoracle" ] || die "missing $SRC_DIR"
+[ -d "$PLATFORM_SRC_DIR" ] || die "missing platform sources $PLATFORM_SRC_DIR"
 
 major="$(java -version 2>&1 | head -1 | sed 's/^[^"]*"\([0-9]*\).*/\1/')"
 [ "$major" -ge 21 ] 2>/dev/null || die "JDK 21 or newer required, found: $(java -version 2>&1 | head -1)"
@@ -41,10 +45,10 @@ mkdir -p "$OUT_DIR"
 args_file="$(mktemp -t oracle-harness-javac-XXXXXX.args)"
 trap 'rm -f "$args_file"' EXIT
 mkdir -p "$(dirname "$args_file")"
-find "$SRC_DIR" -name '*.java' | LC_ALL=C sort > "$args_file"
-[ -s "$args_file" ] || die "no java sources found below $SRC_DIR"
+find "$SRC_DIR" "$PLATFORM_SRC_DIR" -name '*.java' | LC_ALL=C sort > "$args_file"
+[ -s "$args_file" ] || die "no java sources found below $SRC_DIR and $PLATFORM_SRC_DIR"
 
-printf 'compiling harness against native backend classpath\n' >&2
+printf 'compiling harness (%s) against native backend classpath\n' "$ORACLE_WS" >&2
 javac -nowarn -encoding UTF-8 -cp "$backend_cp" -d "$OUT_DIR" @"$args_file" 1>&2 \
 	|| die "harness compilation failed"
 

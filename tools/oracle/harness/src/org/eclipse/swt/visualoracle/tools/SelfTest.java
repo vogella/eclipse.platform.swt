@@ -42,6 +42,7 @@ import org.eclipse.swt.visualoracle.impl.ChildProcessLauncher;
 import org.eclipse.swt.visualoracle.impl.LaunchConfig;
 import org.eclipse.swt.visualoracle.impl.ClusterDiffer;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.visualoracle.impl.ResultMerger;
 import org.eclipse.swt.visualoracle.impl.SettleBudget;
 import org.eclipse.swt.visualoracle.impl.SettleTimeoutException;
@@ -125,8 +126,8 @@ public class SelfTest {
 			check(index++, "shell-reuse-prevents-cross-talk", () -> checkShellReuseIsolation());
 			check(index++, "throwing-specimen-reported-as-failure", () -> checkThrowingSpecimen());
 			check(index++, "capture-deterministic-across-processes", () -> checkAcrossProcesses());
-			check(index++, "xgrab-agrees-with-copyarea-at-zoom100", () -> checkXGrabZoom100());
-			check(index++, "xgrab-agrees-with-copyarea-at-zoom200", () -> checkXGrabZoom200());
+			for (PlatformSupport.NamedCheck platformCheck : PlatformSupport.current().selfTestChecks(selfTestHost()))
+				check(index++, platformCheck.name(), platformCheck.body()::run);
 			check(index++, "catalog-discovered-and-wellformed", CatalogCheck::checkDiscovery);
 			check(index++, "catalog-triple-render-deterministic", () ->
 					CatalogCheck.checkTripleRender(display, nativeBackend, env, out));
@@ -286,8 +287,9 @@ public class SelfTest {
 		display = new Display();
 		nativeBackend = new NativeBackend();
 		nativeBackend.configure(display);
-		if (!"gtk".equals(SWT.getPlatform()))
-			throw new IllegalStateException("expected gtk platform, found: " + SWT.getPlatform());
+		if (!PlatformSupport.current().id().equals(SWT.getPlatform()))
+			throw new IllegalStateException("platform support " + PlatformSupport.current().id()
+					+ " does not serve platform " + SWT.getPlatform());
 		env = SwtRenderEnvs.current(display);
 		specimen = new ButtonModule.Push();
 	}
@@ -483,8 +485,8 @@ public class SelfTest {
 
 	/** Same specimen, several separate processes, same bytes. */
 	private void checkAcrossProcesses() throws Exception {
-		ProbeResult first = runProbe("COPY_AREA", null);
-		ProbeResult second = runProbe("COPY_AREA", null);
+		PlatformSupport.ProbeResult first = runProbe("COPY_AREA", null);
+		PlatformSupport.ProbeResult second = runProbe("COPY_AREA", null);
 		require(first.sha256().equals(second.sha256()),
 				"two separate processes captured different PNG bytes: "
 						+ first.sha256() + " vs " + second.sha256());
@@ -494,35 +496,18 @@ public class SelfTest {
 						+ first.sha256() + " vs " + ownSha);
 	}
 
-	/** Fallback and primary strategy must agree exactly at unit zoom. */
-	private void checkXGrabZoom100() throws Exception {
-		ProbeResult copyArea = runProbe("COPY_AREA", null);
-		ProbeResult xgrab = runProbe("X11_GRAB", null);
-		require(xgrab.width() == copyArea.width() && xgrab.height() == copyArea.height(),
-				"strategies disagree on extent at zoom 100: " + xgrab + " vs " + copyArea);
-		require(xgrab.sha256().equals(copyArea.sha256()),
-				"X11 grab and copyArea disagree at zoom 100: "
-						+ xgrab.sha256() + " vs " + copyArea.sha256());
-	}
+	private PlatformSupport.SelfTestHost selfTestHost() {
+		return new PlatformSupport.SelfTestHost() {
+			@Override
+			public PlatformSupport.ProbeResult runProbe(String strategy, String extraJvmOption) throws Exception {
+				return SelfTest.this.runProbe(strategy, extraJvmOption);
+			}
 
-	/**
-	 * The zoom-200 agreement is what proves the crop-origin fix recorded in
-	 * ADR-001: with the old formula the X11 grab captured a shifted region at
-	 * zoom 200, so these two probes could never agree byte for byte.
-	 */
-	private void checkXGrabZoom200() throws Exception {
-		ProbeResult copyArea = runProbe("COPY_AREA", "-Dswt.autoScale=200");
-		ProbeResult xgrab = runProbe("X11_GRAB", "-Dswt.autoScale=200");
-		int expectedWidth = Math.round(specimen.preferredSize().x * 2f);
-		int expectedHeight = Math.round(specimen.preferredSize().y * 2f);
-		require(copyArea.width() == expectedWidth && copyArea.height() == expectedHeight,
-				"copyArea is not device-resolution at zoom 200: " + copyArea);
-		require(xgrab.width() == expectedWidth && xgrab.height() == expectedHeight,
-				"X11 grab is not device-resolution at zoom 200: " + xgrab);
-		require(xgrab.sha256().equals(copyArea.sha256()),
-				"X11 grab and copyArea disagree at zoom 200: "
-						+ xgrab.sha256() + " vs " + copyArea.sha256()
-						+ "; the crop origin fix regressed");
+			@Override
+			public org.eclipse.swt.graphics.Point preferredSize() {
+				return specimen.preferredSize();
+			}
+		};
 	}
 
 	// ------------------------------------------------------ determinism lint
@@ -681,8 +666,8 @@ public class SelfTest {
 
 	/**
 	 * Pure mapping proof: a requested {@link RenderEnv} becomes the process
-	 * settings that realise it (zoom property, GTK_THEME variable or its
-	 * removal for the platform default, direction and font properties), and
+	 * settings that realise it (zoom property, the platform theme mapping,
+	 *  direction and font properties), and
 	 * environment matching accepts the system font whatever it is called.
 	 */
 	private void checkLaunchConfigMapping() {
@@ -690,9 +675,6 @@ public class SelfTest {
 				new RenderEnv(150, new Theme("Adwaita"), Direction.RTL, "Sans", 12));
 		require(themed.jvmProperties().contains("-Dswt.autoScale=150"),
 				"zoom 150 did not map to the swt.autoScale property: " + themed.jvmProperties());
-		require("Adwaita".equals(themed.variables().get("GTK_THEME")),
-				"theme Adwaita did not map to the GTK_THEME variable");
-		require(!themed.removedVariables().contains("GTK_THEME"), "themed config removes GTK_THEME");
 		require(themed.jvmProperties().contains("-D" + SwtRenderEnvs.DIRECTION_PROPERTY + "=RTL"),
 				"RTL did not map to the direction property");
 
@@ -700,8 +682,7 @@ public class SelfTest {
 				new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1));
 		require(deflt.jvmProperties().contains("-Dswt.autoScale=100"),
 				"zoom 100 did not map to the swt.autoScale property");
-		require(deflt.variables().isEmpty() && deflt.removedVariables().contains("GTK_THEME"),
-				"platform default theme must remove GTK_THEME instead of setting it");
+		PlatformSupport.current().verifyThemeMapping(themed, deflt);
 
 		RenderEnv systemFont = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1);
 		RenderEnv actual = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "Whatever", 11);
@@ -949,11 +930,7 @@ public class SelfTest {
 	 */
 	private int spawnRawChild(Path dir, Path outDir, String specimenId, String... jvmOptions) throws Exception {
 		List<String> command = new ArrayList<>();
-		command.add("env");
-		command.addAll(List.of("-u", "WAYLAND_DISPLAY", "-u", "XDG_SESSION_TYPE", "-u", "DISPLAY"));
-		command.addAll(List.of("GDK_BACKEND=x11", "LIBGL_ALWAYS_SOFTWARE=1"));
-		command.add("xvfb-run");
-		command.addAll(List.of("-a", "-s", "-screen 0 1600x1200x24"));
+		command.addAll(PlatformSupport.current().headlessPrefix());
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
 		command.add("-Djava.library.path=" + System.getProperty("java.library.path", ""));
@@ -987,19 +964,12 @@ public class SelfTest {
 
 	// ------------------------------------------------------------ probe runs
 
-	private record ProbeResult(String sha256, int width, int height) {
-		@Override
-		public String toString() {
-			return width + "x" + height + " sha=" + sha256;
-		}
-	}
-
 	/**
 	 * Runs {@link CaptureProbe} in a child process on this display and
 	 * returns its single CAPTURE line. Graphical environment variables are
 	 * re-pinned so the child cannot silently leave headless mode.
 	 */
-	private ProbeResult runProbe(String strategy, String extraJvmOption) throws Exception {
+	private PlatformSupport.ProbeResult runProbe(String strategy, String extraJvmOption) throws Exception {
 		List<String> command = new ArrayList<>();
 		command.add(ProcessHandle.current().info().command().orElse("java"));
 		command.add("--enable-native-access=ALL-UNNAMED");
@@ -1015,9 +985,7 @@ public class SelfTest {
 		command.add(strategy);
 
 		ProcessBuilder pb = new ProcessBuilder(command);
-		pb.environment().remove("WAYLAND_DISPLAY");
-		pb.environment().remove("XDG_SESSION_TYPE");
-		pb.environment().put("GDK_BACKEND", "x11");
+		PlatformSupport.current().prepareProbeEnvironment(pb.environment());
 		pb.redirectErrorStream(true);
 
 		Process process = pb.start();
@@ -1056,7 +1024,7 @@ public class SelfTest {
 				}
 			}
 			if (sha != null && width > 0 && height > 0)
-				return new ProbeResult(sha, width, height);
+				return new PlatformSupport.ProbeResult(sha, width, height);
 		}
 		throw new AssertionError("probe '" + strategy + "' printed no usable CAPTURE line:\n" + tail(text));
 	}
