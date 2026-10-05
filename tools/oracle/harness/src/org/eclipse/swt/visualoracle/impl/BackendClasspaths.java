@@ -69,11 +69,13 @@ public final class BackendClasspaths {
 	 * of the parent's. Fails when the split cannot be made unambiguously.
 	 */
 	public static String harnessClasspath() {
-		List<String> nativeEntries = List.of(nativeClasspath().split(java.io.File.pathSeparator));
+		List<String> nativeEntries = new ArrayList<>();
+		for (String entry : nativeClasspath().split(java.io.File.pathSeparator))
+			nativeEntries.add(canonical(entry));
 		String parent = System.getProperty("java.class.path", "");
 		List<String> kept = new ArrayList<>();
 		for (String entry : parent.split(java.io.File.pathSeparator)) {
-			if (entry.isEmpty() || nativeEntries.contains(entry))
+			if (entry.isEmpty() || nativeEntries.contains(canonical(entry)))
 				continue;
 			kept.add(entry);
 		}
@@ -84,6 +86,15 @@ public final class BackendClasspaths {
 		}
 		throw new IllegalStateException("cannot locate the visual oracle harness classes on the classpath '"
 				+ parent + "'; launch through tools/oracle/oracle");
+	}
+
+	/** The entry as an absolute normalized path, so C:/x and C:\\x name the same entry. */
+	private static String canonical(String entry) {
+		try {
+			return Path.of(entry).toAbsolutePath().normalize().toString();
+		} catch (java.nio.file.InvalidPathException e) {
+			return entry;
+		}
 	}
 
 	private static String nativeClasspath() {
@@ -99,7 +110,7 @@ public final class BackendClasspaths {
 			throw new IllegalStateException("build recipe not found at " + script);
 		Process process;
 		try {
-			process = new ProcessBuilder(script.toString(), backendId).start();
+			process = new ProcessBuilder(PlatformSupport.current().scriptCommand(script, backendId)).start();
 		} catch (IOException e) {
 			throw new IllegalStateException("cannot run " + script + " " + backendId + ": " + e, e);
 		}

@@ -14,7 +14,8 @@ The scripts and the harness are portable across GTK (Linux), Cocoa (macOS) and W
 `tools/oracle/platform.sh` maps `uname` to the SWT binary fragment, the classpath separator and the headless wrapper.
 On the Java side `impl/PlatformSupport` hides everything platform specific: focus suppression, the native handle check, the grab fallback, child process wrapping and the theme mapping.
 `build-harness.sh` compiles `harness/src` plus exactly one of `harness/src-gtk`, `src-cocoa` or `src-win32`.
-The Cocoa and Win32 implementations are stubs that throw "not implemented yet" where real work is missing, each marked `TODO(cocoa)` or `TODO(win32)`.
+The Cocoa implementation is a stub that throws "not implemented yet" where real work is missing, marked `TODO(cocoa)`.
+The Win32 implementation is complete but has only been compiled, not run, until the Windows workflow has passed; see the Windows section below.
 `tools/oracle/compile-check.sh <fragment>` compiles the harness for any platform on any machine.
 The Skia and Skija backends remain Linux only.
 
@@ -315,6 +316,35 @@ The agent fixes the change and re-runs the same command; the candidate is
 rebuilt because its fingerprint changed. Iteration continues until `pass` is
 `true`, with one command and a JSON read per cycle and no screenshots.
 
+## Windows
+
+Run the scripts from Git Bash (Git for Windows) with a JDK 21 or newer on `PATH` and Git LFS resolved for `binaries/org.eclipse.swt.win32.win32.x86_64`.
+`javac` and `java` are native programs there, so `platform.sh` converts every path they receive with `cygpath -m` (`C:/...` form, which also keeps `@argfile` contents valid) and joins classpaths with `;`.
+`build.sh` prints classpaths in that form, and the Java side starts `build.sh` through the bash named in `ORACLE_BASH`.
+The scripts use the GNU `timeout` only if `timeout --version` identifies it, because the Windows `timeout.exe` can come first on `PATH`.
+Graphical verbs run on the interactive desktop of the session, with no wrapper.
+Children run one at a time (`-Doracle.children.parallelism=1` is set by `oracle`), because windows of concurrent children would overlap on the one desktop.
+Scratch paths such as `/tmp/swt-visual-oracle` resolve to the root of the current drive, for example `D:\tmp\swt-visual-oracle`.
+
+**Capture.**
+The primary path is `GC.copyArea`, which BitBlts from the control's window DC and so depends on the window being visible and on screen.
+`Control.print` (PrintWindow with `PW_RENDERFULLCONTENT`, after SWT's own reparenting fixes) renders the window itself and does not.
+`ORACLE_WIN32_CAPTURE=print` makes the print path the primary of every process that inherits the variable, and `--strategy X11_GRAB` in `CaptureChild` always uses it.
+The Windows selftest check `win32-capture-paths-measured` prints `WIN32-CAPTURE` lines (size, non-blank, determinism across processes, copyArea against print at zoom 100 and 200) and a `WIN32-CAPTURE-DECISION` line, so the CI log shows which path to make primary.
+Only a broken copyArea path fails that check.
+
+**Zoom.**
+Zoom 100 and 200 come from `-Dswt.autoScale=<zoom>` together with `-Dswt.autoScale.updateOnRuntime=false`, which SWT needs to accept a fixed value; the process keeps the DPI awareness SWT or the JDK manifest gives it.
+A process whose resulting device zoom differs from the request refuses to capture with an unsupported-environment error.
+Use a machine at 100 percent scaling for zoom 100 runs, as the monitor scale is not changed.
+
+**Theme.**
+Only the platform default theme is pinned; a named theme is rejected as unsupported, and the selftest skips the theme checks that need an alternate theme.
+
+**Fonts.**
+ClearType makes text pixels depend on the machine and its settings, so a baseline and a candidate must run on the same machine in the same session, which `oracle run` already does.
+Compare results across machines only through a run that includes both sides.
+
 ## Known limitations
 
 * One environment per invocation; a DPI or theme matrix means several invocations.
@@ -325,4 +355,4 @@ rebuilt because its fingerprint changed. Iteration continues until `pass` is
   governs determinism judging only, and their diff numbers can legitimately
   alternate between two faithful renderings.
 * `run` needs the same JDK everywhere.
-  Only Linux GTK is complete today; the Cocoa and Win32 platform layers are stubs, and the Skia and Skija backends are Linux only (ADR-002).
+  Linux GTK is the reference platform; the Cocoa platform layer is a stub, Win32 is implemented but unverified outside CI, and the Skia and Skija backends are Linux only (ADR-002).

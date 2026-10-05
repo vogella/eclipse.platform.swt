@@ -582,6 +582,9 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	// ------------------------------------------------------------ grabbing
 
 	private CapturedImage grabByCopyArea(Control control) {
+		CapturedImage platformGrab = PlatformSupport.current().grabPrimary(control);
+		if (platformGrab != null)
+			return platformGrab;
 		org.eclipse.swt.graphics.Point size = control.getSize();
 		Image image = new Image(control.getDisplay(), size.x, size.y);
 		try {

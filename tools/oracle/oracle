@@ -22,12 +22,13 @@ verb="$1"
 
 classes="$("$SCRIPT_DIR/build-harness.sh")" || die "building harness failed"
 
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(oracle_native_path "$(cd "$SCRIPT_DIR/../.." && pwd)")"
 native_cp="$("$SCRIPT_DIR/build.sh" native)" || die "building native backend classpath failed"
 
 main_class=org.eclipse.swt.visualoracle.tools.OracleCli
 java_cmd=(
 	java --enable-native-access=ALL-UNNAMED
+	${ORACLE_PLATFORM_JAVA_OPTS[@]+"${ORACLE_PLATFORM_JAVA_OPTS[@]}"}
 	-Djava.library.path="$(oracle_binaries_dir "$REPO_ROOT")"
 	-Doracle.repoRoot="$REPO_ROOT"
 	-cp "$classes$ORACLE_CP_SEP$native_cp"
@@ -41,7 +42,9 @@ case "$verb" in
 	selftest)
 		# timeout(1) is absent on stock macOS; the selftest's own child timeouts still apply there
 		selftest_cmd=("${java_cmd[@]}")
-		command -v timeout >/dev/null 2>&1 && selftest_cmd=(timeout 900 "${java_cmd[@]}")
+		if timeout_cmd="$(oracle_timeout_cmd)"; then
+			selftest_cmd=("$timeout_cmd" 900 "${java_cmd[@]}")
+		fi
 		oracle_run_headless "${selftest_cmd[@]}" "$@"
 		;;
 	run|triage)

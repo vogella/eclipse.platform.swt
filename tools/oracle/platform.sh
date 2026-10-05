@@ -10,6 +10,9 @@
 #   oracle_binaries_dir <repo-root>        the fragment directory below binaries/
 #   oracle_native_glob                     glob naming the main native library in that directory
 #   oracle_native_libs_glob                glob matching every native library there
+#   oracle_native_path <path>              the path in the form javac and java take (Windows form on Git Bash)
+#   oracle_timeout_cmd                     prints the name of a GNU timeout(1), fails if there is none
+#   oracle_link_dir <target> <link>        makes <link> show <target> (a copy on Windows, where ln -s copies)
 #   oracle_run_headless <cmd...>           runs a command with the display setup the platform needs
 #   oracle_require_linux_gtk <what>        dies unless on Linux/GTK (Skia and Skija backends)
 #
@@ -34,8 +37,48 @@ esac
 ORACLE_FRAGMENT="$ORACLE_WS.$ORACLE_OS.$ORACLE_ARCH"
 
 ORACLE_CP_SEP=':'
-# TODO(win32): javac and java want Windows paths (cygpath -m) for -cp, -d and @argfiles under Git Bash.
 [ "$ORACLE_WS" = win32 ] && ORACLE_CP_SEP=';'
+
+# javac and java are native Windows programs under Git Bash: they take C:/... paths and ';' in -cp, and
+# the contents of an @argfile are never converted. cygpath -m (forward slashes) keeps argfile quoting simple.
+if [ "$ORACLE_WS" = win32 ]; then
+	command -v cygpath >/dev/null 2>&1 || oracle_platform_die "cygpath not found, run the oracle scripts from Git Bash or MSYS2"
+	oracle_native_path() { cygpath -m "$1"; }
+	# lets the Java side run build.sh through the same bash
+	ORACLE_BASH="$(oracle_native_path "$BASH")"
+	export ORACLE_BASH
+else
+	oracle_native_path() { printf '%s' "$1"; }
+fi
+
+# JVM options every oracle JVM gets on this platform. Children share the one interactive desktop on
+# Windows, where overlapping windows and focus changes would reach the captures, so they run one at a time.
+ORACLE_PLATFORM_JAVA_OPTS=()
+[ "$ORACLE_WS" = win32 ] && ORACLE_PLATFORM_JAVA_OPTS=(-Doracle.children.parallelism=1)
+
+# On Windows an unrelated timeout.exe (the DOS pause command) can precede the GNU one on PATH.
+oracle_timeout_cmd() {
+	local candidate
+	for candidate in timeout /usr/bin/timeout; do
+		if command -v "$candidate" >/dev/null 2>&1 && "$candidate" --version 2>/dev/null | grep -q 'GNU coreutils'; then
+			printf '%s' "$candidate"
+			return 0
+		fi
+	done
+	return 1
+}
+
+oracle_link_dir() {
+	local target="$1" link="$2"
+	if [ "$ORACLE_WS" = win32 ]; then
+		# ln -s makes a copy on Git Bash; keep an identical one instead of replacing natives a JVM may have loaded
+		diff -rq "$target" "$link" >/dev/null 2>&1 && return 0
+		rm -rf "$link"
+		cp -r "$target" "$link"
+	else
+		ln -sfn "$target" "$link"
+	fi
+}
 
 # macOS has no GNU sha256sum (its BSD one lacks -c); shasum is compatible.
 if ! sha256sum --version 2>&1 | grep -q "GNU coreutils"; then
@@ -82,7 +125,7 @@ oracle_run_headless() {
 			;;
 		*)
 			# TODO(cocoa): decide whether children need an isolated session or a fixed display.
-			# TODO(win32): same question for a hidden desktop or a fixed resolution.
+			# Windows: children use the interactive desktop; CI runners have one.
 			exec "$@"
 			;;
 	esac

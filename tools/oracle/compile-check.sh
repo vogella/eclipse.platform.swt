@@ -19,6 +19,7 @@ fragment="$1"
 ws="${fragment%%.*}"
 case "$ws" in gtk|cocoa|win32) ;; *) die "unknown fragment '$fragment'" ;; esac
 platform_src="$SCRIPT_DIR/harness/src-$ws"
+native_script_dir="$(oracle_native_path "$SCRIPT_DIR")"
 [ -d "$platform_src" ] || die "missing $platform_src"
 
 swt_classes="$("$SCRIPT_DIR/build.sh" fragment-classes "$fragment")" || die "compiling SWT for $fragment failed"
@@ -26,10 +27,11 @@ swt_classes="$("$SCRIPT_DIR/build.sh" fragment-classes "$fragment")" || die "com
 out_dir="$(mktemp -d "${TMPDIR:-/tmp}/oracle-compile-check-XXXXXX")"
 trap 'rm -rf "$out_dir"' EXIT
 args_file="$out_dir/javac.args"
-find "$SCRIPT_DIR/harness/src" "$platform_src" -name '*.java' | LC_ALL=C sort \
+find "$native_script_dir/harness/src" "$(oracle_native_path "$platform_src")" -name '*.java' | LC_ALL=C sort \
 	| while IFS= read -r f; do printf '"%s"\n' "$f"; done > "$args_file"
 
 printf 'compile-check.sh: compiling harness (%s) against %s\n' "$ws" "$fragment" >&2
-javac -nowarn -encoding UTF-8 -cp "$swt_classes" -d "$out_dir/classes" @"$args_file" 1>&2 \
+javac -nowarn -encoding UTF-8 -cp "$swt_classes" -d "$(oracle_native_path "$out_dir")/classes" \
+	@"$(oracle_native_path "$args_file")" 1>&2 \
 	|| die "harness does not compile against $fragment"
 printf 'compile-check.sh: OK, harness compiles against %s\n' "$fragment" >&2

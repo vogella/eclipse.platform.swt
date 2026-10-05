@@ -14,13 +14,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=platform.sh
 . "$SCRIPT_DIR/platform.sh"
-SRC_DIR="$SCRIPT_DIR/harness/src"
-PLATFORM_SRC_DIR="$SCRIPT_DIR/harness/src-$ORACLE_WS"
+# paths that reach javac or java are kept in the native form (see oracle_native_path)
+REPO_ROOT="$(oracle_native_path "$(cd "$SCRIPT_DIR/../.." && pwd)")"
+SRC_DIR="$(oracle_native_path "$SCRIPT_DIR")/harness/src"
+PLATFORM_SRC_DIR="$(oracle_native_path "$SCRIPT_DIR")/harness/src-$ORACLE_WS"
 
-CACHE_ROOT="${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}"
+CACHE_ROOT="$(oracle_native_path "${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}")"
 WORKTREE_ID="$(printf '%s' "$(realpath "$REPO_ROOT")" | sha256sum | cut -c1-12)"
 OUT_DIR="$CACHE_ROOT/harness/$WORKTREE_ID/classes"
 
@@ -45,11 +46,11 @@ mkdir -p "$OUT_DIR"
 args_file="$(mktemp -t oracle-harness-javac-XXXXXX.args)"
 trap 'rm -f "$args_file"' EXIT
 mkdir -p "$(dirname "$args_file")"
-find "$SRC_DIR" "$PLATFORM_SRC_DIR" -name '*.java' | LC_ALL=C sort > "$args_file"
+find "$SRC_DIR" "$PLATFORM_SRC_DIR" -name '*.java' | LC_ALL=C sort | sed 's/.*/"&"/' > "$args_file"
 [ -s "$args_file" ] || die "no java sources found below $SRC_DIR and $PLATFORM_SRC_DIR"
 
 printf 'compiling harness (%s) against native backend classpath\n' "$ORACLE_WS" >&2
-javac -nowarn -encoding UTF-8 -cp "$backend_cp" -d "$OUT_DIR" @"$args_file" 1>&2 \
+javac -nowarn -encoding UTF-8 -cp "$backend_cp" -d "$OUT_DIR" @"$(oracle_native_path "$args_file")" 1>&2 \
 	|| die "harness compilation failed"
 
 printf '%s\n' "$OUT_DIR"

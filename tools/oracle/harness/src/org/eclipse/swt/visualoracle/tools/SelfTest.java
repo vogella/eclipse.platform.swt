@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -119,10 +120,10 @@ public class SelfTest {
 			check(index++, "differ-reports-equality", () -> checkDifferEqual());
 			check(index++, "differ-detects-altered-image", () -> checkDifferDetectsChange());
 			check(index++, "result-json-conforms-to-schema", () -> checkJsonSchema(repoRoot));
-			check(index++, "verify-backend-fails-on-disabled-canvas", () ->
-					checkVerifyBackend(repoRoot, true));
-			check(index++, "verify-backend-passes-on-enabled-canvas", () ->
-					checkVerifyBackend(repoRoot, false));
+			check(index++, "verify-backend-fails-on-disabled-canvas", linuxGtkOnly(() ->
+					checkVerifyBackend(repoRoot, true)));
+			check(index++, "verify-backend-passes-on-enabled-canvas", linuxGtkOnly(() ->
+					checkVerifyBackend(repoRoot, false)));
 			check(index++, "shell-reuse-prevents-cross-talk", () -> checkShellReuseIsolation());
 			check(index++, "throwing-specimen-reported-as-failure", () -> checkThrowingSpecimen());
 			check(index++, "capture-deterministic-across-processes", () -> checkAcrossProcesses());
@@ -166,14 +167,14 @@ public class SelfTest {
 			check(index++, "diff-size-mismatch-whole-area", () ->
 					DiffCheck.checkSizeMismatchWholeArea(firstCapture));
 			check(index++, "diff-throughput-measured", () -> DiffCheck.checkThroughput(out));
-			check(index++, "skijaproto-backend-genuinely-activates", () ->
-					SkijaProtoCheck.checkActivation(out));
-			check(index++, "skijaproto-supported-specimen-captures", () ->
-					SkijaProtoCheck.checkSupportedCapture(out));
-			check(index++, "skijaproto-unsupported-specimen-reported-as-data", () ->
-					SkijaProtoCheck.checkUnsupportedReported(out));
-			check(index++, "skijaproto-catalog-coverage-counted", () ->
-					SkijaProtoCheck.checkCatalogCoverage(out));
+			check(index++, "skijaproto-backend-genuinely-activates", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkActivation(out)));
+			check(index++, "skijaproto-supported-specimen-captures", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkSupportedCapture(out)));
+			check(index++, "skijaproto-unsupported-specimen-reported-as-data", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkUnsupportedReported(out)));
+			check(index++, "skijaproto-catalog-coverage-counted", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkCatalogCoverage(out)));
 			check(index++, "result-roundtrip-empty-run", () -> ResultCheck.checkRoundTripEmptyRun(env));
 			check(index++, "result-roundtrip-failed-and-unsupported-captures", () ->
 					ResultCheck.checkRoundTripFailureStatuses(env));
@@ -207,18 +208,18 @@ public class SelfTest {
 					NativeCheck.checkUnsupportedAsData(display, nativeBackend, env, out));
 			check(index++, "native-versus-native-sweep-equal-over-catalog", () ->
 					NativeCheck.checkNativeVsNativeSweep(display, nativeBackend, env, out));
-			check(index++, "skiacanvas-backend-genuinely-activates", () ->
-					SkiaCanvasCheck.checkActivation(out));
-			check(index++, "skiacanvas-supported-specimen-captures", () ->
-					SkiaCanvasCheck.checkSupportedCapture(out));
-			check(index++, "skiacanvas-unsupported-specimen-reported-as-data", () ->
-					SkiaCanvasCheck.checkUnsupportedReported(out));
-			check(index++, "skiacanvas-catalog-coverage-counted", () ->
-					SkiaCanvasCheck.checkCatalogCoverage(out));
-			check(index++, "skiacanvas-flat-skia-style-collision-reported", () ->
-					SkiaCanvasCheck.checkFlatSkiaCollision(display, out));
-			check(index++, "skiacanvas-zoom200-size-discrepancy-measured", () ->
-					SkiaCanvasCheck.checkZoom200DiscrepancyMeasured(out));
+			check(index++, "skiacanvas-backend-genuinely-activates", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkActivation(out)));
+			check(index++, "skiacanvas-supported-specimen-captures", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkSupportedCapture(out)));
+			check(index++, "skiacanvas-unsupported-specimen-reported-as-data", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkUnsupportedReported(out)));
+			check(index++, "skiacanvas-catalog-coverage-counted", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkCatalogCoverage(out)));
+			check(index++, "skiacanvas-flat-skia-style-collision-reported", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkFlatSkiaCollision(display, out)));
+			check(index++, "skiacanvas-zoom200-size-discrepancy-measured", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkZoom200DiscrepancyMeasured(out)));
 			check(index++, "run-filters-select-what-they-claim", () ->
 					RunCheck.checkFiltersSelectWhatTheyClaim(out));
 			check(index++, "run-clean-exits-zero-and-schema-valid", () -> {
@@ -265,6 +266,17 @@ public class SelfTest {
 
 	private interface CheckBody {
 		void run() throws Exception;
+	}
+
+	/** Skia and Skija backends exist on Linux GTK only; elsewhere the check passes as skipped. */
+	private CheckBody linuxGtkOnly(CheckBody body) {
+		return () -> {
+			if (!"gtk".equals(SWT.getPlatform())) {
+				out.println("      skipped: this backend exists on Linux GTK only");
+				return;
+			}
+			body.run();
+		};
 	}
 
 	// ---------------------------------------------------------------- state
@@ -646,22 +658,27 @@ public class SelfTest {
 		if (childBatch != null)
 			return;
 		RenderEnv ltr = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1);
-		List<ChildProcessLauncher.ChildRequest> requests = List.of(
+		List<String> tags = new ArrayList<>(List.of("ltrA", "ltrB", "rtl"));
+		List<ChildProcessLauncher.ChildRequest> requests = new ArrayList<>(List.of(
 				ChildProcessLauncher.ChildRequest.of(ltr, REFERENCE_SPECIMEN),
 				ChildProcessLauncher.ChildRequest.of(ltr, MIRROR_SPECIMEN),
 				ChildProcessLauncher.ChildRequest.of(new RenderEnv(100, Theme.PLATFORM_DEFAULT,
-						Direction.RTL, "", -1), MIRROR_SPECIMEN, REFERENCE_SPECIMEN),
-				ChildProcessLauncher.ChildRequest.of(new RenderEnv(100, new Theme("HighContrast"),
-						Direction.LTR, "", -1), REFERENCE_SPECIMEN),
-				ChildProcessLauncher.ChildRequest.of(new RenderEnv(200, Theme.PLATFORM_DEFAULT,
-						Direction.LTR, "", -1), REFERENCE_SPECIMEN));
+						Direction.RTL, "", -1), MIRROR_SPECIMEN, REFERENCE_SPECIMEN)));
+		Optional<Theme> alternate = PlatformSupport.current().alternateTheme();
+		if (alternate.isPresent()) {
+			tags.add("hc");
+			requests.add(ChildProcessLauncher.ChildRequest.of(new RenderEnv(100, alternate.get(),
+					Direction.LTR, "", -1), REFERENCE_SPECIMEN));
+		}
+		tags.add("z200");
+		requests.add(ChildProcessLauncher.ChildRequest.of(new RenderEnv(200, Theme.PLATFORM_DEFAULT,
+				Direction.LTR, "", -1), REFERENCE_SPECIMEN));
 		Path scratch = Path.of(SCRATCH_ROOT_CHILDREN, "selftest-" + Long.toString(System.currentTimeMillis(), 36));
 		childBatch = new LinkedHashMap<>();
 		List<ChildProcessLauncher.ChildOutcome> outcomes =
 				new ChildProcessLauncher(ChildProcessLauncher.configFromSystemProperties(scratch)).run(requests);
-		String[] tags = {"ltrA", "ltrB", "rtl", "hc", "z200"};
-		for (int i = 0; i < tags.length; i++)
-			childBatch.put(tags[i], outcomes.get(i));
+		for (int i = 0; i < tags.size(); i++)
+			childBatch.put(tags.get(i), outcomes.get(i));
 	}
 
 	/**
@@ -671,8 +688,9 @@ public class SelfTest {
 	 * environment matching accepts the system font whatever it is called.
 	 */
 	private void checkLaunchConfigMapping() {
-		LaunchConfig themed = SwtRenderEnvs.launch(
-				new RenderEnv(150, new Theme("Adwaita"), Direction.RTL, "Sans", 12));
+		boolean namedThemes = PlatformSupport.current().alternateTheme().isPresent();
+		LaunchConfig themed = SwtRenderEnvs.launch(new RenderEnv(150,
+				namedThemes ? new Theme("Adwaita") : Theme.PLATFORM_DEFAULT, Direction.RTL, "Sans", 12));
 		require(themed.jvmProperties().contains("-Dswt.autoScale=150"),
 				"zoom 150 did not map to the swt.autoScale property: " + themed.jvmProperties());
 		require(themed.jvmProperties().contains("-D" + SwtRenderEnvs.DIRECTION_PROPERTY + "=RTL"),
@@ -682,7 +700,8 @@ public class SelfTest {
 				new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1));
 		require(deflt.jvmProperties().contains("-Dswt.autoScale=100"),
 				"zoom 100 did not map to the swt.autoScale property");
-		PlatformSupport.current().verifyThemeMapping(themed, deflt);
+		if (namedThemes)
+			PlatformSupport.current().verifyThemeMapping(themed, deflt);
 
 		RenderEnv systemFont = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "", -1);
 		RenderEnv actual = new RenderEnv(100, Theme.PLATFORM_DEFAULT, Direction.LTR, "Whatever", 11);
@@ -756,6 +775,10 @@ public class SelfTest {
 
 	/** The themed child must render differently from the default theme. */
 	private void checkChildTheme() {
+		if (PlatformSupport.current().alternateTheme().isEmpty()) {
+			out.println("      skipped: platform " + PlatformSupport.current().id() + " pins no alternate theme");
+			return;
+		}
 		ensureChildBatch();
 		ChildProcessLauncher.ChildOutcome plain = childBatch.get("ltrA");
 		ChildProcessLauncher.ChildOutcome hc = childBatch.get("hc");

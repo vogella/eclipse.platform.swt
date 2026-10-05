@@ -13,6 +13,7 @@ package org.eclipse.swt.visualoracle.impl;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.eclipse.swt.SWT;
@@ -65,6 +66,22 @@ public interface PlatformSupport {
 	 */
 	CapturedImage grabFallback(Control control, Path scratchDir) throws CaptureFailedException;
 
+	/**
+	 * Replaces the {@code GC.copyArea} grab inside the settle loop, or returns
+	 * null to keep copyArea. Lets a platform pick another primary capture path.
+	 */
+	default CapturedImage grabPrimary(Control control) {
+		return null;
+	}
+
+	/** The command that runs a shell script of {@code tools/oracle} with {@code args}. */
+	default List<String> scriptCommand(Path script, String... args) {
+		List<String> command = new java.util.ArrayList<>();
+		command.add(script.toString());
+		command.addAll(List.of(args));
+		return command;
+	}
+
 	/** Command prefix that precedes the JVM when the launcher starts a child. Empty means no wrapper. */
 	default List<String> childLauncherPrefix() {
 		return List.of();
@@ -107,6 +124,11 @@ public interface PlatformSupport {
 
 	/** The theme this process is pinned to; {@link Theme#PLATFORM_DEFAULT} if none. */
 	Theme currentTheme();
+
+	/** A named theme other than the default that this platform can pin, for the selftest; empty if none. */
+	default Optional<Theme> alternateTheme() {
+		return Optional.of(new Theme("HighContrast"));
+	}
 
 	/** Selftest hook: asserts {@link #applyTheme} output for a named theme and for the default. */
 	default void verifyThemeMapping(LaunchConfig themed, LaunchConfig platformDefault) {

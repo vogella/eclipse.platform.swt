@@ -27,16 +27,17 @@
 # Set ORACLE_REFRESH=1 to re-fetch the prototype-skija fork from origin.
 set -euo pipefail
 
-CACHE_ROOT="${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}"
-MAVEN_DIR="$CACHE_ROOT/maven"
-CHECKOUT_DIR="$CACHE_ROOT/checkouts"
-BUILD_DIR="$CACHE_ROOT/build"
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=platform.sh
 . "$SCRIPT_DIR/platform.sh"
 
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# every path below reaches javac or java, so it is kept in the native form (see oracle_native_path)
+CACHE_ROOT="$(oracle_native_path "${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}")"
+MAVEN_DIR="$CACHE_ROOT/maven"
+CHECKOUT_DIR="$CACHE_ROOT/checkouts"
+BUILD_DIR="$CACHE_ROOT/build"
+
+REPO_ROOT="$(oracle_native_path "$(cd "$SCRIPT_DIR/../.." && pwd)")"
 WORKTREE_ID="$(printf '%s' "$(realpath "$REPO_ROOT")" | sha256sum | cut -c1-12)"
 OUT_BASE="$BUILD_DIR/$WORKTREE_ID"
 
@@ -268,7 +269,7 @@ build_native() {
 resolve_swt_source() {
 	local spec="$1" sha dir tmp
 	if [ -d "$spec" ]; then
-		realpath "$spec"
+		oracle_native_path "$(realpath "$spec")"
 		return
 	fi
 	sha="$(git -C "$REPO_ROOT" rev-parse --verify --quiet "$spec^{commit}")" \
@@ -312,7 +313,7 @@ build_native_from() {
 	else
 		info "$id backend up to date ($spec)"
 	fi
-	ln -sfn "$bin_dir" "$out_base/lib"
+	oracle_link_dir "$bin_dir" "$out_base/lib"
 	local svg
 	svg="$(svg_classpath "$src" "$out" "$out_base/svg-classes")" || exit 1
 	printf '%s%s' "$out" "$svg"

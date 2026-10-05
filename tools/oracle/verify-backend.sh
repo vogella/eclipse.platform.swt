@@ -18,7 +18,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=platform.sh
 . "$SCRIPT_DIR/platform.sh"
-CACHE_ROOT="${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}"
+CACHE_ROOT="$(oracle_native_path "${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}")"
 BUILD_TMP="$CACHE_ROOT/verify-probes"
 
 die() { printf 'verify-backend.sh: %s\n' "$*" >&2; exit 1; }
@@ -48,7 +48,7 @@ case "$backend" in
 	skija-proto) probe_src="$SCRIPT_DIR/probes/skija-proto/SkijaProtoProbe.java"; probe_class=SkijaProtoProbe ;;
 esac
 
-javac -nowarn -encoding UTF-8 -cp "$classpath" -d "$BUILD_TMP/$backend" "$probe_src" 1>&2 \
+javac -nowarn -encoding UTF-8 -cp "$classpath" -d "$BUILD_TMP/$backend" "$(oracle_native_path "$probe_src")" 1>&2 \
 	|| die "compiling $probe_class failed"
 
 java_cmd=(java --enable-native-access=ALL-UNNAMED)
@@ -58,7 +58,7 @@ if [ "$backend" = "skija-proto" ]; then
 	[ -d "$fork_binaries" ] || die "fork binaries dir missing at $fork_binaries"
 	java_library_path="$fork_binaries"
 else
-	worktree_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
+	worktree_root="$(oracle_native_path "$(cd "$SCRIPT_DIR/../.." && pwd)")"
 	java_library_path="$(oracle_binaries_dir "$worktree_root")"
 fi
 
@@ -70,7 +70,9 @@ fi
 log_file="$BUILD_TMP/$backend/run.log"
 probe_cmd=("${java_cmd[@]}" "${run_flags[@]}" -cp "$BUILD_TMP/$backend$ORACLE_CP_SEP$classpath" "$probe_class")
 # timeout(1) is absent on stock macOS
-command -v timeout >/dev/null 2>&1 && probe_cmd=(timeout 60 "${probe_cmd[@]}")
+if timeout_cmd="$(oracle_timeout_cmd)"; then
+	probe_cmd=("$timeout_cmd" 60 "${probe_cmd[@]}")
+fi
 if [ "$ORACLE_WS" = gtk ]; then
 	probe_cmd=(env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
 		xvfb-run -a -s "-screen 0 1024x768x24" "${probe_cmd[@]}")
