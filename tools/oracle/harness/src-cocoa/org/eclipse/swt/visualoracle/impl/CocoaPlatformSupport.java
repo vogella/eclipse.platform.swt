@@ -40,6 +40,7 @@ public final class CocoaPlatformSupport implements PlatformSupport {
 	/** JVM property carrying the pinned appearance, Light or Dark, into a child. */
 	static final String APPEARANCE_PROPERTY = "oracle.cocoa.appearance";
 	private static final long ACTIVATION_POLICY_PROHIBITED = 2;
+	private static final long LAUNCH_TIMEOUT_MILLIS = 5000;
 
 	@Override
 	public String id() {
@@ -96,7 +97,21 @@ public final class CocoaPlatformSupport implements PlatformSupport {
 	@Override
 	public void prepareDisplay(Display display) {
 		NSApplication app = NSApplication.sharedApplication();
+		// SWT's applicationDidFinishLaunching sets the regular policy and activates; it
+		// arrives from the event loop, so wait for it or it can undo the pin mid-run.
+		long deadline = System.currentTimeMillis() + LAUNCH_TIMEOUT_MILLIS;
+		while (!finishedLaunching() && System.currentTimeMillis() < deadline) {
+			if (!display.readAndDispatch())
+				sleepQuietly(10);
+		}
+		if (!finishedLaunching())
+			throw new BackendUnavailableException(
+					"NSApplication did not finish launching within " + LAUNCH_TIMEOUT_MILLIS + " ms");
+		while (display.readAndDispatch()) {
+			// drain the launch events
+		}
 		app.setActivationPolicy(ACTIVATION_POLICY_PROHIBITED);
+		OS.objc_msgSend(app.id, OS.sel_registerName("deactivate"));
 		String appearance = System.getProperty(APPEARANCE_PROPERTY, "");
 		if (appearance.isEmpty())
 			return;
@@ -164,6 +179,20 @@ public final class CocoaPlatformSupport implements PlatformSupport {
 		NSApplication app = NSApplication.sharedApplication();
 		long policy = OS.objc_msgSend(app.id, OS.sel_registerName("activationPolicy"));
 		require(policy == ACTIVATION_POLICY_PROHIBITED, "activation policy is " + policy + ", not prohibited");
+		require(!app.isActive(), "the application is active");
+	}
+
+	private static boolean finishedLaunching() {
+		long current = OS.objc_msgSend(OS.objc_getClass("NSRunningApplication"), OS.sel_registerName("currentApplication"));
+		return OS.objc_msgSend_bool(current, OS.sel_registerName("isFinishedLaunching"));
+	}
+
+	private static void sleepQuietly(long millis) {
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	private static void require(boolean condition, String message) {
