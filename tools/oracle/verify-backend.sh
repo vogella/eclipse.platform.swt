@@ -5,14 +5,17 @@
 # Usage: verify-backend.sh <backend-id>
 #
 # Builds the backend via build.sh, compiles its probe program, and runs it
-# headless under Xvfb (Wayland variables unset, GDK pinned to X11, software
-# GL). Exits zero only when the backend's activation marker was observed:
+# headless where the platform needs it: under Xvfb on Linux (Wayland variables
+# unset, GDK pinned to X11, software GL), directly on macOS and Windows. Exits zero only when the backend's activation
+# marker was observed:
 #
 #   native        NATIVE-ACTIVE=true            (natives load, paint events fire)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CACHE_ROOT="${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}"
+# shellcheck source=platform.sh
+. "$SCRIPT_DIR/platform.sh"
+CACHE_ROOT="$(oracle_native_path "${ORACLE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/swt-visual-oracle}")"
 BUILD_TMP="$CACHE_ROOT/verify-probes"
 
 die() { printf 'verify-backend.sh: %s\n' "$*" >&2; exit 1; }
@@ -24,7 +27,9 @@ case "$backend" in
 	*) die "unknown backend '$backend', expected native" ;;
 esac
 
-command -v xvfb-run >/dev/null 2>&1 || die "xvfb-run not found, install xvfb"
+if [ "$ORACLE_WS" = gtk ]; then
+	command -v xvfb-run >/dev/null 2>&1 || die "xvfb-run not found, install xvfb"
+fi
 
 classpath="$("$SCRIPT_DIR/build.sh" "$backend")" \
 	|| die "building backend '$backend' failed"
@@ -35,21 +40,24 @@ case "$backend" in
 	native) probe_src="$SCRIPT_DIR/probes/native/NativeProbe.java"; probe_class=NativeProbe ;;
 esac
 
-javac -nowarn -encoding UTF-8 -cp "$classpath" -d "$BUILD_TMP/$backend" "$probe_src" 1>&2 \
+javac -nowarn -encoding UTF-8 -cp "$classpath" -d "$BUILD_TMP/$backend" "$(oracle_native_path "$probe_src")" 1>&2 \
 	|| die "compiling $probe_class failed"
 
 java_cmd=(java --enable-native-access=ALL-UNNAMED)
 
-worktree_root="$(cd "$SCRIPT_DIR/../.." && pwd)"
-java_library_path="$worktree_root/binaries/org.eclipse.swt.gtk.linux.x86_64"
+worktree_root="$(oracle_native_path "$(cd "$SCRIPT_DIR/../.." && pwd)")"
+java_library_path="$(oracle_binaries_dir "$worktree_root")"
 
 run_flags=(-Djava.library.path="$java_library_path")
 
 log_file="$BUILD_TMP/$backend/run.log"
-env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
-	xvfb-run -a -s "-screen 0 1024x768x24" \
-	timeout 60 "${java_cmd[@]}" "${run_flags[@]}" \
-	-cp "$BUILD_TMP/$backend:$classpath" "$probe_class" > "$log_file" 2>&1 \
+probe_cmd=("${java_cmd[@]}" "${run_flags[@]}" -cp "$BUILD_TMP/$backend$ORACLE_CP_SEP$classpath" "$probe_class")
+probe_cmd=("${ORACLE_TIMEOUT[@]}" 60 "${probe_cmd[@]}")
+if [ "$ORACLE_WS" = gtk ]; then
+	probe_cmd=(env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 LIBGL_ALWAYS_SOFTWARE=1 \
+		xvfb-run -a -s "-screen 0 1024x768x24" "${probe_cmd[@]}")
+fi
+"${probe_cmd[@]}" > "$log_file" 2>&1 \
 	|| { cat "$log_file" >&2; die "probe for '$backend' crashed or timed out"; }
 
 echo "--- probe output ($backend) ---"

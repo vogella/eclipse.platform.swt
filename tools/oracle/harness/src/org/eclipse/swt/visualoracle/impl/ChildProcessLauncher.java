@@ -175,11 +175,7 @@ public final class ChildProcessLauncher {
 		}
 
 		ProcessBuilder pb = new ProcessBuilder(buildCommand(request, dir));
-		pb.environment().remove("DISPLAY");
-		pb.environment().remove("WAYLAND_DISPLAY");
-		pb.environment().remove("XDG_SESSION_TYPE");
-		pb.environment().put("GDK_BACKEND", "x11");
-		pb.environment().put("LIBGL_ALWAYS_SOFTWARE", "1");
+		PlatformSupport.current().prepareChildEnvironment(pb.environment());
 		launch.applyTo(pb);
 		pb.redirectOutput(dir.resolve("child.out.log").toFile());
 		pb.redirectError(dir.resolve("child.err.log").toFile());
@@ -222,24 +218,8 @@ public final class ChildProcessLauncher {
 		return new ChildOutcome(request, dir, exitCode, false, reason, null, stderr, elapsed(start));
 	}
 
-	/**
-	 * Kills the child and everything it started. Because the child runs under
-	 * {@code setsid}, its pid is also its process group id, so a negative pid
-	 * signals the whole group: the xvfb-run wrapper, the JVM under it and the
-	 * Xvfb server. Falls back to the direct child if the group kill is
-	 * unavailable, which at worst restores the previous leaky behaviour rather
-	 * than failing the run.
-	 */
 	private static void killProcessTree(Process process) {
-		long pid = process.pid();
-		try {
-			new ProcessBuilder("kill", "-KILL", "-" + pid).start().waitFor(5, TimeUnit.SECONDS);
-		} catch (IOException | InterruptedException e) {
-			if (e instanceof InterruptedException)
-				Thread.currentThread().interrupt();
-		}
-		process.descendants().forEach(ProcessHandle::destroyForcibly);
-		process.destroyForcibly();
+		PlatformSupport.current().killProcessTree(process);
 	}
 
 	private List<String> buildCommand(ChildRequest request, Path dir) {
@@ -247,17 +227,10 @@ public final class ChildProcessLauncher {
 		// every backend but the parent's own native build needs its own classes and natives
 		boolean isolated = !NativeBackend.ID.equals(request.backendId());
 		List<String> command = new ArrayList<>();
-		// setsid puts the child in its own process group. Process.destroyForcibly()
-		// kills only the direct child, which is the xvfb-run wrapper; the JVM and the
-		// Xvfb server it starts are grandchildren and survive, leaking one JVM and one
-		// X server per timed-out child. Killing the whole group is what actually reaps them.
-		command.add("setsid");
-		command.add("xvfb-run");
-		command.add("-a");
-		command.add("-s");
-		command.add("-screen 0 1600x1200x24");
+		command.addAll(PlatformSupport.current().childLauncherPrefix());
 		command.add(javaCommand());
 		command.add("--enable-native-access=ALL-UNNAMED");
+		command.addAll(PlatformSupport.current().jvmArguments());
 		if (isolated)
 			command.add("-Djava.library.path=" + BackendClasspaths.libraryPathFor(request.backendId()));
 		else {

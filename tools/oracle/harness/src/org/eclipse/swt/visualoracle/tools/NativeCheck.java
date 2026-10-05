@@ -26,6 +26,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.ClusterDiffer;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
 import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
@@ -94,7 +95,8 @@ public final class NativeCheck {
 		requireMismatch(backend, withZoom(pinned, pinned.zoomPercent() >= 200 ? 100 : pinned.zoomPercent() * 2),
 				"zoom");
 		requireMismatch(backend, withTheme(pinned, pinned.theme().id().isEmpty()
-				? new Theme("HighContrast") : Theme.PLATFORM_DEFAULT), "theme");
+				? PlatformSupport.current().alternateTheme().orElse(new Theme("HighContrast"))
+				: Theme.PLATFORM_DEFAULT), "theme");
 		requireMismatch(backend, withDirection(pinned,
 				pinned.direction() == Direction.RTL ? Direction.LTR : Direction.RTL), "direction");
 
@@ -190,7 +192,7 @@ public final class NativeCheck {
 		DiffResult disagreement = null;
 		for (int captures = 1; captures <= MAX_WARMUP_CAPTURES; captures++) {
 			CapturedImage image = runtime.capture(specimen, backend, env);
-			if (image.width() != wanted.x || image.height() != wanted.y)
+			if (!PlatformSupport.current().acceptsExtent(image.width(), image.height(), wanted))
 				throw new IllegalStateException(specimen.id() + " captured " + image.width() + "x"
 						+ image.height() + ", preferred is " + wanted.x + "x" + wanted.y);
 			if (prev != null) {

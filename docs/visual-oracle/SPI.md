@@ -146,8 +146,8 @@ schema version; changes require bumping `schemaVersion`.
 ## CLI
 
 Entry point: `tools/oracle/oracle <verb>`, implemented by `OracleCli`.
-The wrapper compiles the harness and runs graphical verbs headless under Xvfb with
-the Wayland variables unset, so callers never apply that incantation themselves.
+The wrapper compiles the harness and runs graphical verbs headless where the platform needs it
+(Xvfb with the Wayland variables unset on Linux), so callers never apply that incantation themselves.
 
 | Verb | State | Behaviour |
 |---|---|---|

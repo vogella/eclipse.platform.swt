@@ -6,8 +6,18 @@ machine-readable verdict without a person looking at an image.
 
 Entry point: `tools/oracle/oracle <verb> [args]`.
 The wrapper compiles the harness, resolves the backend classpaths, and runs
-graphical verbs headless under Xvfb with the Wayland variables unset and
-`GDK_BACKEND=x11`, so callers never apply that incantation themselves.
+graphical verbs headless where the platform needs it, so callers never apply that incantation themselves.
+On Linux that means Xvfb with the Wayland variables unset and `GDK_BACKEND=x11`.
+On macOS and Windows the verbs run directly in the user session.
+
+The scripts and the harness are portable across GTK (Linux), Cocoa (macOS) and Win32 (Windows).
+`tools/oracle/platform.sh` maps `uname` to the SWT binary fragment, the classpath separator and the headless wrapper.
+On the Java side `impl/PlatformSupport` hides everything platform specific: focus suppression, the native handle check, the grab fallback, child process wrapping and the theme mapping.
+`build-harness.sh` compiles `harness/src` plus exactly one of `harness/src-gtk`, `src-cocoa` or `src-win32`.
+The Cocoa implementation is complete and passes the selftest; see the macOS section below.
+The Win32 implementation passes the selftest and a strict same-ref run in the Windows workflow; see the Windows section below.
+`tools/oracle/compile-check.sh <fragment>` compiles the harness for any platform on any machine.
+The Skia and Skija backends remain Linux only.
 
 Verbs:
 
@@ -68,7 +78,7 @@ Per decision D6, one JVM serves exactly one backend and one environment, so
 through `impl/ChildProcessLauncher`, one per backend and batch of specimens,
 merges their schema-v1 documents at the JSON level (`impl/ResultMerger`), and
 compares the referenced PNG evidence with the diff engine
-(`impl/ClusterDiffer`). Each child runs under its own Xvfb display.
+(`impl/ClusterDiffer`). Each child runs under its own Xvfb display on Linux.
 
 ### Selection filters
 
@@ -97,7 +107,7 @@ States live inside specimen ids, so select them with `--prefix`, e.g.
 | Flag | Meaning | Default |
 |---|---|---|
 | `--dpi N` | zoom percentage of the rendering environment | 100 |
-| `--theme ID` | GTK theme id; empty means platform default | platform default |
+| `--theme ID` | platform theme id (the `GTK_THEME` value on Linux); empty means platform default | platform default |
 | `--direction LTR\|RTL` | base text direction | LTR |
 | `--font-family NAME` | base font family; empty means system font | system font |
 | `--font-size N` | points if positive, pixels if negative (FontData convention) | -1 |
@@ -130,7 +140,7 @@ The `svg` family does the same for SVG icons: file, `ImageFileNameProvider` and 
 Every stock SWT build includes its own `org.eclipse.swt.svg` fragment and the JSVG version that fragment's manifest asks for (1.7.2, 2.0.0 or 2.1.0, pinned by checksum), so comparing two refs also compares the JSVG each of them ships with.
 A specimen whose SWT API is missing on one side, such as `ImageDataAtSizeProvider` on a baseline older than 2025-09 or SVG before 2024-09, is reported UNSUPPORTED rather than FAILED.
 
-The harness itself is still compiled against this worktree's SWT, so a candidate that changes the internals the harness calls (`GTK`, `GDK`, `DPIUtil`, `Control.handle`) fails at activation rather than rendering.
+The harness itself is still compiled against this worktree's SWT, so a candidate that changes the internals the harness calls (`DPIUtil`, `Control.handle` and the platform internals behind `PlatformSupport`) fails at activation rather than rendering.
 
 | Flag | Meaning | Default |
 |---|---|---|
@@ -304,6 +314,64 @@ The agent fixes the change and re-runs the same command; the candidate is
 rebuilt because its fingerprint changed. Iteration continues until `pass` is
 `true`, with one command and a JSON read per cycle and no screenshots.
 
+## Windows
+
+Run the scripts from Git Bash (Git for Windows) with a JDK 21 or newer on `PATH` and Git LFS resolved for `binaries/org.eclipse.swt.win32.win32.x86_64`.
+`javac` and `java` are native programs there, so `platform.sh` converts every path they receive with `cygpath -m` (`C:/...` form, which also keeps `@argfile` contents valid) and joins classpaths with `;`.
+`build.sh` prints classpaths in that form, and the Java side starts `build.sh` through the bash named in `ORACLE_BASH`.
+The scripts use the GNU `timeout` only if `timeout --version` identifies it, because the Windows `timeout.exe` can come first on `PATH`.
+Graphical verbs run on the interactive desktop of the session, with no wrapper.
+Children run one at a time (`-Doracle.children.parallelism=1` is set by `oracle`), because windows of concurrent children would overlap on the one desktop.
+Scratch paths such as `/tmp/swt-visual-oracle` resolve to the root of the current drive, for example `D:\tmp\swt-visual-oracle`.
+
+**Capture.**
+The primary path is `GC.copyArea`, which BitBlts from the control's window DC and so depends on the window being visible and on screen.
+`Control.print` (PrintWindow with `PW_RENDERFULLCONTENT`, after SWT's own reparenting fixes) renders the window itself and does not.
+`ORACLE_WIN32_CAPTURE=print` makes the print path the primary of every process that inherits the variable, and `--strategy X11_GRAB` in `CaptureChild` always uses it.
+The Windows selftest check `win32-capture-paths-measured` prints `WIN32-CAPTURE` lines (size, non-blank, determinism across processes, copyArea against print at zoom 100 and 200) and a `WIN32-CAPTURE-DECISION` line, so the CI log shows which path to make primary.
+Only a broken copyArea path fails that check.
+
+**Zoom.**
+Zoom 100 and 200 come from `-Dswt.autoScale=<zoom>` together with `-Dswt.autoScale.updateOnRuntime=false`, which SWT needs to accept a fixed value; the process keeps the DPI awareness SWT or the JDK manifest gives it.
+A process whose resulting device zoom differs from the request refuses to capture with an unsupported-environment error.
+Use a machine at 100 percent scaling for zoom 100 runs, as the monitor scale is not changed.
+
+**Theme.**
+Only the platform default theme is pinned; a named theme is rejected as unsupported, and the selftest skips the theme checks that need an alternate theme.
+
+**Fonts.**
+ClearType makes text pixels depend on the machine and its settings, so a baseline and a candidate must run on the same machine in the same session, which `oracle run` already does.
+Compare results across machines only through a run that includes both sides.
+
+## macOS
+
+Run the scripts from a shell with a JDK 21 or newer and the `binaries/org.eclipse.swt.cocoa.macosx.<arch>` natives resolved.
+`oracle` adds `-XstartOnFirstThread` to every JVM, which Cocoa needs to create a Display, and `oracle.children.parallelism=1`, see below.
+Graphical verbs run on the logged-in desktop session, with no wrapper, and need no Screen Recording permission.
+`timeout(1)` is not part of macOS, so `oracle` uses a perl fallback (`ORACLE_TIMEOUT`).
+
+**Capture.**
+`GC.copyArea` is the only strategy: it renders the view hierarchy into a bitmap, so it needs no screen grab, no window ordering and no permission.
+`Control.print(GC)` is rejected because it drops the label of a push button.
+There is no grab fallback.
+See ADR-003 for the measurements.
+
+**Activation.**
+Every JVM sets the activation policy to prohibited, so no child can take the focus or the Dock icon, and every window renders in its inactive state.
+The selftest check `cocoa-app-never-activates` reads the policy back.
+
+**Parallelism.**
+Children run one at a time (`--children 1` is the default through `oracle`).
+Concurrent children change the rendering of native combos, progress bars, scales, password and read-only texts, so a same-ref run is not bit-identical above one child.
+Use `--children N` only for exploratory runs.
+
+**Zoom.**
+Zoom 100 and 200 come from `-Dswt.autoScale=<zoom>`; 200 renders at true 2x (a 140x40 specimen captures as 280x80).
+
+**Theme.**
+`--theme Light` and `--theme Dark` pin the application appearance through `Display.setDarkThemePreferred`; the platform default follows the system.
+Other theme names are rejected as unsupported.
+
 ## Known limitations
 
 * One environment per invocation; a DPI or theme matrix means several invocations.
@@ -313,5 +381,5 @@ rebuilt because its fingerprint changed. Iteration continues until `pass` is
 * The two quarantined scrollbar specimens remain part of runs; the quarantine
   governs determinism judging only, and their diff numbers can legitimately
   alternate between two faithful renderings.
-* `run` needs the same JDK everywhere and Linux GTK today, matching the
-  backends' own constraints (ADR-002).
+* `run` needs the same JDK everywhere.
+  Linux GTK is the reference platform; the Cocoa platform layer is a stub, Win32 is implemented but unverified outside CI, and the Skia and Skija backends are Linux only (ADR-002).

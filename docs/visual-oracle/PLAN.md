@@ -71,6 +71,7 @@ Separately, its capture of a plain native `Button` hashes differently from both 
 It sees GL content, runs at 0.52 ms per capture against 154 ms for a full screen grab, is byte-identical across processes, and stays crop-exact at zoom 200.
 
 The X11 grab (`import -window root` plus crop) is kept as a fallback behind the same `Capture` interface, for anything `copyArea` cannot reach, such as a widget owning a native popup outside its own bounds.
+It exists on GTK only; the other platforms report the fallback as unsupported until a native grab is added to their `PlatformSupport`.
 Its crop origin is offset at zoom 200, capturing a shifted region, so it is only used at zoom 100.
 
 ### D3: Determinism is a hard requirement, enforced by a lint
@@ -133,6 +134,8 @@ It guarantees that a specimen is rendered identically given identical inputs.
 **Environment control** sets DPI scale, theme, and text direction for a run.
 On Linux this means `GDK_SCALE`, `GDK_DPI_SCALE`, `GTK_THEME`, and the SWT zoom properties.
 On Windows it means the monitor scale and the SWT zoom properties.
+On macOS it means the appearance and the SWT zoom properties.
+These platform differences live behind `impl/PlatformSupport`, with one implementation per platform compiled from `harness/src-gtk`, `src-cocoa` or `src-win32`.
 Each combination is a separate process, because SWT reads most of these once at `Display` creation.
 
 **Diff engine** compares two images and classifies the result.
@@ -151,4 +154,5 @@ Cold build 35 s, warm rebuild under a second, incremental on a source fingerprin
 `tools/oracle/verify-backend.sh <backend>` asserts a backend is genuinely active rather than silently falling back to native.
 `tools/oracle-spike/` is the capture spike, kept as executable evidence for ADR-001.
 
+`tools/oracle/platform.sh` detects the platform for every script, `build.sh` builds the stock SWT of that platform's fragment, and `compile-check.sh <fragment>` compile-checks the harness for any other platform.
 Anything needing a compiled SWT calls `build.sh` rather than writing its own `javac` invocation, which fails on the `../../` prefixes in `build.properties`.

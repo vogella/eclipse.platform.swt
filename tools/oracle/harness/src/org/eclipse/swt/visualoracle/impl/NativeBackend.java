@@ -24,7 +24,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.internal.gtk3.GTK3;
 import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.RenderEnv;
@@ -132,9 +131,8 @@ public class NativeBackend implements Backend {
 	public void configure(Display display) {
 		if (display == null || display.isDisposed())
 			throw new BackendUnavailableException("native backend needs a live Display");
-		if (!"gtk".equals(SWT.getPlatform()))
-			throw new BackendUnavailableException("native backend verified on gtk only, found: "
-					+ SWT.getPlatform());
+		PlatformSupport platform = PlatformSupport.current();
+		platform.prepareDisplay(display);
 		this.env = SwtRenderEnvs.current(display);
 
 		Shell shell = new Shell(display);
@@ -157,12 +155,7 @@ public class NativeBackend implements Backend {
 						"no paint event observed on the probe control within " + ACTIVATION_TIMEOUT_MILLIS
 								+ " ms; nothing proves the native renderer drew anything");
 
-			// A real JNI round trip into the loaded SWT natives; also proves
-			// the probe widget is realized with its own window on screen.
-			long window = GTK3.gtk_widget_get_window(probe.handle);
-			if (window == 0)
-				throw new BackendUnavailableException(
-						"the probe control owns no native window; SWT natives are not working");
+			platform.requireRealizedHandle(probe);
 
 			GC raw = new GC(probe);
 			try {

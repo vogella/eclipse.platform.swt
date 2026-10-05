@@ -30,7 +30,7 @@ import org.eclipse.swt.visualoracle.spi.Theme;
  * launch configuration for a child process, {@link #current(Display)} reads
  * back what this process is actually pinned to.
  *
- * <h2>How each environment component is realised on Linux/GTK</h2>
+ * <h2>How each environment component is realised (GTK shown, see {@link PlatformSupport})</h2>
  * <ul>
  * <li>Zoom: the JVM property {@code swt.autoScale}, applied by SWT when the
  * {@code Display} is created; verified by measurement (display DPI), never by
@@ -79,11 +79,7 @@ public final class SwtRenderEnvs {
 		jvmProperties.add("-D" + DIRECTION_PROPERTY + "=" + env.direction().name());
 		jvmProperties.add("-D" + FONT_FAMILY_PROPERTY + "=" + env.fontFamily());
 		jvmProperties.add("-D" + FONT_SIZE_PROPERTY + "=" + env.fontSize());
-		if (env.theme().isPlatformDefault()) {
-			removed.add("GTK_THEME");
-		} else {
-			variables.put("GTK_THEME", env.theme().id());
-		}
+		PlatformSupport.current().applyTheme(env.theme(), variables, removed, jvmProperties);
 		return new LaunchConfig(env, variables, removed, jvmProperties);
 	}
 
@@ -93,8 +89,7 @@ public final class SwtRenderEnvs {
 		// not follow swt.autoScale, while the device zoom is exactly the
 		// value SWT scales captures by.
 		int zoom = org.eclipse.swt.internal.DPIUtil.getDeviceZoom();
-		String gtkTheme = System.getenv("GTK_THEME");
-		Theme theme = new Theme(gtkTheme == null ? "" : gtkTheme);
+		Theme theme = PlatformSupport.current().currentTheme();
 		Direction direction = readDirection();
 		String familyProp = System.getProperty(FONT_FAMILY_PROPERTY, "");
 		if (!familyProp.isEmpty()) {

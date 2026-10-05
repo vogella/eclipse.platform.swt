@@ -11,20 +11,15 @@
 package org.eclipse.swt.visualoracle.impl;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
-import org.eclipse.swt.graphics.ImageDataProvider;
 import org.eclipse.swt.internal.DPIUtil;
-import org.eclipse.swt.internal.gtk.GDK;
-import org.eclipse.swt.internal.gtk3.GTK3;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Listener;
@@ -68,13 +63,15 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	public enum Strategy {
 		/** {@code GC.copyArea} from the on-screen control (primary). */
 		COPY_AREA,
-		/** X11 grab of the control's own window by id via ImageMagick import (fallback). */
+		/** Platform grab of the control's own native window (fallback; X11 via ImageMagick import on GTK). */
 		X11_GRAB
 	}
 
 	private static final int MARGIN = 12;
 	private static final int SETTLE_TIMEOUT_MILLIS = 5000;
 	private static final int MAX_SETTLE_CYCLES = 50;
+	/** How long a platform whose controls may never paint waits for a first Paint event. */
+	private static final int OPTIONAL_PAINT_MILLIS = 500;
 	/**
 	 * How long the grabbed bytes must persist unchanged, while the event loop
 	 * stays live, before they are accepted as the settled rendering. Must
@@ -186,6 +183,7 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 					+ "' declared an invalid preferred size " + preferred);
 
 		host.setSize(preferred.x + 2 * MARGIN, preferred.y + 2 * MARGIN);
+		PlatformSupport.current().parkFocus(host);
 		Control control;
 		try {
 			control = specimen.create(host, ctx);
@@ -205,8 +203,10 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		control.setBounds(MARGIN, MARGIN, preferred.x, preferred.y);
 		host.layout();
 		host.redraw();
-		if (!host.isVisible())
+		if (!host.isVisible()) {
 			host.open();
+			PlatformSupport.current().parkFocus(host);
+		}
 		requireControlWithinShell(host, control, preferred);
 		return control;
 	}
@@ -238,7 +238,9 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 			boolean contained = bounds.x >= 0 && bounds.y >= 0
 					&& bounds.x + bounds.width <= client.width
 					&& bounds.y + bounds.height <= client.height
-					&& bounds.width == preferred.x && bounds.height == preferred.y;
+					&& (bounds.width == preferred.x && bounds.height == preferred.y
+							|| PlatformSupport.current().allowsNativeSizeClamp()
+									&& bounds.width <= preferred.x && bounds.height <= preferred.y);
 			if (contained)
 				return;
 			if (System.currentTimeMillis() >= end)
@@ -306,14 +308,16 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		control.addListener(SWT.Resize, recorder);
 		control.addListener(SWT.Move, recorder);
 
+		boolean paintOptional = PlatformSupport.current().paintEventOptional();
 		long deadline = System.currentTimeMillis() + SETTLE_TIMEOUT_MILLIS;
-		while (!activity.paint && System.currentTimeMillis() < deadline && !control.isDisposed()) {
+		long firstPaintDeadline = paintOptional ? System.currentTimeMillis() + OPTIONAL_PAINT_MILLIS : deadline;
+		while (!activity.paint && System.currentTimeMillis() < firstPaintDeadline && !control.isDisposed()) {
 			if (!display.readAndDispatch())
 				sleepBriefly();
 		}
 		if (control.isDisposed())
 			throw new CaptureFailedException("control disposed while waiting for its first paint");
-		if (!activity.paint)
+		if (!activity.paint && !paintOptional)
 			throw new CaptureFailedException("no paint event observed for '"
 					+ control.getClass().getSimpleName() + "' within " + SETTLE_TIMEOUT_MILLIS + " ms");
 
@@ -587,6 +591,9 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 	// ------------------------------------------------------------ grabbing
 
 	private CapturedImage grabByCopyArea(Control control) {
+		CapturedImage platformGrab = PlatformSupport.current().grabPrimary(control);
+		if (platformGrab != null)
+			return platformGrab;
 		org.eclipse.swt.graphics.Point size = control.getSize();
 		Image image = new Image(control.getDisplay(), size.x, size.y);
 		try {
@@ -604,112 +611,12 @@ public class CaptureRuntime implements Capture, AutoCloseable {
 		}
 	}
 
-	/**
-	 * Grabs the control's own X window by id, so the crop is done by the X
-	 * server itself and needs no coordinate arithmetic. This is the fix for
-	 * the ADR-001 defect: reconstructing device coordinates from scaled
-	 * logical ones overshoots whenever the screen density does not match the
-	 * reported zoom, which shifted the crop region at zoom 200.
-	 *
-	 * The grabbed pixels are physical. Their zoom basis follows from the
-	 * ratio between physical and logical width; SWT's own DPI machinery then
-	 * produces exactly the representation copyArea would deliver, verified
-	 * byte-identical at zoom 100 and 200.
-	 */
 	private CapturedImage grabByX11(Control control) {
-		if (!"gtk".equals(SWT.getPlatform()))
+		PlatformSupport platform = PlatformSupport.current();
+		if (!platform.supportsGrabFallback())
 			throw new UnsupportedEnvironmentException(
-					"the X11 grab fallback requires gtk/X11, found platform: " + SWT.getPlatform());
-		long window = GTK3.gtk_widget_get_window(control.handle);
-		if (window == 0)
-			throw new CaptureFailedException("'" + control.getClass().getSimpleName()
-					+ "' owns no native window, there is nothing to grab");
-		long xid = GDK.gdk_x11_window_get_xid(window);
-
-		Path png = scratchDir().resolve("xgrab-" + Long.toHexString(xid) + "-"
-				+ Long.toString(System.nanoTime(), 36) + ".png");
-		runImport(xid, png);
-		ImageData raw;
-		try {
-			raw = new ImageData(png.toString());
-		} catch (RuntimeException e) {
-			throw new CaptureFailedException("cannot decode the grabbed image " + png + ": " + e, e);
-		} finally {
-			try {
-				Files.deleteIfExists(png);
-			} catch (IOException e) {
-				// best effort; the file lives in scratch space only
-			}
-		}
-		if (raw.width <= 0 || raw.height <= 0)
-			throw new CaptureFailedException("grabbed image of '"
-					+ control.getClass().getSimpleName() + "' has invalid extent "
-					+ raw.width + "x" + raw.height);
-
-		int logicalWidth = Math.max(1, control.getSize().x);
-		int logicalHeight = Math.max(1, control.getSize().y);
-		int basis = Math.max(100, Math.round(raw.width * 100f / logicalWidth));
-		requireConsistentExtent(raw.width, logicalWidth, basis, "width");
-		requireConsistentExtent(raw.height, logicalHeight, basis, "height");
-
-		// Declaring the true basis lets SWT scale (or not) exactly as it
-		// would scale its own captures.
-		Image wrap = new Image(control.getDisplay(), (ImageDataProvider) zoom -> zoom == basis ? raw : null);
-		try {
-			return new BasicCapturedImage(wrap.getImageData(DPIUtil.getDeviceZoom()));
-		} finally {
-			wrap.dispose();
-		}
-	}
-
-	private void requireConsistentExtent(int actual, int logical, int basis, String dimension) {
-		int expected = Math.round(logical * basis / 100f);
-		if (Math.abs(actual - expected) > 1)
-			throw new CaptureFailedException("grabbed " + dimension + " " + actual
-					+ " matches neither the logical extent " + logical
-					+ " nor the device extent " + expected);
-	}
-
-	private void runImport(long xid, Path png) {
-		Path log = png.resolveSibling(png.getFileName() + ".log");
-		Process process;
-		try {
-			process = new ProcessBuilder("import", "-window", "0x" + Long.toHexString(xid),
-					png.toString())
-					.redirectOutput(log.toFile())
-					.redirectErrorStream(true)
-					.start();
-		} catch (IOException e) {
-			throw new CaptureFailedException(
-					"could not start ImageMagick 'import' (needed for the X11 grab fallback): " + e, e);
-		}
-		try {
-			if (!process.waitFor(GRAB_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
-				process.destroyForcibly();
-				throw new CaptureFailedException("'import' timed out after " + GRAB_TIMEOUT_SECONDS + " s");
-			}
-			if (process.exitValue() != 0) {
-				String stderr = "";
-				try {
-					stderr = Files.readString(log, StandardCharsets.UTF_8).strip();
-				} catch (IOException e) {
-					// detail unavailable; the exit code still carries the failure
-				}
-				throw new CaptureFailedException("'import' failed with exit code " + process.exitValue()
-						+ (stderr.isEmpty() ? "" : ": " + stderr));
-			}
-			if (!Files.isRegularFile(png))
-				throw new CaptureFailedException("'import' reported success but wrote no image");
-		} catch (InterruptedException e) {
-			Thread.currentThread().interrupt();
-			throw new CaptureFailedException("interrupted while waiting for 'import'", e);
-		} finally {
-			try {
-				Files.deleteIfExists(log);
-			} catch (IOException e) {
-				// best effort
-			}
-		}
+					"the grab fallback is not supported on platform: " + SWT.getPlatform());
+		return platform.grabFallback(control, scratchDir());
 	}
 
 	/**

@@ -19,6 +19,7 @@ import java.util.Set;
 
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.visualoracle.impl.SettleBudget;
 import org.eclipse.swt.visualoracle.spi.Backend;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
@@ -265,7 +266,7 @@ public final class DeterminismLint {
 	}
 
 	private static void requireExtent(Specimen specimen, Point wanted, CapturedImage image) {
-		if (image.width() != wanted.x || image.height() != wanted.y)
+		if (!PlatformSupport.current().acceptsExtent(image.width(), image.height(), wanted))
 			throw new IllegalStateException(specimen.id() + " captured " + image.width()
 					+ "x" + image.height() + ", preferred is " + wanted.x + "x" + wanted.y);
 	}

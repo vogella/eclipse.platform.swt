@@ -1,0 +1,84 @@
+# Runs the SWT visual oracle on a Windows runner: the harness selftest, which
+# also measures both capture paths, then a same-ref run that must show no diffs.
+
+name: Visual oracle (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ 'oracle/**' ]
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    env:
+      # the same commit on both sides, so every difference is nondeterminism
+      ORACLE_BASELINE: HEAD
+      ORACLE_CANDIDATE: HEAD
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        lfs: true
+    - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+      with:
+        distribution: temurin
+        java-version: 21
+
+    - name: Check natives and desktop
+      run: |
+        ls -l binaries/org.eclipse.swt.win32.win32.x86_64/*.dll
+        if head -c 64 binaries/org.eclipse.swt.win32.win32.x86_64/swt-win32-*.dll | grep -q 'git-lfs'; then
+          echo "swt-win32 is an unresolved git-lfs pointer"; exit 1
+        fi
+        java -version
+        # which desktop the children will render on
+        powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Screen]::AllScreens | Format-List DeviceName,Bounds,Primary; (Get-ItemProperty 'HKCU:\Control Panel\Desktop\WindowMetrics').AppliedDPI" || true
+
+    - name: Selftest
+      run: |
+        mkdir -p "$RUNNER_TEMP/oracle-artifacts"
+        status=0
+        tools/oracle/oracle selftest 2>&1 | tee "$RUNNER_TEMP/oracle-artifacts/selftest.log" || status=$?
+        {
+          echo '### Capture path measurements'
+          echo '```'
+          grep -h 'WIN32-CAPTURE' "$RUNNER_TEMP/oracle-artifacts/selftest.log" || echo 'no WIN32-CAPTURE lines found'
+          echo '```'
+        } >> "$GITHUB_STEP_SUMMARY"
+        grep -h 'WIN32-CAPTURE' "$RUNNER_TEMP/oracle-artifacts/selftest.log" || true
+        exit $status
+
+    - name: Same-ref run, copyArea capture
+      run: |
+        tools/oracle/oracle run --out "$(cygpath -m "$RUNNER_TEMP")/oracle-artifacts/run-copyarea" --format text
+
+    - name: Same-ref run, print capture (measurement)
+      continue-on-error: true
+      env:
+        ORACLE_WIN32_CAPTURE: print
+      run: |
+        tools/oracle/oracle run --family button --family label --family text --family combo \
+          --out "$(cygpath -m "$RUNNER_TEMP")/oracle-artifacts/run-print" --format text
+
+    - name: Collect captures
+      if: always()
+      run: |
+        # SWT scratch paths such as /tmp/swt-visual-oracle resolve to the root of the workspace drive
+        drive="${GITHUB_WORKSPACE:0:2}"
+        if [ -d "$drive/tmp/swt-visual-oracle" ]; then
+          cp -r "$drive/tmp/swt-visual-oracle" "$RUNNER_TEMP/oracle-artifacts/scratch"
+        fi
+
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      if: always()
+      with:
+        name: visual-oracle-windows
+        path: ${{ runner.temp }}/oracle-artifacts
+        if-no-files-found: warn

@@ -207,7 +207,8 @@ public final class RunVerb {
 				new RenderEnv(zoom, themeId.isEmpty() ? Theme.PLATFORM_DEFAULT : new Theme(themeId),
 						direction, fontFamily, fontSize),
 				tolerance, batchSize,
-				parallelism != null ? parallelism : ChildProcessLauncher.DEFAULT_PARALLELISM,
+				parallelism != null ? parallelism
+						: Integer.getInteger(ChildProcessLauncher.PARALLELISM_PROPERTY, ChildProcessLauncher.DEFAULT_PARALLELISM),
 				childTimeoutSeconds != null ? childTimeoutSeconds : ChildProcessLauncher.DEFAULT_TIMEOUT_SECONDS,
 				outDir, listOnly, formatText);
 	}
