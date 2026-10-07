@@ -77,6 +77,7 @@ typedef enum {
 	gdk_1drop_1read_1value_1finish_FUNC,
 	gdk_1paintable_1get_1intrinsic_1height_FUNC,
 	gdk_1paintable_1get_1intrinsic_1width_FUNC,
+	gdk_1paintable_1get_1type_FUNC,
 	gdk_1paintable_1snapshot_FUNC,
 	gdk_1toplevel_1focus_FUNC,
 	gdk_1toplevel_1get_1state_FUNC,
