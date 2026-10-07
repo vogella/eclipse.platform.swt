@@ -61,7 +61,7 @@ The other 64-bit Linux architectures SWT supports use the same LP64 layouts for 
 * Variadic functions use `Linker.Option.firstVariadicArg` with C default argument promotions, and `flags=sentinel` passes a trailing `NULL`.
 * `flags=dynamic` functions resolve optionally and behave like the JNI glue (no call, result 0) when the symbol is missing.
 * Symbols resolve through the SWT native library loaded by the class loader, whose dependency tree contains GTK, GDK, GLib, Pango, Cairo and ATK.
-* A natives class whose JNI glue dlopens its own library searches that library first: `GLX` uses `libGL.so.1`, `WebKitGTK` the same `libwebkit2gtk-4.1`, `libwebkit2gtk-4.0` or, with `SWT_GTK4=1`, `libwebkitgtk-6.0` that `webkitgtk.h` picks (`FFMGenerator.LOOKUPS`).
+* A natives class whose JNI glue dlopens its own library searches that library first: `GLX` uses `libGL.so.1`, `WebKitGTK` the same `libwebkit2gtk-4.1`, `libwebkit2gtk-4.0` or, under GTK4 (`FFM.GTK4`), `libwebkitgtk-6.0` that `webkitgtk.h` picks (`FFMGenerator.LOOKUPS`).
 
 ### Not generated
 
@@ -71,7 +71,7 @@ The generator leaves these shapes to hand written code or to JNI and reports eve
 * Struct by value parameters (`flags=struct`) do not occur on GTK, while Win32 has 21 and Cocoa 132, so they come with phase 5.
 * `Object` parameters are JNI references, which FFM cannot pass; only natives whose C code itself uses JNI take them, such as the AWT bridge, which `FFMAwt` implements by hand.
 * `flags=unicode` strings are no longer declared by any platform.
-* Callbacks (`CALLBACK_*`) are replaced by `FFMCallback` as a whole, and GTK4 is not generated yet.
+* Callbacks (`CALLBACK_*`) are replaced by `FFMCallback` as a whole.
 
 ### Running side by side
 
@@ -115,7 +115,7 @@ Its 72 ATK functions were uniform C stubs that forwarded to a static method of `
 
 `FFMRuntime` ports the last two helpers, the GDK lock functions, whose `GRecMutex` becomes a `ReentrantLock`, and the debug flag that makes GTK abort on a warning.
 
-What remains of `os_custom.c` is the GTK4 code, so no GTK3 native is left on JNI.
+No native of `os_custom.c` is left on JNI: the GTK4 code is ported as well (see GTK4).
 The harness build (`build-gtk.sh ffm`) therefore also drops the `Library.loadLibrary` calls of the rewritten classes and runs without any SWT native library: the whole JUnit suite produces the same outcomes with `java.library.path` pointing at a directory that does not exist.
 That is what finishes the GTK3 port, because symbols resolve through the GTK libraries themselves rather than through the dependency tree of the SWT library.
 
@@ -138,8 +138,8 @@ Built this way, `libswt-glx`, `libswt-webkit` and `libswt-awt` are no longer nee
 ### Coverage
 
 1,515 of the 1,603 natives of `C`, `OS`, `GDK`, `GTK`, `Graphene`, `GTK3`, `Cairo` and `ATK` are generated (`report-gtk/summary.txt`).
-No native on the GTK3 path goes through JNI any more: the 36 that remain are GTK4 functions the GTK3 headers do not declare.
-The 88 that stay JNI are the `flags=const` constants, the GTK4 functions the GTK3 headers do not declare, the calls through a function pointer, the `sizeof` macros of C types without a Java struct class, the remaining custom C of `os_custom.c` and 1 native that has to be entered through JNI (see below).
+No native goes through JNI any more on GTK3 or GTK4 (see GTK4).
+The 111 that the generator leaves out are the `flags=const` constants, the calls through a function pointer, the `sizeof` macros of C types without a Java struct class and the custom C of `os_custom.c`, which hand written Java implements.
 
 ### Verification
 
@@ -240,7 +240,7 @@ The committed sources keep their `native` declarations: `bundles/org.eclipse.swt
 The step rewrites `Eclipse SWT PI/gtk` and `Eclipse SWT PI/cairo` in place.
 `C.java` and `Callback.java` sit in folders the win32 and cocoa fragments compile too, which have no FFM implementation, so the step moves them out: a rewritten copy goes to `Eclipse SWT PI/gtk-ffm-shared`, which only the GTK fragments list, and the original to `Eclipse SWT PI/jni-shared`, which only the win32 and cocoa fragments list.
 The step keeps the `Library.loadLibrary` call of every class that still has a native: a product build merges pull requests on top, and a native one of them adds is not in `report-gtk` yet, so it has to keep working through JNI; the rewriter names such natives in its output.
-A class left without natives, such as `C`, `GLX`, `WebKitGTK` and `SWT_AWT`, no longer loads its library, and on GTK3 only `libswt-pi3` is loaded, for the GTK4 natives of `OS`.
+A class left without natives, such as `C`, `GLX`, `WebKitGTK`, `SWT_AWT` and `OS`, no longer loads its library, so no SWT native library is loaded on GTK3 or GTK4.
 All five GTK fragments list the FFM source folders, since they all compile the rewritten GTK sources.
 Rewriting the files in the branch instead made every change to `OS.java`, `GTK.java` or `GDK.java` collide with it, which upstream does several times a week.
 Because the declarations stay, the generator keeps its input and the comparison harness keeps its JNI reference.
@@ -358,6 +358,108 @@ Open:
 * aarch64 is untested: the layouts, the `uxtheme` validators and the struct by value classification only ran on x64.
 * Not measured: performance and the cold start cost on Windows; a product build with `apply-ffm.sh win32` under Tycho and an IDE session.
 
+## GTK4
+
+### What is generated
+
+`generate-gtk.sh` makes a second pass over the C units the GTK4 build compiles (`os.c`, `gtk4.c`, `atk.c`) with the flags of `make_linux.mak` (`pkg-config gtk4 gtk4-x11 gtk4-unix-print`, `-DGTK4` comes from `os.h`) and runs the layout probes against the GTK4 headers.
+`c.c`, `cairo.c`, `glx.c` and `webkitgtk.c` do not depend on the GTK version and are read once.
+`GTK4_FFM` is generated from the GTK4 compile alone, and the GTK4 only natives of `OS`, `GDK`, `GTK` and `Graphene` are generated from it, including the new `Graphene_FFM`.
+`gdk_clipboard_read_async` takes a `String[]` as a NULL terminated `char **`, which `FFM.strings` marshals like `swt_getArrayOfStringsUTF`.
+
+| Natives class | before (FFM, JNI) | after (FFM, JNI) |
+| --- | --- | --- |
+| `OS` | 370, 55 | 373, 52 |
+| `GDK` | 175, 35 | 206, 4 |
+| `Graphene` | 0, 3 | 3, 0 |
+| `GTK4` | 0, 245 | 244, 1 |
+| all classes | 1,609, 147 | 1,890, 111 |
+
+### One class for GTK3 and GTK4
+
+`OS`, `GDK` and `GTK` serve both versions, so each native of these classes is planned from both compiles (`report-gtk/gtk4-differences.txt`).
+1,015 natives are declared in both with the same descriptor, 77 only by the GTK3 headers (a GTK4 process cannot link them, as with the JNI `NO_` guards) and 37 only by the GTK4 headers.
+No descriptor differs: the headers changed types such as `const` and `gchar`, and a few return types the Java declarations ignore, but no parameter or result changes its ABI class.
+The generator still supports the choice: where the two plans differ, the method holds both downcall handles and branches on `FFM.GTK4`.
+Eight layouts differ and are chosen at run time in `Structs_FFM` and `Extra_FFM`: `GdkRGBA` (`double` in GTK3, `float` in GTK4, 32 and 16 bytes), `GtkWidgetClass` (824 and 408 bytes, `snapshot` only in GTK4), `GtkCellRendererClass` (264 and 288 bytes, `render` against `snapshot`), the `realize`, `map` and `size_allocate` offsets of `GtkWidgetClass` that the `SwtFixed` ports read, and the sizes of `GtkCellRendererText` and its class.
+The size and offset constants become `FFM.GTK4 ? gtk4 : gtk3`, which the JIT folds, and fields that exist in one version only are read and written under that version only.
+Types that exist in GTK4 only, such as `GdkPaintableInterface` and the `measure` slot of `GtkWidgetClass`, are -1 under GTK3, and the GTK3 only ones (`GtkContainer*`, the pixbuf and toggle cell renderers, the `get_preferred_*` and `get_accessible` slots of `GtkWidgetClass`) are -1 under GTK4.
+A struct passed by value would reject a layout that differs, and none does.
+
+The probe also produces what the hand written ports need beyond the struct classes: the sizes of `GObject`, `GtkWidget`, `GInterfaceInfo` and `GdkPaintableInterface` and the offsets of `GtkWidgetClass.measure`, `GInterfaceInfo.interface_init` and the `GdkPaintableInterface` slots, so no layout is hard coded in Java.
+`FFMGtk4CustomCheck` still compares the constants the ports use with the output of `probe-gtk4-custom.c`.
+
+### One GTK version flag and one library lookup
+
+`FFM.GTK4` is the only GTK version flag of the FFM code.
+It is decided the way `OS.java` picks `swt-pi4` or `swt-pi3`, from `SWT_GTK4=1` read through the C `getenv`, and each version falls back to the other if its GTK library cannot be loaded.
+The rewriter replaces `Library.loadLibrary("swt-pi3")` and `("swt-pi4")` in `OS` with `FFM.loadGtk(false)` and `FFM.loadGtk(true)`, which throw `UnsatisfiedLinkError` when that `libgtk` cannot be opened.
+So the static initializer of `OS` keeps its own try and fallback structure and prints the same message, falls back the same way and fails with the same exception type if neither version loads, as the JNI build does.
+`FFM` probes each GTK library at most once and only when asked, so the library of the version nobody selected is never mapped.
+It needs no SWT native, because it only reads the environment and opens the GTK library.
+`FFM.LOOKUP` lists `libgtk-4.so.1` (which contains GDK) under GTK4 and `libgtk-3.so.0` with `libgdk-3.so.0` under GTK3, followed by the version independent libraries, so a process never maps the GTK libraries of the other version.
+`FFMGtkVersionCheck` reads `/proc/self/maps` to confirm that.
+Every hand written port links through this lookup.
+`flags=dynamic` natives behave as before: a symbol the loaded GTK does not have gives no call and the result 0, for example `gtk_accel_group_new` under GTK4.
+A non dynamic native that only the other version has throws `UnsatisfiedLinkError` when called, as the JNI `NO_` natives do: the generator wraps the downcall in `FFM.gtk3Only` or `FFM.gtk4Only`, which decide in the static initializer of the holder, so the hot path is unchanged.
+This covers every native of `GTK3` and of `GTK4`, the natives the other version's headers lack, and the overload of `gdk_cursor_new_from_name` whose ABI belongs to one version (`(long, String)` is GTK3, `(String, long)` is GTK4), since libgtk-4 has same named symbols with another ABI.
+
+### GTK4 hand written code
+
+The GTK4 parts of `os_custom.c` are Java as well, so a GTK4 build needs no hand written C either.
+`FFMSwtFixed` keeps the natives of the GTK3 container and dispatches to `FFMSwtFixed4` under GTK4.
+One public static method per native name is what the rewriter keys on, so `swt_fixed_get_type`, `swt_fixed_move`, `swt_fixed_resize` and `swt_fixed_restack` serve both versions, while `swt_fixed_add`, `swt_fixed_remove` and `swt_scaled_paintable_new` exist for GTK4 only and throw `UnsatisfiedLinkError` under GTK3, as the GTK3 JNI library has no such symbols.
+`FFMSwtFixed4` and `FFMScaledPaintable` are package private and need no entry in the implementation lists of `build-gtk.sh` and `apply-ffm.sh`.
+`dispose` and `finalize` of the ports always chain to the parent class, also when a pending callback exception surfaces from a downcall in between, as the C code does.
+`sizeAllocate` skips children that a `Resize` listener removed during the loop and allocates the remaining children when one allocation raises, then lets the first exception surface.
+The GTK3 `FFMSwtFixed` reads the GTK3 values of the version dependent `Extra_FFM` offsets, since `FFM.GTK4` is false there.
+
+The GTK4 `SwtFixed` is a plain `GtkWidget` subclass registered with `g_type_register_static` that implements `GtkScrollable`.
+Its `GObjectClass` slots (`set_property`, `get_property`, `dispose`, `finalize`) and `GtkWidgetClass` slots (`measure`, `size_allocate(widget, width, height, baseline)`) are upcall stubs, and the `resize` signal is created with the variadic `g_signal_new` and emitted from `size_allocate` before the children are allocated.
+Children are kept in a Java list as in GTK3, `swt_fixed_resize` and `swt_fixed_move` only record the geometry, and `dispose` unparents every child so that none outlives its container.
+A child that is not in the list is unparented directly, where the C loop would never end.
+
+`FFMScaledPaintable` registers `SwtScaledPaintable` as a `GObject` that implements `GdkPaintable`, with snapshot, intrinsic width, height and aspect ratio, flags and dispose as stubs.
+Its instance keeps the texture and the logical size after the `GObject` header, the layout the C struct has.
+`content_providers_create_gtype` and `content_providers_create_gvalue` live in `FFMTypes`, because they only need GLib.
+`FFMMacros` and `FFMTypes` add `GTK_IS_POPOVER_MENU`, return 0 for `GET_FUNCTION_POINTER_gtk_false` (GTK4 has no `gtk_false`) and take the `sizeof` of the cell renderers from the generated, version dependent constants, where the pixbuf and toggle ones throw under GTK4 as the JNI library has no such natives.
+
+The ports call the generated bindings (`OS_FFM`, `GTK_FFM`, `GTK4_FFM`) wherever one exists, so a replay on the FFM build needs no SWT library.
+Every function the ports call by name is a native of `OS`, `GTK`, `GTK3`, `GTK4` or `ATK`, so the generator emits its binding and the JNI C is generated for it too: the type getters (`gtk_widget_get_type`, `gtk_scrollable_get_type`, `gtk_container_get_type`, `gdk_paintable_get_type`), `g_object_class_override_property`, `g_value_set_object`, `g_value_set_enum`, `g_value_get_enum`, `g_type_add_interface_static`, the variadic `g_signal_new` and `g_signal_emit` with the argument count and promotion of their call sites, `g_boxed_type_register_static`, and the GTK3 container, accessible and lock functions.
+`gdk_paintable_snapshot` declares `double` for the size, like the C function and the vtable slot, so the scaled paintable forwards the fractional size.
+The handles that remain are the calls through a function pointer, which have no symbol, `localeconv` from libc, and the type getters of `FFMMacros`, which are looked up by the name the `GTK_IS_*` macro stands for.
+A call through a function pointer uses one address-less handle per call shape that takes the function as its first argument, because linking a handle per call costs about 0.25 to 0.75 µs more per call and several milliseconds on the first calls.
+GTK widget code does not call `OS.call` itself; the hand written parent class calls (finalize, realize, the ATK initialize) are the paths that benefit, and a widget workload shows no change beyond the noise.
+
+### Remaining JNI
+
+No native stays on JNI on either version: every native of `OS`, `GDK`, `GTK`, `GTK3`, `GTK4`, `Graphene`, `Cairo`, `ATK`, `GLX`, `WebKitGTK` and `C` is generated or implemented by hand written Java, so the rewriter removes every `Library.loadLibrary` call of the SWT libraries and a GTK4 process loads no `libswt-pi4`.
+`SWT_AWT` needs JNI by definition and goes through `FFMAwt`.
+The 111 natives of `report-gtk/unsupported.txt` are the ones the generator does not read: the `flags=const` constants, the macros and the calls through a function pointer, and the custom C, which `FFMMacros`, `FFMTypes`, `FFMRuntime`, `FFMSwtFixed`, `FFMAccessible` and `FFMConstructorProc` implement.
+The rewriter prints the natives that remain on JNI, which are the ones a merged pull request adds after the report was generated.
+
+### Verification
+
+* `FFMCrossCheck` on GTK3 against JNI libraries built from this branch: 1,422 checks, 0 mismatches, so GTK3 does not regress.
+* `FFMCrossCheck` with `SWT_GTK4=1` against `libswt-pi4` built from this branch: 988 checks, 0 mismatches, 0 known differences.
+  That is 25 struct sizes (`GdkRGBA` 16, `GtkWidgetClass` 408, `GtkCellRendererClass` 288 among them), 600 struct reads and 180 struct writes through the JNI `memmove`s, and 146 call results.
+  The calls cover `float` and `double` out parameters (`gtk_hsv_to_rgb`, `gdk_surface_get_device_position`, `gtk_widget_translate_coordinates`), structs by pointer (`gdk_rgba_parse`, `gdk_popup_layout_new`, `gdk_monitor_get_geometry`, `gtk_style_context_get_padding`), the `Graphene` natives, the string array, the dynamic native that is missing and the GTK3 only native that must not link.
+  `xinject.py` injects motion, button, scroll and key events through XTest, and the callbacks compare `gdk_event_get_position`, `_get_surface`, `_get_seat`, `_get_time`, `_get_modifier_state` and the button, scroll and key getters of every event through JNI and FFM: 9 events.
+* `test-gtk-select.sh` compares the JNI and the FFM build for GTK3 only, GTK4 only, both and neither installed with `SWT_GTK4` unset, 0 and 1: the same GTK version, the same stderr message and the same exception type.
+* `FFMGtkVersionCheck` runs generated natives on the FFM build with a library path that does not exist: GTK3 and GTK4 both initialize and open a window, and `/proc/self/maps` shows the GTK libraries of the selected version only.
+* `test-gtk4-custom.sh` runs `FFMGtk4CustomCheck`, which creates the JNI and the FFM implementation in one process under `SWT_GTK4=1`, drives the same scenario through each and compares what it observes: child allocations, measured sizes, the order of `resize` signals, parents after add, remove and dispose, the `GtkScrollable` properties with their notifications, the intrinsic size, aspect ratio, flags, snapshot render node and rendered pixels of scaled paintables, a `Resize` listener that removes a later sibling during size allocation (no GTK critical, the other children still allocated), and every macro and constant.
+  Result: 195 observations with 0 mismatches, 270 macros and constants compared, 27 layout values equal to the C probe.
+  It then replays the recorded JNI observations on the FFM build with no SWT library on the library path: 0 mismatches.
+* The SWT JUnit suite of `test-gtk.sh` (127 classes) runs on the JNI build and on the FFM build without any SWT library, under GTK3 and under `SWT_GTK4=1`; the outcomes are identical on both builds: 4,062 passed, 78 failed, 11 aborted and 2 skipped on GTK3, and 4,043 passed, 95 failed, 13 aborted and 2 skipped on GTK4 (one GTK4 test is flaky on both builds) (the failures of the GTK4 port are the same with JNI).
+* All checks run headless: `env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 xvfb-run -a`.
+
+### Open
+
+* The fallback between versions probes the GTK library with `dlopen`, where the JNI loader falls back when `libswt-pi4` or `libswt-pi3` fails to load, which also fails when the SWT library itself is missing.
+  `test-gtk-select.sh` runs both builds through every combination of installed GTK versions and `SWT_GTK4` (a missing library is a stub of that name whose own dependency is missing) and the outcomes are identical.
+* The layouts were probed on x86_64 only, as for GTK3.
+* `FFMCrossCheck` compares the generated natives with the stock JNI ones, so it cannot catch a difference that both share.
+
 ## Next steps
 
 1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
@@ -365,11 +467,10 @@ Open:
 2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance), without an AOT cache: profile the first iteration at a finer sampling interval to split handle linking, `LambdaForm` spinning and interpreted execution, then attack the largest part.
    Replace the confined arena per copied array with a per-thread allocator for the warm cost.
 3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
-4. Then GTK4 on Linux, Win32 (see Phase 5: Win32) and Cocoa.
+4. Then Win32 (see Phase 5: Win32) and Cocoa.
 
 ## Open questions
 
-* GTK4 is not generated yet; a GTK3 application does not call it, but its natives keep `libswt-pi3` loaded.
 * Java baseline: FFM is final from Java 22 and SWT requires Java 21, so shipping needs a Java 25 baseline; the `java25-bree` branch is ready and lands when something needs it.
   Raising the BREE of SWT alone is fine: a bundle with a JavaSE-21 BREE resolves against one that requires JavaSE-25, because the execution environment capability comes from the running JVM rather than from the consuming bundle.
 * Native access: OSGi bundles live in the unnamed module, so launchers need `--enable-native-access=ALL-UNNAMED`, which becomes mandatory in a future Java release.

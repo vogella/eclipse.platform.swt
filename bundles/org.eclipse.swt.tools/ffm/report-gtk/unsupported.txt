@@ -24,37 +24,6 @@ org.eclipse.swt.internal.gtk.GDK#GDK_IS_WAYLAND_DISPLAY(long)	no C function decl
 org.eclipse.swt.internal.gtk.GDK#GDK_IS_X11_DISPLAY(long)	no C function declaration (macro or custom C): GDK_IS_X11_DISPLAY
 org.eclipse.swt.internal.gtk.GDK#GDK_TYPE_PIXBUF()	const: macro or constant
 org.eclipse.swt.internal.gtk.GDK#GDK_TYPE_RGBA()	const: macro or constant
-org.eclipse.swt.internal.gtk.GDK#gdk_button_event_get_button(long)	no C function declaration (macro or custom C): gdk_button_event_get_button
-org.eclipse.swt.internal.gtk.GDK#gdk_clipboard_set_content(long,long)	no C function declaration (macro or custom C): gdk_clipboard_set_content
-org.eclipse.swt.internal.gtk.GDK#gdk_crossing_event_get_mode(long)	no C function declaration (macro or custom C): gdk_crossing_event_get_mode
-org.eclipse.swt.internal.gtk.GDK#gdk_cursor_new_from_texture(long,int,int,long)	no C function declaration (macro or custom C): gdk_cursor_new_from_texture
-org.eclipse.swt.internal.gtk.GDK#gdk_display_get_monitor_at_surface(long,long)	no C function declaration (macro or custom C): gdk_display_get_monitor_at_surface
-org.eclipse.swt.internal.gtk.GDK#gdk_event_get_modifier_state(long)	no C function declaration (macro or custom C): gdk_event_get_modifier_state
-org.eclipse.swt.internal.gtk.GDK#gdk_event_get_position(long,double[],double[])	no C function declaration (macro or custom C): gdk_event_get_position
-org.eclipse.swt.internal.gtk.GDK#gdk_event_get_surface(long)	no C function declaration (macro or custom C): gdk_event_get_surface
-org.eclipse.swt.internal.gtk.GDK#gdk_event_ref(long)	no C function declaration (macro or custom C): gdk_event_ref
-org.eclipse.swt.internal.gtk.GDK#gdk_event_unref(long)	no C function declaration (macro or custom C): gdk_event_unref
-org.eclipse.swt.internal.gtk.GDK#gdk_focus_event_get_in(long)	no C function declaration (macro or custom C): gdk_focus_event_get_in
-org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_keycode(long)	no C function declaration (macro or custom C): gdk_key_event_get_keycode
-org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_keyval(long)	no C function declaration (macro or custom C): gdk_key_event_get_keyval
-org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_layout(long)	no C function declaration (macro or custom C): gdk_key_event_get_layout
-org.eclipse.swt.internal.gtk.GDK#gdk_popup_get_parent(long)	no C function declaration (macro or custom C): gdk_popup_get_parent
-org.eclipse.swt.internal.gtk.GDK#gdk_popup_layout_new(GdkRectangle,int,int)	no C function declaration (macro or custom C): gdk_popup_layout_new
-org.eclipse.swt.internal.gtk.GDK#gdk_popup_present(long,int,int,long)	no C function declaration (macro or custom C): gdk_popup_present
-org.eclipse.swt.internal.gtk.GDK#gdk_scroll_event_get_deltas(long,double[],double[])	no C function declaration (macro or custom C): gdk_scroll_event_get_deltas
-org.eclipse.swt.internal.gtk.GDK#gdk_scroll_event_get_direction(long)	no C function declaration (macro or custom C): gdk_scroll_event_get_direction
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_create_similar_surface(long,int,int,int)	no C function declaration (macro or custom C): gdk_surface_create_similar_surface
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_destroy(long)	no C function declaration (macro or custom C): gdk_surface_destroy
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_device_position(long,long,double[],double[],int[])	no C function declaration (macro or custom C): gdk_surface_get_device_position
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_display(long)	no C function declaration (macro or custom C): gdk_surface_get_display
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_height(long)	no C function declaration (macro or custom C): gdk_surface_get_height
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_width(long)	no C function declaration (macro or custom C): gdk_surface_get_width
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_hide(long)	no C function declaration (macro or custom C): gdk_surface_hide
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_new_popup(long,boolean)	no C function declaration (macro or custom C): gdk_surface_new_popup
-org.eclipse.swt.internal.gtk.GDK#gdk_surface_set_cursor(long,long)	no C function declaration (macro or custom C): gdk_surface_set_cursor
-org.eclipse.swt.internal.gtk.GDK#gdk_texture_new_for_pixbuf(long)	no C function declaration (macro or custom C): gdk_texture_new_for_pixbuf
-org.eclipse.swt.internal.gtk.GDK#gdk_texture_new_from_file(long,long)	no C function declaration (macro or custom C): gdk_texture_new_from_file
-org.eclipse.swt.internal.gtk.GDK#gdk_x11_surface_get_xid(long)	no C function declaration (macro or custom C): gdk_x11_surface_get_xid
 org.eclipse.swt.internal.gtk.GTK#GET_FUNCTION_POINTER_gtk_false()	no C function declaration (macro or custom C): GET_FUNCTION_POINTER_gtk_false
 org.eclipse.swt.internal.gtk.GTK#GTK_IS_ACCEL_LABEL(long)	no C function declaration (macro or custom C): GTK_IS_ACCEL_LABEL
 org.eclipse.swt.internal.gtk.GTK#GTK_IS_BOX(long)	no C function declaration (macro or custom C): GTK_IS_BOX
@@ -85,9 +54,6 @@ org.eclipse.swt.internal.gtk.GTK#GtkCellRendererToggleClass_sizeof()	no C functi
 org.eclipse.swt.internal.gtk.GTK#GtkCellRendererToggle_sizeof()	no C function declaration (macro or custom C): GtkCellRendererToggle_sizeof
 org.eclipse.swt.internal.gtk.GTK#GtkTextIter_sizeof()	no C function declaration (macro or custom C): GtkTextIter_sizeof
 org.eclipse.swt.internal.gtk.GTK#GtkTreeIter_sizeof()	no C function declaration (macro or custom C): GtkTreeIter_sizeof
-org.eclipse.swt.internal.gtk.Graphene#graphene_rect_alloc()	no C function declaration (macro or custom C): graphene_rect_alloc
-org.eclipse.swt.internal.gtk.Graphene#graphene_rect_free(long)	no C function declaration (macro or custom C): graphene_rect_free
-org.eclipse.swt.internal.gtk.Graphene#graphene_rect_init(long,float,float,float,float)	no C function declaration (macro or custom C): graphene_rect_init
 org.eclipse.swt.internal.gtk.OS#Call(long,long,int,int)	function pointer call: Call
 org.eclipse.swt.internal.gtk.OS#Call(long,long,long)	function pointer call: Call
 org.eclipse.swt.internal.gtk.OS#GDK_WINDOWING_WAYLAND()	no_gen: hand written C
@@ -140,8 +106,6 @@ org.eclipse.swt.internal.gtk.OS#pangoFontFamilyNewProc_CALLBACK(long)	no_gen: ha
 org.eclipse.swt.internal.gtk.OS#pangoLayoutNewProc_CALLBACK(long)	no_gen: hand written C
 org.eclipse.swt.internal.gtk.OS#printerOptionWidgetNewProc_CALLBACK(long)	no_gen: hand written C
 org.eclipse.swt.internal.gtk.OS#swt_fixed_accessible_register_accessible(long,boolean,long)	JNI caller context: caches the SWT class for JNI FindClass
-org.eclipse.swt.internal.gtk.OS#swt_fixed_add(long,long)	no C function declaration (macro or custom C): swt_fixed_add
-org.eclipse.swt.internal.gtk.OS#swt_fixed_remove(long,long)	no C function declaration (macro or custom C): swt_fixed_remove
-org.eclipse.swt.internal.gtk.OS#swt_scaled_paintable_new(long,int,int)	no C function declaration (macro or custom C): swt_scaled_paintable_new
 org.eclipse.swt.internal.gtk3.GTK3#GTK_IS_MENU_ITEM(long)	no C function declaration (macro or custom C): GTK_IS_MENU_ITEM
 org.eclipse.swt.internal.gtk3.GTK3#GTK_TYPE_MENU()	const: macro or constant
+org.eclipse.swt.internal.gtk4.GTK4#GTK_IS_POPOVER_MENU(long)	no C function declaration (macro or custom C): GTK_IS_POPOVER_MENU

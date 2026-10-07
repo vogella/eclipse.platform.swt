@@ -16,6 +16,8 @@ import java.lang.foreign.*;
 import java.lang.invoke.*;
 import java.util.concurrent.locks.*;
 
+import org.eclipse.swt.internal.gtk3.GTK3_FFM;
+
 /**
  * Java port of the last helpers of os_custom.c: the GDK lock functions and the debug flag
  * that makes GTK abort on a warning.
@@ -23,9 +25,6 @@ import java.util.concurrent.locks.*;
 public final class FFMRuntime {
 
 	static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-
-	static final MethodHandle SET_LOCK_FUNCTIONS = FFM.downcall("gdk_threads_set_lock_functions", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
-	static final MethodHandle PARSE_ARGS = FFM.downcall("gtk_parse_args", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG));
 
 	/** Replaces the GRecMutex the C code used, with the same reentrant semantics. */
 	static final ReentrantLock GDK_LOCK = new ReentrantLock();
@@ -55,7 +54,7 @@ public final class FFMRuntime {
 			MethodHandle enter = LOOKUP.findStatic(FFMRuntime.class, "enter", MethodType.methodType(void.class));
 			MethodHandle leave = LOOKUP.findStatic(FFMRuntime.class, "leave", MethodType.methodType(void.class));
 			FunctionDescriptor descriptor = FunctionDescriptor.ofVoid();
-			SET_LOCK_FUNCTIONS.invokeExact(
+			GTK3_FFM.gdk_threads_set_lock_functions(
 				FFM.LINKER.upcallStub(enter, descriptor, Arena.global()).address(),
 				FFM.LINKER.upcallStub(leave, descriptor, Arena.global()).address());
 		} catch (Throwable t) {
@@ -73,10 +72,9 @@ public final class FFMRuntime {
 			arguments.setAtIndex(JAVA_LONG, 1, flag.address());
 			MemorySegment count = arena.allocateFrom(JAVA_INT, 2);
 			MemorySegment pointer = arena.allocateFrom(JAVA_LONG, arguments.address());
-			int parsed = (int) PARSE_ARGS.invokeExact(count.address(), pointer.address());
-			if (parsed == 0) System.err.println("SWT-FFM: gtk_parse_args rejected --g-fatal-warnings");
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
+			if (!GTK3_FFM.gtk_parse_args(count.address(), pointer.address())) {
+				System.err.println("SWT-FFM: gtk_parse_args rejected --g-fatal-warnings");
+			}
 		}
 	}
 }

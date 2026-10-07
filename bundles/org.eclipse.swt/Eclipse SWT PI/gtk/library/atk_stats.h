@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2023 IBM Corporation and others. All rights reserved.
+ * Copyright (c) 2000, 2026 IBM Corporation and others. All rights reserved.
  * The contents of this file are made available under the terms
  * of the GNU Lesser General Public License (LGPL) Version 2.1 that
  * accompanies this distribution (lgpl-v21.txt).  The LGPL is also
@@ -44,6 +44,7 @@ typedef enum {
 	AtkTextRange_1sizeof_FUNC,
 	AtkTextRectangle_1sizeof_FUNC,
 	atk_1object_1add_1relationship_FUNC,
+	atk_1object_1initialize_FUNC,
 	atk_1object_1notify_1state_1change_FUNC,
 	atk_1object_1remove_1relationship_FUNC,
 	atk_1state_1set_1add_1state_FUNC,
