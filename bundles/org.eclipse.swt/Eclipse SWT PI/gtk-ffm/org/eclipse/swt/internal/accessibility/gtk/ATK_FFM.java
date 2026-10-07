@@ -47,6 +47,18 @@ public static boolean atk_object_add_relationship(long arg0, int arg1, long arg2
 	}
 }
 
+private static final class MH_atk_1object_1initialize {
+	static final MethodHandle MH = FFM.downcall("atk_object_initialize", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+}
+public static void atk_object_initialize(long arg0, long arg1) {
+	try {
+		MH_atk_1object_1initialize.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_atk_1object_1notify_1state_1change {
 	static final MethodHandle MH = FFM.downcall("atk_object_notify_state_change", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT));
 }
