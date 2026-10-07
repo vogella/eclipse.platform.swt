@@ -11,8 +11,10 @@
 ###############################################################################
 # Verifies the generated GTK FFM bindings:
 #
-#   1. FFMCrossCheck compares JNI and FFM struct layouts, struct marshalling and a set of calls in one process.
-#   2. The SWT JUnit tests run on the JNI build and on the FFM build; the outcomes are diffed.
+#   1. FFMCrossCheck compares JNI and FFM struct layouts, struct marshalling and a set of calls in one process,
+#      on GTK3 and, with SWT_GTK4=1 against libswt-pi4, on GTK4 (FFMCrossCheck4, with real events injected through XTest).
+#   2. The SWT JUnit tests run on the JNI build and on the FFM build, on GTK3 and with SWT_GTK4=1 on GTK4; the outcomes are
+#      diffed. The FFM build runs without any SWT native library on the library path.
 #
 # Run generate-gtk.sh first. Needs a JDK 25, xvfb-run and ECLIPSE_HOME for the JUnit jars.
 # Pass test class names to restrict step 2, or "--skip-junit". SWT_NATIVES overrides the directory of the native libraries.
@@ -35,10 +37,27 @@ headless() {
 		java -XX:-CreateCoredumpOnCrash --enable-native-access=ALL-UNNAMED -Djava.library.path="$FRAGMENT" "$@"
 }
 
+headless4() {
+	env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 SWT_GTK4=1 xvfb-run -a -s "-screen 0 1920x1080x24" \
+		java -XX:-CreateCoredumpOnCrash --enable-native-access=ALL-UNNAMED -Djava.library.path="$FRAGMENT" "$@"
+}
+
 echo "== Cross check"
 mkdir -p "$B/test-classes"
-javac --release 25 -nowarn -d "$B/test-classes" -cp "$B/swt-jni/classes" "$TOOLS/ffm/test/org/eclipse/swt/tools/ffm/FFMCrossCheck.java"
+javac --release 25 -nowarn -d "$B/test-classes" -cp "$B/swt-jni/classes" "$TOOLS/ffm/test/org/eclipse/swt/tools/ffm/FFMCrossCheck.java" "$TOOLS/ffm/test/org/eclipse/swt/tools/ffm/FFMCrossCheck4.java" "$TOOLS/ffm/test/org/eclipse/swt/tools/ffm/FFMCrossCheckTypes.java"
 headless -cp "$B/swt-jni/classes:$B/test-classes" org.eclipse.swt.tools.ffm.FFMCrossCheck | grep -v '^  \(read\|write\) '
+
+echo "== Cross check on GTK4"
+headless4 -Dffm.inject="$TOOLS/ffm/test/xinject.py" -cp "$B/swt-jni/classes:$B/test-classes" org.eclipse.swt.tools.ffm.FFMCrossCheck | grep -v '^  \(read\|write\) '
+
+echo "== GTK version selection without SWT libraries"
+javac --release 25 -nowarn -d "$B/test-classes" -cp "$B/swt-ffm/classes" "$TOOLS/ffm/test/org/eclipse/swt/tools/ffm/FFMGtkVersionCheck.java"
+SWT_NATIVES_NONE=/nonexistent
+for gtk4 in 0 1; do
+	env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 SWT_GTK4=$([ $gtk4 = 1 ] && echo 1 || echo 0) xvfb-run -a -s "-screen 0 1920x1080x24" \
+		java -XX:-CreateCoredumpOnCrash --enable-native-access=ALL-UNNAMED -Djava.library.path="$SWT_NATIVES_NONE" \
+		-cp "$B/swt-ffm/classes:$B/test-classes" org.eclipse.swt.tools.ffm.FFMGtkVersionCheck 2>&1 | grep -v 'DRI3\|MESA\|^Note:'
+done
 
 [ "${1:-}" = "--skip-junit" ] && exit 0
 
@@ -60,11 +79,17 @@ else
 		| grep -v '\$' | grep -v 'Browser\|Clipboard' | sed -e 's/\.class$//' -e 's#/#.#g')
 fi
 
-for mode in jni ffm; do
-	(cd "$TESTS" && headless -cp "$B/swt-$mode/classes:$B/swt-tests:$junit" org.eclipse.swt.tools.ffm.FFMTestRunner "$B/results-$mode.txt" "${classes[@]}" > "$B/log-$mode.txt" 2>&1) &
+for gtk in 3 4; do
+	for mode in jni ffm; do
+		natives="$FRAGMENT"
+		[ $mode = ffm ] && natives=/nonexistent
+		(cd "$TESTS" && env -u WAYLAND_DISPLAY -u XDG_SESSION_TYPE GDK_BACKEND=x11 SWT_GTK4=$([ $gtk = 4 ] && echo 1 || echo 0) \
+			xvfb-run -a -s "-screen 0 1920x1080x24" java -XX:-CreateCoredumpOnCrash --enable-native-access=ALL-UNNAMED -Djava.library.path="$natives" \
+			-cp "$B/swt-$mode/classes:$B/swt-tests:$junit" org.eclipse.swt.tools.ffm.FFMTestRunner "$B/results-$mode-gtk$gtk.txt" "${classes[@]}" > "$B/log-$mode-gtk$gtk.txt" 2>&1) &
+	done
+	wait
+	echo "== GTK$gtk"
+	grep -h "^Results" "$B/log-jni-gtk$gtk.txt" "$B/log-ffm-gtk$gtk.txt"
+	echo "== Tests whose outcome differs between JNI and FFM on GTK$gtk"
+	diff <(cut -f1,2 "$B/results-jni-gtk$gtk.txt" | sed 's/\t\(\w*\).*/\t\1/') <(cut -f1,2 "$B/results-ffm-gtk$gtk.txt" | sed 's/\t\(\w*\).*/\t\1/') && echo "none"
 done
-wait
-
-grep -h "^Results" "$B/log-jni.txt" "$B/log-ffm.txt"
-echo "== Tests whose outcome differs between JNI and FFM"
-diff <(cut -f1,2 "$B/results-jni.txt" | sed 's/\t\(\w*\).*/\t\1/') <(cut -f1,2 "$B/results-ffm.txt" | sed 's/\t\(\w*\).*/\t\1/') && echo "none"
