@@ -40,6 +40,20 @@ public class FFMProbeGenerator extends JNIGenerator {
 	static final String WIN32_OS = "org.eclipse.swt.internal.win32.OS";
 	static final String WIN32_COM = "org.eclipse.swt.internal.ole.win32.COM";
 
+	/**
+	 * The GTK3 only types and fields among the extras: GtkContainer is gone from GTK4, and so are the
+	 * pixbuf and toggle cell renderers natives of the JNI library.
+	 */
+	static boolean gtk3Only(String type, String field) {
+		return type.startsWith("GtkContainer") || type.startsWith("GtkCellRendererPixbuf") || type.startsWith("GtkCellRendererToggle")
+			|| (type.equals("GtkWidgetClass") && (field.startsWith("get_preferred_") || field.equals("get_accessible")));
+	}
+
+	/** The GTK4 only types and fields among the extras. */
+	static boolean gtk4Only(String type, String field) {
+		return type.equals("GdkPaintableInterface") || (type.equals("GtkWidgetClass") && field.equals("measure"));
+	}
+
 	/** C types whose size the FFM code needs although no Java struct class describes them, per main class. */
 	static final String[][] EXTRA_SIZES = {
 		// the <type>_sizeof() macros of os_custom.h and com_custom.h
@@ -51,6 +65,7 @@ public class FFMProbeGenerator extends JNIGenerator {
 		{GTK_OS, "GtkCellRendererPixbuf"}, {GTK_OS, "GtkCellRendererPixbufClass"},
 		{GTK_OS, "GtkCellRendererToggle"}, {GTK_OS, "GtkCellRendererToggleClass"},
 		{GTK_OS, "GtkContainerAccessible"}, {GTK_OS, "GtkContainerAccessibleClass"},
+		{GTK_OS, "GObject"}, {GTK_OS, "GInterfaceInfo"}, {GTK_OS, "GtkWidget"}, {GTK_OS, "GdkPaintableInterface"},
 	};
 
 	/** Struct fields the FFM code needs the offset of, per main class. */
@@ -59,6 +74,10 @@ public class FFMProbeGenerator extends JNIGenerator {
 		{GTK_OS, "GtkWidgetClass", "get_preferred_width"}, {GTK_OS, "GtkWidgetClass", "get_preferred_height"},
 		{GTK_OS, "GtkWidgetClass", "size_allocate"}, {GTK_OS, "GtkWidgetClass", "get_accessible"},
 		{GTK_OS, "GtkContainerClass", "add"}, {GTK_OS, "GtkContainerClass", "remove"}, {GTK_OS, "GtkContainerClass", "forall"},
+		{GTK_OS, "GtkWidgetClass", "measure"}, {GTK_OS, "GInterfaceInfo", "interface_init"},
+		{GTK_OS, "GdkPaintableInterface", "snapshot"}, {GTK_OS, "GdkPaintableInterface", "get_flags"},
+		{GTK_OS, "GdkPaintableInterface", "get_intrinsic_width"}, {GTK_OS, "GdkPaintableInterface", "get_intrinsic_height"},
+		{GTK_OS, "GdkPaintableInterface", "get_intrinsic_aspect_ratio"},
 	};
 
 	@Override
@@ -67,11 +86,19 @@ public class FFMProbeGenerator extends JNIGenerator {
 		String unit = getMainClass().getName();
 		for (String[] extra : EXTRA_SIZES) {
 			if (!extra[0].equals(unit)) continue;
+			boolean only3 = gtk3Only(extra[1], ""), only4 = gtk4Only(extra[1], "");
+			if (only3) outputln("#ifndef GTK4");
+			if (only4) outputln("#ifdef GTK4");
 			outputln("\tprintf(\"EXTRA." + extra[1] + "=%zu\\n\", sizeof(" + extra[1] + "));");
+			if (only3 || only4) outputln("#endif");
 		}
 		for (String[] extra : EXTRA_OFFSETS) {
 			if (!extra[0].equals(unit)) continue;
+			boolean only3 = gtk3Only(extra[1], extra[2]), only4 = gtk4Only(extra[1], extra[2]);
+			if (only3) outputln("#ifndef GTK4");
+			if (only4) outputln("#ifdef GTK4");
 			outputln("\tprintf(\"EXTRA." + extra[1] + "." + extra[2] + "=%zu\\n\", (size_t)__builtin_offsetof(" + extra[1] + ", " + extra[2] + "));");
+			if (only3 || only4) outputln("#endif");
 		}
 		outputln("\treturn 0;");
 		outputln("}");

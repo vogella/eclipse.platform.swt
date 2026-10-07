@@ -1,0 +1,125 @@
+Struct layouts and extras that differ between GTK3 and GTK4 (chosen at run time):
+  EXTRA.GtkCellRendererText	40/32
+  EXTRA.GtkCellRendererTextClass	304/360
+  EXTRA.GtkWidgetClass.map	184/152
+  EXTRA.GtkWidgetClass.realize	200/168
+  EXTRA.GtkWidgetClass.size_allocate	216/200
+  org.eclipse.swt.internal.gtk.GdkRGBA	size 32/16, fields [alpha, blue, green, red]
+  org.eclipse.swt.internal.gtk.GtkCellRendererClass	size 264/288, fields [render, snapshot]
+  org.eclipse.swt.internal.gtk.GtkWidgetClass	size 824/408, fields [map, size_allocate, snapshot]
+
+Natives by what the GTK3 and GTK4 compile declare:
+  org.eclipse.swt.internal.gtk.GDK#gdk_atom_name(long)	GTK3 only (no C function declaration (macro or custom C): gdk_atom_name)
+  org.eclipse.swt.internal.gtk.GDK#gdk_button_event_get_button(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_cairo_set_source_window(long,long,int,int)	GTK3 only (no C function declaration (macro or custom C): gdk_cairo_set_source_window)
+  org.eclipse.swt.internal.gtk.GDK#gdk_clipboard_set_content(long,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_crossing_event_get_mode(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_cursor_new_from_pixbuf(long,long,int,int)	GTK3 only (no C function declaration (macro or custom C): gdk_cursor_new_from_pixbuf)
+  org.eclipse.swt.internal.gtk.GDK#gdk_cursor_new_from_texture(long,int,int,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_display_get_monitor_at_surface(long,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_drag_context_get_dest_window(long)	GTK3 only (no C function declaration (macro or custom C): gdk_drag_context_get_dest_window)
+  org.eclipse.swt.internal.gtk.GDK#gdk_drag_context_list_targets(long)	GTK3 only (no C function declaration (macro or custom C): gdk_drag_context_list_targets)
+  org.eclipse.swt.internal.gtk.GDK#gdk_drag_status(long,int,int)	GTK3 only (no C function declaration (macro or custom C): gdk_drag_status)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_copy(long)	GTK3 only (no C function declaration (macro or custom C): gdk_event_copy)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_free(long)	GTK3 only (no C function declaration (macro or custom C): gdk_event_free)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get()	GTK3 only (no C function declaration (macro or custom C): gdk_event_get)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_button(long,int[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_button)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_coords(long,double[],double[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_coords)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_keycode(long,short[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_keycode)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_keyval(long,int[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_keyval)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_modifier_state(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_position(long,double[],double[])	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_root_coords(long,double[],double[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_root_coords)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_scroll_deltas(long,double[],double[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_scroll_deltas)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_scroll_direction(long,int[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_scroll_direction)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_state(long,int[])	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_state)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_surface(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_get_window(long)	GTK3 only (no C function declaration (macro or custom C): gdk_event_get_window)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_new(int)	GTK3 only (no C function declaration (macro or custom C): gdk_event_new)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_peek()	GTK3 only (no C function declaration (macro or custom C): gdk_event_peek)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_put(long)	GTK3 only (no C function declaration (macro or custom C): gdk_event_put)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_ref(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_set_device(long,long)	GTK3 only (no C function declaration (macro or custom C): gdk_event_set_device)
+  org.eclipse.swt.internal.gtk.GDK#gdk_event_unref(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_focus_event_get_in(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_get_default_root_window()	GTK3 only (no C function declaration (macro or custom C): gdk_get_default_root_window)
+  org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_keycode(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_keyval(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_layout(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_popup_get_parent(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_popup_layout_new(GdkRectangle,int,int)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_popup_present(long,int,int,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_property_get(long,long,long,long,long,int,long[],int[],int[],long[])	GTK3 only (no C function declaration (macro or custom C): gdk_property_get)
+  org.eclipse.swt.internal.gtk.GDK#gdk_screen_get_default()	GTK3 only (no C function declaration (macro or custom C): gdk_screen_get_default)
+  org.eclipse.swt.internal.gtk.GDK#gdk_screen_get_resolution(long)	GTK3 only (no C function declaration (macro or custom C): gdk_screen_get_resolution)
+  org.eclipse.swt.internal.gtk.GDK#gdk_screen_get_system_visual(long)	GTK3 only (no C function declaration (macro or custom C): gdk_screen_get_system_visual)
+  org.eclipse.swt.internal.gtk.GDK#gdk_screen_is_composited(long)	GTK3 only (no C function declaration (macro or custom C): gdk_screen_is_composited)
+  org.eclipse.swt.internal.gtk.GDK#gdk_scroll_event_get_deltas(long,double[],double[])	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_scroll_event_get_direction(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_selection_owner_get(long)	GTK3 only (no C function declaration (macro or custom C): gdk_selection_owner_get)
+  org.eclipse.swt.internal.gtk.GDK#gdk_selection_owner_set(long,long,int,boolean)	GTK3 only (no C function declaration (macro or custom C): gdk_selection_owner_set)
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_create_similar_surface(long,int,int,int)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_destroy(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_device_position(long,long,double[],double[],int[])	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_display(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_height(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_get_width(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_hide(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_new_popup(long,boolean)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_surface_set_cursor(long,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_text_property_to_utf8_list_for_display(long,long,int,long,int,long[])	GTK3 only (no C function declaration (macro or custom C): gdk_text_property_to_utf8_list_for_display)
+  org.eclipse.swt.internal.gtk.GDK#gdk_texture_new_for_pixbuf(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_texture_new_from_file(long,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_threads_add_idle(long,long)	GTK3 only (no C function declaration (macro or custom C): gdk_threads_add_idle)
+  org.eclipse.swt.internal.gtk.GDK#gdk_threads_add_timeout(int,long,long)	GTK3 only (no C function declaration (macro or custom C): gdk_threads_add_timeout)
+  org.eclipse.swt.internal.gtk.GDK#gdk_threads_enter()	GTK3 only (no C function declaration (macro or custom C): gdk_threads_enter)
+  org.eclipse.swt.internal.gtk.GDK#gdk_threads_init()	GTK3 only (no C function declaration (macro or custom C): gdk_threads_init)
+  org.eclipse.swt.internal.gtk.GDK#gdk_threads_leave()	GTK3 only (no C function declaration (macro or custom C): gdk_threads_leave)
+  org.eclipse.swt.internal.gtk.GDK#gdk_visual_get_depth(long)	GTK3 only (no C function declaration (macro or custom C): gdk_visual_get_depth)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_create_similar_surface(long,int,int,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_create_similar_surface)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_destroy(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_destroy)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_focus(long,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_focus)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_children(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_children)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_device_position(long,long,int[],int[],int[])	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_device_position)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_display(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_display)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_events(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_events)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_frame_extents(long,GdkRectangle)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_frame_extents)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_height(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_height)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_origin(long,int[],int[])	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_origin)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_parent(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_parent)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_root_origin(long,int[],int[])	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_root_origin)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_state(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_state)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_user_data(long,long[])	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_user_data)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_visible_region(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_visible_region)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_get_width(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_get_width)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_hide(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_hide)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_invalidate_rect(long,GdkRectangle,boolean)	GTK3 only (no C function declaration (macro or custom C): gdk_window_invalidate_rect)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_invalidate_region(long,long,boolean)	GTK3 only (no C function declaration (macro or custom C): gdk_window_invalidate_region)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_lower(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_lower)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_move(long,int,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_move)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_move_resize(long,int,int,int,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_move_resize)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_raise(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_raise)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_resize(long,int,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_resize)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_restack(long,long,boolean)	GTK3 only (no C function declaration (macro or custom C): gdk_window_restack)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_set_cursor(long,long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_set_cursor)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_set_decorations(long,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_set_decorations)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_set_events(long,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_set_events)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_set_functions(long,int)	GTK3 only (no C function declaration (macro or custom C): gdk_window_set_functions)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_set_override_redirect(long,boolean)	GTK3 only (no C function declaration (macro or custom C): gdk_window_set_override_redirect)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_set_user_data(long,long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_set_user_data)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_show(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_show)
+  org.eclipse.swt.internal.gtk.GDK#gdk_window_show_unraised(long)	GTK3 only (no C function declaration (macro or custom C): gdk_window_show_unraised)
+  org.eclipse.swt.internal.gtk.GDK#gdk_x11_get_default_xdisplay()	GTK3 only (no C function declaration (macro or custom C): gdk_x11_get_default_xdisplay)
+  org.eclipse.swt.internal.gtk.GDK#gdk_x11_surface_get_xid(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_x11_window_get_xid(long)	GTK3 only (no C function declaration (macro or custom C): gdk_x11_window_get_xid)
+  org.eclipse.swt.internal.gtk.GDK#gdk_x11_window_lookup_for_display(long,long)	GTK3 only (no C function declaration (macro or custom C): gdk_x11_window_lookup_for_display)
+  org.eclipse.swt.internal.gtk.GTK#gtk_im_context_set_client_window(long,long)	GTK3 only (no C function declaration (macro or custom C): gtk_im_context_set_client_window)
+  org.eclipse.swt.internal.gtk.GTK#gtk_plug_new(long)	GTK3 only (no C function declaration (macro or custom C): gtk_plug_new)
+  org.eclipse.swt.internal.gtk.GTK#gtk_socket_get_id(long)	GTK3 only (no C function declaration (macro or custom C): gtk_socket_get_id)
+  org.eclipse.swt.internal.gtk.GTK#gtk_socket_new()	GTK3 only (no C function declaration (macro or custom C): gtk_socket_new)
+  org.eclipse.swt.internal.gtk.Graphene#graphene_rect_alloc()	GTK4 only
+  org.eclipse.swt.internal.gtk.Graphene#graphene_rect_free(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.Graphene#graphene_rect_init(long,float,float,float,float)	GTK4 only
+  org.eclipse.swt.internal.gtk.OS#swt_fixed_add(long,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.OS#swt_fixed_remove(long,long)	GTK4 only
+  org.eclipse.swt.internal.gtk.OS#swt_scaled_paintable_new(long,int,int)	GTK4 only

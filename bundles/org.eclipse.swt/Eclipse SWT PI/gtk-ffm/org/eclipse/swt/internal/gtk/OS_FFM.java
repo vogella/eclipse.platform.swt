@@ -427,6 +427,19 @@ public static boolean g_app_info_supports_uris(long arg0) {
 	}
 }
 
+private static final class MH_g_1boxed_1type_1register_1static {
+	static final MethodHandle MH = FFM.downcall("g_boxed_type_register_static", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static long g_boxed_type_register_static(long arg0, long arg1, long arg2) {
+	try {
+		long rc = (long) MH_g_1boxed_1type_1register_1static.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1bus_1own_1name {
 	static final MethodHandle MH = FFM.downcall("g_bus_own_name", FunctionDescriptor.of(JAVA_INT, JAVA_INT, ADDRESS, JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG));
 }
@@ -1597,6 +1610,18 @@ public static void g_menu_remove(long arg0, int arg1) {
 	}
 }
 
+private static final class MH_g_1object_1class_1override_1property {
+	static final MethodHandle MH = FFM.downcall("g_object_class_override_property", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_LONG));
+}
+public static void g_object_class_override_property(long arg0, int arg1, long arg2) {
+	try {
+		MH_g_1object_1class_1override_1property.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1object_1get__J_3B_3IJ {
 	static final MethodHandle MH = FFM.downcall("g_object_get", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2));
 }
@@ -1957,6 +1982,32 @@ public static int g_signal_connect_closure_by_id(long arg0, int arg1, int arg2, 
 	}
 }
 
+private static final class MH_g_1signal_1connect_1data {
+	static final MethodHandle MH = FFM.downcall("g_signal_connect_data", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT));
+}
+public static long g_signal_connect_data(long arg0, byte[] arg1, long arg2, long arg3, long arg4, int arg5) {
+	try (Arena arena = Arena.ofConfined()) {
+		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
+		long rc = (long) MH_g_1signal_1connect_1data.MH.invokeExact(arg0, lparg1, arg2, arg3, arg4, arg5);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1signal_1emit {
+	static final MethodHandle MH = FFM.downcall("g_signal_emit", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_INT), Linker.Option.firstVariadicArg(3));
+}
+public static void g_signal_emit(long arg0, int arg1, int arg2, int arg3, int arg4) {
+	try {
+		MH_g_1signal_1emit.MH.invokeExact(arg0, arg1, arg2, arg3, arg4);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1signal_1emit_1by_1name__J_3B {
 	static final MethodHandle MH = FFM.downcall("g_signal_emit_by_name", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS), Linker.Option.firstVariadicArg(2));
 }
@@ -2072,6 +2123,19 @@ public static int g_signal_lookup(byte[] arg0, long arg1) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.copyIn(arena, arg0);
 		int rc = (int) MH_g_1signal_1lookup.MH.invokeExact(lparg0, arg1);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1signal_1new {
+	static final MethodHandle MH = FFM.downcall("g_signal_new", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_LONG), Linker.Option.firstVariadicArg(9));
+}
+public static int g_signal_new(long arg0, long arg1, int arg2, int arg3, long arg4, long arg5, long arg6, long arg7, int arg8, long arg9, long arg10) {
+	try {
+		int rc = (int) MH_g_1signal_1new.MH.invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
@@ -2287,6 +2351,44 @@ public static int g_timeout_add(int arg0, long arg1, long arg2) {
 	}
 }
 
+private static final class MH_g_1type_1add_1interface_1static {
+	static final MethodHandle MH = FFM.downcall("g_type_add_interface_static", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static void g_type_add_interface_static(long arg0, long arg1, long arg2) {
+	try {
+		MH_g_1type_1add_1interface_1static.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1type_1check_1instance_1is_1a {
+	static final MethodHandle MH = FFM.downcall("g_type_check_instance_is_a", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG));
+}
+public static boolean g_type_check_instance_is_a(long arg0, long arg1) {
+	try {
+		int rc = (int) MH_g_1type_1check_1instance_1is_1a.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+		return ((byte) rc != 0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1type_1check_1value {
+	static final MethodHandle MH = FFM.downcall("g_type_check_value", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+}
+public static boolean g_type_check_value(long arg0) {
+	try {
+		int rc = (int) MH_g_1type_1check_1value.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return ((byte) rc != 0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1type_1class_1peek {
 	static final MethodHandle MH = FFM.downcall("g_type_class_peek", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
 }
@@ -2333,6 +2435,19 @@ public static void g_type_class_unref(long arg0) {
 	try {
 		MH_g_1type_1class_1unref.MH.invokeExact(arg0);
 		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1type_1interface_1peek {
+	static final MethodHandle MH = FFM.downcall("g_type_interface_peek", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static long g_type_interface_peek(long arg0, long arg1) {
+	try {
+		long rc = (long) MH_g_1type_1interface_1peek.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2608,6 +2723,19 @@ public static double g_value_get_double(long arg0) {
 	}
 }
 
+private static final class MH_g_1value_1get_1enum {
+	static final MethodHandle MH = FFM.downcall("g_value_get_enum", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+}
+public static int g_value_get_enum(long arg0) {
+	try {
+		int rc = (int) MH_g_1value_1get_1enum.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1value_1get_1float {
 	static final MethodHandle MH = FFM.downcall("g_value_get_float", FunctionDescriptor.of(JAVA_FLOAT, JAVA_LONG));
 }
@@ -2724,6 +2852,18 @@ public static void g_value_set_double(long arg0, double arg1) {
 	}
 }
 
+private static final class MH_g_1value_1set_1enum {
+	static final MethodHandle MH = FFM.downcall("g_value_set_enum", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+}
+public static void g_value_set_enum(long arg0, int arg1) {
+	try {
+		MH_g_1value_1set_1enum.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1value_1set_1float {
 	static final MethodHandle MH = FFM.downcall("g_value_set_float", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_FLOAT));
 }
@@ -2754,6 +2894,18 @@ private static final class MH_g_1value_1set_1int64 {
 public static void g_value_set_int64(long arg0, long arg1) {
 	try {
 		MH_g_1value_1set_1int64.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1value_1set_1object {
+	static final MethodHandle MH = FFM.downcall("g_value_set_object", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+}
+public static void g_value_set_object(long arg0, long arg1) {
+	try {
+		MH_g_1value_1set_1object.MH.invokeExact(arg0, arg1);
 		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
@@ -4764,6 +4916,18 @@ public static long swt_fixed_accessible_get_type() {
 	}
 }
 
+private static final class MH_swt_1fixed_1add {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("swt_fixed_add", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "swt_fixed_add");
+}
+public static void swt_fixed_add(long arg0, long arg1) {
+	try {
+		MH_swt_1fixed_1add.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_swt_1fixed_1get_1type {
 	static final MethodHandle MH = FFM.downcall("swt_fixed_get_type", FunctionDescriptor.of(JAVA_LONG));
 }
@@ -4789,6 +4953,18 @@ public static void swt_fixed_move(long arg0, long arg1, int arg2, int arg3) {
 	}
 }
 
+private static final class MH_swt_1fixed_1remove {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("swt_fixed_remove", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "swt_fixed_remove");
+}
+public static void swt_fixed_remove(long arg0, long arg1) {
+	try {
+		MH_swt_1fixed_1remove.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_swt_1fixed_1resize {
 	static final MethodHandle MH = FFM.downcall("swt_fixed_resize", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT));
 }
@@ -4808,6 +4984,19 @@ public static void swt_fixed_restack(long arg0, long arg1, long arg2, boolean ar
 	try {
 		MH_swt_1fixed_1restack.MH.invokeExact(arg0, arg1, arg2, (int) (arg3 ? 1 : 0));
 		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_swt_1scaled_1paintable_1new {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("swt_scaled_paintable_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT)), "swt_scaled_paintable_new");
+}
+public static long swt_scaled_paintable_new(long arg0, int arg1, int arg2) {
+	try {
+		long rc = (long) MH_swt_1scaled_1paintable_1new.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
+		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
