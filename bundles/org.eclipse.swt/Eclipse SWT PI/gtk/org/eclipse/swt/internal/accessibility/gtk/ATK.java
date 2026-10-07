@@ -226,6 +226,11 @@ public static final native long ATK_HYPERTEXT_GET_IFACE(long handle);
 public static final native long ATK_TABLE_GET_IFACE(long handle);
 public static final native long ATK_TEXT_GET_IFACE(long handle);
 public static final native long ATK_VALUE_GET_IFACE(long handle);
+/**
+ * @param accessible cast=(AtkObject *)
+ * @param data cast=(gpointer)
+ */
+public static final native void atk_object_initialize(long accessible, long data);
 /** @param accessible cast=(AtkObject *) */
 public static final native void atk_object_notify_state_change(long accessible, int state, boolean value);
 /**
