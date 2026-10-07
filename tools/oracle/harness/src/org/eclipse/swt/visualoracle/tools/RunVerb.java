@@ -31,7 +31,9 @@ import org.eclipse.swt.visualoracle.impl.BasicCapturedImage;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.ChildProcessLauncher;
 import org.eclipse.swt.visualoracle.impl.ClusterDiffer;
+import org.eclipse.swt.visualoracle.impl.GtkVersion;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.visualoracle.impl.ResultMerger;
 import org.eclipse.swt.visualoracle.json.JsonWriter;
 import org.eclipse.swt.visualoracle.result.CaptureEntry;
@@ -143,6 +145,14 @@ public final class RunVerb {
 				case "--reference" -> referenceBackend = requireValue(arg, ++i);
 				case "--candidate" -> candidateBackend = requireValue(arg, ++i);
 				case "--dpi" -> zoom = parseInt(arg, requireValue(arg, ++i));
+				case "--gtk" -> {
+					String value = requireValue(arg, ++i);
+					if (!"3".equals(value) && !"4".equals(value))
+						throw new UsageError("--gtk must be 3 or 4, found: " + value);
+					if (!"gtk".equals(PlatformSupport.current().id()))
+						throw new UsageError("--gtk applies to the GTK platform only");
+					GtkVersion.request(Integer.parseInt(value));
+				}
 				case "--theme" -> themeId = requireValue(arg, ++i);
 				case "--direction" -> directionName = requireValue(arg, ++i);
 				case "--font-family" -> fontFamily = requireValue(arg, ++i);
@@ -252,6 +262,7 @@ public final class RunVerb {
 				                          $ORACLE_BASELINE, default master), native-candidate (SWT from
 				                          $ORACLE_CANDIDATE); both take a git ref or an SWT directory
 				  --dpi N                 zoom percentage for the environment, default 100
+				  --gtk 3|4               GTK major version of every child, default 3 or $SWT_GTK4=1
 				  --theme ID              GTK theme id, default platform theme
 				  --direction LTR|RTL     default LTR
 				  --font-family NAME      default system font
@@ -421,7 +432,7 @@ public final class RunVerb {
 		// Successful children merge through impl.ResultMerger, which validates,
 		// canonicalises order and rebases image paths to the out directory.
 		Map<String, CaptureEntry> mergedCaptures = new LinkedHashMap<>();
-		String generator = "oracle-harness/" + OracleCli.VERSION + "/run";
+		String generator = "oracle-harness/" + OracleCli.VERSION + "/run" + toolkitSuffix();
 		if (!mergeInputs.isEmpty()) {
 			RunResult merged = RunResult.fromJsonMap(
 					ResultMerger.merge(mergeInputs, generator, config.outDir()));
@@ -662,6 +673,9 @@ public final class RunVerb {
 		map.put("direction", env.direction().name());
 		map.put("fontFamily", env.fontFamily());
 		map.put("fontSize", Integer.valueOf(env.fontSize()));
+		String tag = PlatformSupport.current().toolkitTag();
+		if (!tag.isEmpty())
+			map.put("toolkit", tag);
 		return map;
 	}
 
@@ -684,8 +698,14 @@ public final class RunVerb {
 		return map;
 	}
 
+	private static String toolkitSuffix() {
+		String tag = PlatformSupport.current().toolkitTag();
+		return tag.isEmpty() ? "" : " " + tag;
+	}
+
 	private static String describeEnv(RenderEnv env) {
-		return "zoom=" + env.zoomPercent()
+		String tag = PlatformSupport.current().toolkitTag();
+		return (tag.isEmpty() ? "" : tag + " ") + "zoom=" + env.zoomPercent()
 				+ " theme=" + (env.theme().isPlatformDefault() ? "<default>" : env.theme().id())
 				+ " direction=" + env.direction()
 				+ " font=" + (env.usesSystemFont() ? "<system>" : env.fontFamily() + " " + env.fontSize());

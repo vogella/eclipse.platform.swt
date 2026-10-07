@@ -40,6 +40,7 @@ case "$verb" in
 		exec "${java_cmd[@]}" "$@"
 		;;
 	selftest)
+		[ "${SWT_GTK4:-}" != 1 ] || die "the selftest verifies the GTK3 pipeline, unset SWT_GTK4"
 		oracle_run_headless "${ORACLE_TIMEOUT[@]}" 900 "${java_cmd[@]}" "$@"
 		;;
 	run|triage)

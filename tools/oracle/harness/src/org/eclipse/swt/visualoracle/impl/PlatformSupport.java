@@ -98,6 +98,11 @@ public interface PlatformSupport {
 	default void prepareDisplay(Display display) {
 	}
 
+	/** Toolkit version tag recorded in run metadata, such as {@code gtk4}; empty if the platform has none. */
+	default String toolkitTag() {
+		return "";
+	}
+
 	/** True if the native toolkit may size a control smaller than requested (fixed-height widgets on macOS). */
 	default boolean allowsNativeSizeClamp() {
 		return false;

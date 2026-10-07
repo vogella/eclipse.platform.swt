@@ -20,6 +20,7 @@ import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.visualoracle.impl.CaptureRuntime;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
+import org.eclipse.swt.visualoracle.impl.PlatformSupport;
 import org.eclipse.swt.visualoracle.impl.SwtRenderEnvs;
 import org.eclipse.swt.visualoracle.result.CaptureEntry;
 import org.eclipse.swt.visualoracle.result.CaptureStatus;
@@ -215,7 +216,7 @@ public final class CaptureChild {
 		try {
 			Files.createDirectories(out);
 			RunResult result = new RunResult(RunResult.CURRENT_SCHEMA_VERSION,
-					"oracle-harness/" + OracleCli.VERSION + "/capture-child", env,
+					"oracle-harness/" + OracleCli.VERSION + "/capture-child" + toolkitSuffix(), env,
 							specimens.stream().map(s -> fallback.apply(s.id())).toList(),
 					List.of());
 			Files.writeString(out.resolve("result.json"), result.toJson(), StandardCharsets.UTF_8);
@@ -246,6 +247,11 @@ public final class CaptureChild {
 		if (index >= args.length)
 			throw new IllegalArgumentException("option " + option + " needs a value");
 		return args[index];
+	}
+
+	private static String toolkitSuffix() {
+		String tag = PlatformSupport.current().toolkitTag();
+		return tag.isEmpty() ? "" : " " + tag;
 	}
 
 	private static int usage(String message) {

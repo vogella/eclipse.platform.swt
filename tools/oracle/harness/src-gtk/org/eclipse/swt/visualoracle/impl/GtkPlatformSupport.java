@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.ImageDataProvider;
@@ -30,6 +31,7 @@ import org.eclipse.swt.internal.gtk3.GTK3;
 import org.eclipse.swt.internal.gtk4.GTK4;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.visualoracle.spi.BackendUnavailableException;
 import org.eclipse.swt.visualoracle.spi.CaptureFailedException;
 import org.eclipse.swt.visualoracle.spi.CapturedImage;
@@ -42,6 +44,8 @@ import org.eclipse.swt.visualoracle.spi.Theme;
 public final class GtkPlatformSupport implements PlatformSupport {
 
 	private static final int GRAB_TIMEOUT_SECONDS = 30;
+	private static final int PRINT_ATTEMPTS = 50;
+	private static final long FRAME_PERIOD_MILLIS = 17;
 	private static final String XVFB_SCREEN = "-screen 0 1600x1200x24";
 
 	@Override
@@ -67,13 +71,58 @@ public final class GtkPlatformSupport implements PlatformSupport {
 	}
 
 	@Override
+	public String toolkitTag() {
+		return "gtk" + GtkVersion.requested();
+	}
+
+	@Override
+	public void prepareDisplay(Display display) {
+		int loaded = GTK.GTK4 ? 4 : 3;
+		if (loaded != GtkVersion.requested())
+			throw new BackendUnavailableException("GTK" + GtkVersion.requested()
+					+ " was requested but the process runs GTK" + loaded + " (SWT fell back to the other natives?)");
+	}
+
+	@Override
 	public void requireRealizedHandle(Control probe) {
 		// A real JNI round trip into the loaded SWT natives; also proves
 		// the probe widget is realized with its own window on screen.
-		long window = GTK3.gtk_widget_get_window(probe.handle);
+		long window = GTK.GTK4 ? (GTK.gtk_widget_get_realized(probe.handle) ? probe.handle : 0)
+				: GTK3.gtk_widget_get_window(probe.handle);
 		if (window == 0)
 			throw new BackendUnavailableException(
 					"the probe control owns no native window; SWT natives are not working");
+	}
+
+	/** GTK4 {@code GC.copyArea} from a control yields black; {@code Control.print} renders its snapshot node. */
+	@Override
+	public CapturedImage grabPrimary(Control control) {
+		if (!GTK.GTK4)
+			return null;
+		Display display = control.getDisplay();
+		Point size = control.getSize();
+		Image image = new Image(display, size.x, size.y);
+		try {
+			GC gc = new GC(image);
+			try {
+				// print fails until GTK has allocated the widget
+				for (int attempt = 0; !control.print(gc); attempt++) {
+					if (attempt >= PRINT_ATTEMPTS)
+						throw new CaptureFailedException("'" + control.getClass().getSimpleName()
+								+ "' could not be printed on GTK4");
+					long end = System.currentTimeMillis() + FRAME_PERIOD_MILLIS;
+					while (System.currentTimeMillis() < end) {
+						if (!display.readAndDispatch())
+							display.sleep();
+					}
+				}
+			} finally {
+				gc.dispose();
+			}
+			return new BasicCapturedImage(image.getImageData(DPIUtil.getDeviceZoom()));
+		} finally {
+			image.dispose();
+		}
 	}
 
 	@Override
@@ -203,6 +252,7 @@ public final class GtkPlatformSupport implements PlatformSupport {
 		environment.remove("XDG_SESSION_TYPE");
 		environment.put("GDK_BACKEND", "x11");
 		environment.put("LIBGL_ALWAYS_SOFTWARE", "1");
+		GtkVersion.applyTo(environment);
 	}
 
 	@Override
@@ -210,6 +260,7 @@ public final class GtkPlatformSupport implements PlatformSupport {
 		environment.remove("WAYLAND_DISPLAY");
 		environment.remove("XDG_SESSION_TYPE");
 		environment.put("GDK_BACKEND", "x11");
+		GtkVersion.applyTo(environment);
 	}
 
 	@Override

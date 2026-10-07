@@ -106,6 +106,7 @@ States live inside specimen ids, so select them with `--prefix`, e.g.
 
 | Flag | Meaning | Default |
 |---|---|---|
+| `--gtk 3\|4` | GTK major version of every child, see "Running on GTK4" | 3, or 4 if `SWT_GTK4=1` |
 | `--dpi N` | zoom percentage of the rendering environment | 100 |
 | `--theme ID` | platform theme id (the `GTK_THEME` value on Linux); empty means platform default | platform default |
 | `--direction LTR\|RTL` | base text direction | LTR |
@@ -148,6 +149,26 @@ The harness itself is still compiled against this worktree's SWT, so a candidate
 | `--children N` | concurrent child processes | 4 |
 | `--child-timeout-seconds N` | wall-clock bound per child, killed and recorded as failure data beyond it | 240 |
 | `--out DIR` | output directory for `result.json` and logs | `<scratch>/runs/<timestamp>-<pid>` |
+
+### Running on GTK4
+
+`--gtk 4` (or `SWT_GTK4=1` in the environment) pins every child process to GTK4; the default is GTK3.
+The harness sets or removes `SWT_GTK4` explicitly for each child, checks that the process really loaded the requested GTK, and fails the child if SWT fell back to the other natives.
+The GTK version is recorded in `result.json` as the `gtk3` or `gtk4` suffix of `generator`, in the `toolkit` member of the stdout `environment` and in the `[run]` progress line, so GTK3 and GTK4 results are never mixed up.
+
+Comparing two SWT builds bit for bit on GTK4:
+
+```text
+ORACLE_BASELINE=<ref or dir> ORACLE_CANDIDATE=<ref or dir> \
+  tools/oracle/oracle run --gtk 4 --reference native-baseline --candidate native-candidate \
+  --max-channel-delta 0 --max-changed-fraction 0
+```
+
+`GC.copyArea` from a control draws nothing on GTK4, so captures use `Control.print(GC)`, which renders the widget through its snapshot render node into an image.
+This is the widget's own rendering without window decoration, focus or input state, and it is not byte-comparable with a GTK3 capture.
+Zoom, `--theme` and `--direction` work as on GTK3.
+The `selftest` verifies the GTK3 pipeline only and refuses to run with `SWT_GTK4=1`.
+The GTK platform support is compiled against this worktree's `GTK` and `Control.handle`, so both builds need the GTK4 natives (`libswt-pi4-gtk`, or `libgtk-4.so.1` through FFM).
 
 ### Verdict and exit code
 
@@ -382,4 +403,4 @@ Other theme names are rejected as unsupported.
   governs determinism judging only, and their diff numbers can legitimately
   alternate between two faithful renderings.
 * `run` needs the same JDK everywhere.
-  Linux GTK is the reference platform; the Cocoa platform layer is a stub, Win32 is implemented but unverified outside CI, and the Skia and Skija backends are Linux only (ADR-002).
+  Linux GTK (3 or 4, see "Running on GTK4") is the reference platform; the Cocoa platform layer is a stub, Win32 is implemented but unverified outside CI, and the Skia and Skija backends are Linux only (ADR-002).
