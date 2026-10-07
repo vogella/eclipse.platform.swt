@@ -53,12 +53,6 @@ public final class FFMAccessible {
 	static final String ACCESSIBLE_OBJECT = "org.eclipse.swt.accessibility.AccessibleObject";
 	static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-	static final MethodHandle CONTAINER_ACCESSIBLE_GET_TYPE = FFM.downcall("gtk_container_accessible_get_type", FunctionDescriptor.of(JAVA_LONG));
-	static final MethodHandle ADD_INTERFACE = FFM.downcall("g_type_add_interface_static", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG));
-	static final MethodHandle ACCESSIBLE_SET_WIDGET = FFM.downcall("gtk_accessible_set_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
-	static final MethodHandle ACCESSIBLE_GET_WIDGET = FFM.downcall("gtk_accessible_get_widget", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
-	static final MethodHandle WIDGET_GET_TOPLEVEL = FFM.downcall("gtk_widget_get_toplevel", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
-
 	/** The ATK interfaces the type implements, with the function returning their GType. */
 	static final Map<String, String> INTERFACES = Map.of(
 		"AtkActionIface", "atk_action_get_type",
@@ -158,6 +152,8 @@ public final class FFMAccessible {
 	/* ---------------------------------------------------------------- called from SWT */
 
 	public static synchronized long swt_fixed_accessible_get_type() {
+		// the GTK3 only container accessible, as the JNI library has no such native under GTK4
+		if (FFM.GTK4) throw new UnsatisfiedLinkError("swt_fixed_accessible_get_type");
 		if (type != 0) return type;
 		try {
 			GTypeInfo info = new GTypeInfo();
@@ -167,7 +163,7 @@ public final class FFMAccessible {
 			long pointer = OS.g_malloc(GTypeInfo.sizeof);
 			org.eclipse.swt.internal.C.memset(pointer, 0, GTypeInfo.sizeof);
 			OS.memmove(pointer, info, GTypeInfo.sizeof);
-			type = OS.g_type_register_static((long) CONTAINER_ACCESSIBLE_GET_TYPE.invokeExact(),
+			type = OS.g_type_register_static(GTK3.gtk_container_accessible_get_type(),
 				Converter.wcsToMbcs("SwtFixedAccessible", true), pointer, 0);
 			MethodHandle init = LOOKUP.findStatic(FFMAccessible.class, "interfaceInit",
 				MethodType.methodType(void.class, String.class, long.class, long.class));
@@ -177,7 +173,7 @@ public final class FFMAccessible {
 				MemorySegment initStub = FFM.LINKER.upcallStub(init.bindTo(entry.getKey()),
 					FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG), Arena.global());
 				MemorySegment.ofAddress(interfaceInfo).reinterpret(8).set(JAVA_LONG_UNALIGNED, 0, initStub.address());
-				ADD_INTERFACE.invokeExact(type, FFMMacros.type(entry.getValue()), interfaceInfo);
+				OS.g_type_add_interface_static(type, FFMMacros.type(entry.getValue()), interfaceInfo);
 			}
 			return type;
 		} catch (Throwable t) {
@@ -188,11 +184,7 @@ public final class FFMAccessible {
 	/** SWT calls this when an Accessible exists for the widget, so its ATK functions may be used. */
 	public static void swt_fixed_accessible_register_accessible(long accessible, boolean isNative, long toMap) {
 		REGISTERED.add(accessible);
-		try {
-			if (!isNative) ACCESSIBLE_SET_WIDGET.invokeExact(accessible, toMap);
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
-		}
+		if (!isNative) GTK3.gtk_accessible_set_widget(accessible, toMap);
 	}
 
 	/* ---------------------------------------------------------------- the vtables */
@@ -314,7 +306,7 @@ public final class FFMAccessible {
 
 	static long call(String method, long[] arguments) {
 		try {
-			MethodHandle handle = METHODS.computeIfAbsent(method + arguments.length, key -> find(method, arguments.length));
+			MethodHandle handle = METHODS.computeIfAbsent(method + arguments.length, _ -> find(method, arguments.length));
 			return (long) handle.invokeExact(arguments);
 		} catch (Throwable t) {
 			// the C code logged the exception and returned the error result, so do the same
@@ -370,11 +362,10 @@ public final class FFMAccessible {
 		long function = MemorySegment.ofAddress(parentClass + offset("AtkObjectClass", "initialize")).reinterpret(8).get(JAVA_LONG_UNALIGNED, 0);
 		try {
 			if (function != 0) {
-				FFM.LINKER.downcallHandle(MemorySegment.ofAddress(function), FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG))
-					.invokeExact(accessible, data);
+				FFMSwtFixed.GTK_CALLBACK.invokeExact(MemorySegment.ofAddress(function), accessible, data);
 			}
 			// only widgets with a Java Accessible get the ATK implementations, see the C comment
-			ACCESSIBLE_SET_WIDGET.invokeExact(accessible, REGISTERED.contains(accessible) ? data : 0L);
+			GTK3.gtk_accessible_set_widget(accessible, REGISTERED.contains(accessible) ? data : 0L);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -393,31 +384,27 @@ public final class FFMAccessible {
 			call("atkComponent_get_extents", new long[] {component, x, y, width, height, coordinateType});
 			return;
 		}
-		try {
-			long widget = (long) ACCESSIBLE_GET_WIDGET.invokeExact(component);
-			GtkAllocation allocation = new GtkAllocation();
-			GTK.gtk_widget_get_allocation(widget, allocation);
-			long[] position = new long[2];
-			try (Arena arena = Arena.ofConfined()) {
-				MemorySegment fixedX = arena.allocate(JAVA_INT), fixedY = arena.allocate(JAVA_INT);
-				call("toDisplay", new long[] {GTK3.gtk_widget_get_window(widget), fixedX.address(), fixedY.address()});
-				position[0] = fixedX.get(JAVA_INT, 0);
-				position[1] = fixedY.get(JAVA_INT, 0);
-				if (coordinateType == ATK.ATK_XY_WINDOW) {
-					long top = (long) WIDGET_GET_TOPLEVEL.invokeExact(widget);
-					MemorySegment topX = arena.allocate(JAVA_INT), topY = arena.allocate(JAVA_INT);
-					call("toDisplay", new long[] {GTK3.gtk_widget_get_window(top), topX.address(), topY.address()});
-					position[0] -= topX.get(JAVA_INT, 0);
-					position[1] -= topY.get(JAVA_INT, 0);
-				}
+		long widget = GTK3.gtk_accessible_get_widget(component);
+		GtkAllocation allocation = new GtkAllocation();
+		GTK.gtk_widget_get_allocation(widget, allocation);
+		long[] position = new long[2];
+		try (Arena arena = Arena.ofConfined()) {
+			MemorySegment fixedX = arena.allocate(JAVA_INT), fixedY = arena.allocate(JAVA_INT);
+			call("toDisplay", new long[] {GTK3.gtk_widget_get_window(widget), fixedX.address(), fixedY.address()});
+			position[0] = fixedX.get(JAVA_INT, 0);
+			position[1] = fixedY.get(JAVA_INT, 0);
+			if (coordinateType == ATK.ATK_XY_WINDOW) {
+				long top = GTK3.gtk_widget_get_toplevel(widget);
+				MemorySegment topX = arena.allocate(JAVA_INT), topY = arena.allocate(JAVA_INT);
+				call("toDisplay", new long[] {GTK3.gtk_widget_get_window(top), topX.address(), topY.address()});
+				position[0] -= topX.get(JAVA_INT, 0);
+				position[1] -= topY.get(JAVA_INT, 0);
 			}
-			MemorySegment.ofAddress(x).reinterpret(4).set(JAVA_INT, 0, (int) position[0]);
-			MemorySegment.ofAddress(y).reinterpret(4).set(JAVA_INT, 0, (int) position[1]);
-			MemorySegment.ofAddress(width).reinterpret(4).set(JAVA_INT, 0, allocation.width);
-			MemorySegment.ofAddress(height).reinterpret(4).set(JAVA_INT, 0, allocation.height);
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
 		}
+		MemorySegment.ofAddress(x).reinterpret(4).set(JAVA_INT, 0, (int) position[0]);
+		MemorySegment.ofAddress(y).reinterpret(4).set(JAVA_INT, 0, (int) position[1]);
+		MemorySegment.ofAddress(width).reinterpret(4).set(JAVA_INT, 0, allocation.width);
+		MemorySegment.ofAddress(height).reinterpret(4).set(JAVA_INT, 0, allocation.height);
 	}
 
 	static long stub(String name, FunctionDescriptor descriptor) throws ReflectiveOperationException {
