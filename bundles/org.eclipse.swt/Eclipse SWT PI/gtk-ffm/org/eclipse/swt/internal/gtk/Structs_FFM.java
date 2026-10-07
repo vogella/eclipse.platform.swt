@@ -106,24 +106,24 @@ public static void GdkKeymapKey_write(MemorySegment s, org.eclipse.swt.internal.
 	s.set(JAVA_INT_UNALIGNED, 8L, o.level);
 }
 
-public static final long GdkRGBA_SIZEOF = 32L;
+public static final long GdkRGBA_SIZEOF = FFM.GTK4 ? 16L : 32L;
 public static final long GdkRGBA_RED_OFFSET = 0L;
-public static final long GdkRGBA_GREEN_OFFSET = 8L;
-public static final long GdkRGBA_BLUE_OFFSET = 16L;
-public static final long GdkRGBA_ALPHA_OFFSET = 24L;
+public static final long GdkRGBA_GREEN_OFFSET = FFM.GTK4 ? 4L : 8L;
+public static final long GdkRGBA_BLUE_OFFSET = FFM.GTK4 ? 8L : 16L;
+public static final long GdkRGBA_ALPHA_OFFSET = FFM.GTK4 ? 12L : 24L;
 
 public static void GdkRGBA_read(MemorySegment s, org.eclipse.swt.internal.gtk.GdkRGBA o) {
-	o.red = s.get(JAVA_DOUBLE_UNALIGNED, 0L);
-	o.green = s.get(JAVA_DOUBLE_UNALIGNED, 8L);
-	o.blue = s.get(JAVA_DOUBLE_UNALIGNED, 16L);
-	o.alpha = s.get(JAVA_DOUBLE_UNALIGNED, 24L);
+	if (FFM.GTK4) { o.red = (double) s.get(JAVA_FLOAT_UNALIGNED, 0L); } else { o.red = s.get(JAVA_DOUBLE_UNALIGNED, 0L); }
+	if (FFM.GTK4) { o.green = (double) s.get(JAVA_FLOAT_UNALIGNED, 4L); } else { o.green = s.get(JAVA_DOUBLE_UNALIGNED, 8L); }
+	if (FFM.GTK4) { o.blue = (double) s.get(JAVA_FLOAT_UNALIGNED, 8L); } else { o.blue = s.get(JAVA_DOUBLE_UNALIGNED, 16L); }
+	if (FFM.GTK4) { o.alpha = (double) s.get(JAVA_FLOAT_UNALIGNED, 12L); } else { o.alpha = s.get(JAVA_DOUBLE_UNALIGNED, 24L); }
 }
 
 public static void GdkRGBA_write(MemorySegment s, org.eclipse.swt.internal.gtk.GdkRGBA o) {
-	s.set(JAVA_DOUBLE_UNALIGNED, 0L, o.red);
-	s.set(JAVA_DOUBLE_UNALIGNED, 8L, o.green);
-	s.set(JAVA_DOUBLE_UNALIGNED, 16L, o.blue);
-	s.set(JAVA_DOUBLE_UNALIGNED, 24L, o.alpha);
+	if (FFM.GTK4) { s.set(JAVA_FLOAT_UNALIGNED, 0L, (float) o.red); } else { s.set(JAVA_DOUBLE_UNALIGNED, 0L, o.red); }
+	if (FFM.GTK4) { s.set(JAVA_FLOAT_UNALIGNED, 4L, (float) o.green); } else { s.set(JAVA_DOUBLE_UNALIGNED, 8L, o.green); }
+	if (FFM.GTK4) { s.set(JAVA_FLOAT_UNALIGNED, 8L, (float) o.blue); } else { s.set(JAVA_DOUBLE_UNALIGNED, 16L, o.blue); }
+	if (FFM.GTK4) { s.set(JAVA_FLOAT_UNALIGNED, 12L, (float) o.alpha); } else { s.set(JAVA_DOUBLE_UNALIGNED, 24L, o.alpha); }
 }
 
 public static final long GdkRectangle_SIZEOF = 16L;
@@ -186,17 +186,20 @@ public static void GtkBorder_write(MemorySegment s, org.eclipse.swt.internal.gtk
 	s.set(JAVA_SHORT_UNALIGNED, 6L, (short) o.bottom);
 }
 
-public static final long GtkCellRendererClass_SIZEOF = 264L;
-public static final long GtkCellRendererClass_RENDER_OFFSET = 192L;
+public static final long GtkCellRendererClass_SIZEOF = FFM.GTK4 ? 288L : 264L;
+public static final long GtkCellRendererClass_RENDER_OFFSET = FFM.GTK4 ? -1L : 192L;
+public static final long GtkCellRendererClass_SNAPSHOT_OFFSET = FFM.GTK4 ? 184L : -1L;
 public static final long GtkCellRendererClass_GET_PREFERRED_WIDTH_OFFSET = 144L;
 
 public static void GtkCellRendererClass_read(MemorySegment s, org.eclipse.swt.internal.gtk.GtkCellRendererClass o) {
-	o.render = s.get(JAVA_LONG_UNALIGNED, 192L);
+	if (!FFM.GTK4) { o.render = s.get(JAVA_LONG_UNALIGNED, 192L); }
+	if (FFM.GTK4) { o.snapshot = s.get(JAVA_LONG_UNALIGNED, 184L); }
 	o.get_preferred_width = s.get(JAVA_LONG_UNALIGNED, 144L);
 }
 
 public static void GtkCellRendererClass_write(MemorySegment s, org.eclipse.swt.internal.gtk.GtkCellRendererClass o) {
-	s.set(JAVA_LONG_UNALIGNED, 192L, o.render);
+	if (!FFM.GTK4) { s.set(JAVA_LONG_UNALIGNED, 192L, o.render); }
+	if (FFM.GTK4) { s.set(JAVA_LONG_UNALIGNED, 184L, o.snapshot); }
 	s.set(JAVA_LONG_UNALIGNED, 144L, o.get_preferred_width);
 }
 
@@ -214,20 +217,23 @@ public static void GtkRequisition_write(MemorySegment s, org.eclipse.swt.interna
 	s.set(JAVA_INT_UNALIGNED, 4L, o.height);
 }
 
-public static final long GtkWidgetClass_SIZEOF = 824L;
-public static final long GtkWidgetClass_MAP_OFFSET = 184L;
-public static final long GtkWidgetClass_SIZE_ALLOCATE_OFFSET = 216L;
+public static final long GtkWidgetClass_SIZEOF = FFM.GTK4 ? 408L : 824L;
+public static final long GtkWidgetClass_MAP_OFFSET = FFM.GTK4 ? 152L : 184L;
+public static final long GtkWidgetClass_SIZE_ALLOCATE_OFFSET = FFM.GTK4 ? 200L : 216L;
+public static final long GtkWidgetClass_SNAPSHOT_OFFSET = FFM.GTK4 ? 320L : -1L;
 
 public static void GtkWidgetClass_read(MemorySegment s, org.eclipse.swt.internal.gtk.GtkWidgetClass o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.GObjectClass_read(s, o);
-	o.map = s.get(JAVA_LONG_UNALIGNED, 184L);
-	o.size_allocate = s.get(JAVA_LONG_UNALIGNED, 216L);
+	if (FFM.GTK4) { o.map = s.get(JAVA_LONG_UNALIGNED, 152L); } else { o.map = s.get(JAVA_LONG_UNALIGNED, 184L); }
+	if (FFM.GTK4) { o.size_allocate = s.get(JAVA_LONG_UNALIGNED, 200L); } else { o.size_allocate = s.get(JAVA_LONG_UNALIGNED, 216L); }
+	if (FFM.GTK4) { o.snapshot = s.get(JAVA_LONG_UNALIGNED, 320L); }
 }
 
 public static void GtkWidgetClass_write(MemorySegment s, org.eclipse.swt.internal.gtk.GtkWidgetClass o) {
 	org.eclipse.swt.internal.gtk.Structs_FFM.GObjectClass_write(s, o);
-	s.set(JAVA_LONG_UNALIGNED, 184L, o.map);
-	s.set(JAVA_LONG_UNALIGNED, 216L, o.size_allocate);
+	if (FFM.GTK4) { s.set(JAVA_LONG_UNALIGNED, 152L, o.map); } else { s.set(JAVA_LONG_UNALIGNED, 184L, o.map); }
+	if (FFM.GTK4) { s.set(JAVA_LONG_UNALIGNED, 200L, o.size_allocate); } else { s.set(JAVA_LONG_UNALIGNED, 216L, o.size_allocate); }
+	if (FFM.GTK4) { s.set(JAVA_LONG_UNALIGNED, 320L, o.snapshot); }
 }
 
 public static final long PangoAttrColor_SIZEOF = 24L;

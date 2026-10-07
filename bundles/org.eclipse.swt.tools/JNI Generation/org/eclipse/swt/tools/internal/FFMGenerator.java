@@ -31,11 +31,23 @@ public class FFMGenerator extends JNIGenerator {
 		String packageName;
 		long size;
 		Map<String, String> fields = new HashMap<>();
+		/** Size and fields of the GTK4 compile of the same struct, <code>null</code> if it has none. */
+		Long size4;
+		Map<String, String> fields4;
 		/** Passed by value somewhere, so <code>Structs_FFM</code> needs its <code>MemoryLayout</code>. */
 		boolean byValue;
 
 		String helper() {
 			return packageName + "." + STRUCTS;
+		}
+
+		boolean has4() {
+			return size4 != null;
+		}
+
+		/** Whether GTK3 and GTK4 lay the struct out differently, so that the code has to choose at run time. */
+		boolean differs() {
+			return has4() && (size4 != size || !fields4.equals(fields));
 		}
 	}
 
@@ -46,7 +58,15 @@ public class FFMGenerator extends JNIGenerator {
 	/** Libraries the JNI glue of a natives class dlopens itself instead of linking against, as a lookup expression. */
 	static final Map<String, String> LOOKUPS = Map.of(
 		"org.eclipse.swt.internal.opengl.glx.GLX", "FFM.library(\"libGL.so.1\")",
-		"org.eclipse.swt.internal.webkit.WebKitGTK", "\"1\".equals(System.getenv(\"SWT_GTK4\")) ? FFM.library(\"libwebkitgtk-6.0.so.4\") : FFM.library(\"libwebkit2gtk-4.1.so.0\", \"libwebkit2gtk-4.0.so.37\")");
+		"org.eclipse.swt.internal.webkit.WebKitGTK", "FFM.GTK4 ? FFM.library(\"libwebkitgtk-6.0.so.4\") : FFM.library(\"libwebkit2gtk-4.1.so.0\", \"libwebkit2gtk-4.0.so.37\")");
+
+	/** Natives classes of the GTK3 compile only: the JNI library of GTK4 has none of them. */
+	static final Set<String> GTK3_CLASSES = Set.of("org.eclipse.swt.internal.gtk3.GTK3");
+
+	/** Overloads of one symbol that have the C ABI of a single GTK version, by the type of their first parameter. */
+	static final Map<String, Integer> OVERLOAD_VERSIONS = Map.of(
+		"org.eclipse.swt.internal.gtk.GDK#gdk_cursor_new_from_name(long,String)", 3,
+		"org.eclipse.swt.internal.gtk.GDK#gdk_cursor_new_from_name(String,long)", 4);
 
 	/** Natives classes left to hand written code as a whole, with the reason. */
 	static final Map<String, String> EXCLUDED = Map.of(
@@ -62,8 +82,16 @@ public class FFMGenerator extends JNIGenerator {
 		"GetMenuDefaultItem", "GetMenuItemCount", "GetMenuItemInfo", "InsertMenuItem", "SendInput",
 		"SetMenuItemInfo", "StartDoc", "StartPage");
 
-	final CTypes ctypes;
+	CTypes ctypes;
+	/** The GTK4 compile of the unit when the natives class serves GTK3 and GTK4, see {@link #planBoth}. */
+	CTypes ctypes4;
+	/** Natives that exist in the GTK4 headers only are planned from this compile. */
+	boolean gtk4Only;
+	/** The compile {@link #fill} is reading: the GTK4 one while planning the GTK4 variant. */
+	boolean pass4;
 	final Map<String, StructInfo> structs;
+	/** Differences between the GTK3 and GTK4 compile, for the report. */
+	final Map<String, String> differences = new TreeMap<>();
 	final Map<String, String> unsupported = new TreeMap<>();
 	final Set<String> supported = new TreeSet<>();
 	/** Lookup of the class being generated, <code>null</code> for the SWT libraries. */
@@ -79,6 +107,23 @@ public class FFMGenerator extends JNIGenerator {
 	public FFMGenerator(CTypes ctypes, Map<String, StructInfo> structs) {
 		this.ctypes = ctypes;
 		this.structs = structs;
+	}
+
+	/** The GTK4 compile of the unit; with <code>only</code>, the unit is generated from it alone. */
+	public void setGtk4(CTypes ctypes4, boolean only) {
+		this.ctypes4 = ctypes4;
+		this.gtk4Only = only;
+	}
+
+	/** Natives both compiles declare with the same C ABI. */
+	int sameAbi;
+
+	public int getSameAbi() {
+		return sameAbi;
+	}
+
+	public Map<String, String> getDifferences() {
+		return differences;
 	}
 
 	public void setImports(Map<String, String> imports) {
@@ -225,6 +270,19 @@ public class FFMGenerator extends JNIGenerator {
 		List<Param> params = new ArrayList<>();
 		int firstVariadic = -1;
 		boolean dynamic, critical, arena, captureLastError;
+		/** The variant for GTK4 where the C ABI of GTK3 and GTK4 differ, chosen at run time. */
+		Plan alt;
+		/** 3 or 4 where the native has the ABI of that GTK version only, 0 otherwise. */
+		int only;
+
+		/** What the generated code depends on, to tell whether the GTK3 and GTK4 plans are the same. */
+		String signature() {
+			StringBuilder b = new StringBuilder();
+			b.append(cName).append(' ').append(special).append(' ').append(returnKind).append(' ').append(firstVariadic);
+			b.append(dynamic).append(critical).append(arena).append(captureLastError);
+			for (Param p : params) b.append(',').append(p.mode).append(':').append(p.kind).append(p.address);
+			return b.toString();
+		}
 	}
 
 	static boolean isMemmove(JNIMethod method) {
@@ -240,18 +298,88 @@ public class FFMGenerator extends JNIGenerator {
 			unsupported.put(key(method), reason);
 			return null;
 		}
-		Plan plan = new Plan();
-		plan.method = method;
-		String accessor = method.getAccessor();
-		String name = method.getName();
-		plan.cName = accessor.length() != 0 ? accessor : name.startsWith("_") ? name.substring(1) : name;
+		pass4 = gtk4Only;
+		Plan plan = newPlan(method);
 		reason = fill(plan);
+		pass4 = false;
+		if (ctypes4 != null) {
+			plan = planBoth(method, plan, reason);
+			reason = plan == null ? unsupported.get(key(method)) : null;
+		}
 		if (reason != null) {
 			unsupported.put(key(method), reason);
 			return null;
 		}
 		supported.add(key(method));
+		if (plan.special == null && !plan.dynamic && plan.only == 0) {
+			Integer version = OVERLOAD_VERSIONS.get(key(method));
+			if (version != null) plan.only = version;
+			else if (GTK3_CLASSES.contains(method.getDeclaringClass().getName())) plan.only = 3;
+			else if (gtk4Only) plan.only = 4;
+		}
 		return plan;
+	}
+
+	Plan newPlan(JNIMethod method) {
+		Plan plan = new Plan();
+		plan.method = method;
+		String accessor = method.getAccessor();
+		String name = method.getName();
+		plan.cName = accessor.length() != 0 ? accessor : name.startsWith("_") ? name.substring(1) : name;
+		return plan;
+	}
+
+	static boolean missing(String reason) {
+		return reason != null && (reason.startsWith("no C function declaration") || reason.startsWith("struct without layout"));
+	}
+
+	/**
+	 * Plans a native of a class that serves GTK3 and GTK4 from both compiles: a native only one of them declares
+	 * is planned from that one, and where the C ABI differs the plan carries a variant that is chosen at run time.
+	 * Returns <code>null</code> after recording the reason when neither compile can generate the native.
+	 */
+	Plan planBoth(JNIMethod method, Plan plan3, String reason3) {
+		CTypes saved = ctypes;
+		ctypes = ctypes4;
+		pass4 = true;
+		Plan plan4 = newPlan(method);
+		String reason4 = fill(plan4);
+		ctypes = saved;
+		pass4 = false;
+		String key = key(method);
+		if (reason3 != null && reason4 != null) {
+			unsupported.put(key, reason3);
+			return null;
+		}
+		if (reason3 != null) {
+			if (!missing(reason3)) {
+				unsupported.put(key, reason3);
+				return null;
+			}
+			differences.put(key, "GTK4 only");
+			plan4.only = 4;
+			return plan4;
+		}
+		if (reason4 != null) {
+			if (!missing(reason4)) {
+				unsupported.put(key, "GTK4: " + reason4);
+				return null;
+			}
+			differences.put(key, "GTK3 only (" + reason4 + ")");
+			plan3.only = 3;
+			return plan3;
+		}
+		if (plan3.signature().equals(plan4.signature())) {
+			sameAbi++;
+			return plan3;
+		}
+		if (plan3.special != null) {
+			unsupported.put(key, "GTK3 and GTK4 differ for " + plan3.special);
+			return null;
+		}
+		differences.put(key, "C ABI differs, chosen at run time: GTK3 " + plan3.signature() + " GTK4 " + plan4.signature());
+		plan3.alt = plan4;
+		return plan3;
 	}
 
 	String reject(JNIMethod method) {
@@ -272,6 +400,12 @@ public class FFMGenerator extends JNIGenerator {
 		return null;
 	}
 
+	/** The struct class of the compile being read, <code>null</code> if it has no layout there. */
+	StructInfo struct(String name) {
+		StructInfo info = structs.get(name);
+		return info != null && pass4 && !info.has4() ? null : info;
+	}
+
 	String fill(Plan plan) {
 		JNIMethod method = plan.method;
 		JNIParameter[] params = method.getParameters();
@@ -286,7 +420,7 @@ public class FFMGenerator extends JNIGenerator {
 			boolean toNative = params[0].getType().isPrimitive();
 			JNIType structType = params[toNative ? 1 : 0].getType();
 			if (structType.isPrimitive() || structType.isArray()) return "memmove: between primitives";
-			StructInfo info = structs.get(structType.getName());
+			StructInfo info = struct(structType.getName());
 			if (info == null) return "struct without layout: " + structType.getSimpleName();
 			plan.special = toNative ? "memmove_write" : "memmove_read";
 			plan.struct = info;
@@ -294,10 +428,10 @@ public class FFMGenerator extends JNIGenerator {
 		}
 		if (method.getName().endsWith("_sizeof") && params.length == 0 && returnType.isType("int")) {
 			String structName = method.getName().substring(0, method.getName().length() - "_sizeof".length());
-			StructInfo match = structs.get(packageOf(method.getDeclaringClass().getName()) + "." + structName);
+			StructInfo match = struct(packageOf(method.getDeclaringClass().getName()) + "." + structName);
 			if (match == null) {
 				for (StructInfo info : structs.values()) {
-					if (match == null && info.clazz.getSimpleName().equals(structName)) match = info;
+					if (match == null && info.clazz.getSimpleName().equals(structName) && (!pass4 || info.has4())) match = info;
 				}
 			}
 			if (match != null) {
@@ -376,8 +510,9 @@ public class FFMGenerator extends JNIGenerator {
 					p.kind = cKind;
 				} else {
 					if (cKind != Kind.STRUCT) return "struct by value, C parameter is not a struct: " + function.params.get(i);
-					p.struct = structs.get(p.type.getName());
+					p.struct = struct(p.type.getName());
 					if (p.struct == null) return "struct without layout: " + p.type.getSimpleName();
+					if (p.struct.differs()) return "struct by value: layout differs between GTK3 and GTK4";
 					String reason = structLayout(p.struct, new ArrayList<>());
 					if (reason != null) return "struct by value: " + reason;
 					p.struct.byValue = true;
@@ -399,23 +534,29 @@ public class FFMGenerator extends JNIGenerator {
 				}
 				if (p.type.isArray()) {
 					JNIType component = p.type.getComponentType();
-					if (!component.isPrimitive() || component.isType("boolean")) return "array type: " + p.type.getTypeSignature3();
-					// a heap segment has no address to pass as an integer
-					p.mode = isCritical(param) && !p.address ? "critical" : "array";
+					if (component.isType("java.lang.String") && !p.address) {
+						// swt_getArrayOfStringsUTF: a NULL terminated array of UTF-8 strings
+						p.mode = "strings";
+					} else if (!component.isPrimitive() || component.isType("boolean")) {
+						return "array type: " + p.type.getTypeSignature3();
+					} else {
+						// a heap segment has no address to pass as an integer
+						p.mode = isCritical(param) && !p.address ? "critical" : "array";
+					}
 				} else if (p.type.isType("java.lang.String")) {
 					if (param.getFlag(FLAG_UNICODE)) return "unicode string: " + plan.cName;
 					p.mode = "string";
 				} else if (p.type.isType("java.lang.Object") || p.type.isType("java.lang.Class")) {
 					return "Object parameter: " + plan.cName;
 				} else {
-					p.struct = structs.get(p.type.getName());
+					p.struct = struct(p.type.getName());
 					if (p.struct == null) return "struct without layout: " + p.type.getSimpleName();
 					p.mode = "struct";
 				}
 				p.kind = Kind.PTR;
 			}
 			if (p.mode.equals("critical")) plan.critical = true;
-			if (p.mode.equals("array") || p.mode.equals("string") || p.mode.equals("struct")) plan.arena = true;
+			if (p.mode.equals("array") || p.mode.equals("strings") || p.mode.equals("string") || p.mode.equals("struct")) plan.arena = true;
 			plan.params.add(p);
 		}
 		return null;
@@ -492,6 +633,7 @@ public class FFMGenerator extends JNIGenerator {
 		String returnJava = method.getReturnType().getTypeSignature3();
 		String holder = "MH_" + getFunctionName(method);
 		if (plan.special == null) generateHolder(plan, holder);
+		if (plan.alt != null) generateHolder(plan.alt, "MH4_" + getFunctionName(method));
 
 		output("public static ");
 		output(returnJava);
@@ -511,6 +653,18 @@ public class FFMGenerator extends JNIGenerator {
 			outputln();
 			return;
 		}
+		if (plan.alt != null) {
+			outputln("\tif (FFM.GTK4) {");
+			generateBody(plan.alt, "MH4_" + getFunctionName(method), returnJava);
+			if (plan.alt.returnKind == Kind.VOID) outputln("\t\treturn;");
+			outputln("\t}");
+		}
+		generateBody(plan, holder, returnJava);
+		outputln("}");
+		outputln();
+	}
+
+	void generateBody(Plan plan, String holder, String returnJava) {
 		output(plan.arena ? "\ttry (Arena arena = Arena.ofConfined()) {" : "\ttry {");
 		outputln();
 		for (int i = 0; i < plan.params.size(); i++) {
@@ -521,6 +675,9 @@ public class FFMGenerator extends JNIGenerator {
 					break;
 				case "string":
 					outputln("\t\tMemorySegment lparg" + i + " = FFM.string(arena, arg" + i + ");");
+					break;
+				case "strings":
+					outputln("\t\tMemorySegment lparg" + i + " = FFM.strings(arena, arg" + i + ");");
 					break;
 				case "struct":
 					outputln("\t\tMemorySegment lparg" + i + " = arg" + i + " == null ? MemorySegment.NULL : arena.allocate(" + p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_SIZEOF, 16);");
@@ -581,8 +738,6 @@ public class FFMGenerator extends JNIGenerator {
 		outputln("\t} catch (Throwable e) {");
 		outputln("\t\tthrow FFM.rethrow(e);");
 		outputln("\t}");
-		outputln("}");
-		outputln();
 	}
 
 	void generateHolder(Plan plan, String holder) {
@@ -590,6 +745,7 @@ public class FFMGenerator extends JNIGenerator {
 		output(holder);
 		outputln(" {");
 		output("\tstatic final MethodHandle MH = FFM.");
+		if (plan.only != 0 && !plan.dynamic) output("gtk" + plan.only + "Only(FFM.");
 		output(plan.dynamic ? "downcallOptional" : "downcall");
 		output("(" + lookupArgument(plan) + "\"");
 		output(plan.cName);
@@ -597,7 +753,7 @@ public class FFMGenerator extends JNIGenerator {
 		StringBuilder layouts = new StringBuilder();
 		for (Param p : plan.params) {
 			if (layouts.length() != 0) layouts.append(", ");
-			boolean segment = p.mode.equals("array") || p.mode.equals("string") || p.mode.equals("struct") || p.mode.equals("critical");
+			boolean segment = p.mode.equals("array") || p.mode.equals("strings") || p.mode.equals("string") || p.mode.equals("struct") || p.mode.equals("critical");
 			if (p.mode.equals("byvalue")) layouts.append(p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_LAYOUT");
 			else layouts.append(segment && !p.address ? "ADDRESS" : layout(p.kind));
 		}
@@ -609,7 +765,7 @@ public class FFMGenerator extends JNIGenerator {
 		if (plan.firstVariadic != -1) output(", Linker.Option.firstVariadicArg(" + plan.firstVariadic + ")");
 		if (plan.critical) output(", Linker.Option.critical(true)");
 		if (plan.captureLastError) output(", Linker.Option.captureCallState(\"GetLastError\")");
-		outputln(");");
+		outputln(plan.only != 0 && !plan.dynamic ? "), \"" + plan.cName + "\");" : ");");
 		outputln("}");
 	}
 
@@ -770,7 +926,7 @@ public class FFMGenerator extends JNIGenerator {
 		for (StructInfo info : infos) {
 			String name = info.clazz.getSimpleName();
 			String type = info.clazz.getName();
-			outputln("public static final long " + name + "_SIZEOF = " + info.size + "L;");
+			outputln("public static final long " + name + "_SIZEOF = " + choose(info, info.size + "L", info.has4() ? info.size4 + "L" : null) + ";");
 			if (info.byValue) {
 				List<Object> layout = new ArrayList<>();
 				if (structLayout(info, layout) != null) throw new IllegalStateException(name);
@@ -779,8 +935,10 @@ public class FFMGenerator extends JNIGenerator {
 			for (JNIField field : info.clazz.getDeclaredFields()) {
 				if (ignoreField(field)) continue;
 				String layout = info.fields.get(field.getName());
-				if (layout == null || layout.startsWith("bit")) continue;
-				outputln("public static final long " + name + "_" + field.getName().toUpperCase(java.util.Locale.ROOT) + "_OFFSET = " + layout.split(",")[0] + "L;");
+				String layout4 = info.has4() ? info.fields4.get(field.getName()) : null;
+				if (layout == null && layout4 == null || layout != null && layout.startsWith("bit") || layout4 != null && layout4.startsWith("bit")) continue;
+				outputln("public static final long " + name + "_" + field.getName().toUpperCase(java.util.Locale.ROOT) + "_OFFSET = "
+					+ choose(info, layout == null ? "-1L" : layout.split(",")[0] + "L", layout4 == null ? "-1L" : layout4.split(",")[0] + "L") + ";");
 			}
 			outputln();
 			for (boolean read : new boolean[] {true, false}) {
@@ -793,14 +951,28 @@ public class FFMGenerator extends JNIGenerator {
 				for (JNIField field : info.clazz.getDeclaredFields()) {
 					if (ignoreField(field)) continue;
 					String layout = info.fields.get(field.getName());
-					if (layout == null) continue;
-					outputln("\t" + fieldStatement(field, layout, read));
+					String layout4 = info.has4() ? info.fields4.get(field.getName()) : null;
+					if (layout == null && layout4 == null) continue;
+					if (!info.has4() || Objects.equals(layout, layout4)) {
+						outputln("\t" + fieldStatement(field, layout, read));
+					} else if (layout4 == null) {
+						outputln("\tif (!FFM.GTK4) { " + fieldStatement(field, layout, read) + " }");
+					} else if (layout == null) {
+						outputln("\tif (FFM.GTK4) { " + fieldStatement(field, layout4, read) + " }");
+					} else {
+						outputln("\tif (FFM.GTK4) { " + fieldStatement(field, layout4, read) + " } else { " + fieldStatement(field, layout, read) + " }");
+					}
 				}
 				outputln("}");
 				outputln();
 			}
 		}
 		outputln("}");
+	}
+
+	/** A constant, or the choice between the GTK3 and GTK4 value of a struct that is laid out differently. */
+	static String choose(StructInfo info, String value3, String value4) {
+		return info.differs() && value4 != null && !value4.equals(value3) ? "FFM.GTK4 ? " + value4 + " : " + value3 : value3;
 	}
 
 	String fieldStatement(JNIField field, String layout, boolean read) {

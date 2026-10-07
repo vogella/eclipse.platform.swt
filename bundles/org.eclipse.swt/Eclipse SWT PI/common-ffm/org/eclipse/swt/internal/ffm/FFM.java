@@ -14,6 +14,7 @@ import static java.lang.foreign.ValueLayout.*;
 
 import java.lang.foreign.*;
 import java.lang.invoke.*;
+import java.nio.charset.*;
 import java.util.*;
 
 /**
@@ -25,9 +26,19 @@ public final class FFM {
 
 	static final boolean WINDOWS = System.getProperty("os.name", "").startsWith("Windows");
 
+	/** Whether SWT runs on GTK4, decided the way <code>OS</code> picks <code>swt-pi4</code> or <code>swt-pi3</code>. */
+	public static final boolean GTK4 = !WINDOWS && useGtk4();
+
 	/** Libraries searched after the SWT libraries, whose dlopen handles already cover their dependencies. */
 	static final String[] GTK_LIBRARIES = {
 		"libgtk-3.so.0", "libgdk-3.so.0", "libgdk_pixbuf-2.0.so.0", "libgobject-2.0.so.0", "libglib-2.0.so.0", "libgio-2.0.so.0",
+		"libpango-1.0.so.0", "libpangocairo-1.0.so.0", "libcairo.so.2", "libatk-1.0.so.0", "libgthread-2.0.so.0",
+		"libfontconfig.so.1", "libX11.so.6",
+	};
+
+	/** GTK4 contains GDK, and no GTK3 library may be loaded into a GTK4 process. */
+	static final String[] GTK4_LIBRARIES = {
+		"libgtk-4.so.1", "libgdk_pixbuf-2.0.so.0", "libgobject-2.0.so.0", "libglib-2.0.so.0", "libgio-2.0.so.0",
 		"libpango-1.0.so.0", "libpangocairo-1.0.so.0", "libcairo.so.2", "libatk-1.0.so.0", "libgthread-2.0.so.0",
 		"libfontconfig.so.1", "libX11.so.6",
 	};
@@ -42,11 +53,61 @@ public final class FFM {
 		"urlmon.dll", "wininet.dll", "propsys.dll", "gdiplus.dll", "comctl32.dll",
 	};
 
-	static final String[] LIBRARIES = WINDOWS ? WIN32_LIBRARIES : GTK_LIBRARIES;
+	static final String[] LIBRARIES = WINDOWS ? WIN32_LIBRARIES : GTK4 ? GTK4_LIBRARIES : GTK_LIBRARIES;
 
 	static final SymbolLookup LOOKUP = createLookup();
 
 	private FFM() {
+	}
+
+	/**
+	 * <code>SWT_GTK4=1</code> selects GTK4 and anything else GTK3, each falling back to the other if its GTK library
+	 * cannot be loaded, as <code>OS</code> does with <code>swt-pi4</code> and <code>swt-pi3</code>.
+	 */
+	static boolean useGtk4() {
+		boolean requested = "1".equals(environment("SWT_GTK4"));
+		return GtkLibraries.available(requested) ? requested : GtkLibraries.available(!requested) ? !requested : requested;
+	}
+
+	/** Stands in for <code>Library.loadLibrary("swt-pi4")</code> and <code>("swt-pi3")</code> in <code>OS</code>. */
+	public static void loadGtk(boolean gtk4) {
+		if (!GtkLibraries.available(gtk4)) throw new UnsatisfiedLinkError("Cannot load " + GtkLibraries.name(gtk4));
+	}
+
+	/** The C environment, which sees a <code>setenv</code> after the JVM started, as <code>OS</code> does. */
+	static String environment(String name) {
+		try {
+			MemorySegment getenv = LINKER.defaultLookup().find("getenv").orElseThrow();
+			MethodHandle handle = LINKER.downcallHandle(getenv, FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS));
+			try (Arena arena = Arena.ofConfined()) {
+				MemorySegment value = (MemorySegment) handle.invokeExact(arena.allocateFrom(name));
+				return value.equals(MemorySegment.NULL) ? null : value.reinterpret(Long.MAX_VALUE).getString(0, StandardCharsets.ISO_8859_1);
+			}
+		} catch (Throwable e) {
+			return System.getenv(name);
+		}
+	}
+
+	/** Which GTK major versions can be loaded, probed on demand and once, so that a version nobody asks about is never mapped. */
+	private static final class GtkLibraries {
+		private static final Boolean[] LOADABLE = new Boolean[2];
+
+		static String name(boolean gtk4) {
+			return gtk4 ? "libgtk-4.so.1" : "libgtk-3.so.0";
+		}
+
+		static synchronized boolean available(boolean gtk4) {
+			int index = gtk4 ? 1 : 0;
+			if (LOADABLE[index] == null) {
+				try {
+					SymbolLookup.libraryLookup(name(gtk4), Arena.global());
+					LOADABLE[index] = true;
+				} catch (IllegalArgumentException e) {
+					LOADABLE[index] = false;
+				}
+			}
+			return LOADABLE[index];
+		}
 	}
 
 	static SymbolLookup createLookup() {
@@ -114,10 +175,23 @@ public final class FFM {
 	public static MethodHandle downcall(SymbolLookup lookup, String name, FunctionDescriptor descriptor, Linker.Option... options) {
 		MethodHandle handle = downcallOptional(lookup, name, descriptor, options);
 		if (handle != null) return handle;
-		MethodType type = descriptor.toMethodType();
+		return unavailable(descriptor.toMethodType(), name);
+	}
+
+	static MethodHandle unavailable(MethodType type, String name) {
 		MethodHandle thrower = MethodHandles.throwException(type.returnType(), UnsatisfiedLinkError.class);
 		thrower = MethodHandles.insertArguments(thrower, 0, new UnsatisfiedLinkError(name));
 		return MethodHandles.dropArguments(thrower, 0, type.parameterList());
+	}
+
+	/** The handle under GTK3, one that throws UnsatisfiedLinkError under GTK4, where the native has no ABI of this shape. */
+	public static MethodHandle gtk3Only(MethodHandle handle, String name) {
+		return GTK4 ? unavailable(handle.type(), name) : handle;
+	}
+
+	/** The handle under GTK4, one that throws UnsatisfiedLinkError under GTK3. */
+	public static MethodHandle gtk4Only(MethodHandle handle, String name) {
+		return GTK4 ? handle : unavailable(handle.type(), name);
 	}
 
 	/** Links <code>name</code>, or returns <code>null</code> if the symbol does not exist. */
@@ -192,6 +266,16 @@ public final class FFM {
 
 	public static MemorySegment string(Arena arena, String string) {
 		return string == null ? MemorySegment.NULL : arena.allocateFrom(string);
+	}
+
+	/** A NULL terminated array of UTF-8 strings, where a <code>null</code> element ends the strings early. */
+	public static MemorySegment strings(Arena arena, String[] strings) {
+		if (strings == null) return MemorySegment.NULL;
+		MemorySegment array = arena.allocate(ADDRESS.byteSize() * (strings.length + 1L), ADDRESS.byteAlignment());
+		for (int i = 0; i < strings.length; i++) {
+			array.setAtIndex(ADDRESS, i, strings[i] == null ? MemorySegment.NULL : arena.allocateFrom(strings[i]));
+		}
+		return array;
 	}
 
 	public static MemorySegment copyIn(Arena arena, byte[] array) {
