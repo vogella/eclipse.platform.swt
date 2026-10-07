@@ -9,9 +9,10 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 ###############################################################################
-# Generates the GTK3 FFM bindings from the SWT native declarations.
+# Generates the GTK FFM bindings from the SWT native declarations, reading both the GTK3 and the GTK4 compile of the
+# natives classes that serve both versions (OS, GDK, GTK, ATK) and the GTK4 compile of GTK4.
 #
-# Needs clang, gcc, pkg-config with the GTK3 and GL development headers, a JDK 25 and
+# Needs clang, gcc, pkg-config with the GTK3, GTK4 and GL development headers, a JDK 25 and
 # an Eclipse installation (ECLIPSE_HOME) providing JDT Core for the generator.
 # Intermediate files go to BUILD_DIR (default: /tmp/swt-ffm-build).
 
@@ -49,6 +50,9 @@ CAIRO_FLAGS="$(pkg-config --cflags cairo)"
 ATK_FLAGS="$(pkg-config --cflags atk gtk+-3.0 gtk+-unix-print-3.0)"
 GLX_FLAGS="$(pkg-config --cflags gl x11)"
 WEBKIT_FLAGS="$(pkg-config --cflags gio-2.0 gtk+-3.0)"
+# the flags of the GTK4 build in make_linux.mak
+GTK4_FLAGS="$(pkg-config --cflags gtk4 gtk4-x11 gtk4-unix-print)"
+ATK4_FLAGS="$(pkg-config --cflags atk gtk4 gtk4-unix-print)"
 INCLUDES=(-I"$SWT/Eclipse SWT/common/library" -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux")
 CFLAGS=(-DLINUX -DGTK -std=gnu17 -w "${INCLUDES[@]}")
 
@@ -63,18 +67,36 @@ UNITS=(
 	"org.eclipse.swt.internal.webkit.WebKitGTK|Eclipse SWT WebKit/gtk/library/webkitgtk.c|$WEBKIT_FLAGS"
 )
 
+# the same natives classes compiled for GTK4; c.c, cairo.c, glx.c and webkitgtk.c do not depend on the GTK version
+UNITS4=(
+	"org.eclipse.swt.internal.gtk.OS|Eclipse SWT PI/gtk/library/os.c|$GTK4_FLAGS"
+	"org.eclipse.swt.internal.gtk4.GTK4|Eclipse SWT PI/gtk/library/gtk4.c|$GTK4_FLAGS"
+	"org.eclipse.swt.internal.accessibility.gtk.ATK|Eclipse SWT PI/gtk/library/atk.c|$ATK4_FLAGS"
+)
+
+# read_unit <directory> <unit>: AST, layout probe and layout of one C file, appends to args
+read_unit() {
+	local dir="$1" main cfile flags name
+	IFS='|' read -r main cfile flags <<< "$2"
+	name=$(basename "$cfile" .c)
+	mkdir -p "$BUILD_DIR/$dir"
+	echo "Reading C types and struct layouts of $name ($dir)"
+	# shellcheck disable=SC2086
+	clang -fsyntax-only -Xclang -ast-dump -fno-color-diagnostics "${CFLAGS[@]}" -iquote "$(dirname "$SWT/$cfile")" $flags "$SWT/$cfile" > "$BUILD_DIR/$dir/$name.ast"
+	run_generator probe "$main" "$BUILD_DIR/$dir/$name.ast" "$BUILD_DIR/$dir/${name}_probe.c"
+	# shellcheck disable=SC2086
+	gcc "${CFLAGS[@]}" -iquote "$(dirname "$SWT/$cfile")" -iquote "$SWT/Eclipse SWT PI/gtk/library" $flags "$BUILD_DIR/$dir/${name}_probe.c" -o "$BUILD_DIR/$dir/${name}_probe"
+	"$BUILD_DIR/$dir/${name}_probe" > "$BUILD_DIR/$dir/${name}_layout.txt"
+	args+=("$main" "$BUILD_DIR/$dir/$name.ast" "$BUILD_DIR/$dir/${name}_layout.txt")
+}
+
 args=()
 for unit in "${UNITS[@]}"; do
-	IFS='|' read -r main cfile flags <<< "$unit"
-	name=$(basename "$cfile" .c)
-	echo "Reading C types and struct layouts of $name"
-	# shellcheck disable=SC2086
-	clang -fsyntax-only -Xclang -ast-dump -fno-color-diagnostics "${CFLAGS[@]}" -iquote "$(dirname "$SWT/$cfile")" $flags "$SWT/$cfile" > "$BUILD_DIR/$name.ast"
-	run_generator probe "$main" "$BUILD_DIR/$name.ast" "$BUILD_DIR/${name}_probe.c"
-	# shellcheck disable=SC2086
-	gcc "${CFLAGS[@]}" -iquote "$(dirname "$SWT/$cfile")" -iquote "$SWT/Eclipse SWT PI/gtk/library" $flags "$BUILD_DIR/${name}_probe.c" -o "$BUILD_DIR/${name}_probe"
-	"$BUILD_DIR/${name}_probe" > "$BUILD_DIR/${name}_layout.txt"
-	args+=("$main" "$BUILD_DIR/$name.ast" "$BUILD_DIR/${name}_layout.txt")
+	read_unit gtk3 "$unit"
+done
+args+=(--gtk4)
+for unit in "${UNITS4[@]}"; do
+	read_unit gtk4 "$unit"
 done
 
 # only the generated classes, hand written FFM support classes live in the same folders

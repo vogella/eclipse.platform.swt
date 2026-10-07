@@ -1791,7 +1791,7 @@ public static void gtk_im_context_reset(long arg0) {
 }
 
 private static final class MH_gtk_1im_1context_1set_1client_1window {
-	static final MethodHandle MH = FFM.downcall("gtk_im_context_set_client_window", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_im_context_set_client_window", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_im_context_set_client_window");
 }
 public static void gtk_im_context_set_client_window(long arg0, long arg1) {
 	try {
@@ -2723,7 +2723,7 @@ public static long gtk_paper_size_new_from_ppd(byte[] arg0, byte[] arg1, double 
 }
 
 private static final class MH_gtk_1plug_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_plug_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_plug_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_plug_new");
 }
 public static long gtk_plug_new(long arg0) {
 	try {
@@ -3482,6 +3482,19 @@ public static void gtk_scale_set_draw_value(long arg0, boolean arg1) {
 	}
 }
 
+private static final class MH_gtk_1scrollable_1get_1type {
+	static final MethodHandle MH = FFM.downcall("gtk_scrollable_get_type", FunctionDescriptor.of(JAVA_LONG));
+}
+public static long gtk_scrollable_get_type() {
+	try {
+		long rc = (long) MH_gtk_1scrollable_1get_1type.MH.invokeExact();
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1scrollable_1get_1vadjustment {
 	static final MethodHandle MH = FFM.downcall("gtk_scrollable_get_vadjustment", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
 }
@@ -3677,7 +3690,7 @@ public static long gtk_settings_get_default() {
 }
 
 private static final class MH_gtk_1socket_1get_1id {
-	static final MethodHandle MH = FFM.downcall("gtk_socket_get_id", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_socket_get_id", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_socket_get_id");
 }
 public static long gtk_socket_get_id(long arg0) {
 	try {
@@ -3690,7 +3703,7 @@ public static long gtk_socket_get_id(long arg0) {
 }
 
 private static final class MH_gtk_1socket_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_socket_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_socket_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_socket_new");
 }
 public static long gtk_socket_new() {
 	try {
@@ -6194,6 +6207,19 @@ private static final class MH_gtk_1widget_1get_1tooltip_1text {
 public static long gtk_widget_get_tooltip_text(long arg0) {
 	try {
 		long rc = (long) MH_gtk_1widget_1get_1tooltip_1text.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1widget_1get_1type {
+	static final MethodHandle MH = FFM.downcall("gtk_widget_get_type", FunctionDescriptor.of(JAVA_LONG));
+}
+public static long gtk_widget_get_type() {
+	try {
+		long rc = (long) MH_gtk_1widget_1get_1type.MH.invokeExact();
 		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
