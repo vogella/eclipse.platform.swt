@@ -167,6 +167,14 @@ public class SelfTest {
 			check(index++, "diff-size-mismatch-whole-area", () ->
 					DiffCheck.checkSizeMismatchWholeArea(firstCapture));
 			check(index++, "diff-throughput-measured", () -> DiffCheck.checkThroughput(out));
+			check(index++, "skijaproto-backend-genuinely-activates", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkActivation(out)));
+			check(index++, "skijaproto-supported-specimen-captures", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkSupportedCapture(out)));
+			check(index++, "skijaproto-unsupported-specimen-reported-as-data", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkUnsupportedReported(out)));
+			check(index++, "skijaproto-catalog-coverage-counted", linuxGtkOnly(() ->
+					SkijaProtoCheck.checkCatalogCoverage(out)));
 			check(index++, "result-roundtrip-empty-run", () -> ResultCheck.checkRoundTripEmptyRun(env));
 			check(index++, "result-roundtrip-failed-and-unsupported-captures", () ->
 					ResultCheck.checkRoundTripFailureStatuses(env));
@@ -200,6 +208,18 @@ public class SelfTest {
 					NativeCheck.checkUnsupportedAsData(display, nativeBackend, env, out));
 			check(index++, "native-versus-native-sweep-equal-over-catalog", () ->
 					NativeCheck.checkNativeVsNativeSweep(display, nativeBackend, env, out));
+			check(index++, "skiacanvas-backend-genuinely-activates", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkActivation(out)));
+			check(index++, "skiacanvas-supported-specimen-captures", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkSupportedCapture(out)));
+			check(index++, "skiacanvas-unsupported-specimen-reported-as-data", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkUnsupportedReported(out)));
+			check(index++, "skiacanvas-catalog-coverage-counted", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkCatalogCoverage(out)));
+			check(index++, "skiacanvas-flat-skia-style-collision-reported", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkFlatSkiaCollision(display, out)));
+			check(index++, "skiacanvas-zoom200-size-discrepancy-measured", linuxGtkOnly(() ->
+					SkiaCanvasCheck.checkZoom200DiscrepancyMeasured(out)));
 			check(index++, "run-filters-select-what-they-claim", () ->
 					RunCheck.checkFiltersSelectWhatTheyClaim(out));
 			check(index++, "run-clean-exits-zero-and-schema-valid", () -> {

@@ -34,6 +34,7 @@ import org.eclipse.swt.visualoracle.impl.ClusterDiffer;
 import org.eclipse.swt.visualoracle.impl.GtkVersion;
 import org.eclipse.swt.visualoracle.impl.NativeBackend;
 import org.eclipse.swt.visualoracle.impl.PlatformSupport;
+import org.eclipse.swt.visualoracle.impl.SkijaProtoBackend;
 import org.eclipse.swt.visualoracle.impl.ResultMerger;
 import org.eclipse.swt.visualoracle.json.JsonWriter;
 import org.eclipse.swt.visualoracle.result.CaptureEntry;
@@ -71,7 +72,7 @@ public final class RunVerb {
 	private static final Path DEFAULT_RUNS_ROOT = Path.of(SCRATCH_ROOT, "runs");
 
 	private static final Set<String> CHILD_BACKENDS = Set.of(NativeBackend.ID, NativeBackend.BASELINE_ID,
-			NativeBackend.CANDIDATE_ID);
+			NativeBackend.CANDIDATE_ID, SkijaProtoBackend.ID);
 	private static final int DEFAULT_BATCH_SIZE = 25;
 
 	private final PrintStream stdout;
@@ -260,7 +261,8 @@ public final class RunVerb {
 				  --candidate BACKEND     side under test, default native-candidate
 				                          backends: native (this worktree), native-baseline (SWT from
 				                          $ORACLE_BASELINE, default master), native-candidate (SWT from
-				                          $ORACLE_CANDIDATE); both take a git ref or an SWT directory
+				                          $ORACLE_CANDIDATE; both take a git ref or an SWT directory),
+				                          skija-proto
 				  --dpi N                 zoom percentage for the environment, default 100
 				  --gtk 3|4               GTK major version of every child, default 3 or $SWT_GTK4=1
 				  --theme ID              GTK theme id, default platform theme
