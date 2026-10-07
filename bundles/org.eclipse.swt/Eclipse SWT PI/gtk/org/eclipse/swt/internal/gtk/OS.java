@@ -1289,6 +1289,12 @@ public static final native long g_object_new(long type, byte[] first_property_na
  * @param property_name cast=(const gchar *)
  */
 public static final native void g_object_notify(long object, byte[] property_name);
+/**
+ * @param oclass cast=(GObjectClass *)
+ * @param property_id cast=(guint)
+ * @param name cast=(const gchar *)
+ */
+public static final native void g_object_class_override_property(long oclass, int property_id, long name);
 /** @param object cast=(gpointer) */
 public static final native long g_object_ref(long object);
 /**
@@ -1404,6 +1410,41 @@ public static final native void g_signal_emit_by_name(long instance, byte[] deta
 public static final native void g_signal_emit_by_name(long instance, byte[] detailed_signal, byte [] data);
 /**
  * @param instance cast=(gpointer)
+ * @param detailed_signal cast=(const gchar *),flags=no_out
+ * @param c_handler cast=(GCallback)
+ * @param data cast=(gpointer)
+ * @param destroy_data cast=(GClosureNotify)
+ * @param connect_flags cast=(GConnectFlags)
+ */
+public static final native long g_signal_connect_data(long instance, byte[] detailed_signal, long c_handler, long data, long destroy_data, int connect_flags);
+/**
+ * @param instance cast=(gpointer)
+ * @param signal_id cast=(guint)
+ * @param detail cast=(GQuark)
+ */
+public static final native void g_signal_emit(long instance, int signal_id, int detail, int data1, int data2);
+/**
+ * @param signal_name cast=(const gchar *)
+ * @param itype cast=(GType)
+ * @param signal_flags cast=(GSignalFlags)
+ * @param class_offset cast=(guint)
+ * @param accumulator cast=(GSignalAccumulator)
+ * @param accu_data cast=(gpointer)
+ * @param c_marshaller cast=(GSignalCMarshaller)
+ * @param return_type cast=(GType)
+ * @param n_params cast=(guint)
+ * @param param_type1 cast=(GType)
+ * @param param_type2 cast=(GType)
+ */
+public static final native int g_signal_new(long signal_name, long itype, int signal_flags, int class_offset, long accumulator, long accu_data, long c_marshaller, long return_type, int n_params, long param_type1, long param_type2);
+/**
+ * @param name cast=(const gchar *)
+ * @param boxed_copy cast=(GBoxedCopyFunc)
+ * @param boxed_free cast=(GBoxedFreeFunc)
+ */
+public static final native long g_boxed_type_register_static(long name, long boxed_copy, long boxed_free);
+/**
+ * @param instance cast=(gpointer)
  * @param handler_id cast=(gulong)
  */
 public static final native void g_signal_handler_disconnect(long instance, long handler_id);
@@ -1466,6 +1507,24 @@ public static final native long g_type_class_peek_parent(long g_class);
 public static final native long g_type_class_ref(long g_class);
 /** @param g_class cast=(gpointer) */
 public static final native void g_type_class_unref(long g_class);
+/**
+ * @param instance cast=(GTypeInstance *)
+ * @param iface_type cast=(GType)
+ */
+public static final native boolean g_type_check_instance_is_a(long instance, long iface_type);
+/** @param value cast=(const GValue *) */
+public static final native boolean g_type_check_value(long value);
+/**
+ * @param instance_class cast=(gpointer)
+ * @param iface_type cast=(GType)
+ */
+public static final native long g_type_interface_peek(long instance_class, long iface_type);
+/**
+ * @param instance_type cast=(GType)
+ * @param interface_type cast=(GType)
+ * @param info cast=(const GInterfaceInfo *)
+ */
+public static final native void g_type_add_interface_static(long instance_type, long interface_type, long info);
 /** @param iface cast=(gpointer) */
 public static final native long g_type_interface_peek_parent(long iface);
 /** @param g_type cast=(GType) */
@@ -1542,6 +1601,18 @@ public static final native void g_value_set_int64 (long value, long v);
 public static final native void g_value_set_string (long value, byte[] v_string);
 /** @param value cast=(GValue *) */
 public static final native long g_value_get_string (long value);
+/** @param value cast=(GValue *) */
+public static final native int g_value_get_enum(long value);
+/**
+ * @param value cast=(GValue *)
+ * @param v_enum cast=(gint)
+ */
+public static final native void g_value_set_enum(long value, int v_enum);
+/**
+ * @param value cast=(GValue *)
+ * @param v_object cast=(gpointer)
+ */
+public static final native void g_value_set_object(long value, long v_object);
 /** @param value cast=(GValue *) */
 public static final native long g_value_get_object (long value);
 /** @param value cast=(GValue *) */

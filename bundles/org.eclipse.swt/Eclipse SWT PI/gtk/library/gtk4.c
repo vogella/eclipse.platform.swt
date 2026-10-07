@@ -695,12 +695,24 @@ fail:
 }
 #endif
 
+#ifndef NO_gdk_1paintable_1get_1type
+JNIEXPORT jlong JNICALL GTK4_NATIVE(gdk_1paintable_1get_1type)
+	(JNIEnv *env, jclass that)
+{
+	jlong rc = 0;
+	GTK4_NATIVE_ENTER(env, that, gdk_1paintable_1get_1type_FUNC);
+	rc = (jlong)gdk_paintable_get_type();
+	GTK4_NATIVE_EXIT(env, that, gdk_1paintable_1get_1type_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_gdk_1paintable_1snapshot
 JNIEXPORT void JNICALL GTK4_NATIVE(gdk_1paintable_1snapshot)
-	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jint arg2, jint arg3)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jdouble arg2, jdouble arg3)
 {
 	GTK4_NATIVE_ENTER(env, that, gdk_1paintable_1snapshot_FUNC);
-	gdk_paintable_snapshot((GdkPaintable *)arg0, (GdkSnapshot *)arg1, (double)arg2, (double)arg3);
+	gdk_paintable_snapshot((GdkPaintable *)arg0, (GdkSnapshot *)arg1, arg2, arg3);
 	GTK4_NATIVE_EXIT(env, that, gdk_1paintable_1snapshot_FUNC);
 }
 #endif

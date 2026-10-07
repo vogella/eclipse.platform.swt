@@ -6749,6 +6749,18 @@ JNIEXPORT void JNICALL GTK_NATIVE(gtk_1scale_1set_1draw_1value)
 }
 #endif
 
+#ifndef NO_gtk_1scrollable_1get_1type
+JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1scrollable_1get_1type)
+	(JNIEnv *env, jclass that)
+{
+	jlong rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1scrollable_1get_1type_FUNC);
+	rc = (jlong)gtk_scrollable_get_type();
+	GTK_NATIVE_EXIT(env, that, gtk_1scrollable_1get_1type_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_gtk_1scrollable_1get_1vadjustment
 JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1scrollable_1get_1vadjustment)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -9334,6 +9346,18 @@ JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1widget_1get_1tooltip_1text)
 }
 #endif
 
+#ifndef NO_gtk_1widget_1get_1type
+JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1widget_1get_1type)
+	(JNIEnv *env, jclass that)
+{
+	jlong rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1widget_1get_1type_FUNC);
+	rc = (jlong)gtk_widget_get_type();
+	GTK_NATIVE_EXIT(env, that, gtk_1widget_1get_1type_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_gtk_1widget_1get_1visible
 JNIEXPORT jboolean JNICALL GTK_NATIVE(gtk_1widget_1get_1visible)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -10884,6 +10908,18 @@ JNIEXPORT jboolean JNICALL OS_NATIVE(g_1app_1info_1supports_1uris)
 }
 #endif
 
+#ifndef NO_g_1boxed_1type_1register_1static
+JNIEXPORT jlong JNICALL OS_NATIVE(g_1boxed_1type_1register_1static)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jlong arg2)
+{
+	jlong rc = 0;
+	OS_NATIVE_ENTER(env, that, g_1boxed_1type_1register_1static_FUNC);
+	rc = (jlong)g_boxed_type_register_static((const gchar *)arg0, (GBoxedCopyFunc)arg1, (GBoxedFreeFunc)arg2);
+	OS_NATIVE_EXIT(env, that, g_1boxed_1type_1register_1static_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_g_1bus_1own_1name
 JNIEXPORT jint JNICALL OS_NATIVE(g_1bus_1own_1name)
 	(JNIEnv *env, jclass that, jint arg0, jbyteArray arg1, jint arg2, jlong arg3, jlong arg4, jlong arg5, jlong arg6, jlong arg7)
@@ -12088,6 +12124,16 @@ JNIEXPORT void JNICALL OS_NATIVE(g_1menu_1remove)
 }
 #endif
 
+#ifndef NO_g_1object_1class_1override_1property
+JNIEXPORT void JNICALL OS_NATIVE(g_1object_1class_1override_1property)
+	(JNIEnv *env, jclass that, jlong arg0, jint arg1, jlong arg2)
+{
+	OS_NATIVE_ENTER(env, that, g_1object_1class_1override_1property_FUNC);
+	g_object_class_override_property((GObjectClass *)arg0, (guint)arg1, (const gchar *)arg2);
+	OS_NATIVE_EXIT(env, that, g_1object_1class_1override_1property_FUNC);
+}
+#endif
+
 #ifndef NO_g_1object_1get__J_3B_3IJ
 JNIEXPORT void JNICALL OS_NATIVE(g_1object_1get__J_3B_3IJ)
 	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1, jintArray arg2, jlong arg3)
@@ -12473,6 +12519,32 @@ JNIEXPORT jint JNICALL OS_NATIVE(g_1signal_1connect_1closure_1by_1id)
 }
 #endif
 
+#ifndef NO_g_1signal_1connect_1data
+JNIEXPORT jlong JNICALL OS_NATIVE(g_1signal_1connect_1data)
+	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1, jlong arg2, jlong arg3, jlong arg4, jint arg5)
+{
+	jbyte *lparg1=NULL;
+	jlong rc = 0;
+	OS_NATIVE_ENTER(env, that, g_1signal_1connect_1data_FUNC);
+	if (arg1) if ((lparg1 = (*env)->GetByteArrayElements(env, arg1, NULL)) == NULL) goto fail;
+	rc = (jlong)g_signal_connect_data((gpointer)arg0, (const gchar *)lparg1, (GCallback)arg2, (gpointer)arg3, (GClosureNotify)arg4, (GConnectFlags)arg5);
+fail:
+	if (arg1 && lparg1) (*env)->ReleaseByteArrayElements(env, arg1, lparg1, JNI_ABORT);
+	OS_NATIVE_EXIT(env, that, g_1signal_1connect_1data_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_g_1signal_1emit
+JNIEXPORT void JNICALL OS_NATIVE(g_1signal_1emit)
+	(JNIEnv *env, jclass that, jlong arg0, jint arg1, jint arg2, jint arg3, jint arg4)
+{
+	OS_NATIVE_ENTER(env, that, g_1signal_1emit_FUNC);
+	g_signal_emit((gpointer)arg0, (guint)arg1, (GQuark)arg2, arg3, arg4);
+	OS_NATIVE_EXIT(env, that, g_1signal_1emit_FUNC);
+}
+#endif
+
 #ifndef NO_g_1signal_1emit_1by_1name__J_3B
 JNIEXPORT void JNICALL OS_NATIVE(g_1signal_1emit_1by_1name__J_3B)
 	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1)
@@ -12595,6 +12667,18 @@ JNIEXPORT jint JNICALL OS_NATIVE(g_1signal_1lookup)
 fail:
 	if (arg0 && lparg0) (*env)->ReleaseByteArrayElements(env, arg0, lparg0, JNI_ABORT);
 	OS_NATIVE_EXIT(env, that, g_1signal_1lookup_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_g_1signal_1new
+JNIEXPORT jint JNICALL OS_NATIVE(g_1signal_1new)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jint arg2, jint arg3, jlong arg4, jlong arg5, jlong arg6, jlong arg7, jint arg8, jlong arg9, jlong arg10)
+{
+	jint rc = 0;
+	OS_NATIVE_ENTER(env, that, g_1signal_1new_FUNC);
+	rc = (jint)g_signal_new((const gchar *)arg0, (GType)arg1, (GSignalFlags)arg2, (guint)arg3, (GSignalAccumulator)arg4, (gpointer)arg5, (GSignalCMarshaller)arg6, (GType)arg7, (guint)arg8, (GType)arg9, (GType)arg10);
+	OS_NATIVE_EXIT(env, that, g_1signal_1new_FUNC);
 	return rc;
 }
 #endif
@@ -12819,6 +12903,40 @@ JNIEXPORT jint JNICALL OS_NATIVE(g_1timeout_1add)
 }
 #endif
 
+#ifndef NO_g_1type_1add_1interface_1static
+JNIEXPORT void JNICALL OS_NATIVE(g_1type_1add_1interface_1static)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1, jlong arg2)
+{
+	OS_NATIVE_ENTER(env, that, g_1type_1add_1interface_1static_FUNC);
+	g_type_add_interface_static((GType)arg0, (GType)arg1, (const GInterfaceInfo *)arg2);
+	OS_NATIVE_EXIT(env, that, g_1type_1add_1interface_1static_FUNC);
+}
+#endif
+
+#ifndef NO_g_1type_1check_1instance_1is_1a
+JNIEXPORT jboolean JNICALL OS_NATIVE(g_1type_1check_1instance_1is_1a)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
+{
+	jboolean rc = 0;
+	OS_NATIVE_ENTER(env, that, g_1type_1check_1instance_1is_1a_FUNC);
+	rc = (jboolean)g_type_check_instance_is_a((GTypeInstance *)arg0, (GType)arg1);
+	OS_NATIVE_EXIT(env, that, g_1type_1check_1instance_1is_1a_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_g_1type_1check_1value
+JNIEXPORT jboolean JNICALL OS_NATIVE(g_1type_1check_1value)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jboolean rc = 0;
+	OS_NATIVE_ENTER(env, that, g_1type_1check_1value_FUNC);
+	rc = (jboolean)g_type_check_value((const GValue *)arg0);
+	OS_NATIVE_EXIT(env, that, g_1type_1check_1value_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_g_1type_1class_1peek
 JNIEXPORT jlong JNICALL OS_NATIVE(g_1type_1class_1peek)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -12862,6 +12980,18 @@ JNIEXPORT void JNICALL OS_NATIVE(g_1type_1class_1unref)
 	OS_NATIVE_ENTER(env, that, g_1type_1class_1unref_FUNC);
 	g_type_class_unref((gpointer)arg0);
 	OS_NATIVE_EXIT(env, that, g_1type_1class_1unref_FUNC);
+}
+#endif
+
+#ifndef NO_g_1type_1interface_1peek
+JNIEXPORT jlong JNICALL OS_NATIVE(g_1type_1interface_1peek)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
+{
+	jlong rc = 0;
+	OS_NATIVE_ENTER(env, that, g_1type_1interface_1peek_FUNC);
+	rc = (jlong)g_type_interface_peek((gpointer)arg0, (GType)arg1);
+	OS_NATIVE_EXIT(env, that, g_1type_1interface_1peek_FUNC);
+	return rc;
 }
 #endif
 
@@ -13168,6 +13298,18 @@ JNIEXPORT jdouble JNICALL OS_NATIVE(g_1value_1get_1double)
 }
 #endif
 
+#ifndef NO_g_1value_1get_1enum
+JNIEXPORT jint JNICALL OS_NATIVE(g_1value_1get_1enum)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jint rc = 0;
+	OS_NATIVE_ENTER(env, that, g_1value_1get_1enum_FUNC);
+	rc = (jint)g_value_get_enum((GValue *)arg0);
+	OS_NATIVE_EXIT(env, that, g_1value_1get_1enum_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_g_1value_1get_1float
 JNIEXPORT jfloat JNICALL OS_NATIVE(g_1value_1get_1float)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -13274,6 +13416,16 @@ JNIEXPORT void JNICALL OS_NATIVE(g_1value_1set_1double)
 }
 #endif
 
+#ifndef NO_g_1value_1set_1enum
+JNIEXPORT void JNICALL OS_NATIVE(g_1value_1set_1enum)
+	(JNIEnv *env, jclass that, jlong arg0, jint arg1)
+{
+	OS_NATIVE_ENTER(env, that, g_1value_1set_1enum_FUNC);
+	g_value_set_enum((GValue *)arg0, (gint)arg1);
+	OS_NATIVE_EXIT(env, that, g_1value_1set_1enum_FUNC);
+}
+#endif
+
 #ifndef NO_g_1value_1set_1float
 JNIEXPORT void JNICALL OS_NATIVE(g_1value_1set_1float)
 	(JNIEnv *env, jclass that, jlong arg0, jfloat arg1)
@@ -13301,6 +13453,16 @@ JNIEXPORT void JNICALL OS_NATIVE(g_1value_1set_1int64)
 	OS_NATIVE_ENTER(env, that, g_1value_1set_1int64_FUNC);
 	g_value_set_int64((GValue *)arg0, arg1);
 	OS_NATIVE_EXIT(env, that, g_1value_1set_1int64_FUNC);
+}
+#endif
+
+#ifndef NO_g_1value_1set_1object
+JNIEXPORT void JNICALL OS_NATIVE(g_1value_1set_1object)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
+{
+	OS_NATIVE_ENTER(env, that, g_1value_1set_1object_FUNC);
+	g_value_set_object((GValue *)arg0, (gpointer)arg1);
+	OS_NATIVE_EXIT(env, that, g_1value_1set_1object_FUNC);
 }
 #endif
 

@@ -161,9 +161,18 @@ public class GTK3 {
 	 */
 	public static final native void gtk_container_set_border_width(long container, int border_width);
 
+	public static final native long gtk_container_get_type();
+	public static final native long gtk_container_accessible_get_type();
+
 	/* GtkDialog */
 	/** @param dialog cast=(GtkDialog *) */
 	public static final native int gtk_dialog_run(long dialog);
+
+	/**
+	 * @param argc cast=(gint *)
+	 * @param argv cast=(gchar ***)
+	 */
+	public static final native boolean gtk_parse_args(long argc, long argv);
 
 	/* GTK Initialization */
 	/**
@@ -350,6 +359,37 @@ public class GTK3 {
 	public static final native long gtk_widget_get_window(long widget);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native long gtk_widget_get_toplevel(long widget);
+	/** @param widget cast=(GtkWidget *) */
+	public static final native long gtk_widget_get_visual(long widget);
+	/** @param widget cast=(GtkWidget *) */
+	public static final native void gtk_widget_map(long widget);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param mapped cast=(gboolean)
+	 */
+	public static final native void gtk_widget_set_mapped(long widget, boolean mapped);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param realized cast=(gboolean)
+	 */
+	public static final native void gtk_widget_set_realized(long widget, boolean realized);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param window cast=(GdkWindow *)
+	 */
+	public static final native void gtk_widget_set_window(long widget, long window);
+	/**
+	 * @method flags=ignore_deprecations
+	 * @param context cast=(GtkStyleContext *)
+	 * @param window cast=(GdkWindow *)
+	 */
+	public static final native void gtk_style_context_set_background(long context, long window);
+	/**
+	 * @method flags=ignore_deprecations
+	 * @param lock_function cast=(GCallback)
+	 * @param unlock_function cast=(GCallback)
+	 */
+	public static final native void gdk_threads_set_lock_functions(long lock_function, long unlock_function);
 	/**
 	 * @param widget cast=(GtkWidget *)
 	 * @param redraw cast=(gboolean)
@@ -862,6 +902,12 @@ public class GTK3 {
 	public static final native void gtk_viewport_set_shadow_type(long viewport, int type);
 
 	/* GtkAccessible */
+	/**
+	 * @method flags=ignore_deprecations
+	 * @param accessible cast=(GtkAccessible *)
+	 * @param widget cast=(GtkWidget *)
+	 */
+	public static final native void gtk_accessible_set_widget(long accessible, long widget);
 	/** @param accessible cast=(GtkAccessible *) */
 	public static final native long gtk_accessible_get_widget(long accessible);
 

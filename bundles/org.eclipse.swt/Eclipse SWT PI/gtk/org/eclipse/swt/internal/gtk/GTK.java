@@ -260,6 +260,10 @@ public class GTK extends OS {
 	public static final native long GET_FUNCTION_POINTER_gtk_false();
 
 
+	/* GtkWidget and GtkScrollable types */
+	public static final native long gtk_widget_get_type();
+	public static final native long gtk_scrollable_get_type();
+
 	/* GtkButton */
 	public static final native long gtk_button_get_type();
 	public static final native long gtk_button_new();

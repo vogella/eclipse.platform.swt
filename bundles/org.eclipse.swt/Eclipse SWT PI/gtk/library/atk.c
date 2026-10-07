@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2025 IBM Corporation and others. All rights reserved.
+ * Copyright (c) 2000, 2026 IBM Corporation and others. All rights reserved.
  * The contents of this file are made available under the terms
  * of the GNU Lesser General Public License (LGPL) Version 2.1 that
  * accompanies this distribution (lgpl-v21.txt).  The LGPL is also
@@ -266,6 +266,16 @@ JNIEXPORT jboolean JNICALL ATK_NATIVE(atk_1object_1add_1relationship)
 	rc = (jboolean)atk_object_add_relationship((AtkObject *)arg0, (AtkRelationType)arg1, (AtkObject *)arg2);
 	ATK_NATIVE_EXIT(env, that, atk_1object_1add_1relationship_FUNC);
 	return rc;
+}
+#endif
+
+#ifndef NO_atk_1object_1initialize
+JNIEXPORT void JNICALL ATK_NATIVE(atk_1object_1initialize)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
+{
+	ATK_NATIVE_ENTER(env, that, atk_1object_1initialize_FUNC);
+	atk_object_initialize((AtkObject *)arg0, (gpointer)arg1);
+	ATK_NATIVE_EXIT(env, that, atk_1object_1initialize_FUNC);
 }
 #endif
 

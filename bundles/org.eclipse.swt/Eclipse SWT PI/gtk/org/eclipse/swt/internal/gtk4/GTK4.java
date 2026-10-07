@@ -1214,13 +1214,12 @@ public class GTK4 {
 	public static final native int gtk_widget_get_height(long widget);
 
 	public static final native long gtk_header_bar_new();
+	public static final native long gdk_paintable_get_type();
 	/**
 	 * @param paintable cast=(GdkPaintable *)
 	 * @param snapshot cast=(GdkSnapshot *)
-	 * @param width cast=(double)
-	 * @param height cast=(double)
 	 */
-	public static final native void gdk_paintable_snapshot(long paintable, long snapshot, int width, int height);
+	public static final native void gdk_paintable_snapshot(long paintable, long snapshot, double width, double height);
 
 	/**
 	 * @param renderNode cast=(GskRenderNode *)
