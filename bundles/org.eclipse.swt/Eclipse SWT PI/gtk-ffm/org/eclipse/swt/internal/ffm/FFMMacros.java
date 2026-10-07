@@ -15,18 +15,15 @@ import static java.lang.foreign.ValueLayout.*;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 
+import org.eclipse.swt.internal.gtk.OS_FFM;
+
 /**
  * Java implementations of the GLib, GTK and ATK macros that have no symbol to link against.
  * Each one does what the macro expands to: a type check, a field of a public struct or a bit of arithmetic.
  */
 public final class FFMMacros {
 
-	static final MethodHandle TYPE_CHECK_INSTANCE_IS_A = FFM.downcall("g_type_check_instance_is_a", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG));
-	static final MethodHandle TYPE_INTERFACE_PEEK = FFM.downcall("g_type_interface_peek", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG));
-	static final MethodHandle TYPE_CHECK_VALUE = FFM.downcall("g_type_check_value", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
-	static final MethodHandle TYPE_NAME = FFM.downcall("g_type_name", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
-	static final MethodHandle SIGNAL_CONNECT_DATA = FFM.downcall("g_signal_connect_data",
-		FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT));
+	/* localeconv is libc, which no SWT native class covers */
 	static final MethodHandle LOCALECONV = FFM.downcall("localeconv", FunctionDescriptor.of(JAVA_LONG));
 
 	private FFMMacros() {
@@ -49,21 +46,13 @@ public final class FFMMacros {
 	/** G_TYPE_CHECK_INSTANCE_TYPE, used by all the GTK_IS_* and GDK_IS_* macros. */
 	public static boolean isA(long instance, long type) {
 		if (instance == 0 || type == 0) return false;
-		try {
-			return (int) TYPE_CHECK_INSTANCE_IS_A.invokeExact(instance, type) != 0;
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
-		}
+		return OS_FFM.g_type_check_instance_is_a(instance, type);
 	}
 
 	/** G_TYPE_INSTANCE_GET_INTERFACE, used by the ATK_*_GET_IFACE macros. */
 	public static long getInterface(long instance, long type) {
 		if (instance == 0) return 0;
-		try {
-			return (long) TYPE_INTERFACE_PEEK.invokeExact(G_OBJECT_GET_CLASS(instance), type);
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
-		}
+		return OS_FFM.g_type_interface_peek(G_OBJECT_GET_CLASS(instance), type);
 	}
 
 	/** GTypeInstance.g_class, the first field of every GObject instance. */
@@ -105,20 +94,11 @@ public final class FFMMacros {
 
 	public static boolean G_IS_VALUE(long value) {
 		if (value == 0) return false;
-		try {
-			return (int) TYPE_CHECK_VALUE.invokeExact(value) != 0;
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
-		}
+		return OS_FFM.g_type_check_value(value);
 	}
 
 	static long typeName(long type) {
-		if (type == 0) return 0;
-		try {
-			return (long) TYPE_NAME.invokeExact(type);
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
-		}
+		return type == 0 ? 0 : OS_FFM.g_type_name(type);
 	}
 
 	/* ---------------------------------------------------------------- lists, errors, arithmetic */
@@ -182,16 +162,12 @@ public final class FFMMacros {
 
 	/** g_signal_connect is g_signal_connect_data without a destroy notify and without flags. */
 	public static int g_signal_connect(long instance, byte[] detailedSignal, long proc, long data) {
-		try (Arena arena = Arena.ofConfined()) {
-			MemorySegment signal = FFM.copyIn(arena, detailedSignal);
-			return (int) (long) SIGNAL_CONNECT_DATA.invokeExact(instance, signal.address(), proc, data, 0L, 0);
-		} catch (Throwable t) {
-			throw FFM.rethrow(t);
-		}
+		return (int) OS_FFM.g_signal_connect_data(instance, detailedSignal, proc, data, 0L, 0);
 	}
 
+	/** GTK4 has no gtk_false, and the C code then returns the NULL it could not load. */
 	public static long GET_FUNCTION_POINTER_gtk_false() {
-		return FFM.address("gtk_false");
+		return FFM.LOOKUP.find("gtk_false").map(MemorySegment::address).orElse(0L);
 	}
 
 	public static int PTR_sizeof() {
@@ -253,6 +229,10 @@ public final class FFMMacros {
 
 	public static boolean GTK_IS_MENU_ITEM(long obj) {
 		return isA(obj, type("gtk_menu_item_get_type"));
+	}
+
+	public static boolean GTK_IS_POPOVER_MENU(long obj) {
+		return isA(obj, type("gtk_popover_menu_get_type"));
 	}
 
 	public static boolean GTK_IS_PLUG(long obj) {
