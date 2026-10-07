@@ -22,7 +22,7 @@ import org.eclipse.swt.internal.ffm.*;
 @SuppressWarnings("all")
 public final class WebKitGTK_FFM {
 
-private static final SymbolLookup LOOKUP = "1".equals(System.getenv("SWT_GTK4")) ? FFM.library("libwebkitgtk-6.0.so.4") : FFM.library("libwebkit2gtk-4.1.so.0", "libwebkit2gtk-4.0.so.37");
+private static final SymbolLookup LOOKUP = FFM.GTK4 ? FFM.library("libwebkitgtk-6.0.so.4") : FFM.library("libwebkit2gtk-4.1.so.0", "libwebkit2gtk-4.0.so.37");
 
 public static int GdkRectangle_sizeof() {
 	return (int) org.eclipse.swt.internal.webkit.Structs_FFM.GdkRectangle_SIZEOF;

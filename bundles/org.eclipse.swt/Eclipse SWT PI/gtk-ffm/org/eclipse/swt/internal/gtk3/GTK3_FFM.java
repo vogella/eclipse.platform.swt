@@ -62,8 +62,20 @@ public static int GtkTargetEntry_sizeof() {
 	return (int) org.eclipse.swt.internal.gtk3.Structs_FFM.GtkTargetEntry_SIZEOF;
 }
 
+private static final class MH_gdk_1threads_1set_1lock_1functions {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gdk_threads_set_lock_functions", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gdk_threads_set_lock_functions");
+}
+public static void gdk_threads_set_lock_functions(long arg0, long arg1) {
+	try {
+		MH_gdk_1threads_1set_1lock_1functions.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gdk_1window_1new {
-	static final MethodHandle MH = FFM.downcall("gdk_window_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gdk_window_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT)), "gdk_window_new");
 }
 public static long gdk_window_new(long arg0, org.eclipse.swt.internal.gtk3.GdkWindowAttr arg1, int arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -78,7 +90,7 @@ public static long gdk_window_new(long arg0, org.eclipse.swt.internal.gtk3.GdkWi
 }
 
 private static final class MH_gtk_1accel_1label_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_accel_label_new", FunctionDescriptor.of(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_accel_label_new", FunctionDescriptor.of(JAVA_LONG, ADDRESS)), "gtk_accel_label_new");
 }
 public static long gtk_accel_label_new(byte[] arg0) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -93,7 +105,7 @@ public static long gtk_accel_label_new(byte[] arg0) {
 }
 
 private static final class MH_gtk_1accel_1label_1set_1accel {
-	static final MethodHandle MH = FFM.downcall("gtk_accel_label_set_accel", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_accel_label_set_accel", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_accel_label_set_accel");
 }
 public static void gtk_accel_label_set_accel(long arg0, int arg1, int arg2) {
 	try {
@@ -105,7 +117,7 @@ public static void gtk_accel_label_set_accel(long arg0, int arg1, int arg2) {
 }
 
 private static final class MH_gtk_1accel_1label_1set_1accel_1widget {
-	static final MethodHandle MH = FFM.downcall("gtk_accel_label_set_accel_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_accel_label_set_accel_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_accel_label_set_accel_widget");
 }
 public static void gtk_accel_label_set_accel_widget(long arg0, long arg1) {
 	try {
@@ -117,7 +129,7 @@ public static void gtk_accel_label_set_accel_widget(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1accessible_1get_1widget {
-	static final MethodHandle MH = FFM.downcall("gtk_accessible_get_widget", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_accessible_get_widget", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_accessible_get_widget");
 }
 public static long gtk_accessible_get_widget(long arg0) {
 	try {
@@ -129,8 +141,20 @@ public static long gtk_accessible_get_widget(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1accessible_1set_1widget {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_accessible_set_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_accessible_set_widget");
+}
+public static void gtk_accessible_set_widget(long arg0, long arg1) {
+	try {
+		MH_gtk_1accessible_1set_1widget.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1bin_1get_1child {
-	static final MethodHandle MH = FFM.downcall("gtk_bin_get_child", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_bin_get_child", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_bin_get_child");
 }
 public static long gtk_bin_get_child(long arg0) {
 	try {
@@ -143,7 +167,7 @@ public static long gtk_bin_get_child(long arg0) {
 }
 
 private static final class MH_gtk_1box_1pack_1end {
-	static final MethodHandle MH = FFM.downcall("gtk_box_pack_end", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_box_pack_end", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT)), "gtk_box_pack_end");
 }
 public static void gtk_box_pack_end(long arg0, long arg1, boolean arg2, boolean arg3, int arg4) {
 	try {
@@ -155,7 +179,7 @@ public static void gtk_box_pack_end(long arg0, long arg1, boolean arg2, boolean 
 }
 
 private static final class MH_gtk_1box_1reorder_1child {
-	static final MethodHandle MH = FFM.downcall("gtk_box_reorder_child", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_box_reorder_child", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_box_reorder_child");
 }
 public static void gtk_box_reorder_child(long arg0, long arg1, int arg2) {
 	try {
@@ -167,7 +191,7 @@ public static void gtk_box_reorder_child(long arg0, long arg1, int arg2) {
 }
 
 private static final class MH_gtk_1box_1set_1child_1packing {
-	static final MethodHandle MH = FFM.downcall("gtk_box_set_child_packing", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_box_set_child_packing", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_INT)), "gtk_box_set_child_packing");
 }
 public static void gtk_box_set_child_packing(long arg0, long arg1, boolean arg2, boolean arg3, int arg4, int arg5) {
 	try {
@@ -179,7 +203,7 @@ public static void gtk_box_set_child_packing(long arg0, long arg1, boolean arg2,
 }
 
 private static final class MH_gtk_1button_1set_1image {
-	static final MethodHandle MH = FFM.downcall("gtk_button_set_image", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_button_set_image", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_button_set_image");
 }
 public static void gtk_button_set_image(long arg0, long arg1) {
 	try {
@@ -191,7 +215,7 @@ public static void gtk_button_set_image(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1calendar_1get_1date {
-	static final MethodHandle MH = FFM.downcall("gtk_calendar_get_date", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_calendar_get_date", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, ADDRESS)), "gtk_calendar_get_date");
 }
 public static void gtk_calendar_get_date(long arg0, int[] arg1, int[] arg2, int[] arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -209,7 +233,7 @@ public static void gtk_calendar_get_date(long arg0, int[] arg1, int[] arg2, int[
 }
 
 private static final class MH_gtk_1calendar_1select_1day {
-	static final MethodHandle MH = FFM.downcall("gtk_calendar_select_day", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_calendar_select_day", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_calendar_select_day");
 }
 public static void gtk_calendar_select_day(long arg0, int arg1) {
 	try {
@@ -221,7 +245,7 @@ public static void gtk_calendar_select_day(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1calendar_1select_1month {
-	static final MethodHandle MH = FFM.downcall("gtk_calendar_select_month", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_calendar_select_month", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_calendar_select_month");
 }
 public static void gtk_calendar_select_month(long arg0, int arg1, int arg2) {
 	try {
@@ -233,7 +257,7 @@ public static void gtk_calendar_select_month(long arg0, int arg1, int arg2) {
 }
 
 private static final class MH_gtk_1calendar_1set_1display_1options {
-	static final MethodHandle MH = FFM.downcall("gtk_calendar_set_display_options", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_calendar_set_display_options", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_calendar_set_display_options");
 }
 public static void gtk_calendar_set_display_options(long arg0, int arg1) {
 	try {
@@ -245,7 +269,7 @@ public static void gtk_calendar_set_display_options(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1check_1menu_1item_1get_1active {
-	static final MethodHandle MH = FFM.downcall("gtk_check_menu_item_get_active", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_check_menu_item_get_active", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_check_menu_item_get_active");
 }
 public static boolean gtk_check_menu_item_get_active(long arg0) {
 	try {
@@ -258,7 +282,7 @@ public static boolean gtk_check_menu_item_get_active(long arg0) {
 }
 
 private static final class MH_gtk_1check_1menu_1item_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_check_menu_item_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_check_menu_item_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_check_menu_item_new");
 }
 public static long gtk_check_menu_item_new() {
 	try {
@@ -271,7 +295,7 @@ public static long gtk_check_menu_item_new() {
 }
 
 private static final class MH_gtk_1check_1menu_1item_1set_1active {
-	static final MethodHandle MH = FFM.downcall("gtk_check_menu_item_set_active", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_check_menu_item_set_active", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_check_menu_item_set_active");
 }
 public static void gtk_check_menu_item_set_active(long arg0, boolean arg1) {
 	try {
@@ -283,7 +307,7 @@ public static void gtk_check_menu_item_set_active(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1clipboard_1clear {
-	static final MethodHandle MH = FFM.downcall("gtk_clipboard_clear", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_clipboard_clear", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_clipboard_clear");
 }
 public static void gtk_clipboard_clear(long arg0) {
 	try {
@@ -295,7 +319,7 @@ public static void gtk_clipboard_clear(long arg0) {
 }
 
 private static final class MH_gtk_1clipboard_1get {
-	static final MethodHandle MH = FFM.downcall("gtk_clipboard_get", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_clipboard_get", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_clipboard_get");
 }
 public static long gtk_clipboard_get(long arg0) {
 	try {
@@ -308,7 +332,7 @@ public static long gtk_clipboard_get(long arg0) {
 }
 
 private static final class MH_gtk_1clipboard_1set_1can_1store {
-	static final MethodHandle MH = FFM.downcall("gtk_clipboard_set_can_store", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_clipboard_set_can_store", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_clipboard_set_can_store");
 }
 public static void gtk_clipboard_set_can_store(long arg0, long arg1, int arg2) {
 	try {
@@ -320,7 +344,7 @@ public static void gtk_clipboard_set_can_store(long arg0, long arg1, int arg2) {
 }
 
 private static final class MH_gtk_1clipboard_1set_1with_1owner {
-	static final MethodHandle MH = FFM.downcall("gtk_clipboard_set_with_owner", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_clipboard_set_with_owner", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG)), "gtk_clipboard_set_with_owner");
 }
 public static boolean gtk_clipboard_set_with_owner(long arg0, long arg1, int arg2, long arg3, long arg4, long arg5) {
 	try {
@@ -333,7 +357,7 @@ public static boolean gtk_clipboard_set_with_owner(long arg0, long arg1, int arg
 }
 
 private static final class MH_gtk_1clipboard_1store {
-	static final MethodHandle MH = FFM.downcall("gtk_clipboard_store", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_clipboard_store", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_clipboard_store");
 }
 public static void gtk_clipboard_store(long arg0) {
 	try {
@@ -345,7 +369,7 @@ public static void gtk_clipboard_store(long arg0) {
 }
 
 private static final class MH_gtk_1clipboard_1wait_1for_1contents {
-	static final MethodHandle MH = FFM.downcall("gtk_clipboard_wait_for_contents", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_clipboard_wait_for_contents", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG)), "gtk_clipboard_wait_for_contents");
 }
 public static long gtk_clipboard_wait_for_contents(long arg0, long arg1) {
 	try {
@@ -358,7 +382,7 @@ public static long gtk_clipboard_wait_for_contents(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1combo_1box_1get_1wrap_1width {
-	static final MethodHandle MH = FFM.downcall("gtk_combo_box_get_wrap_width", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_combo_box_get_wrap_width", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_combo_box_get_wrap_width");
 }
 public static int gtk_combo_box_get_wrap_width(long arg0) {
 	try {
@@ -371,7 +395,7 @@ public static int gtk_combo_box_get_wrap_width(long arg0) {
 }
 
 private static final class MH_gtk_1combo_1box_1set_1wrap_1width {
-	static final MethodHandle MH = FFM.downcall("gtk_combo_box_set_wrap_width", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_combo_box_set_wrap_width", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_combo_box_set_wrap_width");
 }
 public static void gtk_combo_box_set_wrap_width(long arg0, int arg1) {
 	try {
@@ -382,8 +406,21 @@ public static void gtk_combo_box_set_wrap_width(long arg0, int arg1) {
 	}
 }
 
+private static final class MH_gtk_1container_1accessible_1get_1type {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_accessible_get_type", FunctionDescriptor.of(JAVA_LONG)), "gtk_container_accessible_get_type");
+}
+public static long gtk_container_accessible_get_type() {
+	try {
+		long rc = (long) MH_gtk_1container_1accessible_1get_1type.MH.invokeExact();
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1container_1add {
-	static final MethodHandle MH = FFM.downcall("gtk_container_add", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_add", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_container_add");
 }
 public static void gtk_container_add(long arg0, long arg1) {
 	try {
@@ -395,7 +432,7 @@ public static void gtk_container_add(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1container_1forall {
-	static final MethodHandle MH = FFM.downcall("gtk_container_forall", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_forall", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG)), "gtk_container_forall");
 }
 public static void gtk_container_forall(long arg0, long arg1, long arg2) {
 	try {
@@ -407,7 +444,7 @@ public static void gtk_container_forall(long arg0, long arg1, long arg2) {
 }
 
 private static final class MH_gtk_1container_1get_1border_1width {
-	static final MethodHandle MH = FFM.downcall("gtk_container_get_border_width", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_get_border_width", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_container_get_border_width");
 }
 public static int gtk_container_get_border_width(long arg0) {
 	try {
@@ -420,7 +457,7 @@ public static int gtk_container_get_border_width(long arg0) {
 }
 
 private static final class MH_gtk_1container_1get_1children {
-	static final MethodHandle MH = FFM.downcall("gtk_container_get_children", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_get_children", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_container_get_children");
 }
 public static long gtk_container_get_children(long arg0) {
 	try {
@@ -432,8 +469,21 @@ public static long gtk_container_get_children(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1container_1get_1type {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_get_type", FunctionDescriptor.of(JAVA_LONG)), "gtk_container_get_type");
+}
+public static long gtk_container_get_type() {
+	try {
+		long rc = (long) MH_gtk_1container_1get_1type.MH.invokeExact();
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1container_1propagate_1draw {
-	static final MethodHandle MH = FFM.downcall("gtk_container_propagate_draw", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_propagate_draw", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG)), "gtk_container_propagate_draw");
 }
 public static void gtk_container_propagate_draw(long arg0, long arg1, long arg2) {
 	try {
@@ -445,7 +495,7 @@ public static void gtk_container_propagate_draw(long arg0, long arg1, long arg2)
 }
 
 private static final class MH_gtk_1container_1remove {
-	static final MethodHandle MH = FFM.downcall("gtk_container_remove", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_remove", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_container_remove");
 }
 public static void gtk_container_remove(long arg0, long arg1) {
 	try {
@@ -457,7 +507,7 @@ public static void gtk_container_remove(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1container_1set_1border_1width {
-	static final MethodHandle MH = FFM.downcall("gtk_container_set_border_width", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_container_set_border_width", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_container_set_border_width");
 }
 public static void gtk_container_set_border_width(long arg0, int arg1) {
 	try {
@@ -469,7 +519,7 @@ public static void gtk_container_set_border_width(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1css_1provider_1load_1from_1data {
-	static final MethodHandle MH = FFM.downcall("gtk_css_provider_load_from_data", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, ADDRESS, JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_css_provider_load_from_data", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, ADDRESS, JAVA_LONG, ADDRESS)), "gtk_css_provider_load_from_data");
 }
 public static boolean gtk_css_provider_load_from_data(long arg0, byte[] arg1, long arg2, long[] arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -486,7 +536,7 @@ public static boolean gtk_css_provider_load_from_data(long arg0, byte[] arg1, lo
 }
 
 private static final class MH_gtk_1dialog_1run {
-	static final MethodHandle MH = FFM.downcall("gtk_dialog_run", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_dialog_run", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_dialog_run");
 }
 public static int gtk_dialog_run(long arg0) {
 	try {
@@ -499,7 +549,7 @@ public static int gtk_dialog_run(long arg0) {
 }
 
 private static final class MH_gtk_1drag_1begin_1with_1coordinates {
-	static final MethodHandle MH = FFM.downcall("gtk_drag_begin_with_coordinates", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_drag_begin_with_coordinates", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_drag_begin_with_coordinates");
 }
 public static long gtk_drag_begin_with_coordinates(long arg0, long arg1, int arg2, int arg3, long arg4, int arg5, int arg6) {
 	try {
@@ -512,7 +562,7 @@ public static long gtk_drag_begin_with_coordinates(long arg0, long arg1, int arg
 }
 
 private static final class MH_gtk_1drag_1check_1threshold {
-	static final MethodHandle MH = FFM.downcall("gtk_drag_check_threshold", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_drag_check_threshold", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_INT)), "gtk_drag_check_threshold");
 }
 public static boolean gtk_drag_check_threshold(long arg0, int arg1, int arg2, int arg3, int arg4) {
 	try {
@@ -525,7 +575,7 @@ public static boolean gtk_drag_check_threshold(long arg0, int arg1, int arg2, in
 }
 
 private static final class MH_gtk_1drag_1dest_1set {
-	static final MethodHandle MH = FFM.downcall("gtk_drag_dest_set", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_drag_dest_set", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_drag_dest_set");
 }
 public static void gtk_drag_dest_set(long arg0, int arg1, long arg2, int arg3, int arg4) {
 	try {
@@ -537,7 +587,7 @@ public static void gtk_drag_dest_set(long arg0, int arg1, long arg2, int arg3, i
 }
 
 private static final class MH_gtk_1drag_1dest_1unset {
-	static final MethodHandle MH = FFM.downcall("gtk_drag_dest_unset", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_drag_dest_unset", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_drag_dest_unset");
 }
 public static void gtk_drag_dest_unset(long arg0) {
 	try {
@@ -549,7 +599,7 @@ public static void gtk_drag_dest_unset(long arg0) {
 }
 
 private static final class MH_gtk_1drag_1finish {
-	static final MethodHandle MH = FFM.downcall("gtk_drag_finish", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_drag_finish", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT)), "gtk_drag_finish");
 }
 public static void gtk_drag_finish(long arg0, boolean arg1, boolean arg2, int arg3) {
 	try {
@@ -561,7 +611,7 @@ public static void gtk_drag_finish(long arg0, boolean arg1, boolean arg2, int ar
 }
 
 private static final class MH_gtk_1drag_1get_1data {
-	static final MethodHandle MH = FFM.downcall("gtk_drag_get_data", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_drag_get_data", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_drag_get_data");
 }
 public static void gtk_drag_get_data(long arg0, long arg1, long arg2, int arg3) {
 	try {
@@ -573,7 +623,7 @@ public static void gtk_drag_get_data(long arg0, long arg1, long arg2, int arg3) 
 }
 
 private static final class MH_gtk_1drag_1set_1icon_1surface {
-	static final MethodHandle MH = FFM.downcall("gtk_drag_set_icon_surface", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_drag_set_icon_surface", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_drag_set_icon_surface");
 }
 public static void gtk_drag_set_icon_surface(long arg0, long arg1) {
 	try {
@@ -585,7 +635,7 @@ public static void gtk_drag_set_icon_surface(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1editable_1copy_1clipboard {
-	static final MethodHandle MH = FFM.downcall("gtk_editable_copy_clipboard", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_editable_copy_clipboard", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_editable_copy_clipboard");
 }
 public static void gtk_editable_copy_clipboard(long arg0) {
 	try {
@@ -597,7 +647,7 @@ public static void gtk_editable_copy_clipboard(long arg0) {
 }
 
 private static final class MH_gtk_1editable_1cut_1clipboard {
-	static final MethodHandle MH = FFM.downcall("gtk_editable_cut_clipboard", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_editable_cut_clipboard", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_editable_cut_clipboard");
 }
 public static void gtk_editable_cut_clipboard(long arg0) {
 	try {
@@ -609,7 +659,7 @@ public static void gtk_editable_cut_clipboard(long arg0) {
 }
 
 private static final class MH_gtk_1editable_1paste_1clipboard {
-	static final MethodHandle MH = FFM.downcall("gtk_editable_paste_clipboard", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_editable_paste_clipboard", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_editable_paste_clipboard");
 }
 public static void gtk_editable_paste_clipboard(long arg0) {
 	try {
@@ -621,7 +671,7 @@ public static void gtk_editable_paste_clipboard(long arg0) {
 }
 
 private static final class MH_gtk_1entry_1get_1layout {
-	static final MethodHandle MH = FFM.downcall("gtk_entry_get_layout", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_entry_get_layout", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_entry_get_layout");
 }
 public static long gtk_entry_get_layout(long arg0) {
 	try {
@@ -634,7 +684,7 @@ public static long gtk_entry_get_layout(long arg0) {
 }
 
 private static final class MH_gtk_1entry_1get_1layout_1offsets {
-	static final MethodHandle MH = FFM.downcall("gtk_entry_get_layout_offsets", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_entry_get_layout_offsets", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS)), "gtk_entry_get_layout_offsets");
 }
 public static void gtk_entry_get_layout_offsets(long arg0, int[] arg1, int[] arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -650,7 +700,7 @@ public static void gtk_entry_get_layout_offsets(long arg0, int[] arg1, int[] arg
 }
 
 private static final class MH_gtk_1entry_1get_1text {
-	static final MethodHandle MH = FFM.downcall("gtk_entry_get_text", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_entry_get_text", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_entry_get_text");
 }
 public static long gtk_entry_get_text(long arg0) {
 	try {
@@ -663,7 +713,7 @@ public static long gtk_entry_get_text(long arg0) {
 }
 
 private static final class MH_gtk_1entry_1set_1text {
-	static final MethodHandle MH = FFM.downcall("gtk_entry_set_text", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_entry_set_text", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_entry_set_text");
 }
 public static void gtk_entry_set_text(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -677,7 +727,7 @@ public static void gtk_entry_set_text(long arg0, byte[] arg1) {
 }
 
 private static final class MH_gtk_1entry_1set_1width_1chars {
-	static final MethodHandle MH = FFM.downcall("gtk_entry_set_width_chars", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_entry_set_width_chars", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_entry_set_width_chars");
 }
 public static void gtk_entry_set_width_chars(long arg0, int arg1) {
 	try {
@@ -689,7 +739,7 @@ public static void gtk_entry_set_width_chars(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1entry_1text_1index_1to_1layout_1index {
-	static final MethodHandle MH = FFM.downcall("gtk_entry_text_index_to_layout_index", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_entry_text_index_to_layout_index", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_INT)), "gtk_entry_text_index_to_layout_index");
 }
 public static int gtk_entry_text_index_to_layout_index(long arg0, int arg1) {
 	try {
@@ -702,7 +752,7 @@ public static int gtk_entry_text_index_to_layout_index(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1event_1box_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_event_box_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_event_box_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_event_box_new");
 }
 public static long gtk_event_box_new() {
 	try {
@@ -715,7 +765,7 @@ public static long gtk_event_box_new() {
 }
 
 private static final class MH_gtk_1event_1controller_1handle_1event {
-	static final MethodHandle MH = FFM.downcall("gtk_event_controller_handle_event", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_event_controller_handle_event", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_event_controller_handle_event");
 }
 public static void gtk_event_controller_handle_event(long arg0, long arg1) {
 	try {
@@ -727,7 +777,7 @@ public static void gtk_event_controller_handle_event(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1events_1pending {
-	static final MethodHandle MH = FFM.downcall("gtk_events_pending", FunctionDescriptor.of(JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_events_pending", FunctionDescriptor.of(JAVA_INT)), "gtk_events_pending");
 }
 public static boolean gtk_events_pending() {
 	try {
@@ -740,7 +790,7 @@ public static boolean gtk_events_pending() {
 }
 
 private static final class MH_gtk_1file_1chooser_1get_1filename {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_get_filename", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_get_filename", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_file_chooser_get_filename");
 }
 public static long gtk_file_chooser_get_filename(long arg0) {
 	try {
@@ -753,7 +803,7 @@ public static long gtk_file_chooser_get_filename(long arg0) {
 }
 
 private static final class MH_gtk_1file_1chooser_1get_1filenames {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_get_filenames", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_get_filenames", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_file_chooser_get_filenames");
 }
 public static long gtk_file_chooser_get_filenames(long arg0) {
 	try {
@@ -766,7 +816,7 @@ public static long gtk_file_chooser_get_filenames(long arg0) {
 }
 
 private static final class MH_gtk_1file_1chooser_1get_1uri {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_get_uri", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_get_uri", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_file_chooser_get_uri");
 }
 public static long gtk_file_chooser_get_uri(long arg0) {
 	try {
@@ -779,7 +829,7 @@ public static long gtk_file_chooser_get_uri(long arg0) {
 }
 
 private static final class MH_gtk_1file_1chooser_1get_1uris {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_get_uris", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_get_uris", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_file_chooser_get_uris");
 }
 public static long gtk_file_chooser_get_uris(long arg0) {
 	try {
@@ -792,7 +842,7 @@ public static long gtk_file_chooser_get_uris(long arg0) {
 }
 
 private static final class MH_gtk_1file_1chooser_1set_1current_1folder {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_set_current_folder", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_set_current_folder", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_file_chooser_set_current_folder");
 }
 public static void gtk_file_chooser_set_current_folder(long arg0, long arg1) {
 	try {
@@ -804,7 +854,7 @@ public static void gtk_file_chooser_set_current_folder(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1file_1chooser_1set_1current_1folder_1uri {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_set_current_folder_uri", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_set_current_folder_uri", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_file_chooser_set_current_folder_uri");
 }
 public static void gtk_file_chooser_set_current_folder_uri(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -818,7 +868,7 @@ public static void gtk_file_chooser_set_current_folder_uri(long arg0, byte[] arg
 }
 
 private static final class MH_gtk_1file_1chooser_1set_1do_1overwrite_1confirmation {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_set_do_overwrite_confirmation", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_set_do_overwrite_confirmation", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_file_chooser_set_do_overwrite_confirmation");
 }
 public static void gtk_file_chooser_set_do_overwrite_confirmation(long arg0, boolean arg1) {
 	try {
@@ -830,7 +880,7 @@ public static void gtk_file_chooser_set_do_overwrite_confirmation(long arg0, boo
 }
 
 private static final class MH_gtk_1file_1chooser_1set_1extra_1widget {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_set_extra_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_set_extra_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_file_chooser_set_extra_widget");
 }
 public static void gtk_file_chooser_set_extra_widget(long arg0, long arg1) {
 	try {
@@ -842,7 +892,7 @@ public static void gtk_file_chooser_set_extra_widget(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1file_1chooser_1set_1filename {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_set_filename", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_set_filename", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_file_chooser_set_filename");
 }
 public static void gtk_file_chooser_set_filename(long arg0, long arg1) {
 	try {
@@ -854,7 +904,7 @@ public static void gtk_file_chooser_set_filename(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1file_1chooser_1set_1local_1only {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_set_local_only", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_set_local_only", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_file_chooser_set_local_only");
 }
 public static void gtk_file_chooser_set_local_only(long arg0, boolean arg1) {
 	try {
@@ -866,7 +916,7 @@ public static void gtk_file_chooser_set_local_only(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1file_1chooser_1set_1uri {
-	static final MethodHandle MH = FFM.downcall("gtk_file_chooser_set_uri", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_file_chooser_set_uri", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_file_chooser_set_uri");
 }
 public static void gtk_file_chooser_set_uri(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -880,7 +930,7 @@ public static void gtk_file_chooser_set_uri(long arg0, byte[] arg1) {
 }
 
 private static final class MH_gtk_1frame_1set_1shadow_1type {
-	static final MethodHandle MH = FFM.downcall("gtk_frame_set_shadow_type", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_frame_set_shadow_type", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_frame_set_shadow_type");
 }
 public static void gtk_frame_set_shadow_type(long arg0, int arg1) {
 	try {
@@ -892,7 +942,7 @@ public static void gtk_frame_set_shadow_type(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1gesture_1drag_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_gesture_drag_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_gesture_drag_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_gesture_drag_new");
 }
 public static long gtk_gesture_drag_new(long arg0) {
 	try {
@@ -905,7 +955,7 @@ public static long gtk_gesture_drag_new(long arg0) {
 }
 
 private static final class MH_gtk_1gesture_1rotate_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_gesture_rotate_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_gesture_rotate_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_gesture_rotate_new");
 }
 public static long gtk_gesture_rotate_new(long arg0) {
 	try {
@@ -918,7 +968,7 @@ public static long gtk_gesture_rotate_new(long arg0) {
 }
 
 private static final class MH_gtk_1gesture_1zoom_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_gesture_zoom_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_gesture_zoom_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_gesture_zoom_new");
 }
 public static long gtk_gesture_zoom_new(long arg0) {
 	try {
@@ -931,7 +981,7 @@ public static long gtk_gesture_zoom_new(long arg0) {
 }
 
 private static final class MH_gtk_1get_1current_1event {
-	static final MethodHandle MH = FFM.downcall("gtk_get_current_event", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_get_current_event", FunctionDescriptor.of(JAVA_LONG)), "gtk_get_current_event");
 }
 public static long gtk_get_current_event() {
 	try {
@@ -944,7 +994,7 @@ public static long gtk_get_current_event() {
 }
 
 private static final class MH_gtk_1get_1current_1event_1state {
-	static final MethodHandle MH = FFM.downcall("gtk_get_current_event_state", FunctionDescriptor.of(JAVA_INT, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_get_current_event_state", FunctionDescriptor.of(JAVA_INT, ADDRESS)), "gtk_get_current_event_state");
 }
 public static boolean gtk_get_current_event_state(int[] arg0) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -959,7 +1009,7 @@ public static boolean gtk_get_current_event_state(int[] arg0) {
 }
 
 private static final class MH_gtk_1get_1event_1widget {
-	static final MethodHandle MH = FFM.downcall("gtk_get_event_widget", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_get_event_widget", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_get_event_widget");
 }
 public static long gtk_get_event_widget(long arg0) {
 	try {
@@ -972,7 +1022,7 @@ public static long gtk_get_event_widget(long arg0) {
 }
 
 private static final class MH_gtk_1grab_1add {
-	static final MethodHandle MH = FFM.downcall("gtk_grab_add", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_grab_add", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_grab_add");
 }
 public static void gtk_grab_add(long arg0) {
 	try {
@@ -984,7 +1034,7 @@ public static void gtk_grab_add(long arg0) {
 }
 
 private static final class MH_gtk_1grab_1get_1current {
-	static final MethodHandle MH = FFM.downcall("gtk_grab_get_current", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_grab_get_current", FunctionDescriptor.of(JAVA_LONG)), "gtk_grab_get_current");
 }
 public static long gtk_grab_get_current() {
 	try {
@@ -997,7 +1047,7 @@ public static long gtk_grab_get_current() {
 }
 
 private static final class MH_gtk_1grab_1remove {
-	static final MethodHandle MH = FFM.downcall("gtk_grab_remove", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_grab_remove", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_grab_remove");
 }
 public static void gtk_grab_remove(long arg0) {
 	try {
@@ -1009,7 +1059,7 @@ public static void gtk_grab_remove(long arg0) {
 }
 
 private static final class MH_gtk_1hsv_1to_1rgb {
-	static final MethodHandle MH = FFM.downcall("gtk_hsv_to_rgb", FunctionDescriptor.ofVoid(JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, ADDRESS, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_hsv_to_rgb", FunctionDescriptor.ofVoid(JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, ADDRESS, ADDRESS, ADDRESS)), "gtk_hsv_to_rgb");
 }
 public static void gtk_hsv_to_rgb(double arg0, double arg1, double arg2, double[] arg3, double[] arg4, double[] arg5) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1027,7 +1077,7 @@ public static void gtk_hsv_to_rgb(double arg0, double arg1, double arg2, double[
 }
 
 private static final class MH_gtk_1icon_1info_1load_1icon {
-	static final MethodHandle MH = FFM.downcall("gtk_icon_info_load_icon", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_icon_info_load_icon", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS)), "gtk_icon_info_load_icon");
 }
 public static long gtk_icon_info_load_icon(long arg0, long[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1042,7 +1092,7 @@ public static long gtk_icon_info_load_icon(long arg0, long[] arg1) {
 }
 
 private static final class MH_gtk_1icon_1theme_1get_1default {
-	static final MethodHandle MH = FFM.downcall("gtk_icon_theme_get_default", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_icon_theme_get_default", FunctionDescriptor.of(JAVA_LONG)), "gtk_icon_theme_get_default");
 }
 public static long gtk_icon_theme_get_default() {
 	try {
@@ -1055,7 +1105,7 @@ public static long gtk_icon_theme_get_default() {
 }
 
 private static final class MH_gtk_1icon_1theme_1load_1icon {
-	static final MethodHandle MH = FFM.downcall("gtk_icon_theme_load_icon", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT, JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_icon_theme_load_icon", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT, JAVA_INT, JAVA_LONG)), "gtk_icon_theme_load_icon");
 }
 public static long gtk_icon_theme_load_icon(long arg0, byte[] arg1, int arg2, int arg3, long arg4) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1070,7 +1120,7 @@ public static long gtk_icon_theme_load_icon(long arg0, byte[] arg1, int arg2, in
 }
 
 private static final class MH_gtk_1icon_1theme_1lookup_1by_1gicon {
-	static final MethodHandle MH = FFM.downcall("gtk_icon_theme_lookup_by_gicon", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_icon_theme_lookup_by_gicon", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_icon_theme_lookup_by_gicon");
 }
 public static long gtk_icon_theme_lookup_by_gicon(long arg0, long arg1, int arg2, int arg3) {
 	try {
@@ -1083,7 +1133,7 @@ public static long gtk_icon_theme_lookup_by_gicon(long arg0, long arg1, int arg2
 }
 
 private static final class MH_gtk_1im_1context_1filter_1keypress {
-	static final MethodHandle MH = FFM.downcall("gtk_im_context_filter_keypress", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_im_context_filter_keypress", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG)), "gtk_im_context_filter_keypress");
 }
 public static boolean gtk_im_context_filter_keypress(long arg0, long arg1) {
 	try {
@@ -1096,7 +1146,7 @@ public static boolean gtk_im_context_filter_keypress(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1image_1new_1from_1icon_1name {
-	static final MethodHandle MH = FFM.downcall("gtk_image_new_from_icon_name", FunctionDescriptor.of(JAVA_LONG, ADDRESS, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_image_new_from_icon_name", FunctionDescriptor.of(JAVA_LONG, ADDRESS, JAVA_INT)), "gtk_image_new_from_icon_name");
 }
 public static long gtk_image_new_from_icon_name(byte[] arg0, int arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1111,7 +1161,7 @@ public static long gtk_image_new_from_icon_name(byte[] arg0, int arg1) {
 }
 
 private static final class MH_gtk_1image_1new_1from_1surface {
-	static final MethodHandle MH = FFM.downcall("gtk_image_new_from_surface", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_image_new_from_surface", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_image_new_from_surface");
 }
 public static long gtk_image_new_from_surface(long arg0) {
 	try {
@@ -1124,7 +1174,7 @@ public static long gtk_image_new_from_surface(long arg0) {
 }
 
 private static final class MH_gtk_1image_1set_1from_1icon_1name {
-	static final MethodHandle MH = FFM.downcall("gtk_image_set_from_icon_name", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_image_set_from_icon_name", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_INT)), "gtk_image_set_from_icon_name");
 }
 public static void gtk_image_set_from_icon_name(long arg0, byte[] arg1, int arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1138,7 +1188,7 @@ public static void gtk_image_set_from_icon_name(long arg0, byte[] arg1, int arg2
 }
 
 private static final class MH_gtk_1image_1set_1from_1surface {
-	static final MethodHandle MH = FFM.downcall("gtk_image_set_from_surface", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_image_set_from_surface", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_image_set_from_surface");
 }
 public static void gtk_image_set_from_surface(long arg0, long arg1) {
 	try {
@@ -1150,7 +1200,7 @@ public static void gtk_image_set_from_surface(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1init_1check {
-	static final MethodHandle MH = FFM.downcall("gtk_init_check", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_init_check", FunctionDescriptor.of(JAVA_INT, ADDRESS, ADDRESS)), "gtk_init_check");
 }
 public static boolean gtk_init_check(long[] arg0, long[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1167,7 +1217,7 @@ public static boolean gtk_init_check(long[] arg0, long[] arg1) {
 }
 
 private static final class MH_gtk_1label_1set_1line_1wrap {
-	static final MethodHandle MH = FFM.downcall("gtk_label_set_line_wrap", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_label_set_line_wrap", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_label_set_line_wrap");
 }
 public static void gtk_label_set_line_wrap(long arg0, boolean arg1) {
 	try {
@@ -1179,7 +1229,7 @@ public static void gtk_label_set_line_wrap(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1label_1set_1line_1wrap_1mode {
-	static final MethodHandle MH = FFM.downcall("gtk_label_set_line_wrap_mode", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_label_set_line_wrap_mode", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_label_set_line_wrap_mode");
 }
 public static void gtk_label_set_line_wrap_mode(long arg0, int arg1) {
 	try {
@@ -1191,7 +1241,7 @@ public static void gtk_label_set_line_wrap_mode(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1main_1do_1event {
-	static final MethodHandle MH = FFM.downcall("gtk_main_do_event", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_main_do_event", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_main_do_event");
 }
 public static void gtk_main_do_event(long arg0) {
 	try {
@@ -1203,7 +1253,7 @@ public static void gtk_main_do_event(long arg0) {
 }
 
 private static final class MH_gtk_1main_1iteration_1do {
-	static final MethodHandle MH = FFM.downcall("gtk_main_iteration_do", FunctionDescriptor.of(JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_main_iteration_do", FunctionDescriptor.of(JAVA_INT, JAVA_INT)), "gtk_main_iteration_do");
 }
 public static boolean gtk_main_iteration_do(boolean arg0) {
 	try {
@@ -1216,7 +1266,7 @@ public static boolean gtk_main_iteration_do(boolean arg0) {
 }
 
 private static final class MH_gtk_1menu_1bar_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_bar_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_bar_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_menu_bar_new");
 }
 public static long gtk_menu_bar_new() {
 	try {
@@ -1229,7 +1279,7 @@ public static long gtk_menu_bar_new() {
 }
 
 private static final class MH_gtk_1menu_1item_1get_1submenu {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_item_get_submenu", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_item_get_submenu", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_menu_item_get_submenu");
 }
 public static long gtk_menu_item_get_submenu(long arg0) {
 	try {
@@ -1242,7 +1292,7 @@ public static long gtk_menu_item_get_submenu(long arg0) {
 }
 
 private static final class MH_gtk_1menu_1item_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_item_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_item_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_menu_item_new");
 }
 public static long gtk_menu_item_new() {
 	try {
@@ -1255,7 +1305,7 @@ public static long gtk_menu_item_new() {
 }
 
 private static final class MH_gtk_1menu_1item_1set_1submenu {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_item_set_submenu", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_item_set_submenu", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_menu_item_set_submenu");
 }
 public static void gtk_menu_item_set_submenu(long arg0, long arg1) {
 	try {
@@ -1267,7 +1317,7 @@ public static void gtk_menu_item_set_submenu(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1menu_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_menu_new");
 }
 public static long gtk_menu_new() {
 	try {
@@ -1280,7 +1330,7 @@ public static long gtk_menu_new() {
 }
 
 private static final class MH_gtk_1menu_1popdown {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_popdown", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_popdown", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_menu_popdown");
 }
 public static void gtk_menu_popdown(long arg0) {
 	try {
@@ -1292,7 +1342,7 @@ public static void gtk_menu_popdown(long arg0) {
 }
 
 private static final class MH_gtk_1menu_1popup_1at_1pointer {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_popup_at_pointer", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_popup_at_pointer", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_menu_popup_at_pointer");
 }
 public static void gtk_menu_popup_at_pointer(long arg0, long arg1) {
 	try {
@@ -1304,7 +1354,7 @@ public static void gtk_menu_popup_at_pointer(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1menu_1popup_1at_1rect {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_popup_at_rect", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT, JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_popup_at_rect", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT, JAVA_INT, JAVA_LONG)), "gtk_menu_popup_at_rect");
 }
 public static void gtk_menu_popup_at_rect(long arg0, long arg1, org.eclipse.swt.internal.gtk.GdkRectangle arg2, int arg3, int arg4, long arg5) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1319,7 +1369,7 @@ public static void gtk_menu_popup_at_rect(long arg0, long arg1, org.eclipse.swt.
 }
 
 private static final class MH_gtk_1menu_1shell_1deactivate {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_shell_deactivate", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_shell_deactivate", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_menu_shell_deactivate");
 }
 public static void gtk_menu_shell_deactivate(long arg0) {
 	try {
@@ -1331,7 +1381,7 @@ public static void gtk_menu_shell_deactivate(long arg0) {
 }
 
 private static final class MH_gtk_1menu_1shell_1insert {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_shell_insert", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_shell_insert", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_menu_shell_insert");
 }
 public static void gtk_menu_shell_insert(long arg0, long arg1, int arg2) {
 	try {
@@ -1343,7 +1393,7 @@ public static void gtk_menu_shell_insert(long arg0, long arg1, int arg2) {
 }
 
 private static final class MH_gtk_1menu_1shell_1set_1take_1focus {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_shell_set_take_focus", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_shell_set_take_focus", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_menu_shell_set_take_focus");
 }
 public static void gtk_menu_shell_set_take_focus(long arg0, boolean arg1) {
 	try {
@@ -1355,7 +1405,7 @@ public static void gtk_menu_shell_set_take_focus(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1menu_1tool_1button_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_menu_tool_button_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_menu_tool_button_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS)), "gtk_menu_tool_button_new");
 }
 public static long gtk_menu_tool_button_new(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1370,7 +1420,7 @@ public static long gtk_menu_tool_button_new(long arg0, byte[] arg1) {
 }
 
 private static final class MH_gtk_1native_1dialog_1run {
-	static final MethodHandle MH = FFM.downcall("gtk_native_dialog_run", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_native_dialog_run", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_native_dialog_run");
 }
 public static int gtk_native_dialog_run(long arg0) {
 	try {
@@ -1382,8 +1432,21 @@ public static int gtk_native_dialog_run(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1parse_1args {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_parse_args", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG)), "gtk_parse_args");
+}
+public static boolean gtk_parse_args(long arg0, long arg1) {
+	try {
+		int rc = (int) MH_gtk_1parse_1args.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+		return ((byte) rc != 0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1radio_1button_1get_1group {
-	static final MethodHandle MH = FFM.downcall("gtk_radio_button_get_group", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_radio_button_get_group", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_radio_button_get_group");
 }
 public static long gtk_radio_button_get_group(long arg0) {
 	try {
@@ -1396,7 +1459,7 @@ public static long gtk_radio_button_get_group(long arg0) {
 }
 
 private static final class MH_gtk_1radio_1button_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_radio_button_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_radio_button_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_radio_button_new");
 }
 public static long gtk_radio_button_new(long arg0) {
 	try {
@@ -1409,7 +1472,7 @@ public static long gtk_radio_button_new(long arg0) {
 }
 
 private static final class MH_gtk_1radio_1menu_1item_1get_1group {
-	static final MethodHandle MH = FFM.downcall("gtk_radio_menu_item_get_group", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_radio_menu_item_get_group", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_radio_menu_item_get_group");
 }
 public static long gtk_radio_menu_item_get_group(long arg0) {
 	try {
@@ -1422,7 +1485,7 @@ public static long gtk_radio_menu_item_get_group(long arg0) {
 }
 
 private static final class MH_gtk_1radio_1menu_1item_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_radio_menu_item_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_radio_menu_item_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_radio_menu_item_new");
 }
 public static long gtk_radio_menu_item_new(long arg0) {
 	try {
@@ -1435,7 +1498,7 @@ public static long gtk_radio_menu_item_new(long arg0) {
 }
 
 private static final class MH_gtk_1rgb_1to_1hsv {
-	static final MethodHandle MH = FFM.downcall("gtk_rgb_to_hsv", FunctionDescriptor.ofVoid(JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, ADDRESS, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_rgb_to_hsv", FunctionDescriptor.ofVoid(JAVA_DOUBLE, JAVA_DOUBLE, JAVA_DOUBLE, ADDRESS, ADDRESS, ADDRESS)), "gtk_rgb_to_hsv");
 }
 public static void gtk_rgb_to_hsv(double arg0, double arg1, double arg2, double[] arg3, double[] arg4, double[] arg5) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1453,7 +1516,7 @@ public static void gtk_rgb_to_hsv(double arg0, double arg1, double arg2, double[
 }
 
 private static final class MH_gtk_1scrolled_1window_1get_1shadow_1type {
-	static final MethodHandle MH = FFM.downcall("gtk_scrolled_window_get_shadow_type", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_scrolled_window_get_shadow_type", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_scrolled_window_get_shadow_type");
 }
 public static int gtk_scrolled_window_get_shadow_type(long arg0) {
 	try {
@@ -1466,7 +1529,7 @@ public static int gtk_scrolled_window_get_shadow_type(long arg0) {
 }
 
 private static final class MH_gtk_1scrolled_1window_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_scrolled_window_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_scrolled_window_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG)), "gtk_scrolled_window_new");
 }
 public static long gtk_scrolled_window_new(long arg0, long arg1) {
 	try {
@@ -1479,7 +1542,7 @@ public static long gtk_scrolled_window_new(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1scrolled_1window_1set_1shadow_1type {
-	static final MethodHandle MH = FFM.downcall("gtk_scrolled_window_set_shadow_type", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_scrolled_window_set_shadow_type", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_scrolled_window_set_shadow_type");
 }
 public static void gtk_scrolled_window_set_shadow_type(long arg0, int arg1) {
 	try {
@@ -1491,7 +1554,7 @@ public static void gtk_scrolled_window_set_shadow_type(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1selection_1data_1free {
-	static final MethodHandle MH = FFM.downcall("gtk_selection_data_free", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_selection_data_free", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_selection_data_free");
 }
 public static void gtk_selection_data_free(long arg0) {
 	try {
@@ -1503,7 +1566,7 @@ public static void gtk_selection_data_free(long arg0) {
 }
 
 private static final class MH_gtk_1selection_1data_1get_1data {
-	static final MethodHandle MH = FFM.downcall("gtk_selection_data_get_data", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_selection_data_get_data", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_selection_data_get_data");
 }
 public static long gtk_selection_data_get_data(long arg0) {
 	try {
@@ -1516,7 +1579,7 @@ public static long gtk_selection_data_get_data(long arg0) {
 }
 
 private static final class MH_gtk_1selection_1data_1get_1data_1type {
-	static final MethodHandle MH = FFM.downcall("gtk_selection_data_get_data_type", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_selection_data_get_data_type", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_selection_data_get_data_type");
 }
 public static long gtk_selection_data_get_data_type(long arg0) {
 	try {
@@ -1529,7 +1592,7 @@ public static long gtk_selection_data_get_data_type(long arg0) {
 }
 
 private static final class MH_gtk_1selection_1data_1get_1format {
-	static final MethodHandle MH = FFM.downcall("gtk_selection_data_get_format", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_selection_data_get_format", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_selection_data_get_format");
 }
 public static int gtk_selection_data_get_format(long arg0) {
 	try {
@@ -1542,7 +1605,7 @@ public static int gtk_selection_data_get_format(long arg0) {
 }
 
 private static final class MH_gtk_1selection_1data_1get_1length {
-	static final MethodHandle MH = FFM.downcall("gtk_selection_data_get_length", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_selection_data_get_length", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_selection_data_get_length");
 }
 public static int gtk_selection_data_get_length(long arg0) {
 	try {
@@ -1555,7 +1618,7 @@ public static int gtk_selection_data_get_length(long arg0) {
 }
 
 private static final class MH_gtk_1selection_1data_1get_1target {
-	static final MethodHandle MH = FFM.downcall("gtk_selection_data_get_target", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_selection_data_get_target", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_selection_data_get_target");
 }
 public static long gtk_selection_data_get_target(long arg0) {
 	try {
@@ -1568,7 +1631,7 @@ public static long gtk_selection_data_get_target(long arg0) {
 }
 
 private static final class MH_gtk_1selection_1data_1set {
-	static final MethodHandle MH = FFM.downcall("gtk_selection_data_set", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_selection_data_set", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_LONG, JAVA_INT)), "gtk_selection_data_set");
 }
 public static void gtk_selection_data_set(long arg0, long arg1, int arg2, long arg3, int arg4) {
 	try {
@@ -1580,7 +1643,7 @@ public static void gtk_selection_data_set(long arg0, long arg1, int arg2, long a
 }
 
 private static final class MH_gtk_1separator_1menu_1item_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_separator_menu_item_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_separator_menu_item_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_separator_menu_item_new");
 }
 public static long gtk_separator_menu_item_new() {
 	try {
@@ -1593,7 +1656,7 @@ public static long gtk_separator_menu_item_new() {
 }
 
 private static final class MH_gtk_1separator_1tool_1item_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_separator_tool_item_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_separator_tool_item_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_separator_tool_item_new");
 }
 public static long gtk_separator_tool_item_new() {
 	try {
@@ -1606,7 +1669,7 @@ public static long gtk_separator_tool_item_new() {
 }
 
 private static final class MH_gtk_1separator_1tool_1item_1set_1draw {
-	static final MethodHandle MH = FFM.downcall("gtk_separator_tool_item_set_draw", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_separator_tool_item_set_draw", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_separator_tool_item_set_draw");
 }
 public static void gtk_separator_tool_item_set_draw(long arg0, boolean arg1) {
 	try {
@@ -1618,7 +1681,7 @@ public static void gtk_separator_tool_item_set_draw(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1status_1icon_1get_1geometry {
-	static final MethodHandle MH = FFM.downcall("gtk_status_icon_get_geometry", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_status_icon_get_geometry", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_LONG)), "gtk_status_icon_get_geometry");
 }
 public static boolean gtk_status_icon_get_geometry(long arg0, long arg1, org.eclipse.swt.internal.gtk.GdkRectangle arg2, long arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1634,7 +1697,7 @@ public static boolean gtk_status_icon_get_geometry(long arg0, long arg1, org.ecl
 }
 
 private static final class MH_gtk_1status_1icon_1get_1visible {
-	static final MethodHandle MH = FFM.downcall("gtk_status_icon_get_visible", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_status_icon_get_visible", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_status_icon_get_visible");
 }
 public static boolean gtk_status_icon_get_visible(long arg0) {
 	try {
@@ -1647,7 +1710,7 @@ public static boolean gtk_status_icon_get_visible(long arg0) {
 }
 
 private static final class MH_gtk_1status_1icon_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_status_icon_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_status_icon_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_status_icon_new");
 }
 public static long gtk_status_icon_new() {
 	try {
@@ -1660,7 +1723,7 @@ public static long gtk_status_icon_new() {
 }
 
 private static final class MH_gtk_1status_1icon_1set_1from_1pixbuf {
-	static final MethodHandle MH = FFM.downcall("gtk_status_icon_set_from_pixbuf", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_status_icon_set_from_pixbuf", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_status_icon_set_from_pixbuf");
 }
 public static void gtk_status_icon_set_from_pixbuf(long arg0, long arg1) {
 	try {
@@ -1672,7 +1735,7 @@ public static void gtk_status_icon_set_from_pixbuf(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1status_1icon_1set_1tooltip_1text {
-	static final MethodHandle MH = FFM.downcall("gtk_status_icon_set_tooltip_text", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_status_icon_set_tooltip_text", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_status_icon_set_tooltip_text");
 }
 public static void gtk_status_icon_set_tooltip_text(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1686,7 +1749,7 @@ public static void gtk_status_icon_set_tooltip_text(long arg0, byte[] arg1) {
 }
 
 private static final class MH_gtk_1status_1icon_1set_1visible {
-	static final MethodHandle MH = FFM.downcall("gtk_status_icon_set_visible", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_status_icon_set_visible", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_status_icon_set_visible");
 }
 public static void gtk_status_icon_set_visible(long arg0, boolean arg1) {
 	try {
@@ -1698,7 +1761,7 @@ public static void gtk_status_icon_set_visible(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1style_1context_1add_1provider_1for_1screen {
-	static final MethodHandle MH = FFM.downcall("gtk_style_context_add_provider_for_screen", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_add_provider_for_screen", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_style_context_add_provider_for_screen");
 }
 public static void gtk_style_context_add_provider_for_screen(long arg0, long arg1, int arg2) {
 	try {
@@ -1710,7 +1773,7 @@ public static void gtk_style_context_add_provider_for_screen(long arg0, long arg
 }
 
 private static final class MH_gtk_1style_1context_1get {
-	static final MethodHandle MH = FFM.downcall("gtk_style_context_get", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_get", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2)), "gtk_style_context_get");
 }
 public static void gtk_style_context_get(long arg0, int arg1, byte[] arg2, long[] arg3, long arg4) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1725,7 +1788,7 @@ public static void gtk_style_context_get(long arg0, int arg1, byte[] arg2, long[
 }
 
 private static final class MH_gtk_1style_1context_1get_1border {
-	static final MethodHandle MH = FFM.downcall("gtk_style_context_get_border", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_get_border", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS)), "gtk_style_context_get_border");
 }
 public static void gtk_style_context_get_border(long arg0, int arg1, org.eclipse.swt.internal.gtk.GtkBorder arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1739,7 +1802,7 @@ public static void gtk_style_context_get_border(long arg0, int arg1, org.eclipse
 }
 
 private static final class MH_gtk_1style_1context_1get_1color {
-	static final MethodHandle MH = FFM.downcall("gtk_style_context_get_color", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_get_color", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS)), "gtk_style_context_get_color");
 }
 public static void gtk_style_context_get_color(long arg0, int arg1, org.eclipse.swt.internal.gtk.GdkRGBA arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1754,7 +1817,7 @@ public static void gtk_style_context_get_color(long arg0, int arg1, org.eclipse.
 }
 
 private static final class MH_gtk_1style_1context_1get_1font {
-	static final MethodHandle MH = FFM.downcall("gtk_style_context_get_font", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_get_font", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_style_context_get_font");
 }
 public static long gtk_style_context_get_font(long arg0, int arg1) {
 	try {
@@ -1767,7 +1830,7 @@ public static long gtk_style_context_get_font(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1style_1context_1get_1padding {
-	static final MethodHandle MH = FFM.downcall("gtk_style_context_get_padding", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_get_padding", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS)), "gtk_style_context_get_padding");
 }
 public static void gtk_style_context_get_padding(long arg0, int arg1, org.eclipse.swt.internal.gtk.GtkBorder arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1781,7 +1844,7 @@ public static void gtk_style_context_get_padding(long arg0, int arg1, org.eclips
 }
 
 private static final class MH_gtk_1style_1context_1get_1parent {
-	static final MethodHandle MH = FFM.downcall("gtk_style_context_get_parent", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_get_parent", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_style_context_get_parent");
 }
 public static long gtk_style_context_get_parent(long arg0) {
 	try {
@@ -1793,8 +1856,20 @@ public static long gtk_style_context_get_parent(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1style_1context_1set_1background {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_style_context_set_background", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_style_context_set_background");
+}
+public static void gtk_style_context_set_background(long arg0, long arg1) {
+	try {
+		MH_gtk_1style_1context_1set_1background.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1target_1list_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_target_list_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_target_list_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_target_list_new");
 }
 public static long gtk_target_list_new(long arg0, int arg1) {
 	try {
@@ -1807,7 +1882,7 @@ public static long gtk_target_list_new(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1target_1list_1unref {
-	static final MethodHandle MH = FFM.downcall("gtk_target_list_unref", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_target_list_unref", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_target_list_unref");
 }
 public static void gtk_target_list_unref(long arg0) {
 	try {
@@ -1819,7 +1894,7 @@ public static void gtk_target_list_unref(long arg0) {
 }
 
 private static final class MH_gtk_1text_1view_1get_1window {
-	static final MethodHandle MH = FFM.downcall("gtk_text_view_get_window", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_text_view_get_window", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_text_view_get_window");
 }
 public static long gtk_text_view_get_window(long arg0, int arg1) {
 	try {
@@ -1832,7 +1907,7 @@ public static long gtk_text_view_get_window(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1toggle_1button_1set_1inconsistent {
-	static final MethodHandle MH = FFM.downcall("gtk_toggle_button_set_inconsistent", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toggle_button_set_inconsistent", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_toggle_button_set_inconsistent");
 }
 public static void gtk_toggle_button_set_inconsistent(long arg0, boolean arg1) {
 	try {
@@ -1844,7 +1919,7 @@ public static void gtk_toggle_button_set_inconsistent(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1toggle_1tool_1button_1get_1active {
-	static final MethodHandle MH = FFM.downcall("gtk_toggle_tool_button_get_active", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toggle_tool_button_get_active", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_toggle_tool_button_get_active");
 }
 public static boolean gtk_toggle_tool_button_get_active(long arg0) {
 	try {
@@ -1857,7 +1932,7 @@ public static boolean gtk_toggle_tool_button_get_active(long arg0) {
 }
 
 private static final class MH_gtk_1toggle_1tool_1button_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_toggle_tool_button_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toggle_tool_button_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_toggle_tool_button_new");
 }
 public static long gtk_toggle_tool_button_new() {
 	try {
@@ -1870,7 +1945,7 @@ public static long gtk_toggle_tool_button_new() {
 }
 
 private static final class MH_gtk_1toggle_1tool_1button_1set_1active {
-	static final MethodHandle MH = FFM.downcall("gtk_toggle_tool_button_set_active", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toggle_tool_button_set_active", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_toggle_tool_button_set_active");
 }
 public static void gtk_toggle_tool_button_set_active(long arg0, boolean arg1) {
 	try {
@@ -1882,7 +1957,7 @@ public static void gtk_toggle_tool_button_set_active(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1tool_1button_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_button_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_button_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS)), "gtk_tool_button_new");
 }
 public static long gtk_tool_button_new(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1897,7 +1972,7 @@ public static long gtk_tool_button_new(long arg0, byte[] arg1) {
 }
 
 private static final class MH_gtk_1tool_1button_1set_1icon_1widget {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_button_set_icon_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_button_set_icon_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_tool_button_set_icon_widget");
 }
 public static void gtk_tool_button_set_icon_widget(long arg0, long arg1) {
 	try {
@@ -1909,7 +1984,7 @@ public static void gtk_tool_button_set_icon_widget(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1tool_1button_1set_1label_1widget {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_button_set_label_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_button_set_label_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_tool_button_set_label_widget");
 }
 public static void gtk_tool_button_set_label_widget(long arg0, long arg1) {
 	try {
@@ -1921,7 +1996,7 @@ public static void gtk_tool_button_set_label_widget(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1tool_1button_1set_1use_1underline {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_button_set_use_underline", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_button_set_use_underline", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_tool_button_set_use_underline");
 }
 public static void gtk_tool_button_set_use_underline(long arg0, boolean arg1) {
 	try {
@@ -1933,7 +2008,7 @@ public static void gtk_tool_button_set_use_underline(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1tool_1item_1get_1proxy_1menu_1item {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_item_get_proxy_menu_item", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_item_get_proxy_menu_item", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS)), "gtk_tool_item_get_proxy_menu_item");
 }
 public static long gtk_tool_item_get_proxy_menu_item(long arg0, byte[] arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1948,7 +2023,7 @@ public static long gtk_tool_item_get_proxy_menu_item(long arg0, byte[] arg1) {
 }
 
 private static final class MH_gtk_1tool_1item_1retrieve_1proxy_1menu_1item {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_item_retrieve_proxy_menu_item", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_item_retrieve_proxy_menu_item", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_tool_item_retrieve_proxy_menu_item");
 }
 public static long gtk_tool_item_retrieve_proxy_menu_item(long arg0) {
 	try {
@@ -1961,7 +2036,7 @@ public static long gtk_tool_item_retrieve_proxy_menu_item(long arg0) {
 }
 
 private static final class MH_gtk_1tool_1item_1set_1homogeneous {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_item_set_homogeneous", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_item_set_homogeneous", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_tool_item_set_homogeneous");
 }
 public static void gtk_tool_item_set_homogeneous(long arg0, boolean arg1) {
 	try {
@@ -1973,7 +2048,7 @@ public static void gtk_tool_item_set_homogeneous(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1tool_1item_1set_1is_1important {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_item_set_is_important", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_item_set_is_important", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_tool_item_set_is_important");
 }
 public static void gtk_tool_item_set_is_important(long arg0, boolean arg1) {
 	try {
@@ -1985,7 +2060,7 @@ public static void gtk_tool_item_set_is_important(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1tool_1item_1set_1proxy_1menu_1item {
-	static final MethodHandle MH = FFM.downcall("gtk_tool_item_set_proxy_menu_item", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tool_item_set_proxy_menu_item", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG)), "gtk_tool_item_set_proxy_menu_item");
 }
 public static void gtk_tool_item_set_proxy_menu_item(long arg0, byte[] arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -1999,7 +2074,7 @@ public static void gtk_tool_item_set_proxy_menu_item(long arg0, byte[] arg1, lon
 }
 
 private static final class MH_gtk_1toolbar_1insert {
-	static final MethodHandle MH = FFM.downcall("gtk_toolbar_insert", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toolbar_insert", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT)), "gtk_toolbar_insert");
 }
 public static void gtk_toolbar_insert(long arg0, long arg1, int arg2) {
 	try {
@@ -2011,7 +2086,7 @@ public static void gtk_toolbar_insert(long arg0, long arg1, int arg2) {
 }
 
 private static final class MH_gtk_1toolbar_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_toolbar_new", FunctionDescriptor.of(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toolbar_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_toolbar_new");
 }
 public static long gtk_toolbar_new() {
 	try {
@@ -2024,7 +2099,7 @@ public static long gtk_toolbar_new() {
 }
 
 private static final class MH_gtk_1toolbar_1set_1icon_1size {
-	static final MethodHandle MH = FFM.downcall("gtk_toolbar_set_icon_size", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toolbar_set_icon_size", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_toolbar_set_icon_size");
 }
 public static void gtk_toolbar_set_icon_size(long arg0, int arg1) {
 	try {
@@ -2036,7 +2111,7 @@ public static void gtk_toolbar_set_icon_size(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1toolbar_1set_1style {
-	static final MethodHandle MH = FFM.downcall("gtk_toolbar_set_style", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_toolbar_set_style", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_toolbar_set_style");
 }
 public static void gtk_toolbar_set_style(long arg0, int arg1) {
 	try {
@@ -2048,7 +2123,7 @@ public static void gtk_toolbar_set_style(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1tree_1view_1column_1cell_1get_1size {
-	static final MethodHandle MH = FFM.downcall("gtk_tree_view_column_cell_get_size", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tree_view_column_cell_get_size", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, ADDRESS, ADDRESS, ADDRESS)), "gtk_tree_view_column_cell_get_size");
 }
 public static void gtk_tree_view_column_cell_get_size(long arg0, org.eclipse.swt.internal.gtk.GdkRectangle arg1, int[] arg2, int[] arg3, int[] arg4, int[] arg5) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2070,7 +2145,7 @@ public static void gtk_tree_view_column_cell_get_size(long arg0, org.eclipse.swt
 }
 
 private static final class MH_gtk_1tree_1view_1get_1bin_1window {
-	static final MethodHandle MH = FFM.downcall("gtk_tree_view_get_bin_window", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_tree_view_get_bin_window", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_tree_view_get_bin_window");
 }
 public static long gtk_tree_view_get_bin_window(long arg0) {
 	try {
@@ -2083,7 +2158,7 @@ public static long gtk_tree_view_get_bin_window(long arg0) {
 }
 
 private static final class MH_gtk_1viewport_1set_1shadow_1type {
-	static final MethodHandle MH = FFM.downcall("gtk_viewport_set_shadow_type", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_viewport_set_shadow_type", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_viewport_set_shadow_type");
 }
 public static void gtk_viewport_set_shadow_type(long arg0, int arg1) {
 	try {
@@ -2095,7 +2170,7 @@ public static void gtk_viewport_set_shadow_type(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1widget_1add_1accelerator {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_add_accelerator", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_add_accelerator", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT)), "gtk_widget_add_accelerator");
 }
 public static void gtk_widget_add_accelerator(long arg0, byte[] arg1, long arg2, int arg3, int arg4, int arg5) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2109,7 +2184,7 @@ public static void gtk_widget_add_accelerator(long arg0, byte[] arg1, long arg2,
 }
 
 private static final class MH_gtk_1widget_1add_1events {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_add_events", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_add_events", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_add_events");
 }
 public static void gtk_widget_add_events(long arg0, int arg1) {
 	try {
@@ -2121,7 +2196,7 @@ public static void gtk_widget_add_events(long arg0, int arg1) {
 }
 
 private static final class MH_gtk_1widget_1destroy {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_destroy", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_destroy", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_widget_destroy");
 }
 public static void gtk_widget_destroy(long arg0) {
 	try {
@@ -2133,7 +2208,7 @@ public static void gtk_widget_destroy(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1draw {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_draw", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_draw", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_widget_draw");
 }
 public static void gtk_widget_draw(long arg0, long arg1) {
 	try {
@@ -2145,7 +2220,7 @@ public static void gtk_widget_draw(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1widget_1event {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_event", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_event", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG)), "gtk_widget_event");
 }
 public static boolean gtk_widget_event(long arg0, long arg1) {
 	try {
@@ -2158,7 +2233,7 @@ public static boolean gtk_widget_event(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1widget_1get_1accessible {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_accessible", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_accessible", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_widget_get_accessible");
 }
 public static long gtk_widget_get_accessible(long arg0) {
 	try {
@@ -2171,7 +2246,7 @@ public static long gtk_widget_get_accessible(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1get_1can_1default {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_can_default", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_can_default", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_widget_get_can_default");
 }
 public static boolean gtk_widget_get_can_default(long arg0) {
 	try {
@@ -2184,7 +2259,7 @@ public static boolean gtk_widget_get_can_default(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1get_1clip {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_clip", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_clip", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_widget_get_clip");
 }
 public static void gtk_widget_get_clip(long arg0, org.eclipse.swt.internal.gtk.GtkAllocation arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2199,7 +2274,7 @@ public static void gtk_widget_get_clip(long arg0, org.eclipse.swt.internal.gtk.G
 }
 
 private static final class MH_gtk_1widget_1get_1events {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_events", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_events", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_widget_get_events");
 }
 public static int gtk_widget_get_events(long arg0) {
 	try {
@@ -2212,7 +2287,7 @@ public static int gtk_widget_get_events(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1get_1has_1window {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_has_window", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_has_window", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_widget_get_has_window");
 }
 public static boolean gtk_widget_get_has_window(long arg0) {
 	try {
@@ -2225,7 +2300,7 @@ public static boolean gtk_widget_get_has_window(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1get_1preferred_1height {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_preferred_height", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_preferred_height", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS)), "gtk_widget_get_preferred_height");
 }
 public static void gtk_widget_get_preferred_height(long arg0, int[] arg1, int[] arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2241,7 +2316,7 @@ public static void gtk_widget_get_preferred_height(long arg0, int[] arg1, int[] 
 }
 
 private static final class MH_gtk_1widget_1get_1preferred_1height_1for_1width {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_preferred_height_for_width", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_preferred_height_for_width", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS)), "gtk_widget_get_preferred_height_for_width");
 }
 public static void gtk_widget_get_preferred_height_for_width(long arg0, int arg1, int[] arg2, int[] arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2257,7 +2332,7 @@ public static void gtk_widget_get_preferred_height_for_width(long arg0, int arg1
 }
 
 private static final class MH_gtk_1widget_1get_1preferred_1width_1for_1height {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_preferred_width_for_height", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_preferred_width_for_height", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, ADDRESS, ADDRESS)), "gtk_widget_get_preferred_width_for_height");
 }
 public static void gtk_widget_get_preferred_width_for_height(long arg0, int arg1, int[] arg2, int[] arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2273,7 +2348,7 @@ public static void gtk_widget_get_preferred_width_for_height(long arg0, int arg1
 }
 
 private static final class MH_gtk_1widget_1get_1screen {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_screen", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_screen", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_widget_get_screen");
 }
 public static long gtk_widget_get_screen(long arg0) {
 	try {
@@ -2286,7 +2361,7 @@ public static long gtk_widget_get_screen(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1get_1toplevel {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_toplevel", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_toplevel", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_widget_get_toplevel");
 }
 public static long gtk_widget_get_toplevel(long arg0) {
 	try {
@@ -2298,8 +2373,21 @@ public static long gtk_widget_get_toplevel(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1widget_1get_1visual {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_visual", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_widget_get_visual");
+}
+public static long gtk_widget_get_visual(long arg0) {
+	try {
+		long rc = (long) MH_gtk_1widget_1get_1visual.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1widget_1get_1window {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_get_window", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_get_window", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_widget_get_window");
 }
 public static long gtk_widget_get_window(long arg0) {
 	try {
@@ -2312,7 +2400,7 @@ public static long gtk_widget_get_window(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1hide {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_hide", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_hide", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_widget_hide");
 }
 public static void gtk_widget_hide(long arg0) {
 	try {
@@ -2324,7 +2412,7 @@ public static void gtk_widget_hide(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1input_1shape_1combine_1region {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_input_shape_combine_region", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_input_shape_combine_region", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_widget_input_shape_combine_region");
 }
 public static void gtk_widget_input_shape_combine_region(long arg0, long arg1) {
 	try {
@@ -2335,8 +2423,20 @@ public static void gtk_widget_input_shape_combine_region(long arg0, long arg1) {
 	}
 }
 
+private static final class MH_gtk_1widget_1map {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_map", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_widget_map");
+}
+public static void gtk_widget_map(long arg0) {
+	try {
+		MH_gtk_1widget_1map.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1widget_1override_1font {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_override_font", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_override_font", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_widget_override_font");
 }
 public static void gtk_widget_override_font(long arg0, long arg1) {
 	try {
@@ -2348,7 +2448,7 @@ public static void gtk_widget_override_font(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1widget_1remove_1accelerator {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_remove_accelerator", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_remove_accelerator", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_widget_remove_accelerator");
 }
 public static void gtk_widget_remove_accelerator(long arg0, long arg1, int arg2, int arg3) {
 	try {
@@ -2360,7 +2460,7 @@ public static void gtk_widget_remove_accelerator(long arg0, long arg1, int arg2,
 }
 
 private static final class MH_gtk_1widget_1reparent {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_reparent", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_reparent", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_widget_reparent");
 }
 public static void gtk_widget_reparent(long arg0, long arg1) {
 	try {
@@ -2372,7 +2472,7 @@ public static void gtk_widget_reparent(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1widget_1set_1allocation {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_set_allocation", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_allocation", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_widget_set_allocation");
 }
 public static void gtk_widget_set_allocation(long arg0, org.eclipse.swt.internal.gtk.GtkAllocation arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2386,7 +2486,7 @@ public static void gtk_widget_set_allocation(long arg0, org.eclipse.swt.internal
 }
 
 private static final class MH_gtk_1widget_1set_1can_1default {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_set_can_default", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_can_default", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_set_can_default");
 }
 public static void gtk_widget_set_can_default(long arg0, boolean arg1) {
 	try {
@@ -2398,7 +2498,7 @@ public static void gtk_widget_set_can_default(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1widget_1set_1clip {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_set_clip", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_clip", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_widget_set_clip");
 }
 public static void gtk_widget_set_clip(long arg0, org.eclipse.swt.internal.gtk.GtkAllocation arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2413,7 +2513,7 @@ public static void gtk_widget_set_clip(long arg0, org.eclipse.swt.internal.gtk.G
 }
 
 private static final class MH_gtk_1widget_1set_1double_1buffered {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_set_double_buffered", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_double_buffered", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_set_double_buffered");
 }
 public static void gtk_widget_set_double_buffered(long arg0, boolean arg1) {
 	try {
@@ -2425,7 +2525,7 @@ public static void gtk_widget_set_double_buffered(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1widget_1set_1has_1window {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_set_has_window", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_has_window", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_set_has_window");
 }
 public static void gtk_widget_set_has_window(long arg0, boolean arg1) {
 	try {
@@ -2436,8 +2536,20 @@ public static void gtk_widget_set_has_window(long arg0, boolean arg1) {
 	}
 }
 
+private static final class MH_gtk_1widget_1set_1mapped {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_mapped", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_set_mapped");
+}
+public static void gtk_widget_set_mapped(long arg0, boolean arg1) {
+	try {
+		MH_gtk_1widget_1set_1mapped.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1widget_1set_1parent_1window {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_set_parent_window", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_parent_window", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_widget_set_parent_window");
 }
 public static void gtk_widget_set_parent_window(long arg0, long arg1) {
 	try {
@@ -2448,8 +2560,20 @@ public static void gtk_widget_set_parent_window(long arg0, long arg1) {
 	}
 }
 
+private static final class MH_gtk_1widget_1set_1realized {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_realized", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_set_realized");
+}
+public static void gtk_widget_set_realized(long arg0, boolean arg1) {
+	try {
+		MH_gtk_1widget_1set_1realized.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1widget_1set_1redraw_1on_1allocate {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_set_redraw_on_allocate", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_redraw_on_allocate", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_set_redraw_on_allocate");
 }
 public static void gtk_widget_set_redraw_on_allocate(long arg0, boolean arg1) {
 	try {
@@ -2460,8 +2584,20 @@ public static void gtk_widget_set_redraw_on_allocate(long arg0, boolean arg1) {
 	}
 }
 
+private static final class MH_gtk_1widget_1set_1window {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_set_window", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_widget_set_window");
+}
+public static void gtk_widget_set_window(long arg0, long arg1) {
+	try {
+		MH_gtk_1widget_1set_1window.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1widget_1shape_1combine_1region {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_shape_combine_region", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_shape_combine_region", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_widget_shape_combine_region");
 }
 public static void gtk_widget_shape_combine_region(long arg0, long arg1) {
 	try {
@@ -2473,7 +2609,7 @@ public static void gtk_widget_shape_combine_region(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1widget_1show {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_show", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_show", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_widget_show");
 }
 public static void gtk_widget_show(long arg0) {
 	try {
@@ -2485,7 +2621,7 @@ public static void gtk_widget_show(long arg0) {
 }
 
 private static final class MH_gtk_1widget_1size_1allocate {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_size_allocate", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_size_allocate", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS)), "gtk_widget_size_allocate");
 }
 public static void gtk_widget_size_allocate(long arg0, org.eclipse.swt.internal.gtk.GtkAllocation arg1) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2499,7 +2635,7 @@ public static void gtk_widget_size_allocate(long arg0, org.eclipse.swt.internal.
 }
 
 private static final class MH_gtk_1widget_1style_1get__J_3B_3IJ {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_style_get", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_style_get", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2)), "gtk_widget_style_get");
 }
 public static void gtk_widget_style_get(long arg0, byte[] arg1, int[] arg2, long arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2515,7 +2651,7 @@ public static void gtk_widget_style_get(long arg0, byte[] arg1, int[] arg2, long
 }
 
 private static final class MH_gtk_1widget_1style_1get__J_3B_3JJ {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_style_get", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_style_get", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS, JAVA_LONG), Linker.Option.firstVariadicArg(2)), "gtk_widget_style_get");
 }
 public static void gtk_widget_style_get(long arg0, byte[] arg1, long[] arg2, long arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2531,7 +2667,7 @@ public static void gtk_widget_style_get(long arg0, byte[] arg1, long[] arg2, lon
 }
 
 private static final class MH_gtk_1widget_1translate_1coordinates {
-	static final MethodHandle MH = FFM.downcall("gtk_widget_translate_coordinates", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_widget_translate_coordinates", FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS)), "gtk_widget_translate_coordinates");
 }
 public static boolean gtk_widget_translate_coordinates(long arg0, long arg1, int arg2, int arg3, int[] arg4, int[] arg5) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2548,7 +2684,7 @@ public static boolean gtk_widget_translate_coordinates(long arg0, long arg1, int
 }
 
 private static final class MH_gtk_1window_1activate_1default {
-	static final MethodHandle MH = FFM.downcall("gtk_window_activate_default", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_activate_default", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_window_activate_default");
 }
 public static boolean gtk_window_activate_default(long arg0) {
 	try {
@@ -2561,7 +2697,7 @@ public static boolean gtk_window_activate_default(long arg0) {
 }
 
 private static final class MH_gtk_1window_1add_1accel_1group {
-	static final MethodHandle MH = FFM.downcall("gtk_window_add_accel_group", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_add_accel_group", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_window_add_accel_group");
 }
 public static void gtk_window_add_accel_group(long arg0, long arg1) {
 	try {
@@ -2573,7 +2709,7 @@ public static void gtk_window_add_accel_group(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1window_1deiconify {
-	static final MethodHandle MH = FFM.downcall("gtk_window_deiconify", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_deiconify", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_window_deiconify");
 }
 public static void gtk_window_deiconify(long arg0) {
 	try {
@@ -2585,7 +2721,7 @@ public static void gtk_window_deiconify(long arg0) {
 }
 
 private static final class MH_gtk_1window_1get_1icon_1list {
-	static final MethodHandle MH = FFM.downcall("gtk_window_get_icon_list", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_get_icon_list", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_window_get_icon_list");
 }
 public static long gtk_window_get_icon_list(long arg0) {
 	try {
@@ -2598,7 +2734,7 @@ public static long gtk_window_get_icon_list(long arg0) {
 }
 
 private static final class MH_gtk_1window_1get_1mnemonic_1modifier {
-	static final MethodHandle MH = FFM.downcall("gtk_window_get_mnemonic_modifier", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_get_mnemonic_modifier", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gtk_window_get_mnemonic_modifier");
 }
 public static int gtk_window_get_mnemonic_modifier(long arg0) {
 	try {
@@ -2611,7 +2747,7 @@ public static int gtk_window_get_mnemonic_modifier(long arg0) {
 }
 
 private static final class MH_gtk_1window_1get_1position {
-	static final MethodHandle MH = FFM.downcall("gtk_window_get_position", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_get_position", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS)), "gtk_window_get_position");
 }
 public static void gtk_window_get_position(long arg0, int[] arg1, int[] arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2627,7 +2763,7 @@ public static void gtk_window_get_position(long arg0, int[] arg1, int[] arg2) {
 }
 
 private static final class MH_gtk_1window_1get_1size {
-	static final MethodHandle MH = FFM.downcall("gtk_window_get_size", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_get_size", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS)), "gtk_window_get_size");
 }
 public static void gtk_window_get_size(long arg0, int[] arg1, int[] arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2643,7 +2779,7 @@ public static void gtk_window_get_size(long arg0, int[] arg1, int[] arg2) {
 }
 
 private static final class MH_gtk_1window_1iconify {
-	static final MethodHandle MH = FFM.downcall("gtk_window_iconify", FunctionDescriptor.ofVoid(JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_iconify", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_window_iconify");
 }
 public static void gtk_window_iconify(long arg0) {
 	try {
@@ -2655,7 +2791,7 @@ public static void gtk_window_iconify(long arg0) {
 }
 
 private static final class MH_gtk_1window_1move {
-	static final MethodHandle MH = FFM.downcall("gtk_window_move", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_move", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_window_move");
 }
 public static void gtk_window_move(long arg0, int arg1, int arg2) {
 	try {
@@ -2667,7 +2803,7 @@ public static void gtk_window_move(long arg0, int arg1, int arg2) {
 }
 
 private static final class MH_gtk_1window_1new {
-	static final MethodHandle MH = FFM.downcall("gtk_window_new", FunctionDescriptor.of(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_new", FunctionDescriptor.of(JAVA_LONG, JAVA_INT)), "gtk_window_new");
 }
 public static long gtk_window_new(int arg0) {
 	try {
@@ -2680,7 +2816,7 @@ public static long gtk_window_new(int arg0) {
 }
 
 private static final class MH_gtk_1window_1remove_1accel_1group {
-	static final MethodHandle MH = FFM.downcall("gtk_window_remove_accel_group", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_remove_accel_group", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_window_remove_accel_group");
 }
 public static void gtk_window_remove_accel_group(long arg0, long arg1) {
 	try {
@@ -2692,7 +2828,7 @@ public static void gtk_window_remove_accel_group(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1window_1resize {
-	static final MethodHandle MH = FFM.downcall("gtk_window_resize", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_resize", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT, JAVA_INT)), "gtk_window_resize");
 }
 public static void gtk_window_resize(long arg0, int arg1, int arg2) {
 	try {
@@ -2704,7 +2840,7 @@ public static void gtk_window_resize(long arg0, int arg1, int arg2) {
 }
 
 private static final class MH_gtk_1window_1set_1attached_1to {
-	static final MethodHandle MH = FFM.downcall("gtk_window_set_attached_to", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_set_attached_to", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_window_set_attached_to");
 }
 public static void gtk_window_set_attached_to(long arg0, long arg1) {
 	try {
@@ -2716,7 +2852,7 @@ public static void gtk_window_set_attached_to(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1window_1set_1default {
-	static final MethodHandle MH = FFM.downcall("gtk_window_set_default", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_set_default", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_window_set_default");
 }
 public static void gtk_window_set_default(long arg0, long arg1) {
 	try {
@@ -2728,7 +2864,7 @@ public static void gtk_window_set_default(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1window_1set_1geometry_1hints {
-	static final MethodHandle MH = FFM.downcall("gtk_window_set_geometry_hints", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_set_geometry_hints", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, ADDRESS, JAVA_INT)), "gtk_window_set_geometry_hints");
 }
 public static void gtk_window_set_geometry_hints(long arg0, long arg1, org.eclipse.swt.internal.gtk3.GdkGeometry arg2, int arg3) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2742,7 +2878,7 @@ public static void gtk_window_set_geometry_hints(long arg0, long arg1, org.eclip
 }
 
 private static final class MH_gtk_1window_1set_1icon_1list {
-	static final MethodHandle MH = FFM.downcall("gtk_window_set_icon_list", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_set_icon_list", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_window_set_icon_list");
 }
 public static void gtk_window_set_icon_list(long arg0, long arg1) {
 	try {
@@ -2754,7 +2890,7 @@ public static void gtk_window_set_icon_list(long arg0, long arg1) {
 }
 
 private static final class MH_gtk_1window_1set_1keep_1above {
-	static final MethodHandle MH = FFM.downcall("gtk_window_set_keep_above", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_set_keep_above", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_window_set_keep_above");
 }
 public static void gtk_window_set_keep_above(long arg0, boolean arg1) {
 	try {
@@ -2766,7 +2902,7 @@ public static void gtk_window_set_keep_above(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1window_1set_1skip_1taskbar_1hint {
-	static final MethodHandle MH = FFM.downcall("gtk_window_set_skip_taskbar_hint", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_set_skip_taskbar_hint", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_window_set_skip_taskbar_hint");
 }
 public static void gtk_window_set_skip_taskbar_hint(long arg0, boolean arg1) {
 	try {
@@ -2778,7 +2914,7 @@ public static void gtk_window_set_skip_taskbar_hint(long arg0, boolean arg1) {
 }
 
 private static final class MH_gtk_1window_1set_1type_1hint {
-	static final MethodHandle MH = FFM.downcall("gtk_window_set_type_hint", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_window_set_type_hint", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_window_set_type_hint");
 }
 public static void gtk_window_set_type_hint(long arg0, int arg1) {
 	try {
@@ -2790,7 +2926,7 @@ public static void gtk_window_set_type_hint(long arg0, int arg1) {
 }
 
 private static final class MH_memmove__JLorg_eclipse_swt_internal_gtk3_GdkEventButton_2J {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG)), "memmove");
 }
 public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GdkEventButton arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2804,7 +2940,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GdkEventButt
 }
 
 private static final class MH_memmove__JLorg_eclipse_swt_internal_gtk3_GdkEventKey_2J {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG)), "memmove");
 }
 public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GdkEventKey arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2818,7 +2954,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GdkEventKey 
 }
 
 private static final class MH_memmove__JLorg_eclipse_swt_internal_gtk3_GtkTargetEntry_2J {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG)), "memmove");
 }
 public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GtkTargetEntry arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2832,7 +2968,7 @@ public static void memmove(long arg0, org.eclipse.swt.internal.gtk3.GtkTargetEnt
 }
 
 private static final class MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventButton_2JJ {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG)), "memmove");
 }
 public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventButton arg0, long arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2846,7 +2982,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventButton arg0, lo
 }
 
 private static final class MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventCrossing_2JJ {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG)), "memmove");
 }
 public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventCrossing arg0, long arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2860,7 +2996,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventCrossing arg0, 
 }
 
 private static final class MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventFocus_2JJ {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG)), "memmove");
 }
 public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventFocus arg0, long arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2874,7 +3010,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventFocus arg0, lon
 }
 
 private static final class MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventKey_2JJ {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG)), "memmove");
 }
 public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventKey arg0, long arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2888,7 +3024,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventKey arg0, long 
 }
 
 private static final class MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventMotion_2JJ {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG)), "memmove");
 }
 public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventMotion arg0, long arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
@@ -2902,7 +3038,7 @@ public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventMotion arg0, lo
 }
 
 private static final class MH_memmove__Lorg_eclipse_swt_internal_gtk3_GdkEventWindowState_2JJ {
-	static final MethodHandle MH = FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("memmove", FunctionDescriptor.ofVoid(ADDRESS, JAVA_LONG, JAVA_LONG)), "memmove");
 }
 public static void memmove(org.eclipse.swt.internal.gtk3.GdkEventWindowState arg0, long arg1, long arg2) {
 	try (Arena arena = Arena.ofConfined()) {
