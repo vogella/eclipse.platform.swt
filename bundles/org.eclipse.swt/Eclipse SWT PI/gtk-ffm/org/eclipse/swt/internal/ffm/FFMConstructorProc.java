@@ -15,6 +15,8 @@ import static java.lang.foreign.ValueLayout.*;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 
+import org.eclipse.swt.internal.gtk.OS_FFM;
+
 /**
  * Java port of the GObject constructor overrides of os_custom.c. Each one calls the constructor of
  * the super class and then does what SWT needs, which for most of them is nothing at all.
@@ -71,11 +73,7 @@ public final class FFMConstructorProc {
 	static long pangoLayout(long type, int count, long properties) {
 		long layout = call(pangoLayoutSuper, type, count, properties);
 		if (layout != 0) {
-			try {
-				SET_AUTO_DIR.invokeExact(layout, 0);
-			} catch (Throwable t) {
-				FFM.callbackFailed(t);
-			}
+			OS_FFM.pango_layout_set_auto_dir(layout, false);
 		}
 		return layout;
 	}
@@ -91,8 +89,6 @@ public final class FFMConstructorProc {
 	static long printerOptionWidget(long type, int count, long properties) {
 		return call(printerOptionWidgetSuper, type, count, properties);
 	}
-
-	static final MethodHandle SET_AUTO_DIR = FFM.downcall("pango_layout_set_auto_dir", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
 
 	/* ---------------------------------------------------------------- plumbing */
 

@@ -15,6 +15,7 @@ import static java.lang.foreign.ValueLayout.*;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 
+import org.eclipse.swt.internal.C_FFM;
 import org.eclipse.swt.internal.gtk.*;
 
 /**
@@ -161,6 +162,12 @@ public final class FFMTypes {
 
 	/* ---------------------------------------------------------------- sizes of C types */
 
+	/** Types that only GTK3 has, and that the JNI library has no natives for under GTK4. */
+	static int gtk3Only(long size, String name) {
+		if (FFM.GTK4) throw new UnsatisfiedLinkError(name);
+		return (int) size;
+	}
+
 	public static int GValue_sizeof() {
 		return (int) Extra_FFM.GVALUE;
 	}
@@ -186,19 +193,52 @@ public final class FFMTypes {
 	}
 
 	public static int GtkCellRendererPixbuf_sizeof() {
-		return (int) Extra_FFM.GTKCELLRENDERERPIXBUF;
+		return gtk3Only(Extra_FFM.GTKCELLRENDERERPIXBUF, "GtkCellRendererPixbuf_sizeof");
 	}
 
 	public static int GtkCellRendererPixbufClass_sizeof() {
-		return (int) Extra_FFM.GTKCELLRENDERERPIXBUFCLASS;
+		return gtk3Only(Extra_FFM.GTKCELLRENDERERPIXBUFCLASS, "GtkCellRendererPixbufClass_sizeof");
 	}
 
 	public static int GtkCellRendererToggle_sizeof() {
-		return (int) Extra_FFM.GTKCELLRENDERERTOGGLE;
+		return gtk3Only(Extra_FFM.GTKCELLRENDERERTOGGLE, "GtkCellRendererToggle_sizeof");
 	}
 
 	public static int GtkCellRendererToggleClass_sizeof() {
-		return (int) Extra_FFM.GTKCELLRENDERERTOGGLECLASS;
+		return gtk3Only(Extra_FFM.GTKCELLRENDERERTOGGLECLASS, "GtkCellRendererToggleClass_sizeof");
+	}
+
+	/* ---------------------------------------------------------------- boxed types for content providers */
+
+	/** The boxed copy function of the content provider types, which share the pointer. */
+	static long contentProvidersCopy(long pointer) {
+		return pointer;
+	}
+
+	static void contentProvidersFree(long pointer) {
+	}
+
+	/** Registers a boxed GType whose values are shared pointers that nobody frees. */
+	public static long content_providers_create_gtype(String name) {
+		try (Arena arena = Arena.ofConfined()) {
+			MethodHandles.Lookup lookup = MethodHandles.lookup();
+			FunctionDescriptor copy = FunctionDescriptor.of(JAVA_LONG, JAVA_LONG);
+			FunctionDescriptor free = FunctionDescriptor.ofVoid(JAVA_LONG);
+			long copyStub = FFM.LINKER.upcallStub(lookup.findStatic(FFMTypes.class, "contentProvidersCopy", copy.toMethodType()), copy, Arena.global()).address();
+			long freeStub = FFM.LINKER.upcallStub(lookup.findStatic(FFMTypes.class, "contentProvidersFree", free.toMethodType()), free, Arena.global()).address();
+			return OS_FFM.g_boxed_type_register_static(name == null ? 0L : arena.allocateFrom(name).address(), copyStub, freeStub);
+		} catch (Throwable t) {
+			throw FFM.rethrow(t);
+		}
+	}
+
+	/** A heap allocated GValue of the type holding <code>value</code>, which the GValue takes over. */
+	public static long content_providers_create_gvalue(long gtype, long value) {
+		long gvalue = OS_FFM.g_malloc(Extra_FFM.GVALUE);
+		C_FFM.memset(gvalue, 0, Extra_FFM.GVALUE);
+		OS_FFM.g_value_init(gvalue, gtype);
+		OS_FFM.g_value_take_boxed(gvalue, value);
+		return gvalue;
 	}
 
 	/* ---------------------------------------------------------------- versions and windowing */
@@ -231,8 +271,16 @@ public final class FFMTypes {
 
 	/* ---------------------------------------------------------------- calls through a function pointer */
 
-	static MethodHandle pointer(FunctionDescriptor descriptor, long function) {
-		return FFM.LINKER.downcallHandle(MemorySegment.ofAddress(function), descriptor);
+	/** One handle per shape, taking the function pointer as its first argument; a holder so class init links nothing. */
+	static final class Calls {
+		static final MethodHandle[] LONGS = new MethodHandle[8];
+		static {
+			for (int count = 1; count < LONGS.length; count++) {
+				LONGS[count] = FFM.LINKER.downcallHandle(longs(count));
+			}
+		}
+		static final MethodHandle INT_LL = FFM.LINKER.downcallHandle(FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG));
+		static final MethodHandle INT_LII = FFM.LINKER.downcallHandle(FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT));
 	}
 
 	static FunctionDescriptor longs(int count) {
@@ -243,7 +291,7 @@ public final class FFMTypes {
 
 	public static long call(long function, long arg0) {
 		try {
-			return (long) pointer(longs(1), function).invokeExact(arg0);
+			return (long) Calls.LONGS[1].invokeExact(MemorySegment.ofAddress(function), arg0);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -251,7 +299,7 @@ public final class FFMTypes {
 
 	public static long call(long function, long arg0, long arg1) {
 		try {
-			return (long) pointer(longs(2), function).invokeExact(arg0, arg1);
+			return (long) Calls.LONGS[2].invokeExact(MemorySegment.ofAddress(function), arg0, arg1);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -259,7 +307,7 @@ public final class FFMTypes {
 
 	public static long call(long function, long arg0, long arg1, long arg2) {
 		try {
-			return (long) pointer(longs(3), function).invokeExact(arg0, arg1, arg2);
+			return (long) Calls.LONGS[3].invokeExact(MemorySegment.ofAddress(function), arg0, arg1, arg2);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -267,7 +315,7 @@ public final class FFMTypes {
 
 	public static long call(long function, long arg0, long arg1, long arg2, long arg3) {
 		try {
-			return (long) pointer(longs(4), function).invokeExact(arg0, arg1, arg2, arg3);
+			return (long) Calls.LONGS[4].invokeExact(MemorySegment.ofAddress(function), arg0, arg1, arg2, arg3);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -275,7 +323,7 @@ public final class FFMTypes {
 
 	public static long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4) {
 		try {
-			return (long) pointer(longs(5), function).invokeExact(arg0, arg1, arg2, arg3, arg4);
+			return (long) Calls.LONGS[5].invokeExact(MemorySegment.ofAddress(function), arg0, arg1, arg2, arg3, arg4);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -283,7 +331,7 @@ public final class FFMTypes {
 
 	public static long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5) {
 		try {
-			return (long) pointer(longs(6), function).invokeExact(arg0, arg1, arg2, arg3, arg4, arg5);
+			return (long) Calls.LONGS[6].invokeExact(MemorySegment.ofAddress(function), arg0, arg1, arg2, arg3, arg4, arg5);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -291,7 +339,7 @@ public final class FFMTypes {
 
 	public static long call(long function, long arg0, long arg1, long arg2, long arg3, long arg4, long arg5, long arg6) {
 		try {
-			return (long) pointer(longs(7), function).invokeExact(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+			return (long) Calls.LONGS[7].invokeExact(MemorySegment.ofAddress(function), arg0, arg1, arg2, arg3, arg4, arg5, arg6);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -299,7 +347,7 @@ public final class FFMTypes {
 
 	public static int Call(long proc, long arg1, long arg2) {
 		try {
-			return (int) pointer(FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_LONG), proc).invokeExact(arg1, arg2);
+			return (int) Calls.INT_LL.invokeExact(MemorySegment.ofAddress(proc), arg1, arg2);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
@@ -307,7 +355,7 @@ public final class FFMTypes {
 
 	public static int Call(long func, long arg0, int arg1, int arg2) {
 		try {
-			return (int) pointer(FunctionDescriptor.of(JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT), func).invokeExact(arg0, arg1, arg2);
+			return (int) Calls.INT_LII.invokeExact(MemorySegment.ofAddress(func), arg0, arg1, arg2);
 		} catch (Throwable t) {
 			throw FFM.rethrow(t);
 		}
