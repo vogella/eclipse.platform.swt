@@ -17,6 +17,8 @@ import java.lang.foreign.*;
 import java.lang.invoke.*;
 import java.nio.file.*;
 
+import org.eclipse.swt.internal.gtk.OS_FFM;
+
 /**
  * The natives of <code>SWT_AWT</code> on X11, which reach AWT through JAWT and the JNI view of
  * <code>sun.awt.X11.XEmbeddedFrame</code> just like <code>swt_awt.c</code>.
@@ -31,8 +33,6 @@ public final class FFMAwt {
 	static final long X11_DRAWABLE = 0, X11_DISPLAY = 8, X11_SIZEOF = 16;
 
 	static final MemorySegment GET_AWT = jawt().find("JAWT_GetAWT").orElseThrow(() -> new UnsatisfiedLinkError("JAWT_GetAWT"));
-	static final MethodHandle X_SYNCHRONIZE = FFM.downcall("XSynchronize", FunctionDescriptor.of(ADDRESS, ADDRESS, JAVA_INT))
-		.asType(MethodType.methodType(void.class, MemorySegment.class, int.class));
 
 	static final MemorySegment EMBEDDED_FRAME = FFMJni.cstring("sun/awt/X11/XEmbeddedFrame"), CONSTRUCTOR = FFMJni.cstring("<init>"),
 		CONSTRUCTOR_SIGNATURE = FFMJni.cstring("(JZ)V"), VALIDATE_WITH_BOUNDS = FFMJni.cstring("validateWithBounds"),
@@ -78,7 +78,7 @@ public final class FFMAwt {
 					if (dsi == 0) return 0;
 					try {
 						MemorySegment x11 = MemorySegment.ofAddress(dsi).reinterpret(ADDRESS.byteSize()).get(ADDRESS, 0).reinterpret(X11_SIZEOF);
-						if (synchronize != -1) X_SYNCHRONIZE.invokeExact(x11.get(ADDRESS, X11_DISPLAY), synchronize);
+						if (synchronize != -1) OS_FFM.XSynchronize(x11.get(ADDRESS, X11_DISPLAY).address(), synchronize != 0);
 						return x11.get(JAVA_LONG, X11_DRAWABLE);
 					} finally {
 						FFMJni.call(function(ds, DS_FREE_INFO), dsi, 0, 0, 0);
