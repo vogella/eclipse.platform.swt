@@ -24,13 +24,16 @@ import org.eclipse.swt.tools.internal.FFMGenerator.*;
  *
  * <pre>
  * probe    &lt;mainClass&gt; &lt;ast&gt; &lt;out.c&gt;
- * generate &lt;outputRoot&gt; &lt;reportDir&gt; [--imports &lt;imports.txt&gt;] (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)...
+ * generate &lt;outputRoot&gt; &lt;reportDir&gt; [--imports &lt;imports.txt&gt;] (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)... [--gtk4 (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)...]
  * rewrite  &lt;supported.txt&gt; &lt;sourceRoot&gt; &lt;outputRoot&gt;
  * </pre>
  *
  * A <code>clang -E -dM</code> dump next to an AST, with the extension <code>.macros</code>, resolves function renaming
  * macros. <code>--imports</code> lists <code>function dll</code> pairs from the Windows import libraries, and an AST
- * and layout of <code>-</code> stand for a natives class that is not generated at all.
+ * and layout of <code>-</code> stand for a natives class that is not generated at all. The units after
+ * <code>--gtk4</code> are the GTK4 compile of the units before it: a natives class that has none is generated from
+ * the GTK3 compile, one that only has a GTK4 compile (<code>GTK4</code>) from that, and one with both serves
+ * GTK3 and GTK4 and gets a run time choice wherever the C ABI or a struct layout differs.
  */
 public class FFMGeneratorApp {
 
@@ -85,7 +88,20 @@ public class FFMGeneratorApp {
 		return imports;
 	}
 
-	static void generate(String outputRoot, String reportDir, String importsFile, List<String[]> units) throws IOException {
+	static void generate(String outputRoot, String reportDir, String importsFile, List<String[]> units, List<String[]> units4) throws IOException {
+		Map<String, String[]> alternatives = new HashMap<>();
+		for (String[] unit : units4) alternatives.put(unit[0], unit);
+		Set<String> known = new HashSet<>();
+		for (String[] unit : units) known.add(unit[0]);
+		// a natives class that only the GTK4 build compiles is generated from that compile alone
+		Set<String> only4 = new HashSet<>();
+		for (String[] unit : units4) {
+			if (known.add(unit[0])) {
+				units.add(unit);
+				only4.add(unit[0]);
+			}
+		}
+		Map<String, String> layoutDifferences = new TreeMap<>();
 		Map<String, String> imports = importsFile != null ? readImports(importsFile) : null;
 		Map<String, String> symbols = new TreeMap<>();
 		Map<String, StructInfo> structs = new HashMap<>();
@@ -110,12 +126,37 @@ public class FFMGeneratorApp {
 				byPackage.computeIfAbsent(info.packageName, k -> new ArrayList<>()).add(info);
 			}
 		}
+		for (String[] unit : units4) {
+			JNIGeneratorApp app = load(unit[0]);
+			Map<String, String> layout = readLayout(unit[2]);
+			for (JNIClass clazz : app.getStructureClasses(app.getClasses())) {
+				String size = layout.get(clazz.getSimpleName());
+				StructInfo info = structs.get(clazz.getName());
+				if (size == null || info == null) continue;
+				info.size4 = Long.parseLong(size);
+				info.fields4 = new HashMap<>();
+				String prefix = clazz.getSimpleName() + ".";
+				layout.forEach((k, v) -> {
+					if (k.startsWith(prefix)) info.fields4.put(k.substring(prefix.length()), v);
+				});
+				if (info.differs()) {
+					Set<String> names = new TreeSet<>(info.fields.keySet());
+					names.addAll(info.fields4.keySet());
+					names.removeIf(n -> Objects.equals(info.fields.get(n), info.fields4.get(n)));
+					layoutDifferences.put(clazz.getName(), "size " + info.size + "/" + info.size4 + ", fields " + names);
+				}
+			}
+		}
 		Map<String, String> unsupported = new TreeMap<>();
 		Set<String> supported = new TreeSet<>();
+		Map<String, String> differences = new TreeMap<>();
+		int[] sameAbi = new int[1];
 		StringBuilder summary = new StringBuilder();
 		for (int u = 0; u < units.size(); u++) {
 			JNIGeneratorApp app = apps.get(u);
 			FFMGenerator generator = new FFMGenerator(readCTypes(units.get(u)[1]), structs);
+			String[] unit4 = alternatives.get(units.get(u)[0]);
+			if (unit4 != null) generator.setGtk4(only4.contains(units.get(u)[0]) ? null : readCTypes(unit4[1]), only4.contains(units.get(u)[0]));
 			generator.setImports(imports);
 			Map<String, String> extras = new HashMap<>();
 			readLayout(units.get(u)[2]).forEach((k, v) -> {
@@ -135,6 +176,8 @@ public class FFMGeneratorApp {
 			}
 			unsupported.putAll(generator.getUnsupported());
 			supported.addAll(generator.getSupported());
+			generator.getDifferences().forEach((k, v) -> differences.put(k, v));
+			sameAbi[0] += generator.getSameAbi();
 			symbols.putAll(generator.getSymbols());
 		}
 		for (int u = 0; u < units.size(); u++) {
@@ -144,15 +187,37 @@ public class FFMGeneratorApp {
 				if (k.startsWith("EXTRA.")) extras.put(k.substring("EXTRA.".length()), v);
 			});
 			if (extras.isEmpty()) continue;
+			String[] unit4 = alternatives.get(units.get(u)[0]);
+			Map<String, String> extras4 = new TreeMap<>();
+			if (unit4 != null && !only4.contains(unit4[0])) {
+				readLayout(unit4[2]).forEach((k, v) -> {
+					if (k.startsWith("EXTRA.")) extras4.put(k.substring("EXTRA.".length()), v);
+				});
+				extras4.forEach((k, v) -> {
+					if (extras.containsKey(k) && !extras.get(k).equals(v)) layoutDifferences.put("EXTRA." + k, extras.get(k) + "/" + v);
+				});
+			}
 			String packageName = FFMGenerator.packageOf(apps.get(u).getMainClass().getName());
 			StringBuilder source = new StringBuilder();
 			source.append("package ").append(packageName).append(";\n\n");
 			source.append("/* Note: This file was auto-generated by ").append(FFMGenerator.class.getName()).append(" */\n");
 			source.append("/* DO NOT EDIT - your changes will be lost. */\n\n");
+			if (!extras4.isEmpty()) source.append("import org.eclipse.swt.internal.ffm.*;\n\n");
 			source.append("/** Sizes and field offsets of C types that have no Java struct class. */\n");
 			source.append("public final class Extra").append(FFMGenerator.SUFFIX).append(" {\n\n");
-			extras.forEach((k, v) -> source.append("\tpublic static final long ")
-				.append(k.replace('.', '_').toUpperCase(Locale.ROOT)).append(" = ").append(v).append("L;\n"));
+			Map<String, String> all = new TreeMap<>(extras);
+			// -1 where the type does not exist in GTK3
+			extras4.forEach((k, v) -> all.putIfAbsent(k, null));
+			all.forEach((k, v) -> {
+				String v4 = extras4.get(k);
+				String name = k.replace('.', '_').toUpperCase(Locale.ROOT);
+				int dot = k.indexOf('.');
+				boolean only3 = v != null && v4 == null && !extras4.isEmpty()
+					&& FFMProbeGenerator.gtk3Only(dot < 0 ? k : k.substring(0, dot), dot < 0 ? "" : k.substring(dot + 1));
+				String value = v == null ? "FFM.GTK4 ? " + v4 + "L : -1L" : only3 ? "FFM.GTK4 ? -1L : " + v + "L"
+					: v4 != null && !v4.equals(v) ? "FFM.GTK4 ? " + v4 + "L : " + v + "L" : v + "L";
+				source.append("\tpublic static final long ").append(name).append(" = ").append(value).append(";\n");
+			});
 			source.append("}\n");
 			write(outputRoot, packageName + ".Extra" + FFMGenerator.SUFFIX, source.toString());
 		}
@@ -165,6 +230,15 @@ public class FFMGeneratorApp {
 		Files.createDirectories(Paths.get(reportDir));
 		Files.write(Paths.get(reportDir, "supported.txt"), supported);
 		Files.write(Paths.get(reportDir, "unsupported.txt"), unsupported.entrySet().stream().map(e -> e.getKey() + "\t" + e.getValue()).collect(Collectors.toList()));
+		if (!units4.isEmpty()) {
+			List<String> lines = new ArrayList<>();
+			lines.add("Struct layouts and extras that differ between GTK3 and GTK4 (chosen at run time):");
+			layoutDifferences.forEach((k, v) -> lines.add("  " + k + "\t" + v));
+			lines.add("");
+			lines.add("Natives by what the GTK3 and GTK4 compile declare:");
+			differences.forEach((k, v) -> lines.add("  " + k + "\t" + v));
+			Files.write(Paths.get(reportDir, "gtk4-differences.txt"), lines);
+		}
 		if (imports != null) {
 			// "-": not in an import library, resolved through the default lookup (C runtime)
 			Files.write(Paths.get(reportDir, "symbols.txt"), symbols.entrySet().stream().map(e -> e.getKey() + "\t" + e.getValue()).collect(Collectors.toList()));
@@ -173,6 +247,13 @@ public class FFMGeneratorApp {
 			.collect(Collectors.groupingBy(r -> r.substring(0, r.indexOf(':')), TreeMap::new, Collectors.counting()));
 		summary.append(String.format("%nTotal FFM %d, JNI %d%n%nKept on JNI by reason:%n", supported.size(), unsupported.size()));
 		reasons.forEach((r, c) -> summary.append(String.format("%6d  %s%n", c, r)));
+		if (!units4.isEmpty()) {
+			Map<String, Long> kinds = differences.values().stream()
+				.collect(Collectors.groupingBy(v -> v.startsWith("GTK3 only") ? "GTK3 only (no declaration in the GTK4 headers)" : v.startsWith("GTK4 only") ? "GTK4 only" : "C ABI differs, run time choice", TreeMap::new, Collectors.counting()));
+			summary.append(String.format("%nGTK3 and GTK4 (gtk4-differences.txt), %d struct layouts differ:%n", layoutDifferences.size()));
+			kinds.forEach((r, c) -> summary.append(String.format("%6d  %s%n", c, r)));
+			summary.append(String.format("%6d  same C ABI in both%n", sameAbi[0]));
+		}
 		Files.writeString(Paths.get(reportDir, "summary.txt"), summary.toString());
 		System.out.print(summary);
 	}
@@ -188,7 +269,16 @@ public class FFMGeneratorApp {
 	static final Pattern NATIVE = Pattern.compile("((?:" + MODIFIERS + "\\s+)*)native\\s+((?:" + MODIFIERS + "\\s+)*)([\\w\\[\\]]+)\\s*(?:/\\*[^*]*\\*/\\s*)?(\\w+)\\s*\\(([^)]*)\\)\\s*;");
 
 	/** Classes whose natives are implemented by a hand written FFM class instead of generated code. */
-	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"swt[\\w-]*\"\\s*\\)\\s*;");
+	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"(swt[\\w-]*)\"\\s*\\)\\s*;");
+
+	/** OS asks FFM instead of Library for the GTK libraries, so that a missing one fails it as a missing swt-pi3 or swt-pi4 does. */
+	static String loadReplacement(String library) {
+		return switch (library) {
+			case "swt-pi3" -> "org.eclipse.swt.internal.ffm.FFM.loadGtk(false);";
+			case "swt-pi4" -> "org.eclipse.swt.internal.ffm.FFM.loadGtk(true);";
+			default -> "/* FFM: no JNI library needed */";
+		};
+	}
 
 	static final Map<String, String> HANDWRITTEN = Map.of(
 		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback",
@@ -262,7 +352,7 @@ public class FFMGeneratorApp {
 				if (!changed) continue;
 				m.appendTail(result);
 				// nothing in this class reaches the JNI library any more
-				String rewritten = LOAD_LIBRARY.matcher(result.toString()).replaceAll("/* FFM: no JNI library needed */");
+				String rewritten = LOAD_LIBRARY.matcher(result.toString()).replaceAll(load -> loadReplacement(load.group(1)));
 				result = new StringBuilder(rewritten);
 				Path out = Paths.get(outputRoot).resolve(relative);
 				Files.createDirectories(out.getParent());
@@ -279,15 +369,24 @@ public class FFMGeneratorApp {
 				probe(args[1], args[2], args[3]);
 				break;
 			case "generate":
-				List<String[]> units = new ArrayList<>();
+				List<String[]> units = new ArrayList<>(), units4 = new ArrayList<>();
 				int first = 3;
 				String imports = null;
 				if (args.length > 4 && args[3].equals("--imports")) {
 					imports = args[4];
 					first = 5;
 				}
-				for (int i = first; i + 2 < args.length; i += 3) units.add(new String[] {args[i], args[i + 1], args[i + 2]});
-				generate(args[1], args[2], imports, units);
+				List<String[]> target = units;
+				for (int i = first; i < args.length;) {
+					if (args[i].equals("--gtk4")) {
+						target = units4;
+						i++;
+					} else {
+						target.add(new String[] {args[i], args[i + 1], args[i + 2]});
+						i += 3;
+					}
+				}
+				generate(args[1], args[2], imports, units, units4);
 				break;
 			case "rewrite":
 				rewrite(args[1], args[2], args[3], Arrays.copyOfRange(args, 4, args.length));

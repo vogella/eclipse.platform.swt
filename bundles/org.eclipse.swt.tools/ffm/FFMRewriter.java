@@ -38,7 +38,16 @@ public class FFMRewriter {
 	static final Map<String, String> HANDWRITTEN = Map.of(
 		"org.eclipse.swt.internal.Callback", "org.eclipse.swt.internal.ffm.FFMCallback",
 		"org.eclipse.swt.awt.SWT_AWT", "org.eclipse.swt.internal.ffm.FFMAwt");
-	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"swt[\\w-]*\"\\s*\\)\\s*;");
+	static final Pattern LOAD_LIBRARY = Pattern.compile("Library\\.loadLibrary\\s*\\(\\s*\"(swt[\\w-]*)\"\\s*\\)\\s*;");
+
+	/** OS asks FFM instead of Library for the GTK libraries, so that a missing one fails it as a missing swt-pi3 or swt-pi4 does. */
+	static String loadReplacement(String library) {
+		return switch (library) {
+			case "swt-pi3" -> "org.eclipse.swt.internal.ffm.FFM.loadGtk(false);";
+			case "swt-pi4" -> "org.eclipse.swt.internal.ffm.FFM.loadGtk(true);";
+			default -> "/* FFM: no JNI library needed */";
+		};
+	}
 
 	public static void main(String[] args) throws IOException {
 		if (args.length < 2) {
@@ -67,9 +76,7 @@ public class FFMRewriter {
 		}
 		System.out.println("FFMRewriter: " + count + " natives in " + files + " files below " + root);
 		if (!remaining.isEmpty()) {
-			System.out.println("FFMRewriter: " + remaining.size() + " natives stay on JNI, GTK4 ones and any added since the report was generated");
-			List<String> unknown = remaining.stream().filter(n -> !n.matches(".*\\.(gdk_(surface|event|popup|texture|clipboard|cursor_new_from_texture|display_get_monitor_at_surface|x11_surface|scroll_event|key_event|button_event|crossing_event|focus_event)\\w*|swt_fixed_(add|remove)|swt_scaled_paintable_new|content_providers_\\w+)")).collect(Collectors.toList());
-			if (!unknown.isEmpty()) System.out.println("FFMRewriter: not yet generated, running on JNI: " + String.join(", ", unknown));
+			System.out.println("FFMRewriter: " + remaining.size() + " natives stay on JNI, for example ones added since the report was generated: " + String.join(", ", remaining));
 		}
 	}
 
@@ -116,7 +123,7 @@ public class FFMRewriter {
 		// A class keeps loading its JNI library while it has natives left, for example one a merged
 		// pull request adds that this list does not know yet, so that it links instead of failing.
 		if (NATIVE.matcher(result).find()) return result.toString();
-		return LOAD_LIBRARY.matcher(result).replaceAll("/* FFM: no JNI library needed */");
+		return LOAD_LIBRARY.matcher(result).replaceAll(load -> loadReplacement(load.group(1)));
 	}
 
 	static String key(String className, String methodName, List<String> parameterTypes) {
