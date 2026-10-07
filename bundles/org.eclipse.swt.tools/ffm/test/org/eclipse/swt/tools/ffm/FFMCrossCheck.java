@@ -21,6 +21,7 @@ import org.eclipse.swt.internal.ffm.*;
 import org.eclipse.swt.internal.accessibility.gtk.*;
 import org.eclipse.swt.internal.gtk.*;
 import org.eclipse.swt.internal.gtk3.*;
+import org.eclipse.swt.internal.gtk4.*;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
@@ -28,16 +29,26 @@ import org.eclipse.swt.widgets.Shell;
 
 /**
  * Runs the JNI and the generated FFM implementation of the same natives in one process and compares the results.
- * Run against the "jni" build of build-gtk.sh, where the natives are still JNI.
+ * Run against the "jni" build of build-gtk.sh, where the natives are still JNI. With <code>SWT_GTK4=1</code> the
+ * natives of GTK4 are compared against <code>libswt-pi4</code>, and the JNI natives that GTK4 does not compile are skipped.
  */
 public class FFMCrossCheck {
 
-	static final String[] NATIVES = {
+	static final boolean GTK4 = "1".equals(System.getenv("SWT_GTK4"));
+
+	static final String[] NATIVES = GTK4 ? new String[] {
+		"org.eclipse.swt.internal.C", "org.eclipse.swt.internal.gtk.OS", "org.eclipse.swt.internal.gtk.GDK",
+		"org.eclipse.swt.internal.gtk.GTK", "org.eclipse.swt.internal.gtk.Graphene", "org.eclipse.swt.internal.gtk4.GTK4",
+		"org.eclipse.swt.internal.cairo.Cairo", "org.eclipse.swt.internal.accessibility.gtk.ATK",
+	} : new String[] {
 		"org.eclipse.swt.internal.C", "org.eclipse.swt.internal.gtk.OS", "org.eclipse.swt.internal.gtk.GDK",
 		"org.eclipse.swt.internal.gtk.GTK", "org.eclipse.swt.internal.gtk3.GTK3", "org.eclipse.swt.internal.cairo.Cairo",
 		"org.eclipse.swt.internal.accessibility.gtk.ATK",
 	};
-	static final String[] STRUCT_PACKAGES = {
+	static final String[] STRUCT_PACKAGES = GTK4 ? new String[] {
+		"org.eclipse.swt.internal", "org.eclipse.swt.internal.gtk",
+		"org.eclipse.swt.internal.cairo", "org.eclipse.swt.internal.accessibility.gtk",
+	} : new String[] {
 		"org.eclipse.swt.internal", "org.eclipse.swt.internal.gtk", "org.eclipse.swt.internal.gtk3",
 		"org.eclipse.swt.internal.cairo", "org.eclipse.swt.internal.accessibility.gtk",
 	};
@@ -62,16 +73,32 @@ public class FFMCrossCheck {
 	}
 
 	public static void main(String[] args) throws Exception {
-		Display display = new Display();
-		try {
+		if (GTK4) {
 			checkSizes();
 			checkStructs();
-			checkFunctions(display);
-		} finally {
-			display.dispose();
+			FFMCrossCheck4.checkFunctions();
+		} else {
+			Display display = new Display();
+			try {
+				checkSizes();
+				checkStructs();
+				checkFunctions(display);
+			} finally {
+				display.dispose();
+			}
 		}
+		checkLoadedLibraries();
 		System.out.println(checks + " checks, " + failures + " mismatches, " + known + " known header differences");
 		System.exit(failures == 0 ? 0 : 1);
+	}
+
+	/** The process must contain the GTK libraries of one version only. */
+	static void checkLoadedLibraries() throws Exception {
+		String maps = java.nio.file.Files.readString(java.nio.file.Path.of("/proc/self/maps"));
+		boolean gtk3 = maps.contains("libgtk-3.so") || maps.contains("libgdk-3.so");
+		boolean gtk4 = maps.contains("libgtk-4.so");
+		System.out.println("Loaded GTK libraries: " + (gtk3 ? "GTK3 " : "") + (gtk4 ? "GTK4" : ""));
+		check("only the GTK libraries of the selected version are loaded", GTK4 ? (gtk4 && !gtk3) : (gtk3 && !gtk4), true);
 	}
 
 	/* ------------------------------------------------------------------ sizes */
@@ -105,11 +132,14 @@ public class FFMCrossCheck {
 				if (Modifier.isNative(method.getModifiers())) return (Integer) method.invoke(null);
 			} catch (NoSuchMethodException e) {
 				// declared in another natives class
+			} catch (InvocationTargetException e) {
+				if (!(e.getCause() instanceof UnsatisfiedLinkError)) throw e;
+				// not compiled for this GTK version
 			}
 		}
 		try {
 			return Class.forName(pkg + "." + name).getField("sizeof").getInt(null);
-		} catch (NoSuchFieldException | ClassNotFoundException e) {
+		} catch (NoSuchFieldException | ClassNotFoundException | LinkageError e) {
 			return null;
 		}
 	}
@@ -117,7 +147,7 @@ public class FFMCrossCheck {
 	/* ------------------------------------------------------------------ struct marshalling */
 
 	static void checkStructs() throws Exception {
-		int reads = 0, writes = 0;
+		int reads = 0, writes = 0, skipped = 0;
 		for (String natives : NATIVES) {
 			Class<?> jniClass = Class.forName(natives);
 			for (Method jni : jniClass.getDeclaredMethods()) {
@@ -133,6 +163,11 @@ public class FFMCrossCheck {
 				// JNI copies into a C struct of its own compile-time size, so never pass more
 				long size = jniSize == null ? ffmSize : Math.min(ffmSize, jniSize);
 				System.out.println("  " + (read ? "read  " : "write ") + struct.getName() + " (" + size + " bytes)");
+				if (!compiledInJni(jni, struct, read)) {
+					System.out.println("  skip  " + struct.getName() + ": the JNI library does not compile it for this GTK version");
+					skipped++;
+					continue;
+				}
 				Method ffmRead = structs.getMethod(struct.getSimpleName() + "_read", MemorySegment.class, struct);
 				Method ffmWrite = structs.getMethod(struct.getSimpleName() + "_write", MemorySegment.class, struct);
 				Random random = new Random(struct.getName().hashCode());
@@ -173,7 +208,24 @@ public class FFMCrossCheck {
 				}
 			}
 		}
-		System.out.println("Compared " + reads + " struct reads and " + writes + " struct writes");
+		System.out.println("Compared " + reads + " struct reads and " + writes + " struct writes" + (skipped != 0 ? ", skipped " + skipped + " structs the JNI library does not have" : ""));
+	}
+
+	static boolean compiledInJni(Method jni, Class<?> struct, boolean read) throws Exception {
+		try {
+			// one byte only links the native, a larger copy overflows the small C structs of a hardened build
+			long buffer = C.malloc(4096);
+			try {
+				C.memset(buffer, 0, 4096);
+				invokeJni(jni, read ? struct.getConstructor().newInstance() : (Object) buffer, read ? (Object) buffer : struct.getConstructor().newInstance(), 1);
+			} finally {
+				C.free(buffer);
+			}
+			return true;
+		} catch (InvocationTargetException e) {
+			if (e.getCause() instanceof UnsatisfiedLinkError) return false;
+			throw e;
+		}
 	}
 
 	static void invokeJni(Method jni, Object a, Object b, long size) throws Exception {
@@ -255,7 +307,7 @@ public class FFMCrossCheck {
 
 	/* ------------------------------------------------------------------ functions */
 
-	static void checkFunctions(Display display) {
+	static void checkFunctions(Display display) throws Exception {
 		Shell shell = new Shell(display);
 		Label label = new Label(shell, SWT.NONE);
 		label.setText("FFM cross check");
@@ -479,6 +531,9 @@ public class FFMCrossCheck {
 		check("call through a function pointer", OS.call(gtkFalse, 0, 0, 0, 0), FFMTypes.call(gtkFalse, 0, 0, 0, 0));
 		check("ATK call through a function pointer", ATK.call(gtkFalse, 0), FFMTypes.call(gtkFalse, 0));
 		check("Call through a function pointer", OS.Call(gtkFalse, 0, 0), FFMTypes.Call(gtkFalse, 0, 0));
+
+		FFMCrossCheckTypes.checkTypes(handle);
+		FFMCrossCheckTypes.checkGtk3(handle);
 
 		// dynamic function present in GTK 3
 		check("gtk_accel_group_new available", GTK.gtk_accel_group_new() != 0, GTK_FFM.gtk_accel_group_new() != 0);
