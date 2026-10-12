@@ -2244,7 +2244,7 @@ String gtk_css_create_css_color_string (String background, String foreground, in
 GdkRGBA gtk_css_parse_background (String css, String precise) {
 	String shortOutput;
 	int startIndex;
-	GdkRGBA rgba = new GdkRGBA ();
+	GdkRGBA rgba = null;
 	if (css.isEmpty()) return COLOR_WIDGET_BACKGROUND_RGBA;
 	String searched = "";
 	/*
@@ -2280,7 +2280,7 @@ GdkRGBA gtk_css_parse_background (String css, String precise) {
 		shortOutput = searched.substring (startIndex + 13);
 		rgba = gtk_css_property_to_rgba (shortOutput);
 	}
-	return rgba;
+	return rgba != null ? rgba : new GdkRGBA ();
 }
 
 String gtk_css_provider_to_string (long provider) {
@@ -2314,7 +2314,7 @@ String gtk_css_provider_to_string (long provider) {
  */
 GdkRGBA gtk_css_parse_foreground (String css, String precise) {
 	if (css.isEmpty()) return COLOR_WIDGET_FOREGROUND_RGBA;
-	GdkRGBA rgba = new GdkRGBA ();
+	GdkRGBA rgba;
 	String searched = "";
 	/*
 	 * This section allows for finer searching: for example
@@ -2369,10 +2369,9 @@ GdkRGBA gtk_css_parse_foreground (String css, String precise) {
  */
 GdkRGBA gtk_css_property_to_rgba(String property) {
 	GdkRGBA rgba = new GdkRGBA ();
-	String [] propertyParsed = new String [1];
-	//Note that we still need to remove the ";" character from the input string
-	propertyParsed = property.split (";");
-	GDK.gdk_rgba_parse (rgba, Converter.wcsToMbcs (propertyParsed[0], true));
+	// Strip the ";" and anything after it
+	int end = property.indexOf (';');
+	GDK.gdk_rgba_parse (rgba, Converter.wcsToMbcs (end >= 0 ? property.substring (0, end) : property, true));
 	return rgba;
 }
 

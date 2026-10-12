@@ -53,6 +53,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -606,6 +607,21 @@ public void test_redrawIIIIZ() {
 @Test
 public void test_requestLayoutL() {
 	control.requestLayout();
+}
+@Test
+public void test_setBackgroundParentBackgroundKeepsParentOpaque() {
+	Composite parent = new Composite(shell, SWT.NONE);
+	parent.setBackgroundMode(SWT.INHERIT_FORCE);
+	Color color = new Color(255, 0, 0);
+	parent.setBackground(color);
+	new Button(parent, SWT.PUSH);
+	assertEquals(color, parent.getBackground());
+	GC gc = new GC(parent);
+	try {
+		assertEquals(color, gc.getBackground());
+	} finally {
+		gc.dispose();
+	}
 }
 @Test
 public void test_setBackgroundLorg_eclipse_swt_graphics_Color() {
