@@ -216,7 +216,7 @@ int calculateWidth (TableItem[] items, int index, GC gc) {
 	for (int i=0; i < itemCount; i++) {
 		TableItem item = items [i];
 		if (item != null && item.cached) {
-			width = Math.max (width, item.calculateWidth (index, gc, isSelected(index)));
+			width = Math.max (width, item.calculateWidth (index, gc, isSelected(i)));
 		}
 	}
 	return width;
