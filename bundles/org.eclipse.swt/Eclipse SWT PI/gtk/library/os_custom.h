@@ -39,14 +39,6 @@ static inline guint swt_instance_size(GType type) { GTypeQuery query; g_type_que
 #define GtkTextIter_sizeof() sizeof(GtkTextIter)
 #define GtkTreeIter_sizeof() sizeof(GtkTreeIter)
 
-#ifdef _WIN32
-#define LIB_GTK "libgtk-3-0.dll"
-#define LIB_GDK "libgdk-3-0.dll"
-#define LIB_GTHREAD "libgthread-2.0-0.dll"
-#define LIB_GLIB "libglib-2.0-0.dll"
-#define LIB_ATK "libatk-1.0-0.dll"
-#define LIB_FONTCONFIG "libfontconfig-1.dll"
-#else
 #if defined(GTK4)
 #define LIB_GTK "libgtk-4.so.1"
 // Point GDK to GTK for GTK4
@@ -55,12 +47,9 @@ static inline guint swt_instance_size(GType type) { GTypeQuery query; g_type_que
 #define LIB_GTK "libgtk-3.so.0"
 #define LIB_GDK "libgdk-3.so.0"
 #endif
-#define LIB_GTHREAD "libgthread-2.0.so.0"
 #define LIB_GLIB "libglib-2.0.so.0"
-#define LIB_ATK "libatk-1.0.so.0"
 #define LIB_FONTCONFIG "libfontconfig.so.1"
 #define LIB_PANGO "libpango-1.0.so.0"
-#endif
 
 /* Libraries for dynamic loaded functions */
 
@@ -73,26 +62,17 @@ static inline guint swt_instance_size(GType type) { GTypeQuery query; g_type_que
 /* Field accessors */
 #define G_OBJECT_CLASS_CONSTRUCTOR(arg0) (arg0)->constructor
 #define G_OBJECT_CLASS_SET_CONSTRUCTOR(arg0, arg1) (arg0)->constructor = (GObject* (*) (GType, guint, GObjectConstructParam *))arg1
-#define GDK_EVENT_TYPE(arg0) (arg0)->type
-#define GDK_EVENT_WINDOW(arg0) (arg0)->window
 #define X_EVENT_TYPE(arg0) (arg0)->type
 #define X_EVENT_WINDOW(arg0) (arg0)->window
 #define g_error_get_message(arg0) (arg0)->message
 #define g_list_data(arg0) (arg0)->data
 #define g_slist_data(arg0) (arg0)->data
-#define g_list_set_next(arg0, arg1) (arg0)->next = arg1
-#define g_list_set_previous(arg0, arg1) (arg0)->prev = arg1
 #define localeconv_decimal_point() localeconv()->decimal_point
 
 // Mechanism to get function pointers of C/gtk functions back to java.
 // Idea is that you substitute the return value with the function pointer.
-// NOTE: functions like gtk_false need to be linked to a lib. Eg see gtk_false_LIB above.
 #define GET_FUNCTION_POINTER_gtk_false() 0; \
 GTK_LOAD_FUNCTION(fp, gtk_false) \
-rc = (jlong)fp;
-
-#define gtk_status_icon_position_menu_func() 0; \
-GTK_LOAD_FUNCTION(fp, gtk_status_icon_position_menu) \
 rc = (jlong)fp;
 
 glong g_utf16_pointer_to_offset(const gchar*, const gchar*);
