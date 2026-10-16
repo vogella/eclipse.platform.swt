@@ -12,7 +12,7 @@
 # Switches the checked out SWT sources from JNI to FFM, in place, by turning every
 # supported native declaration into a call of its FFM implementation.
 #
-#   apply-ffm.sh [gtk] [win32]    the platforms to switch, gtk if none is given
+#   apply-ffm.sh [gtk] [win32] [cocoa]    the platforms to switch, gtk if none is given
 #
 # The committed sources keep their native declarations, so that this branch never
 # collides with a change to OS.java and friends; a product build runs this first.
@@ -47,6 +47,10 @@ win32_implementations=()
 for name in FFMCom FFMComCustom FFMOsCustom FFMGdipGraphics FFMGdipObjects FFMWin32Macros FFMResources; do
 	win32_implementations+=("$(native_path "$SWT/Eclipse SWT PI/win32-ffm/org/eclipse/swt/internal/ffm/$name.java")")
 done
+cocoa_implementations=()
+for file in "$SWT/Eclipse SWT PI/cocoa-ffm/org/eclipse/swt/internal/ffm/FFMCocoa"*.java; do
+	[ -f "$file" ] && cocoa_implementations+=("$(native_path "$file")")
+done
 
 for platform in "${PLATFORMS[@]}"; do
 	case "$platform" in
@@ -57,6 +61,12 @@ for platform in "${PLATFORMS[@]}"; do
 		win32)
 			# the OpenGL (swt-wgl) and AWT (swt-awt) natives stay on JNI
 			rewrite "$TOOLS/ffm/report-win32/supported.txt" "$SWT/Eclipse SWT PI/win32" "${win32_implementations[@]}" ;;
+		cocoa)
+			[ ${#cocoa_implementations[@]} -gt 0 ] || { echo "apply-ffm.sh: no FFMCocoa*.java in Eclipse SWT PI/cocoa-ffm" >&2; exit 2; }
+			# the AWT (swt-awt) natives stay on JNI
+			for root in "Eclipse SWT PI/cocoa" "Eclipse SWT WebKit/cocoa"; do
+				rewrite "$TOOLS/ffm/report-cocoa/supported.txt" "$SWT/$root" "${cocoa_implementations[@]}"
+			done ;;
 		*) echo "apply-ffm.sh: unknown platform $platform" >&2; exit 2 ;;
 	esac
 done
@@ -74,11 +84,11 @@ for file in "Eclipse SWT PI/common/org/eclipse/swt/internal/C.java" "Eclipse SWT
 	mv "$SWT/$file" "$SWT/$JNI_SHARED/org/eclipse/swt/internal/$name"
 done
 for platform in "${PLATFORMS[@]}"; do
-	if [ "$platform" = gtk ]; then
-		rewrite "$TOOLS/ffm/report-gtk/supported.txt" "$SWT/Eclipse SWT PI/gtk-ffm-shared" "${gtk_implementations[@]}"
-	else
-		rewrite "$TOOLS/ffm/report-win32/supported.txt" "$SWT/Eclipse SWT PI/win32-ffm-shared" "${win32_implementations[@]}"
-	fi
+	case "$platform" in
+		gtk) rewrite "$TOOLS/ffm/report-gtk/supported.txt" "$SWT/Eclipse SWT PI/gtk-ffm-shared" "${gtk_implementations[@]}" ;;
+		win32) rewrite "$TOOLS/ffm/report-win32/supported.txt" "$SWT/Eclipse SWT PI/win32-ffm-shared" "${win32_implementations[@]}" ;;
+		cocoa) rewrite "$TOOLS/ffm/report-cocoa/supported.txt" "$SWT/Eclipse SWT PI/cocoa-ffm-shared" "${cocoa_implementations[@]}" ;;
+	esac
 done
 for fragment in "$SWT"/../../binaries/org.eclipse.swt.*.*.*/build.properties; do
 	folder="$JNI_SHARED"
