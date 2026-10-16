@@ -773,18 +773,6 @@ void setNMLVDISPINFOFields(JNIEnv *env, jobject lpObject, NMLVDISPINFO *lpStruct
 #define NMLVDISPINFO_sizeof() 0
 #endif
 
-#ifndef NO_NMLVFINDITEM
-void cacheNMLVFINDITEMFields(JNIEnv *env, jobject lpObject);
-NMLVFINDITEM *getNMLVFINDITEMFields(JNIEnv *env, jobject lpObject, NMLVFINDITEM *lpStruct);
-void setNMLVFINDITEMFields(JNIEnv *env, jobject lpObject, NMLVFINDITEM *lpStruct);
-#define NMLVFINDITEM_sizeof() sizeof(NMLVFINDITEM)
-#else
-#define cacheNMLVFINDITEMFields(a,b)
-#define getNMLVFINDITEMFields(a,b,c) NULL
-#define setNMLVFINDITEMFields(a,b,c)
-#define NMLVFINDITEM_sizeof() 0
-#endif
-
 #ifndef NO_NMLVODSTATECHANGE
 void cacheNMLVODSTATECHANGEFields(JNIEnv *env, jobject lpObject);
 NMLVODSTATECHANGE *getNMLVODSTATECHANGEFields(JNIEnv *env, jobject lpObject, NMLVODSTATECHANGE *lpStruct);
