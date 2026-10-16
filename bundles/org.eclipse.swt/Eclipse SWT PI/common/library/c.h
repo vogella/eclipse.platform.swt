@@ -23,7 +23,6 @@
 /* Functions excludes */
 #ifdef _WIN32
 #define NO_getenv
-#define NO_setenv
 #endif /* _WIN32 */
 
 #endif /* INC_c_H */
