@@ -39,6 +39,7 @@ import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.internal.DPIUtil.ElementAtZoom;
 import org.eclipse.swt.internal.NativeImageLoader;
+import org.eclipse.swt.internal.image.FileFormat;
 import org.eclipse.swt.widgets.Display;
 import org.junit.jupiter.api.Test;
 
@@ -265,6 +266,59 @@ public void test_loadOnePixelWideRgbPng_bug3545() throws IOException {
 	for (int y = 0; y < expected.length; y++) {
 		assertEquals(expected[y], imageData.palette.getRGB(imageData.getPixel(0, y)), "Wrong pixel in row " + y);
 	}
+}
+
+/**
+ * The Java decoders in FileFormat are the only path on win32 and cocoa but are bypassed by
+ * GdkPixbuf on GTK, so they are called directly.
+ */
+@Test
+public void test_decodeBaselineJpeg() throws IOException {
+	assertRedBlueHalves(decodeWithJavaCodec("baseline_16x16.jpg"), 40);
+}
+
+@Test
+public void test_decodeProgressiveJpeg() throws IOException {
+	assertRedBlueHalves(decodeWithJavaCodec("progressive_16x16.jpg"), 40);
+}
+
+@Test
+public void test_decodeInterlacedPng() throws IOException {
+	assertRedBlueHalves(decodeWithJavaCodec("interlaced_16x16.png"), 0);
+}
+
+@Test
+public void test_encodeJpegRoundTrip() throws IOException {
+	ImageData source = decodeWithJavaCodec("interlaced_16x16.png");
+	ImageLoader saver = new ImageLoader();
+	saver.data = new ImageData[] { source };
+	ByteArrayOutputStream out = new ByteArrayOutputStream();
+	FileFormat.save(out, SWT.IMAGE_JPEG, saver);
+	ImageData decoded = FileFormat
+			.load(new ElementAtZoom<>(new ByteArrayInputStream(out.toByteArray()), 100), new ImageLoader(), 100).get(0)
+			.element();
+	assertRedBlueHalves(decoded, 40);
+}
+
+private ImageData decodeWithJavaCodec(String resource) throws IOException {
+	try (InputStream in = getClass().getResourceAsStream(resource)) {
+		assertNotNull(in, "Test resource " + resource + " not found");
+		return FileFormat.load(new ElementAtZoom<>(in, 100), new ImageLoader(), 100).get(0).element();
+	}
+}
+
+private static void assertRedBlueHalves(ImageData data, int tolerance) {
+	assertEquals(16, data.width);
+	assertEquals(16, data.height);
+	for (int y : new int[] { 1, 14 }) {
+		assertNear(new RGB(255, 0, 0), data.palette.getRGB(data.getPixel(2, y)), tolerance);
+		assertNear(new RGB(0, 0, 255), data.palette.getRGB(data.getPixel(13, y)), tolerance);
+	}
+}
+
+private static void assertNear(RGB expected, RGB actual, int tolerance) {
+	assertTrue(Math.abs(expected.red - actual.red) <= tolerance && Math.abs(expected.green - actual.green) <= tolerance
+			&& Math.abs(expected.blue - actual.blue) <= tolerance, "Expected " + expected + " but was " + actual);
 }
 
 /* custom */
