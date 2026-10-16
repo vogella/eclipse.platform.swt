@@ -1,0 +1,51 @@
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_NSTextAttachmentCell_attachment(long)	callback: CALLBACK_NSTextAttachmentCell_attachment
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_NSTextAttachmentCell_cellSize(long)	callback: CALLBACK_NSTextAttachmentCell_cellSize
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_accessibilityHitTest_(long)	callback: CALLBACK_accessibilityHitTest_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_attributedSubstringFromRange_(long)	callback: CALLBACK_attributedSubstringFromRange_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_cacheDisplayInRect_toBitmapImageRep_(long)	callback: CALLBACK_cacheDisplayInRect_toBitmapImageRep_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_canDragRowsWithIndexes_atPoint_(long)	callback: CALLBACK_canDragRowsWithIndexes_atPoint_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_cellBaselineOffset(long)	callback: CALLBACK_cellBaselineOffset
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_cellSize(long)	callback: CALLBACK_cellSize
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_cellSizeForBounds_(long)	callback: CALLBACK_cellSizeForBounds_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_characterIndexForPoint_(long)	callback: CALLBACK_characterIndexForPoint_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_columnAtPoint_(long)	callback: CALLBACK_columnAtPoint_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_draggedImage_endedAt_operation_(long)	callback: CALLBACK_draggedImage_endedAt_operation_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawBackgroundInClipRect_(long)	callback: CALLBACK_drawBackgroundInClipRect_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawBezelWithFrame_inView_(long)	callback: CALLBACK_drawBezelWithFrame_inView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawImage_withFrame_inView_(long)	callback: CALLBACK_drawImage_withFrame_inView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawInteriorWithFrame_inView_(long)	callback: CALLBACK_drawInteriorWithFrame_inView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawLabel_inRect_(long)	callback: CALLBACK_drawLabel_inRect_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawRect_(long)	callback: CALLBACK_drawRect_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawTitle_withFrame_inView_(long)	callback: CALLBACK_drawTitle_withFrame_inView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawViewBackgroundInRect_(long)	callback: CALLBACK_drawViewBackgroundInRect_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_drawWithExpansionFrame_inView_(long)	callback: CALLBACK_drawWithExpansionFrame_inView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_expansionFrameWithFrame_inView_(long)	callback: CALLBACK_expansionFrameWithFrame_inView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_firstRectForCharacterRange_(long)	callback: CALLBACK_firstRectForCharacterRange_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_focusRingMaskBoundsForFrame_inView_(long)	callback: CALLBACK_focusRingMaskBoundsForFrame_inView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_headerRectOfColumn_(long)	callback: CALLBACK_headerRectOfColumn_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_highlightSelectionInClipRect_(long)	callback: CALLBACK_highlightSelectionInClipRect_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_hitTestForEvent_inRect_ofView_(long)	callback: CALLBACK_hitTestForEvent_inRect_ofView_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_hitTest_(long)	callback: CALLBACK_hitTest_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_imageRectForBounds_(long)	callback: CALLBACK_imageRectForBounds_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_markedRange(long)	callback: CALLBACK_markedRange
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_scrollClipView_toPoint_(long)	callback: CALLBACK_scrollClipView_toPoint_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_selectedRange(long)	callback: CALLBACK_selectedRange
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_setFrameOrigin_(long)	callback: CALLBACK_setFrameOrigin_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_setFrameSize_(long)	callback: CALLBACK_setFrameSize_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_setMarkedText_selectedRange_(long)	callback: CALLBACK_setMarkedText_selectedRange_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_setNeedsDisplayInRect_(long)	callback: CALLBACK_setNeedsDisplayInRect_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_shouldChangeTextInRange_replacementString_(long)	callback: CALLBACK_shouldChangeTextInRange_replacementString_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_sizeOfLabel_(long)	callback: CALLBACK_sizeOfLabel_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_textView_willChangeSelectionFromCharacterRange_toCharacterRange_(long)	callback: CALLBACK_textView_willChangeSelectionFromCharacterRange_toCharacterRange_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_titleRectForBounds_(long)	callback: CALLBACK_titleRectForBounds_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_view_stringForToolTip_point_userData_(long)	callback: CALLBACK_view_stringForToolTip_point_userData_
+org.eclipse.swt.internal.cocoa.OS#CALLBACK_webView_setFrame_(long)	callback: CALLBACK_webView_setFrame_
+org.eclipse.swt.internal.cocoa.OS#CGDisplayBounds(int,CGRect)	no_gen: hand written C
+org.eclipse.swt.internal.cocoa.OS#DeleteGlobalRef(long)	flag: jni
+org.eclipse.swt.internal.cocoa.OS#JNIGetObject(long)	no_gen: hand written C
+org.eclipse.swt.internal.cocoa.OS#NSIntersectionRect(NSRect,NSRect,NSRect)	no_gen: hand written C
+org.eclipse.swt.internal.cocoa.OS#NewGlobalRef(Object)	flag: jni
+org.eclipse.swt.internal.cocoa.OS#beginSheetModalForWindow(long,long,long,long)	no_gen: hand written C
+org.eclipse.swt.internal.cocoa.OS#class_getName(long)	no_gen: hand written C
+org.eclipse.swt.internal.cocoa.OS#isFlipped_CALLBACK()	no_gen: hand written C
+org.eclipse.swt.internal.cocoa.OS#kTISPropertyUnicodeKeyLayoutData()	no_gen: hand written C
