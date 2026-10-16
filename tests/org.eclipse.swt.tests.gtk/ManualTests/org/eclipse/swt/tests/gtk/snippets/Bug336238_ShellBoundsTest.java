@@ -14,16 +14,18 @@
 package org.eclipse.swt.tests.gtk.snippets;
 
 
-//import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.eclipse.swt.widgets.Shell;
-//import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class Bug336238_ShellBoundsTest {
 
 	static int cycles = 5;
 
-//  @Test
+	@Disabled("manual test")
+	@Test
 	public void testSetBounds() {
 
 		int x;
@@ -41,8 +43,8 @@ public class Bug336238_ShellBoundsTest {
 
 			testShell.setBounds(x, y, width, height);
 
-//      assertEquals(x, testShell.getLocation().x);
-//      assertEquals(y, testShell.getLocation().y);
+			assertEquals(x, testShell.getLocation().x);
+			assertEquals(y, testShell.getLocation().y);
 			testShell.close();
 		}
 	}
