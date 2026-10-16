@@ -481,6 +481,8 @@ The rewriter prints the natives that remain on JNI, which are the ones a merged 
   `beginSheetModalForWindow` builds an Objective-C block per the Clang Block ABI, copies it to the heap and autoreleases it as the C did.
 * `FFMCocoaCallbacks` implements the 42 `CALLBACK_*` trampolines from one table of signatures: an upcall stub with the real Objective-C signature, structs by value included, hands the SWT callback pointers to copies of its struct arguments.
 * `FFMCallback` works unchanged; Cocoa only uses callbacks with `long` arguments.
+  Its stubs live in the code cache, which is gone once `main` returns and the VM is destroyed, while AppKit still sends notifications to the process wide `SWTApplicationDelegate` that way, and an upcall then ends in SIGBUS where the trampolines of `callback.c` returned harmlessly.
+  `FFMCocoaCustom` therefore detaches that delegate from `NSApplication` in a shutdown hook; `test-cocoa-exit.sh` checks that the process exits cleanly.
 * `SWT_AWT` stays on JNI (`libswt-awt-cocoa`).
 
 `build-cocoa.sh jni|ffm`, `test-cocoa.sh`, `test-cocoa-crosscheck.sh` and `test-cocoa-custom.sh` mirror the other platforms, and `apply-ffm.sh cocoa` rewrites `Eclipse SWT PI/cocoa` with a rewritten `C` and `Callback` in `cocoa-ffm-shared`.
