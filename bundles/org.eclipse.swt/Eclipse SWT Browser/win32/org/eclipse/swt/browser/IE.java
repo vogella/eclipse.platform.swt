@@ -65,7 +65,6 @@ class IE extends WebBrowser {
 	static final int WindowClosing = 0x107;
 	static final int WindowSetHeight = 0x10b;
 	static final int WindowSetLeft = 0x108;
-	static final int WindowSetResizable = 0x106;
 	static final int WindowSetTop = 0x109;
 	static final int WindowSetWidth = 0x10a;
 	static final int NavigateError = 0x10f;
@@ -81,8 +80,6 @@ class IE extends WebBrowser {
 	static final int URLPOLICY_JAVA_LOW = 0x00030000;
 	static final int URLZONE_LOCAL_MACHINE = 0;
 	static final int URLZONE_INTRANET = 1;
-	static final int URLACTION_ACTIVEX_MIN = 0x00001200;
-	static final int URLACTION_ACTIVEX_MAX = 0x000013ff;
 	static final int URLACTION_ACTIVEX_RUN = 0x00001200;
 	static final int URLACTION_FEATURE_ZONE_ELEVATION = 0x00002101;
 	static final int URLACTION_JAVA_MIN = 0x00001C00;
@@ -105,7 +102,6 @@ class IE extends WebBrowser {
 	static final int DLCTL_NO_CLIENTPULL = 0x20000000;
 	static final int DLCTL_SILENT = 0x40000000;
 	static final int DOCHOSTUIFLAG_THEME = 0x00040000;
-	static final int DOCHOSTUIFLAG_NO3DBORDER  = 0x0000004;
 	static final int DOCHOSTUIFLAG_NO3DOUTERBORDER = 0x00200000;
 	static final int DOCHOSTUIFLAG_ENABLE_REDIRECT_NOTIFICATION = 0x04000000;
 	static final int DOCHOSTUIFLAG_DPI_AWARE = 0x40000000;
@@ -114,7 +110,6 @@ class IE extends WebBrowser {
 	static final String CLSID_SHELLEXPLORER1 = "{EAB22AC3-30C1-11CF-A7EB-0000C05BAE0B}"; //$NON-NLS-1$
 	static final int DEFAULT_IE_VERSION = 9999;
 	static final String EXTENSION_PDF = ".pdf";	//$NON-NLS-1$
-	static final String HTML_DOCUMENT = "HTML Document";	//$NON-NLS-1$
 	static final int MAX_PDF = 20;
 	static final char SEPARATOR_OS = File.separatorChar;
 	static final String PROPERTY_IEVERSION = "org.eclipse.swt.browser.IEVersion"; //$NON-NLS-1$
