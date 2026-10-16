@@ -1558,8 +1558,6 @@ public static final native void g_value_set_string (long value, byte[] v_string)
 /** @param value cast=(GValue *) */
 public static final native long g_value_get_string (long value);
 /** @param value cast=(GValue *) */
-public static final native long g_value_get_object (long value);
-/** @param value cast=(GValue *) */
 public static final native void g_value_unset (long value);
 /** @param value cast=(const GValue *) */
 public static final native long g_value_peek_pointer(long value);
@@ -2014,11 +2012,6 @@ public static final native void pango_tab_array_set_tab(long tab_array, int tab_
  * @method flags=dynamic
  */
 public static final native long ubuntu_menu_proxy_get();
-/**
- * @param s1 cast=(const char*)
- * @param s2 cast=(const char*)
- */
-public static final native int strcmp (long s1, byte [] s2);
 
 /**
  * Theme name as given by OS.
@@ -2409,11 +2402,6 @@ public static final native long g_file_get_path(long file);
 
 /* GMenu */
 public static final native long g_menu_new();
-/**
- * @param label cast=(const gchar *)
- * @param submenu cast=(GMenuModel *)
- */
-public static final native long g_menu_item_new_submenu(byte[] label, long submenu);
 /**
  * @param label cast=(const gchar *)
  * @param section cast=(GMenuModel *)
