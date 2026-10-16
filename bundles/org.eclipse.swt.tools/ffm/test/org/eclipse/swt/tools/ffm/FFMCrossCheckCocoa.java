@@ -46,6 +46,11 @@ public class FFMCrossCheckCocoa {
 	}
 
 	public static void main(String[] args) throws Exception {
+		// child process without the JNI library: only a framework the FFM bindings load themselves is there
+		if (args.length > 1 && args[0].equals("--ffm-only")) {
+			for (int i = 1; i < args.length; i++) System.out.println(args[i] + "=" + (OS_FFM.objc_getClass(args[i]) != 0));
+			return;
+		}
 		if (args.length > 0) checkSymbols(args[0]);
 		checkLinking();
 		checkSizes();
@@ -355,9 +360,27 @@ public class FFMCrossCheckCocoa {
 
 	/* ------------------------------------------------------------------ messages */
 
+	/** Classes of WebKit and Security must be found by the FFM bindings alone, as the JNI library links those frameworks. */
+	static void checkClassesOfLazyFrameworks() {
+		String[] names = {"WebView", "WebPreferences", "SFCertificatePanel"};
+		try {
+			String java = Path.of(System.getProperty("java.home"), "bin", "java").toString();
+			List<String> command = new ArrayList<>(List.of(java, "-XstartOnFirstThread", "--enable-native-access=ALL-UNNAMED",
+				"-Djava.library.path=/nonexistent", "-cp", System.getProperty("java.class.path"), FFMCrossCheckCocoa.class.getName(), "--ffm-only"));
+			command.addAll(List.of(names));
+			Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+			String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+			process.waitFor();
+			for (String name : names) check("FFM only objc_getClass " + name, true, output.contains(name + "=true"));
+		} catch (Exception e) {
+			check("FFM only child process", "ok", e.toString());
+		}
+	}
+
 	static void checkMessages() {
 		int start = checks;
 		check("objc_getClass", OS.objc_getClass("NSString"), OS_FFM.objc_getClass("NSString"));
+		checkClassesOfLazyFrameworks();
 		check("objc_getClass missing", OS.objc_getClass("NoSuchClassFFM"), OS_FFM.objc_getClass("NoSuchClassFFM"));
 		check("objc_lookUpClass", OS.objc_lookUpClass("NSArray"), OS_FFM.objc_lookUpClass("NSArray"));
 		check("objc_getMetaClass", OS.objc_getMetaClass("NSString"), OS_FFM.objc_getMetaClass("NSString"));
