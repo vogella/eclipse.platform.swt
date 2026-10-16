@@ -1780,7 +1780,7 @@ static gboolean swt_fixed_accessible_table_remove_column_selection (AtkTable *ta
 	jlong returned_value = 0;
 
 	if (private->has_accessible) {
-		returned_value = call_accessible_object_function("atkTable_remove_row_selection", "(JJ)J",
+		returned_value = call_accessible_object_function("atkTable_remove_column_selection", "(JJ)J",
 			table, column);
 	}
 	return ((gint) returned_value == 1) ? TRUE : FALSE;
