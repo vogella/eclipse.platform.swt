@@ -75,6 +75,11 @@ public static NSColor colorWithPatternImage(NSImage image) {
 	return result != 0 ? new NSColor(result) : null;
 }
 
+public static NSColor controlAccentColor() {
+	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlAccentColor);
+	return result != 0 ? new NSColor(result) : null;
+}
+
 public static NSColor controlBackgroundColor() {
 	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlBackgroundColor);
 	return result != 0 ? new NSColor(result) : null;
