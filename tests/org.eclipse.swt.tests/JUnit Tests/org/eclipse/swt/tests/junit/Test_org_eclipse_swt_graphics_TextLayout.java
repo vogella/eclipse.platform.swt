@@ -1211,4 +1211,219 @@ public void test_Bug579335_win32_StyledText_LongLine() {
 			font.dispose();
 	}
 }
+
+/* Characterization tests for the segments helper, computeRuns and the draw loop */
+
+@Test
+public void test_segmentsTextAndLocationRoundTrip() {
+	String text = "abc def ghi";
+	int[][] segmentsList = {null, {0, 4}, {0, 4, 8}, {0, text.length()}};
+	for (int[] segments : segmentsList) {
+		String message = "segments " + Arrays.toString(segments);
+		TextLayout layout = new TextLayout(display);
+		try {
+			layout.setText(text);
+			layout.setSegments(segments);
+			assertEquals(text, layout.getText(), message);
+			assertArrayEquals(segments, layout.getSegments(), message);
+			assertEquals(1, layout.getLineCount(), message);
+			assertArrayEquals(new int[] {0, text.length()}, layout.getLineOffsets(), message);
+			int previousX = Integer.MIN_VALUE;
+			for (int i = 0; i < text.length(); i++) {
+				Point location = layout.getLocation(i, false);
+				assertTrue(location.x >= previousX, message + " x must not decrease at " + i);
+				previousX = location.x;
+				int[] trailing = new int[1];
+				int offset = layout.getOffset(location.x + 1, location.y, trailing);
+				assertEquals(i, offset + trailing[0], message + " round trip at " + i);
+				// asking twice gives the same answer
+				assertEquals(location, layout.getLocation(i, false), message);
+			}
+			Point end = layout.getLocation(text.length() - 1, true);
+			assertTrue(end.x > layout.getLocation(0, false).x, message);
+		} finally {
+			layout.dispose();
+		}
+	}
+}
+
+@Test
+public void test_segmentsDoNotChangeTextOrLineStructure() {
+	TextLayout layout = new TextLayout(display);
+	try {
+		layout.setText("abc\ndef");
+		int[] offsetsWithout = layout.getLineOffsets();
+		layout.setSegments(new int[] {0, 4});
+		assertEquals("abc\ndef", layout.getText());
+		assertArrayEquals(offsetsWithout, layout.getLineOffsets());
+		layout.setSegments(null);
+		assertArrayEquals(offsetsWithout, layout.getLineOffsets());
+		assertNull(layout.getSegments());
+	} finally {
+		layout.dispose();
+	}
+}
+
+@Test
+public void test_emptyTextHasOneLineWithDefaultHeight() {
+	TextLayout empty = new TextLayout(display);
+	TextLayout single = new TextLayout(display);
+	try {
+		empty.setText("");
+		single.setText("A");
+		assertEquals(1, empty.getLineCount());
+		assertArrayEquals(new int[] {0, 0}, empty.getLineOffsets());
+		Rectangle emptyLine = empty.getLineBounds(0);
+		assertTrue(emptyLine.height > 0);
+		assertEquals(single.getLineBounds(0).height, emptyLine.height);
+		assertEquals(emptyLine.height, empty.getBounds().height);
+		assertEquals(0, empty.getBounds().width);
+		assertEquals(0, empty.getLineIndex(0));
+	} finally {
+		empty.dispose();
+		single.dispose();
+	}
+}
+
+@Test
+public void test_multiLineStructure() {
+	String text = "abc\ndef gh\n\nlast";
+	TextLayout layout = new TextLayout(display);
+	try {
+		layout.setText(text);
+		assertEquals(4, layout.getLineCount());
+		assertArrayEquals(new int[] {0, 4, 11, 12, text.length()}, layout.getLineOffsets());
+		Rectangle previous = null;
+		for (int i = 0; i < 4; i++) {
+			Rectangle bounds = layout.getLineBounds(i);
+			assertEquals(bounds, layout.getLineBounds(i), "stable line " + i);
+			assertTrue(bounds.height > 0);
+			if (previous != null) {
+				assertEquals(previous.y + previous.height, bounds.y, "lines are stacked at " + i);
+			}
+			previous = bounds;
+		}
+		assertEquals(0, layout.getLineBounds(0).y);
+		assertEquals(layout.getBounds().height, previous.y + previous.height);
+		assertEquals(0, layout.getLineIndex(0));
+		assertEquals(1, layout.getLineIndex(4));
+		assertEquals(2, layout.getLineIndex(11));
+		assertEquals(3, layout.getLineIndex(text.length() - 1));
+		// the empty line is as high as the others
+		assertEquals(layout.getLineBounds(0).height, layout.getLineBounds(2).height);
+	} finally {
+		layout.dispose();
+	}
+}
+
+@Test
+public void test_wrappedLinesAreUnchangedByEqualStyles() {
+	String text = "The quick brown fox jumps over the lazy dog and keeps running";
+	Font font = new Font(display, SwtTestUtil.testFontNameFixedWidth, 12, SWT.NORMAL);
+	TextLayout plain = new TextLayout(display);
+	TextLayout styled = new TextLayout(display);
+	try {
+		plain.setFont(font);
+		styled.setFont(font);
+		plain.setText(text);
+		styled.setText(text);
+		int wrapWidth = plain.getLocation(1, false).x * 20;
+		plain.setWidth(wrapWidth);
+		styled.setWidth(wrapWidth);
+		// styles that do not change metrics must not change the line breaking
+		TextStyle underline = new TextStyle();
+		underline.underline = true;
+		for (int i = 0; i < text.length(); i += 7) {
+			styled.setStyle(underline, i, Math.min(i + 6, text.length() - 1));
+		}
+		assertTrue(plain.getLineCount() > 2);
+		assertEquals(plain.getLineCount(), styled.getLineCount());
+		assertArrayEquals(plain.getLineOffsets(), styled.getLineOffsets());
+		for (int i = 0; i < plain.getLineCount(); i++) {
+			assertEquals(plain.getLineBounds(i), styled.getLineBounds(i), "line " + i);
+		}
+		int[] offsets = plain.getLineOffsets();
+		assertEquals(0, offsets[0]);
+		assertEquals(text.length(), offsets[offsets.length - 1]);
+		for (int i = 1; i < offsets.length; i++) {
+			assertTrue(offsets[i] > offsets[i - 1]);
+		}
+		// repeating gives the same result
+		assertArrayEquals(offsets, plain.getLineOffsets());
+		assertEquals(plain.getBounds(), styled.getBounds());
+	} finally {
+		plain.dispose();
+		styled.dispose();
+		font.dispose();
+	}
+}
+
+private int[][] drawAdjacentOrMerged(boolean split, boolean underline, boolean border) {
+	String text = "The quick brown fox jumps over the lazy dog and keeps running";
+	Font font = new Font(display, SwtTestUtil.testFontNameFixedWidth, 12, SWT.NORMAL);
+	Color color = new Color(0, 0, 255);
+	Color borderColor = new Color(255, 0, 0);
+	TextLayout layout = new TextLayout(display);
+	Image image = null;
+	try {
+		layout.setFont(font);
+		layout.setText(text);
+		layout.setWidth(layout.getLocation(1, false).x * 20);
+		int start = 4;
+		int end = 50; // spans several line wraps
+		if (split) {
+			for (int i = start; i <= end; i += 6) {
+				layout.setStyle(createStyle(color, borderColor, underline, border), i, Math.min(i + 5, end));
+			}
+		} else {
+			layout.setStyle(createStyle(color, borderColor, underline, border), start, end);
+		}
+		image = draw(layout, SWT.DEFAULT);
+		assertTrue(SwtTestUtil.hasPixelNotMatching(image, display.getSystemColor(SWT.COLOR_WHITE), image.getBounds()));
+		return SwtTestUtil.getAllPixels(image);
+	} finally {
+		if (image != null) {
+			image.dispose();
+		}
+		layout.dispose();
+		font.dispose();
+		color.dispose();
+		borderColor.dispose();
+	}
+}
+
+private static TextStyle createStyle(Color color, Color borderColor, boolean underline, boolean border) {
+	TextStyle style = new TextStyle();
+	style.foreground = color;
+	if (underline) {
+		style.underline = true;
+		style.underlineStyle = SWT.UNDERLINE_SINGLE;
+		style.underlineColor = borderColor;
+	}
+	if (border) {
+		style.borderStyle = SWT.BORDER_SOLID;
+		style.borderColor = borderColor;
+	}
+	return style;
+}
+
+@Test
+public void test_adjacentUnderlineStylesDrawLikeMergedRange() {
+	assertArrayEquals(drawAdjacentOrMerged(false, true, false), drawAdjacentOrMerged(true, true, false));
+}
+
+@Test
+public void test_adjacentBorderStylesDrawLikeMergedRange() {
+	assertArrayEquals(drawAdjacentOrMerged(false, false, true), drawAdjacentOrMerged(true, false, true));
+}
+
+@Test
+public void test_adjacentUnderlineAndBorderStylesDrawLikeMergedRange() {
+	assertArrayEquals(drawAdjacentOrMerged(false, true, true), drawAdjacentOrMerged(true, true, true));
+}
+
+@Test
+public void test_drawingTwiceGivesSamePixels() {
+	assertArrayEquals(drawAdjacentOrMerged(true, true, true), drawAdjacentOrMerged(true, true, true));
+}
 }
