@@ -41,7 +41,6 @@ private void initialize(int[] lengths) {
 	codeLengthInfo = new CodeLengthInfo[MAX_CODE_LENGTH];
 	for (int i = 0; i < MAX_CODE_LENGTH; i++) {
 		codeLengthInfo[i] = new CodeLengthInfo();
-		codeLengthInfo[i].length = i;
 		codeLengthInfo[i].baseIndex = 0;
 		codeLengthInfo[i].min = BAD_CODE;
 		codeLengthInfo[i].max = -1;
@@ -119,7 +118,6 @@ int getNextValue(PngDecodingDataStream stream) throws IOException {
 }
 
 static class CodeLengthInfo {
-	int length;
 	int max;
 	int min;
 	int baseIndex;
