@@ -296,6 +296,8 @@ public enum Selector {
 	, sel_contentView("contentView")
 	, sel_contentViewMargins("contentViewMargins")
 	, sel_context("context")
+	, sel_controlAccentColor("controlAccentColor")
+	, sel_controlBackgroundColor("controlBackgroundColor")
 	, sel_controlDarkShadowColor("controlDarkShadowColor")
 	, sel_controlLightHighlightColor("controlLightHighlightColor")
 	, sel_controlPointBounds("controlPointBounds")

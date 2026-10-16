@@ -570,6 +570,7 @@ typedef enum {
 	gtk_1spin_1button_1update_FUNC,
 	gtk_1style_1context_1add_1class_FUNC,
 	gtk_1style_1context_1add_1provider_FUNC,
+	gtk_1style_1context_1lookup_1color_FUNC,
 	gtk_1style_1context_1remove_1class_FUNC,
 	gtk_1style_1context_1restore_FUNC,
 	gtk_1style_1context_1save_FUNC,

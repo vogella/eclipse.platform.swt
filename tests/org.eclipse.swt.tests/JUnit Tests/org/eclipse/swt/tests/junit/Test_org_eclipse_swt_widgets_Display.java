@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.DeviceData;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -496,11 +497,23 @@ public void test_getSystemColorI() {
 			SWT.COLOR_WIDGET_BACKGROUND, SWT.COLOR_WIDGET_BORDER,
 			SWT.COLOR_WIDGET_FOREGROUND, SWT.COLOR_LIST_FOREGROUND,
 			SWT.COLOR_LIST_BACKGROUND, SWT.COLOR_LIST_SELECTION,
-			SWT.COLOR_LIST_SELECTION_TEXT,
+			SWT.COLOR_LIST_SELECTION_TEXT, SWT.COLOR_WIDGET_ACCENT,
 		};
 		for (int colorId : colorIds) {
 			assertNotNull(display.getSystemColor(colorId));
 		}
+	} finally {
+		display.dispose();
+	}
+}
+
+@Test
+public void test_getSystemColor_widgetAccent() {
+	Display display = new Display();
+	try {
+		Color accent = display.getSystemColor(SWT.COLOR_WIDGET_ACCENT);
+		assertNotNull(accent);
+		assertFalse(accent.isDisposed());
 	} finally {
 		display.dispose();
 	}

@@ -7104,6 +7104,25 @@ JNIEXPORT void JNICALL GTK_NATIVE(gtk_1style_1context_1add_1provider)
 }
 #endif
 
+#ifndef NO_gtk_1style_1context_1lookup_1color
+JNIEXPORT jboolean JNICALL GTK_NATIVE(gtk_1style_1context_1lookup_1color)
+	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1, jobject arg2)
+{
+	jbyte *lparg1=NULL;
+	GdkRGBA _arg2, *lparg2=NULL;
+	jboolean rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1style_1context_1lookup_1color_FUNC);
+	if (arg1) if ((lparg1 = (*env)->GetByteArrayElements(env, arg1, NULL)) == NULL) goto fail;
+	if (arg2) if ((lparg2 = getGdkRGBAFields(env, arg2, &_arg2)) == NULL) goto fail;
+	rc = (jboolean)gtk_style_context_lookup_color((GtkStyleContext *)arg0, (const gchar *)lparg1, (GdkRGBA *)lparg2);
+fail:
+	if (arg2 && lparg2) setGdkRGBAFields(env, arg2, lparg2);
+	if (arg1 && lparg1) (*env)->ReleaseByteArrayElements(env, arg1, lparg1, 0);
+	GTK_NATIVE_EXIT(env, that, gtk_1style_1context_1lookup_1color_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_gtk_1style_1context_1remove_1class
 JNIEXPORT void JNICALL GTK_NATIVE(gtk_1style_1context_1remove_1class)
 	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1)

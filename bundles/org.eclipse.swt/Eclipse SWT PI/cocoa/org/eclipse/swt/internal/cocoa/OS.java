@@ -945,6 +945,8 @@ public static final long sel_contentSizeForFrameSize_hasHorizontalScroller_hasVe
 public static final long sel_contentView = Selector.sel_contentView.value;
 public static final long sel_contentViewMargins = Selector.sel_contentViewMargins.value;
 public static final long sel_context = Selector.sel_context.value;
+public static final long sel_controlAccentColor = Selector.sel_controlAccentColor.value;
+public static final long sel_controlBackgroundColor = Selector.sel_controlBackgroundColor.value;
 public static final long sel_controlDarkShadowColor = Selector.sel_controlDarkShadowColor.value;
 public static final long sel_controlLightHighlightColor = Selector.sel_controlLightHighlightColor.value;
 public static final long sel_controlPointBounds = Selector.sel_controlPointBounds.value;
