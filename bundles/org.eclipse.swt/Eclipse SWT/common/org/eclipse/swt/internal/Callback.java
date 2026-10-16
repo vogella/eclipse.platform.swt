@@ -332,19 +332,6 @@ public static final native synchronized void setEnabled (boolean enable);
 public static final native synchronized boolean getEnabled ();
 
 /**
- * This might be called directly from native code in environments
- * which can generate spurious events. Check before removing it.
- *
- * @deprecated
- *
- * @param ignore true if callbacks should not be invoked
- */
-@Deprecated
-static final void ignoreCallbacks (boolean ignore) {
-	setEnabled (!ignore);
-}
-
-/**
  * Immediately wipes out all native level state associated
  * with <em>all</em> callbacks.
  * <p>
