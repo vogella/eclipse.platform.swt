@@ -504,11 +504,26 @@ macOS aarch64, JDK 25, against the JNI libraries of the fragment:
 * JUnit, 129 classes of `org.eclipse.swt.tests` and `org.eclipse.swt.tests.cocoa`, 4,357 tests, JNI build and FFM build without any SWT library except `libswt-awt`: identical outcomes (4,237 passed, 77 failed, 37 aborted and 6 skipped on both).
 * Visual Oracle, 218 specimens, zero tolerance, FFM build without any SWT library except `libswt-awt`: all equal at 100% and 200% zoom, right to left and in the dark appearance.
 
+### Performance
+
+`bench-cocoa.sh` runs `FFMWorkloadBench` on the JNI and the FFM build in alternating fresh JVMs, 10 runs of 30 iterations, MacBook aarch64 with nothing else on the screen; medians in ms of wall time, CPU time follows the same pattern:
+
+| Phase | Cold JNI | Cold FFM | Warm JNI | Warm FFM |
+| --- | --- | --- | --- | --- |
+| display | 177 | 219 | | |
+| create | 187 | 257 | 82 | 76 |
+| open | 245 | 275 | 102 | 101 |
+| relayout | 195 | 228 | 156 | 124 |
+| gc | 141 | 148 | 122 | 119 |
+| dispose | 60 | 53 | 49 | 45 |
+
+The first use costs about 175 ms more (1,004 against 1,179 ms, +17%), the linking of each handle on its first call as on GTK, and a warm iteration is about 9% faster (511 against 465 ms), most of it in relayout.
+
 ### Open
 
 * x86_64 is untested: layouts, `objc_msgSend_stret` and `_fpret`.
 * `TISGetInputSourceProperty`, `class_createInstance` and `instrumentObjcMessageSends` are both generated and hand written; the hand written ones win in the rewriter.
-* Not measured: performance and the cold start cost on macOS; a product build with `apply-ffm.sh cocoa` under Tycho and an IDE session.
+* Not measured: a product build with `apply-ffm.sh cocoa` under Tycho and an IDE session.
 * The generator changes for Cocoa were not rerun against GTK and Win32.
 
 ## Next steps
