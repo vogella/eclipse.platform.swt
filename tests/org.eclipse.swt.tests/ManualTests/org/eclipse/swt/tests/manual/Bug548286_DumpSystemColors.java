@@ -54,6 +54,7 @@ public class Bug548286_DumpSystemColors {
 		hmap.put(SWT.COLOR_LINK_FOREGROUND, "COLOR_LINK_FOREGROUND");
 		hmap.put(SWT.COLOR_WIDGET_DISABLED_FOREGROUND, "COLOR_WIDGET_DISABLED_FOREGROUND");
 		hmap.put(SWT.COLOR_TEXT_DISABLED_BACKGROUND, "COLOR_TEXT_DISABLED_BACKGROUND");
+		hmap.put(SWT.COLOR_WIDGET_ACCENT, "COLOR_WIDGET_ACCENT");
 
 		// Printing IDs instead of names gives more compact output
 		boolean printIDs = true;
