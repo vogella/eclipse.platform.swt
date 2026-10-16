@@ -40,7 +40,7 @@ add_root() {
 while IFS= read -r entry; do
 	[[ "$entry" == *legal_files* ]] && continue
 	add_root "$FRAGMENT/$entry"
-done < <(sed -n '/^source\.\. *=/,/^[^[:space:]]/p' "$FRAGMENT/build.properties" | tr -d '\r' | sed -e 's/^source\.\. *=//' -e 's/\\$//' -e 's/,$//' -e 's/^[[:space:]]*//' | grep -v '^$' | grep -v '=')
+done <<< "$(sed -n '/^source\.\. *=/,/^[^[:space:]]/p' "$FRAGMENT/build.properties" | tr -d '\r' | sed -e 's/^source\.\. *=//' -e 's/\\$//' -e 's/,$//' -e 's/^[[:space:]]*//' | grep -v '^$' | grep -v '=')"
 add_root "$SWT/Eclipse SWT PI/common-ffm"
 add_root "$SWT/Eclipse SWT PI/cocoa-ffm"
 
@@ -71,11 +71,12 @@ fi
 
 : > "$OUT/sources.txt"
 for root in ${roots[@]+"${roots[@]}"}; do
+	find "$root" -name '*.java' -print0 > "$OUT/files.tmp"
 	while IFS= read -r -d '' file; do
 		relative="${file#"$root"/}"
 		if [ -f "$OUT/overlay/$relative" ]; then file="$OUT/overlay/$relative"; fi
 		printf '"%s"\n' "$file" >> "$OUT/sources.txt"
-	done < <(find "$root" -name '*.java' -print0)
+	done < "$OUT/files.tmp"
 	# the native sources under library/ are not part of the classes
 	(cd "$root" && find . -path ./library -prune -o -type f ! -name '*.java' ! -name '*.html' -print0 | cpio -0pdm --quiet "$OUT/classes")
 done
