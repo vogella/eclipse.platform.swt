@@ -1611,26 +1611,15 @@ public class JPEGDecoder {
 //		JMETHOD(void, finish_pass, (j_decompress_ptr cinfo));
 //		JMETHOD(void, new_color_map, (j_decompress_ptr cinfo));
 
-		/* Initially allocated colormap is saved here */
-		int[][] sv_colormap;	/* The color map as a 2-D pixel array */
-		int sv_actual;		/* number of entries in use */
-
 		int[][] colorindex;	/* Precomputed mapping for speed */
 		/* colorindex[i][j] = index of color closest to pixel value j in component i,
 		 * premultiplied as described above.	Since colormap indexes must fit into
 		 * JSAMPLEs, the entries of this array will too.
 		 */
-		boolean is_padded;		/* is the colorindex padded for odither? */
 
-		int[] Ncolors = new int [MAX_Q_COMPS];	/* # of values alloced to each component */
-
-		/* Variables for ordered dithering */
-		int row_index;		/* cur row's vertical index in dither matrix */
 //			ODITHER_MATRIX_PTR odither[MAX_Q_COMPS]; /* one dither array per component */
 
-		/* Variables for Floyd-Steinberg dithering */
 //			FSERRPTR fserrors[MAX_Q_COMPS]; /* accumulated errors */
-		boolean on_odd_row;
 
 		void start_pass (jpeg_decompress_struct cinfo, boolean is_pre_scan) {
 			error();
