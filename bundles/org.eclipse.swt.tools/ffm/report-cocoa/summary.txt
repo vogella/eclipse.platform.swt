@@ -1,0 +1,20 @@
+org.eclipse.swt.internal.C                              FFM    24  JNI     0
+org.eclipse.swt.internal.cocoa.OS                       FFM   462  JNI    51
+
+Total FFM 486, JNI 51
+
+Kept on JNI by reason:
+    42  callback
+     2  flag
+     7  no_gen
+
+Not generated (the CALLBACK_ natives are left out):
+  org.eclipse.swt.internal.cocoa.OS#CGDisplayBounds(int,CGRect)  no_gen: hand written C
+  org.eclipse.swt.internal.cocoa.OS#DeleteGlobalRef(long)  flag: jni
+  org.eclipse.swt.internal.cocoa.OS#JNIGetObject(long)  no_gen: hand written C
+  org.eclipse.swt.internal.cocoa.OS#NSIntersectionRect(NSRect,NSRect,NSRect)  no_gen: hand written C
+  org.eclipse.swt.internal.cocoa.OS#NewGlobalRef(Object)  flag: jni
+  org.eclipse.swt.internal.cocoa.OS#beginSheetModalForWindow(long,long,long,long)  no_gen: hand written C
+  org.eclipse.swt.internal.cocoa.OS#class_getName(long)  no_gen: hand written C
+  org.eclipse.swt.internal.cocoa.OS#isFlipped_CALLBACK()  no_gen: hand written C
+  org.eclipse.swt.internal.cocoa.OS#kTISPropertyUnicodeKeyLayoutData()  no_gen: hand written C
