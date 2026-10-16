@@ -37,13 +37,14 @@ public class FFMWorkloadBench {
 		for (int i = 0; i < ITERATIONS; i++) {
 			iteration(display);
 		}
-		display.dispose();
 		for (var e : TIMES.entrySet()) {
 			List<Double> v = e.getValue();
 			List<Double> warm = new ArrayList<>(v.subList(Math.min(1, v.size() - 1), v.size()));
 			Collections.sort(warm);
 			System.out.printf(Locale.ROOT, "%s %.2f %.2f%n", e.getKey(), v.get(0), warm.get(warm.size() / 2));
 		}
+		System.out.flush();
+		display.dispose();
 	}
 
 	static void iteration(Display display) {
