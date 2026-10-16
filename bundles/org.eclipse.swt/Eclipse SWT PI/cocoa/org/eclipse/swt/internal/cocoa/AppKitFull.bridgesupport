@@ -7700,6 +7700,9 @@
 <arg declared_type='CGFloat' index='1' name='alpha' type='f' type64='d'/>
 <retval declared_type='NSColor * _Nonnull' type='@'/>
 </method>
+<method class_method='true' selector='controlAccentColor'>
+<retval declared_type='NSColor * _Nonnull' type='@'/>
+</method>
 <method class_method='true' selector='controlAlternatingRowBackgroundColors'>
 <retval declared_type='NSArray * _Nonnull' type='@'/>
 </method>
