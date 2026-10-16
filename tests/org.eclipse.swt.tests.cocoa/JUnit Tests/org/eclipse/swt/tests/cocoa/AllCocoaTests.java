@@ -19,7 +19,11 @@ import org.junit.platform.suite.api.Suite;
 
 @Suite
 @SelectClasses({
-	Test_cocoa_AccessibleTextRanges.class
+	Test_cocoa_AccessibleTextRanges.class,
+	Test_cocoa_AccessibleRoles.class,
+	Test_cocoa_AccessibleAttributes.class,
+	Test_cocoa_TransferRegisterType.class,
+	Test_org_eclipse_swt_internal_cocoa_Smoke.class
 })
 
 public class AllCocoaTests {
