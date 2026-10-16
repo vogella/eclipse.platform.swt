@@ -40,7 +40,7 @@ while IFS= read -r entry; do
 	dir="$FRAGMENT/$entry"
 	[[ "$entry" == *legal_files* || ! -d "$dir" ]] && continue
 	roots+=("$(cd "$dir" && pwd)")
-done < <(sed -n '/^source\.\. *=/,/^[^ \t]/p' "$FRAGMENT/build.properties" | sed -e 's/^source\.\. *=//' -e 's/\\$//' -e 's/,$//' -e 's/^[ \t]*//' | grep -v '^$' | grep -v '=')
+done <<< "$(sed -n '/^source\.\. *=/,/^[^ \t]/p' "$FRAGMENT/build.properties" | sed -e 's/^source\.\. *=//' -e 's/\\$//' -e 's/,$//' -e 's/^[ \t]*//' | grep -v '^$' | grep -v '=')"
 roots+=("$SWT/Eclipse SWT PI/common-ffm" "$SWT/Eclipse SWT PI/cocoa-ffm")
 
 : > "$OUT/sources.txt"
