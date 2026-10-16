@@ -1131,21 +1131,6 @@ void setRowCount (int count) {
 	}
 }
 
-/*public*/ void setTabItemList (ToolItem [] tabList) {
-	checkWidget ();
-	if (tabList != null) {
-		for (ToolItem item : tabList) {
-			if (item == null) error (SWT.ERROR_INVALID_ARGUMENT);
-			if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-			if (item.parent != this) error (SWT.ERROR_INVALID_PARENT);
-		}
-		ToolItem [] newList = new ToolItem [tabList.length];
-		System.arraycopy (tabList, 0, newList, 0, tabList.length);
-		tabList = newList;
-	}
-	this.tabItemList = tabList;
-}
-
 @Override
 boolean setTabItemFocus () {
 	int index = 0;
