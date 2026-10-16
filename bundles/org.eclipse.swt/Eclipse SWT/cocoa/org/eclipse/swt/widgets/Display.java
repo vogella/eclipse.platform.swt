@@ -2001,6 +2001,7 @@ double [] getWidgetColorRGB (int id) {
 		case SWT.COLOR_WIDGET_DISABLED_FOREGROUND:
 			color = NSColor.secondarySelectedControlColor();
 			break;
+		case SWT.COLOR_WIDGET_ACCENT: color = NSColor.controlAccentColor(); break;
 	}
 	return getNSColorRGB (color);
 }
@@ -3245,7 +3246,7 @@ void initColors (boolean ignoreColorChange) {
 }
 
 void initColors () {
-	colors = new double [SWT.COLOR_WIDGET_DISABLED_FOREGROUND + 1][];
+	colors = new double [SWT.COLOR_WIDGET_ACCENT + 1][];
 	colors[SWT.COLOR_INFO_FOREGROUND] = getWidgetColorRGB(SWT.COLOR_INFO_FOREGROUND);
 	colors[SWT.COLOR_INFO_BACKGROUND] = getWidgetColorRGB(SWT.COLOR_INFO_BACKGROUND);
 	colors[SWT.COLOR_TITLE_FOREGROUND] = getWidgetColorRGB(SWT.COLOR_TITLE_FOREGROUND);
@@ -3268,6 +3269,8 @@ void initColors () {
 	colors[SWT.COLOR_LINK_FOREGROUND] = getWidgetColorRGB(SWT.COLOR_LINK_FOREGROUND);
 	colors[SWT.COLOR_TEXT_DISABLED_BACKGROUND] = getWidgetColorRGB(SWT.COLOR_TEXT_DISABLED_BACKGROUND);
 	colors[SWT.COLOR_WIDGET_DISABLED_FOREGROUND] = getWidgetColorRGB(SWT.COLOR_WIDGET_DISABLED_FOREGROUND);
+	double [] accent = getWidgetColorRGB(SWT.COLOR_WIDGET_ACCENT);
+	colors[SWT.COLOR_WIDGET_ACCENT] = accent != null ? accent : colors[SWT.COLOR_LIST_SELECTION];
 
 	alternateSelectedControlTextColor = getNSColorRGB(NSColor.alternateSelectedControlTextColor());
 	selectedControlTextColor = getNSColorRGB(NSColor.selectedControlTextColor());
