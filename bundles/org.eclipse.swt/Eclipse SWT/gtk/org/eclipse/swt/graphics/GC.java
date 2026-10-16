@@ -1620,7 +1620,8 @@ public void fillGradientRectangle(int x, int y, int width, int height, boolean v
 	double[] oldScaleX = new double[1], oldScaleY = new double[1];
 	if (surface != 0) {
 		Cairo.cairo_surface_get_device_scale(surface, oldScaleX, oldScaleY);
-		float scaleFactor = DPIUtil.getDeviceZoom() / 100f;
+		// images carry their own device scale
+		float scaleFactor = data.image != null ? (float) oldScaleX[0] : DPIUtil.getDeviceZoom() / 100f;
 		Cairo.cairo_surface_set_device_scale(surface, scaleFactor, scaleFactor);
 	}
 	try {
@@ -2057,7 +2058,7 @@ public Rectangle getClipping() {
 	/* Calculate visible bounds in device space */
 	int x = 0, y = 0, width = 0, height = 0;
 	int[] w = new int[1], h = new int[1];
-	getSize(w, h);
+	getUserSpaceSize(w, h);
 	width = w[0];
 	height = h[0];
 	/* Intersect visible bounds with clipping in device space and then convert then to user space */
@@ -2160,7 +2161,7 @@ public void getClipping(Region region) {
 	if (clipRgn == 0) {
 		cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
 		int[] width = new int[1], height = new int[1];
-		getSize(width, height);
+		getUserSpaceSize(width, height);
 		rect.width = width[0];
 		rect.height = height[0];
 		Cairo.cairo_region_union_rectangle(clipping, rect);
@@ -2451,6 +2452,29 @@ public int getStyle () {
 	return data.style;
 }
 
+/** Returns the image size in user space, which is in points for images with a device scale. */
+private void getUserSpaceSize(int[] width, int[] height) {
+	getSize(width, height);
+	if (data.image != null && data.image.surface != 0) {
+		double[] scaleX = new double[1], scaleY = new double[1];
+		Cairo.cairo_surface_get_device_scale(data.image.surface, scaleX, scaleY);
+		width[0] = (int) Math.round(width[0] / scaleX[0]);
+		height[0] = (int) Math.round(height[0] / scaleY[0]);
+	}
+}
+
+/** Returns the width in user space to mirror around. */
+double getMirroringWidth() {
+	int[] w = new int[1], h = new int[1];
+	getSize(w, h);
+	if (data.image != null && data.image.surface != 0) {
+		double[] scaleX = new double[1], scaleY = new double[1];
+		Cairo.cairo_surface_get_device_scale(data.image.surface, scaleX, scaleY);
+		return w[0] / scaleX[0];
+	}
+	return w[0];
+}
+
 void getSize(int[] width, int[] height) {
 	if (data.width != -1 && data.height != -1) {
 		width[0] = data.width;
@@ -2593,9 +2617,7 @@ public int hashCode() {
 double[] identity() {
 	double[] identity = new double[6];
 	if ((data.style & SWT.MIRRORED) != 0) {
-		int[] w = new int[1], h = new int[1];
-		getSize(w, h);
-		Cairo.cairo_matrix_init(identity, -1, 0, 0, 1, w[0], 0);
+		Cairo.cairo_matrix_init(identity, -1, 0, 0, 1, getMirroringWidth(), 0);
 	} else {
 		Cairo.cairo_matrix_init_identity(identity);
 	}
@@ -2629,9 +2651,7 @@ void init(Drawable drawable, GCData data, long gdkGC) {
 	initCairo();
 	if ((data.style & SWT.MIRRORED) != 0) {
 		// Don't overwrite the Cairo transformation matrix in GTK 3.14 and above; it contains a translation relative to the parent widget.
-		int[] w = new int[1], h = new int[1];
-		getSize(w, h);
-		Cairo.cairo_translate(cairo, w[0], 0);
+		Cairo.cairo_translate(cairo, getMirroringWidth(), 0);
 		Cairo.cairo_scale(cairo, -1.0, 1.0);
 	}
 	if (cairoTransformationMatrix == null) cairoTransformationMatrix = new double[6];
