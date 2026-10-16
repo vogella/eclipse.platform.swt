@@ -502,7 +502,7 @@ macOS aarch64, JDK 25, against the JNI libraries of the fragment:
 * `FFMCrossCheckCocoa`: 1,369 checks, 0 mismatches (symbols, handles, struct sizes and round trips, constants, call results, classes of lazily loaded frameworks).
 * `FFMCocoaCustomCheck`: 592 checks, 0 mismatches.
 * JUnit, 129 classes of `org.eclipse.swt.tests` and `org.eclipse.swt.tests.cocoa`, 4,357 tests, JNI build and FFM build without any SWT library except `libswt-awt`: identical outcomes (4,237 passed, 77 failed, 37 aborted and 6 skipped on both).
-* Visual Oracle, 218 specimens, zero tolerance, FFM build without any SWT library except `libswt-awt`: all equal.
+* Visual Oracle, 218 specimens, zero tolerance, FFM build without any SWT library except `libswt-awt`: all equal at 100% and 200% zoom, right to left and in the dark appearance.
 
 ### Open
 
