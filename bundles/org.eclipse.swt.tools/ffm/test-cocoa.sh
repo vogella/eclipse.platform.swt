@@ -43,9 +43,11 @@ mkdir -p "$B/swt-tests"
 
 test_dirs=("$TESTS/JUnit Tests" "$TESTS/data/clipboard" "$TOOLS/ffm/test-stubs")
 [ -d "$TESTS_COCOA/JUnit Tests" ] && test_dirs+=("$TESTS_COCOA/JUnit Tests")
-find "${test_dirs[@]}" -name '*.java' ! -path '*/performance/*' | sed 's/.*/"&"/' > "$B/swt-tests-sources.txt"
+# AllCocoaTests is a JUnit 4 suite, the runner picks the classes itself
+find "${test_dirs[@]}" -name '*.java' ! -path '*/performance/*' ! -name AllCocoaTests.java | sed 's/.*/"&"/' > "$B/swt-tests-sources.txt"
 echo "\"$TOOLS/ffm/test/org/eclipse/swt/tools/ffm/FFMTestRunner.java\"" >> "$B/swt-tests-sources.txt"
-javac --release 25 -nowarn -encoding UTF-8 -d "$B/swt-tests" -cp "$B/swt-jni/classes:$junit" @"$B/swt-tests-sources.txt" 2>&1 | grep -v '^Note:' || true
+javac --release 25 -nowarn -encoding UTF-8 -d "$B/swt-tests" -cp "$B/swt-jni/classes:$junit" @"$B/swt-tests-sources.txt" > "$B/javac-tests.log" 2>&1 \
+	|| { grep -v '^Note:' "$B/javac-tests.log"; echo "test-cocoa.sh: compiling the tests failed" >&2; exit 1; }
 for dir in "$TESTS/JUnit Tests" "$TESTS_COCOA/JUnit Tests"; do
 	[ -d "$dir" ] && (cd "$dir" && find . -type f ! -name '*.java' -print0 | cpio -0pdm --quiet "$B/swt-tests")
 done
@@ -67,6 +69,11 @@ for mode in jni ffm; do
 		> "$B/log-$mode.txt" 2>&1) || true
 done
 
+for mode in jni ffm; do
+	[ -s "$B/results-$mode.txt" ] || { echo "test-cocoa.sh: no results from the $mode build, see $B/log-$mode.txt" >&2; exit 1; }
+done
 grep -h "^Results" "$B/log-jni.txt" "$B/log-ffm.txt" || true
 echo "== Tests whose outcome differs between JNI and FFM"
-diff <(cut -f1,2 "$B/results-jni.txt" | sed 's/\t\(\w*\).*/\t\1/') <(cut -f1,2 "$B/results-ffm.txt" | sed 's/\t\(\w*\).*/\t\1/') && echo "none"
+# compare the outcome only, not the message
+outcomes() { awk -F'\t' '{ split($2, o, " "); print $1 "\t" o[1] }' "$1" | sort; }
+diff <(outcomes "$B/results-jni.txt") <(outcomes "$B/results-ffm.txt") && echo "none"
