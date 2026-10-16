@@ -82,6 +82,9 @@ public class FFMGenerator extends JNIGenerator {
 		"GetMenuDefaultItem", "GetMenuItemCount", "GetMenuItemInfo", "InsertMenuItem", "SendInput",
 		"SetMenuItemInfo", "StartDoc", "StartPage");
 
+	/** macOS: small structs that a Java primitive array stands for when passed by value, with the layout of their fields. */
+	static final Map<String, String> ARRAY_STRUCTS = Map.of("Point", "MemoryLayout.structLayout(JAVA_SHORT, JAVA_SHORT)");
+
 	CTypes ctypes;
 	/** The GTK4 compile of the unit when the natives class serves GTK3 and GTK4, see {@link #planBoth}. */
 	CTypes ctypes4;
@@ -103,6 +106,10 @@ public class FFMGenerator extends JNIGenerator {
 	Map<String, String> imports;
 	/** Symbol and library of every generated downcall, for the report. */
 	final Map<String, String> symbols = new TreeMap<>();
+	/** macOS: <code>objc_msgSend</code> casts, struct returns, exported constants and bundle lookups. */
+	boolean cocoa;
+	/** Values of the constants that have no symbol (<code>CONST.</code> entries of the layout probe), by name. */
+	Map<String, String> constants = Map.of();
 
 	public FFMGenerator(CTypes ctypes, Map<String, StructInfo> structs) {
 		this.ctypes = ctypes;
@@ -128,6 +135,14 @@ public class FFMGenerator extends JNIGenerator {
 
 	public void setImports(Map<String, String> imports) {
 		this.imports = imports;
+	}
+
+	public void setCocoa(boolean cocoa) {
+		this.cocoa = cocoa;
+	}
+
+	public void setConstants(Map<String, String> constants) {
+		this.constants = constants;
 	}
 
 	/** Sizes of C types without a Java struct class, from the probe of the unit, generated as <code>Extra_FFM</code>. */
@@ -253,10 +268,14 @@ public class FFMGenerator extends JNIGenerator {
 
 	static class Param {
 		JNIParameter param;
+		/** Position among the Java parameters, which differs from the position among the C parameters of a struct return. */
+		int index;
 		JNIType type;
 		Kind kind;
 		String mode;
 		StructInfo struct;
+		/** The layout of the struct that an array stands for, see {@link #ARRAY_STRUCTS}. */
+		String layout;
 		/** A copied array, string or struct whose address is passed as an integer. */
 		boolean address;
 	}
@@ -270,6 +289,14 @@ public class FFMGenerator extends JNIGenerator {
 		List<Param> params = new ArrayList<>();
 		int firstVariadic = -1;
 		boolean dynamic, critical, arena, captureLastError;
+		/** macOS: the struct that is the C return value of an <code>objc_msgSend_stret</code>, a Java parameter. */
+		StructInfo structReturn;
+		/** macOS: the first parameter is the function to call. */
+		boolean pointerCall;
+		/** macOS: kind of the exported variable that a constant reads. */
+		Kind constKind;
+		/** macOS: the literal of a constant that has no symbol. */
+		String constValue;
 		/** The variant for GTK4 where the C ABI of GTK3 and GTK4 differ, chosen at run time. */
 		Plan alt;
 		/** 3 or 4 where the native has the ABI of that GTK version only, 0 otherwise. */
@@ -389,12 +416,13 @@ public class FFMGenerator extends JNIGenerator {
 		String jniOnly = JNI_ONLY.get(method.getName());
 		if (jniOnly != null) return jniOnly;
 		for (String flag : new String[] {FLAG_JNI, FLAG_CPP, FLAG_SETTER, FLAG_GETTER, FLAG_ADDER, FLAG_NEW, FLAG_DELETE, FLAG_GCNEW, FLAG_OBJECT, FLAG_CAST}) {
+			if (cocoa && flag.equals(FLAG_CAST)) continue;
 			if (method.getFlag(flag)) return "flag: " + flag;
 		}
-		if (method.getFlag(FLAG_CONST) && !method.getFlag(FLAG_ADDRESS)) return "const: macro or constant";
+		if (method.getFlag(FLAG_CONST) && !method.getFlag(FLAG_ADDRESS) && !cocoa) return "const: macro or constant";
 		String name = method.getName();
 		if (name.startsWith("CALLBACK_")) return "callback: " + name;
-		if (name.equalsIgnoreCase("call") || name.startsWith("callFunc") || name.contains("VtblCall")) return "function pointer call: " + name;
+		if ((name.equalsIgnoreCase("call") && !cocoa) || name.startsWith("callFunc") || name.contains("VtblCall")) return "function pointer call: " + name;
 		JNIType returnType = method.getReturnType();
 		if (!returnType.isPrimitive()) return "Java return type: " + returnType.getSimpleName();
 		return null;
@@ -410,6 +438,8 @@ public class FFMGenerator extends JNIGenerator {
 		JNIMethod method = plan.method;
 		JNIParameter[] params = method.getParameters();
 		JNIType returnType = method.getReturnType();
+
+		if (cocoa && method.getFlag(FLAG_CONST)) return fillConstant(plan);
 
 		if (method.getFlag(FLAG_ADDRESS)) {
 			if (!returnType.isType("long") || params.length != 0) return "address: has parameters";
@@ -446,6 +476,11 @@ public class FFMGenerator extends JNIGenerator {
 			}
 		}
 
+		if (cocoa && plan.cName.equals("PTR_sizeof") && params.length == 0 && returnType.isType("int")) {
+			plan.special = "ptr_sizeof";
+			return null;
+		}
+
 		if (imports != null && plan.cName.equals("GetLastError") && params.length == 0 && returnType.isType("int")) {
 			plan.special = "last_error";
 			return null;
@@ -454,8 +489,19 @@ public class FFMGenerator extends JNIGenerator {
 		plan.dynamic = method.getFlag(FLAG_DYNAMIC);
 		plan.captureLastError = imports != null && CAPTURE_LAST_ERROR.contains(plan.cName);
 		Function function = null;
+		// macOS: objc_msgSend is called through a cast to the function type of the Java signature, and call() through its first parameter
+		boolean castCall = cocoa && !plan.dynamic && (method.getFlag(FLAG_CAST) || method.getName().equals("call"));
 		if (plan.dynamic) {
 			plan.returnKind = javaKind(returnType);
+		} else if (castCall) {
+			plan.returnKind = javaKind(returnType);
+			plan.pointerCall = method.getName().equals("call");
+			if (!plan.pointerCall) {
+				// objc_msgSend_stret is a macro for objc_msgSend on arm64, which the SDK header declares as well
+				String resolved = ctypes.resolveMacros(plan.cName);
+				if (resolved == null) return "no C function declaration (macro or custom C): " + plan.cName;
+				plan.cName = resolved.endsWith("_stret") ? resolved.substring(0, resolved.length() - "_stret".length()) : resolved;
+			}
 		} else {
 			String resolved = ctypes.resolve(plan.cName);
 			if (resolved == null) return "no C function declaration (macro or custom C): " + plan.cName;
@@ -480,11 +526,30 @@ public class FFMGenerator extends JNIGenerator {
 			plan.returnKind = Kind.VOID;
 		}
 
-		for (int i = 0; i < params.length; i++) {
+		int first = 0;
+		if (castCall && method.getName().endsWith("_stret") && params.length > 0 && !params[0].getType().isPrimitive() && !params[0].getType().isArray()) {
+			// arm64 returns the struct in registers or through x8, which the struct return of the descriptor does
+			StructInfo result = struct(params[0].getType().getName());
+			if (result == null) return "struct without layout: " + params[0].getType().getSimpleName();
+			String reason = structLayout(result, new ArrayList<>());
+			if (reason != null) return "struct return: " + reason;
+			result.byValue = true;
+			plan.structReturn = result;
+			plan.arena = true;
+			first = 1;
+		}
+		for (int i = first; i < params.length; i++) {
 			JNIParameter param = params[i];
 			Param p = new Param();
 			p.param = param;
+			p.index = i;
 			p.type = param.getType();
+			if (plan.pointerCall && i == 0) {
+				p.kind = Kind.PTR;
+				p.mode = "funcptr";
+				plan.params.add(p);
+				continue;
+			}
 			String cast = param.getCast();
 			boolean variadic = plan.firstVariadic != -1 && i >= plan.firstVariadic;
 			if (function != null && !variadic) {
@@ -500,8 +565,18 @@ public class FFMGenerator extends JNIGenerator {
 				p.kind = Kind.PTR;
 			} else if (param.getFlag(FLAG_STRUCT)) {
 				// passed by value: the JNI glue dereferences the Java value, a pointer or a struct object
-				if (function == null || variadic) return "struct by value without prototype: " + plan.cName;
-				Kind cKind = ctypes.classify(function.params.get(i));
+				String arrayStruct = cocoa && function == null && p.type.isArray() ? ARRAY_STRUCTS.get(cast.replaceAll("[()*\\s]|const", "")) : null;
+				if (arrayStruct != null) {
+					p.mode = "arrayvalue";
+					p.kind = Kind.STRUCT;
+					p.layout = arrayStruct;
+					plan.arena = true;
+					plan.params.add(p);
+					continue;
+				}
+				boolean objectWithoutPrototype = function == null && cocoa && !p.type.isPrimitive() && !p.type.isArray();
+				if ((function == null && !objectWithoutPrototype) || variadic) return "struct by value without prototype: " + plan.cName;
+				Kind cKind = objectWithoutPrototype ? Kind.STRUCT : ctypes.classify(function.params.get(i));
 				if (p.type.isPrimitive()) {
 					if (!p.type.isType("long") || !(cKind.isInteger() || cKind == Kind.PTR || cKind == Kind.F32 || cKind == Kind.F64)) {
 						return "struct by value of C type: " + function.params.get(i);
@@ -559,6 +634,25 @@ public class FFMGenerator extends JNIGenerator {
 			if (p.mode.equals("array") || p.mode.equals("strings") || p.mode.equals("string") || p.mode.equals("struct")) plan.arena = true;
 			plan.params.add(p);
 		}
+		return null;
+	}
+
+	/** macOS: a constant is read from the exported variable, or is the value the layout probe printed for a macro. */
+	String fillConstant(Plan plan) {
+		if (plan.method.getParameters().length != 0) return "const: has parameters";
+		if (ctypes.hasSymbolVariable(plan.cName)) {
+			String type = ctypes.getVariableType(plan.cName);
+			Kind kind = ctypes.classify(type);
+			if (!(kind.isInteger() || kind == Kind.PTR || kind == Kind.F32 || kind == Kind.F64)) return "const: variable type " + type;
+			plan.special = "const_symbol";
+			plan.constKind = kind;
+			symbols.put(plan.cName, "variable -");
+			return null;
+		}
+		String value = constants.get(plan.cName);
+		if (value == null) return "const: macro or constant without a value";
+		plan.special = "const_value";
+		plan.constValue = value;
 		return null;
 	}
 
@@ -667,10 +761,11 @@ public class FFMGenerator extends JNIGenerator {
 	void generateBody(Plan plan, String holder, String returnJava) {
 		output(plan.arena ? "\ttry (Arena arena = Arena.ofConfined()) {" : "\ttry {");
 		outputln();
-		for (int i = 0; i < plan.params.size(); i++) {
-			Param p = plan.params.get(i);
+		for (Param p : plan.params) {
+			int i = p.index;
 			switch (p.mode) {
 				case "array":
+				case "arrayvalue":
 					outputln("\t\tMemorySegment lparg" + i + " = FFM.copyIn(arena, arg" + i + ");");
 					break;
 				case "string":
@@ -696,7 +791,7 @@ public class FFMGenerator extends JNIGenerator {
 			}
 		}
 		String indent = "\t\t";
-		boolean returns = plan.returnKind != Kind.VOID;
+		boolean returns = plan.returnKind != Kind.VOID && plan.structReturn == null;
 		if (plan.dynamic) {
 			if (returns) outputln("\t\t" + carrier(plan.returnKind) + " rc = 0;");
 			outputln("\t\tif (" + holder + ".MH != null) {");
@@ -707,30 +802,38 @@ public class FFMGenerator extends JNIGenerator {
 			if (!plan.dynamic) output(carrier(plan.returnKind) + " ");
 			output("rc = (" + carrier(plan.returnKind) + ") ");
 		}
+		if (plan.structReturn != null) output("MemorySegment rc = (MemorySegment) ");
 		output(holder + ".MH.invokeExact(");
 		if (plan.captureLastError) output(plan.params.isEmpty() ? "FFMLastError.state()" : "FFMLastError.state(), ");
-		for (int i = 0; i < plan.params.size(); i++) {
-			if (i != 0) output(", ");
-			Param p = plan.params.get(i);
+		if (plan.structReturn != null) output(plan.params.isEmpty() ? "(SegmentAllocator) arena" : "(SegmentAllocator) arena, ");
+		for (int n = 0; n < plan.params.size(); n++) {
+			if (n != 0) output(", ");
+			Param p = plan.params.get(n);
+			int i = p.index;
 			switch (p.mode) {
 				case "sentinel": output("0L"); break;
 				case "value": output(toC(p.type.getName(), p.kind, "arg" + i)); break;
 				case "critical": output("FFM.heap(arg" + i + ")"); break;
 				case "deref": output("FFM.segment(arg" + i + ", " + byteSize(p.kind) + ").get(" + layout(p.kind) + ", 0)"); break;
+				case "funcptr": output("MemorySegment.ofAddress(arg" + i + ")"); break;
 				default: output(p.address ? "lparg" + i + ".address()" : "lparg" + i);
 			}
 		}
 		outputln(");");
 		if (plan.dynamic) outputln("\t\t}");
 		// same order as the JNI setters, so the first of several aliased arrays is copied back last
-		for (int i = plan.params.size() - 1; i >= 0; i--) {
-			Param p = plan.params.get(i);
+		for (int n = plan.params.size() - 1; n >= 0; n--) {
+			Param p = plan.params.get(n);
+			int i = p.index;
 			if (p.param.getFlag(FLAG_NO_OUT)) continue;
 			if (p.mode.equals("array")) {
 				outputln("\t\tFFM.copyOut(lparg" + i + ", arg" + i + ");");
 			} else if (p.mode.equals("struct") || p.mode.equals("byvalue")) {
 				outputln("\t\tif (arg" + i + " != null) " + p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_read(lparg" + i + ", arg" + i + ");");
 			}
+		}
+		if (plan.structReturn != null) {
+			outputln("\t\tif (arg0 != null) " + plan.structReturn.helper() + "." + plan.structReturn.clazz.getSimpleName() + "_read(rc, arg0);");
 		}
 		// a callback may have failed during the call, and JNI let that exception surface here
 		outputln("\t\tFFM.checkCallbackException();");
@@ -746,18 +849,26 @@ public class FFMGenerator extends JNIGenerator {
 		outputln(" {");
 		output("\tstatic final MethodHandle MH = FFM.");
 		if (plan.only != 0 && !plan.dynamic) output("gtk" + plan.only + "Only(FFM.");
-		output(plan.dynamic ? "downcallOptional" : "downcall");
-		output("(" + lookupArgument(plan) + "\"");
-		output(plan.cName);
-		output("\", ");
+		output(plan.dynamic ? "downcallOptional" : plan.pointerCall ? "downcallAddress" : "downcall");
+		output("(");
+		if (!plan.pointerCall) {
+			output(lookupArgument(plan));
+			// x86_64 returns a struct of more than 16 bytes through objc_msgSend_stret
+			if (plan.structReturn != null) output("FFM.stret(\"" + plan.cName + "\", " + plan.structReturn.helper() + "." + plan.structReturn.clazz.getSimpleName() + "_SIZEOF), ");
+			else output("\"" + plan.cName + "\", ");
+		}
 		StringBuilder layouts = new StringBuilder();
 		for (Param p : plan.params) {
+			if (p.mode.equals("funcptr")) continue;
 			if (layouts.length() != 0) layouts.append(", ");
 			boolean segment = p.mode.equals("array") || p.mode.equals("strings") || p.mode.equals("string") || p.mode.equals("struct") || p.mode.equals("critical");
-			if (p.mode.equals("byvalue")) layouts.append(p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_LAYOUT");
+			if (p.mode.equals("arrayvalue")) layouts.append(p.layout);
+			else if (p.mode.equals("byvalue")) layouts.append(p.struct.helper() + "." + p.struct.clazz.getSimpleName() + "_LAYOUT");
 			else layouts.append(segment && !p.address ? "ADDRESS" : layout(p.kind));
 		}
-		if (plan.returnKind == Kind.VOID) {
+		if (plan.structReturn != null) {
+			output("FunctionDescriptor.of(" + plan.structReturn.helper() + "." + plan.structReturn.clazz.getSimpleName() + "_LAYOUT" + (layouts.length() != 0 ? ", " : "") + layouts + ")");
+		} else if (plan.returnKind == Kind.VOID) {
 			output("FunctionDescriptor.ofVoid(" + layouts + ")");
 		} else {
 			output("FunctionDescriptor.of(" + layout(plan.returnKind) + (layouts.length() != 0 ? ", " : "") + layouts + ")");
@@ -775,10 +886,28 @@ public class FFMGenerator extends JNIGenerator {
 	 * Functions of neither kind, the C runtime, resolve through the default lookup of {@code FFM}.
 	 */
 	String lookupArgument(Plan plan) {
+		if (cocoa) {
+			// a dynamic function is searched in the bundle that name_LIB names, as the JNI glue does with CFBundle
+			String bundle = plan.dynamic ? ctypes.getLibrary(plan.cName) : null;
+			symbols.put(plan.cName, (plan.dynamic ? "dynamic " : "function ") + (bundle != null ? bundle : "-"));
+			return bundle != null ? "FFM.bundle(\"" + bundle + "\"), " : "";
+		}
 		if (imports == null) return lookup != null ? "LOOKUP, " : "";
 		String dll = plan.dynamic ? ctypes.getLibrary(plan.cName) : imports.get(plan.cName);
 		symbols.put(plan.cName, dll != null ? dll : "-");
 		return dll != null ? "FFMLibraries.get(\"" + dll + "\"), " : "";
+	}
+
+	/** The Java literal for a value the layout probe printed with <code>%lld</code> or <code>%.17g</code>. */
+	static String literal(String javaType, String value) {
+		switch (javaType) {
+			case "double": return Double.toString(Double.parseDouble(value));
+			case "float": return Float.toString((float) Double.parseDouble(value)) + "f";
+			case "long": return Long.parseLong(value) + "L";
+			case "boolean": return Long.parseLong(value) != 0 ? "true" : "false";
+			case "int": return Integer.toString((int) Long.parseLong(value));
+			default: return "(" + javaType + ") " + Long.parseLong(value);
+		}
 	}
 
 	static int byteSize(Kind kind) {
@@ -795,6 +924,18 @@ public class FFMGenerator extends JNIGenerator {
 		switch (plan.special) {
 			case "address":
 				outputln("\treturn FFM.address(" + lookupArgument(plan) + "\"" + plan.cName + "\");");
+				break;
+			case "const_symbol": {
+				// the value of the exported global variable, such as the NSString* behind NSFontAttributeName
+				String read = "FFM.segment(FFM.address(\"" + plan.cName + "\"), " + byteSize(plan.constKind) + ").get(" + layout(plan.constKind) + ", 0)";
+				outputln("\treturn " + toJava(plan.constKind, plan.method.getReturnType().getTypeSignature3(), read) + ";");
+				break;
+			}
+			case "const_value":
+				outputln("\treturn " + literal(plan.method.getReturnType().getName(), plan.constValue) + ";");
+				break;
+			case "ptr_sizeof":
+				outputln("\treturn (int) ADDRESS.byteSize();");
 				break;
 			case "sizeof_extra": {
 				String name = plan.method.getName();
