@@ -41,7 +41,6 @@ class AccessibleObject {
 	static long keybindingPtr = -1;
 	static long namePtr = -1;
 	static final Map<LONG, AccessibleObject> AccessibleObjects = new HashMap<> (9);
-	static final boolean DEBUG = Device.DEBUG;
 
 	AccessibleObject (long type, long widget, Accessible accessible, boolean isLightweight) {
 		super ();
@@ -68,10 +67,6 @@ class AccessibleObject {
 		this.accessible = accessible;
 		this.isLightweight = isLightweight;
 		AccessibleObjects.put (new LONG (atkHandle), this);
-	}
-
-	static void print (String str) {
-		System.out.println (str);
 	}
 
 	static int size(Collection<?> listeners) {
@@ -2697,62 +2692,6 @@ class AccessibleObject {
 		long ptr = OS.g_malloc(buffer.length);
 		C.memmove(ptr, buffer, buffer.length);
 		return ptr;
-	}
-
-	/**
-	 * Get the bounding box containing the glyph representing the character
-	 * at a particular text offset.
-	 *
-	 * This is the implementation of an ATK function which
-	 * queries the Accessible listeners at the Java level. On GTK3 the ATK
-	 * interfaces are implemented in os_custom.c and access this method via
-	 * JNI.
-	 *
-	 * @param atkObject a pointer to the current AtkObject
-	 * @param offset the offset of the text character for which bounding info
-	 * is required
-	 * @param x the pointer for the x coordinate of the bounding box
-	 * @param y the pointer for the y coordinate of the bounding box
-	 * @param width the pointer for the width of the bounding box
-	 * @param height the pointer for the height of the bounding box
-	 * @param coords long int representing the AtkCoordType for the coordinates
-	 *
-	 * @return a long int representation of 0 indicating that the method completed
-	 * successfully
-	 */
-	static long atkText_get_character_extents (long atkObject, long offset,
-			long x, long y, long width, long height, long coords) {
-		AccessibleObject object = getAccessibleObject (atkObject);
-		if (object != null) {
-			Accessible accessible = object.accessible;
-			List<AccessibleTextExtendedListener> listeners = accessible.accessibleTextExtendedListeners;
-			int length = size(listeners);
-			if (length > 0) {
-				AccessibleTextEvent event = new AccessibleTextEvent(accessible);
-				event.start = (int)offset;
-				event.end = (int)(offset + 1);
-				for (int i = 0; i < length; i++) {
-					AccessibleTextExtendedListener listener = listeners.get(i);
-					listener.getTextBounds(event);
-				}
-				int[] topWindowX = new int [1], topWindowY = new int [1];
-				if (coords == ATK.ATK_XY_WINDOW) {
-					windowPoint (object, topWindowX, topWindowY);
-					event.x -= topWindowX [0];
-					event.y -= topWindowY [0];
-				}
-				C.memmove (x, new int[]{event.x}, 4);
-				C.memmove (y, new int[]{event.y}, 4);
-				C.memmove (width, new int[]{event.width}, 4);
-				C.memmove (height, new int[]{event.height}, 4);
-				return 0;
-			}
-		}
-		AtkTextIface iface = getParentTextIface (atkObject);
-		if (iface != null && iface.get_character_extents != 0) {
-			OS.call (iface.get_character_extents, atkObject, offset, x, y, width, height, coords);
-		}
-		return 0;
 	}
 
 	/**
