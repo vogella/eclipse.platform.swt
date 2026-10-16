@@ -24,7 +24,7 @@ import org.eclipse.swt.tools.internal.FFMGenerator.*;
  *
  * <pre>
  * probe    &lt;mainClass&gt; &lt;ast&gt; &lt;out.c&gt;
- * generate &lt;outputRoot&gt; &lt;reportDir&gt; [--imports &lt;imports.txt&gt;] (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)... [--gtk4 (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)...]
+ * generate &lt;outputRoot&gt; &lt;reportDir&gt; [--imports &lt;imports.txt&gt;] [--cocoa] (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)... [--gtk4 (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)...]
  * rewrite  &lt;supported.txt&gt; &lt;sourceRoot&gt; &lt;outputRoot&gt;
  * </pre>
  *
@@ -34,6 +34,8 @@ import org.eclipse.swt.tools.internal.FFMGenerator.*;
  * <code>--gtk4</code> are the GTK4 compile of the units before it: a natives class that has none is generated from
  * the GTK3 compile, one that only has a GTK4 compile (<code>GTK4</code>) from that, and one with both serves
  * GTK3 and GTK4 and gets a run time choice wherever the C ABI or a struct layout differs.
+ * <code>--cocoa</code> generates for macOS, where <code>CONST.</code> entries of a layout file give the values of
+ * the constants that have no exported variable.
  */
 public class FFMGeneratorApp {
 
@@ -56,6 +58,7 @@ public class FFMGeneratorApp {
 	static void probe(String mainClass, String ast, String outFile) throws IOException {
 		JNIGeneratorApp app = load(mainClass);
 		FFMProbeGenerator generator = new FFMProbeGenerator(new CTypes(ast));
+		generator.setNativesClasses(app.getNativesClasses(app.getClasses()));
 		generator.setMainClass(app.getMainClass());
 		generator.setClasses(app.getStructureClasses(app.getClasses()));
 		generator.setMetaData(app.getMetaData());
@@ -73,9 +76,15 @@ public class FFMGeneratorApp {
 	}
 
 	static CTypes readCTypes(String ast) throws IOException {
+		return readCTypes(ast, false);
+	}
+
+	static CTypes readCTypes(String ast, boolean objc) throws IOException {
 		if (ast.equals("-")) return null;
 		Path macros = Paths.get(ast.replaceAll("\\.ast$", "") + ".macros");
-		return new CTypes(ast, Files.exists(macros) ? macros.toString() : null);
+		CTypes ctypes = new CTypes(ast, Files.exists(macros) ? macros.toString() : null);
+		ctypes.setObjc(objc);
+		return ctypes;
 	}
 
 	/** Reads <code>function dll</code> lines, the first library naming a function wins as with the linker. */
@@ -89,6 +98,10 @@ public class FFMGeneratorApp {
 	}
 
 	static void generate(String outputRoot, String reportDir, String importsFile, List<String[]> units, List<String[]> units4) throws IOException {
+		generate(outputRoot, reportDir, importsFile, units, units4, false);
+	}
+
+	static void generate(String outputRoot, String reportDir, String importsFile, List<String[]> units, List<String[]> units4, boolean cocoa) throws IOException {
 		Map<String, String[]> alternatives = new HashMap<>();
 		for (String[] unit : units4) alternatives.put(unit[0], unit);
 		Set<String> known = new HashSet<>();
@@ -154,7 +167,8 @@ public class FFMGeneratorApp {
 		StringBuilder summary = new StringBuilder();
 		for (int u = 0; u < units.size(); u++) {
 			JNIGeneratorApp app = apps.get(u);
-			FFMGenerator generator = new FFMGenerator(readCTypes(units.get(u)[1]), structs);
+			FFMGenerator generator = new FFMGenerator(readCTypes(units.get(u)[1], cocoa), structs);
+			generator.setCocoa(cocoa);
 			String[] unit4 = alternatives.get(units.get(u)[0]);
 			if (unit4 != null) generator.setGtk4(only4.contains(units.get(u)[0]) ? null : readCTypes(unit4[1]), only4.contains(units.get(u)[0]));
 			generator.setImports(imports);
@@ -163,6 +177,11 @@ public class FFMGeneratorApp {
 				if (k.startsWith("EXTRA.")) extras.put(k.substring("EXTRA.".length()), v);
 			});
 			generator.setExtras(extras);
+			Map<String, String> constants = new HashMap<>();
+			readLayout(units.get(u)[2]).forEach((k, v) -> {
+				if (k.startsWith("CONST.")) constants.put(k.substring("CONST.".length()), v);
+			});
+			generator.setConstants(constants);
 			generator.setMetaData(app.getMetaData());
 			generator.setMainClass(app.getMainClass());
 			for (JNIClass clazz : app.getNativesClasses(app.getClasses())) {
@@ -239,7 +258,7 @@ public class FFMGeneratorApp {
 			differences.forEach((k, v) -> lines.add("  " + k + "\t" + v));
 			Files.write(Paths.get(reportDir, "gtk4-differences.txt"), lines);
 		}
-		if (imports != null) {
+		if (imports != null || cocoa) {
 			// "-": not in an import library, resolved through the default lookup (C runtime)
 			Files.write(Paths.get(reportDir, "symbols.txt"), symbols.entrySet().stream().map(e -> e.getKey() + "\t" + e.getValue()).collect(Collectors.toList()));
 		}
@@ -247,6 +266,13 @@ public class FFMGeneratorApp {
 			.collect(Collectors.groupingBy(r -> r.substring(0, r.indexOf(':')), TreeMap::new, Collectors.counting()));
 		summary.append(String.format("%nTotal FFM %d, JNI %d%n%nKept on JNI by reason:%n", supported.size(), unsupported.size()));
 		reasons.forEach((r, c) -> summary.append(String.format("%6d  %s%n", c, r)));
+		if (cocoa) {
+			// the callbacks are replaced by FFMCallback as a whole, every other native is listed
+			summary.append(String.format("%nNot generated (the CALLBACK_ natives are left out):%n"));
+			unsupported.forEach((k, v) -> {
+				if (!v.startsWith("callback:")) summary.append(String.format("  %s  %s%n", k, v));
+			});
+		}
 		if (!units4.isEmpty()) {
 			Map<String, Long> kinds = differences.values().stream()
 				.collect(Collectors.groupingBy(v -> v.startsWith("GTK3 only") ? "GTK3 only (no declaration in the GTK4 headers)" : v.startsWith("GTK4 only") ? "GTK4 only" : "C ABI differs, run time choice", TreeMap::new, Collectors.counting()));
@@ -376,6 +402,11 @@ public class FFMGeneratorApp {
 					imports = args[4];
 					first = 5;
 				}
+				boolean cocoa = false;
+				if (args.length > first && args[first].equals("--cocoa")) {
+					cocoa = true;
+					first++;
+				}
 				List<String[]> target = units;
 				for (int i = first; i < args.length;) {
 					if (args[i].equals("--gtk4")) {
@@ -386,7 +417,7 @@ public class FFMGeneratorApp {
 						i += 3;
 					}
 				}
-				generate(args[1], args[2], imports, units, units4);
+				generate(args[1], args[2], imports, units, units4, cocoa);
 				break;
 			case "rewrite":
 				rewrite(args[1], args[2], args[3], Arrays.copyOfRange(args, 4, args.length));

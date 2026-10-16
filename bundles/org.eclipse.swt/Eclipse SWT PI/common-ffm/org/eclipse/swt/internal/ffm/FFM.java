@@ -26,8 +26,10 @@ public final class FFM {
 
 	static final boolean WINDOWS = System.getProperty("os.name", "").startsWith("Windows");
 
+	static final boolean MACOS = System.getProperty("os.name", "").startsWith("Mac");
+
 	/** Whether SWT runs on GTK4, decided the way <code>OS</code> picks <code>swt-pi4</code> or <code>swt-pi3</code>. */
-	public static final boolean GTK4 = !WINDOWS && useGtk4();
+	public static final boolean GTK4 = !WINDOWS && !MACOS && useGtk4();
 
 	/** Libraries searched after the SWT libraries, whose dlopen handles already cover their dependencies. */
 	static final String[] GTK_LIBRARIES = {
@@ -53,7 +55,39 @@ public final class FFM {
 		"urlmon.dll", "wininet.dll", "propsys.dll", "gdiplus.dll", "comctl32.dll",
 	};
 
-	static final String[] LIBRARIES = WINDOWS ? WIN32_LIBRARIES : GTK4 ? GTK4_LIBRARIES : GTK_LIBRARIES;
+	/**
+	 * The libraries swt-pi-cocoa links against (make_macosx.mak) and the ones the Carbon, ApplicationServices and
+	 * LaunchServices functions live in, by the path dlopen resolves from the shared cache. libobjc comes first.
+	 */
+	static final String[] MACOS_LIBRARIES = {
+		"/usr/lib/libobjc.A.dylib",
+		"/System/Library/Frameworks/Cocoa.framework/Cocoa",
+		"/System/Library/Frameworks/AppKit.framework/AppKit",
+		"/System/Library/Frameworks/Foundation.framework/Foundation",
+		"/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation",
+		"/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",
+		"/System/Library/Frameworks/CoreServices.framework/CoreServices",
+		"/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices",
+		"/System/Library/Frameworks/Carbon.framework/Carbon",
+		"/System/Library/Frameworks/CoreText.framework/CoreText",
+		"/System/Library/Frameworks/Security.framework/Security",
+		"/System/Library/Frameworks/SecurityInterface.framework/SecurityInterface",
+		"/System/Library/Frameworks/JavaScriptCore.framework/JavaScriptCore",
+		"/System/Library/Frameworks/WebKit.framework/WebKit",
+	};
+
+	/** Frameworks by the bundle identifier that the <code>name_LIB</code> macros of the cocoa JNI glue use. */
+	static final Map<String, String> BUNDLES = Map.of(
+		"com.apple.Carbon", "/System/Library/Frameworks/Carbon.framework/Carbon",
+		"com.apple.Cocoa", "/System/Library/Frameworks/Cocoa.framework/Cocoa",
+		"com.apple.Foundation", "/System/Library/Frameworks/Foundation.framework/Foundation",
+		"com.apple.CoreGraphics", "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",
+		"com.apple.CoreServices", "/System/Library/Frameworks/CoreServices.framework/CoreServices",
+		"com.apple.LaunchServices", "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/LaunchServices",
+		"com.apple.ApplicationServices", "/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices",
+		"com.apple.ApplicationServices.ATS", "/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices");
+
+	static final String[] LIBRARIES = WINDOWS ? WIN32_LIBRARIES : MACOS ? MACOS_LIBRARIES : GTK4 ? GTK4_LIBRARIES : GTK_LIBRARIES;
 
 	static final SymbolLookup LOOKUP = createLookup();
 
@@ -113,7 +147,7 @@ public final class FFM {
 	static SymbolLookup createLookup() {
 		SymbolLookup lookup = SymbolLookup.loaderLookup();
 		for (String library : LIBRARIES) {
-			if (WINDOWS) {
+			if (WINDOWS || MACOS) {
 				lookup = lookup.or(lazy(library));
 				continue;
 			}
@@ -128,7 +162,8 @@ public final class FFM {
 
 	/**
 	 * Loads <code>library</code> when a lookup first reaches it. comctl32 has to be loaded after
-	 * <code>OS</code> activated the SWT manifest, or it resolves to version 5 instead of 6.
+	 * <code>OS</code> activated the SWT manifest, or it resolves to version 5 instead of 6; on macOS the
+	 * frameworks that no call reaches stay unloaded.
 	 */
 	static SymbolLookup lazy(String library) {
 		return new SymbolLookup() {
@@ -150,6 +185,31 @@ public final class FFM {
 				return lookup.find(name);
 			}
 		};
+	}
+
+	private static final Map<String, SymbolLookup> BUNDLE_LOOKUPS = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/**
+	 * macOS: a lookup that searches the framework of a bundle identifier first, then every framework SWT uses, so that
+	 * a function the bundle only re-exports still resolves. A missing symbol is absent, as for CFBundle.
+	 */
+	public static SymbolLookup bundle(String identifier) {
+		return BUNDLE_LOOKUPS.computeIfAbsent(identifier, id -> {
+			String path = BUNDLES.get(id);
+			return path == null ? LOOKUP : lazy(path).or(LOOKUP);
+		});
+	}
+
+	static final boolean X86_64 = System.getProperty("os.arch", "").matches("x86_64|amd64");
+
+	/** x86_64 returns a struct of more than 16 bytes through <code>objc_msgSend_stret</code>, arm64 always through <code>objc_msgSend</code>. */
+	public static String stret(String name, long size) {
+		return X86_64 && size > 16 ? name + "_stret" : name;
+	}
+
+	/** A handle taking the address of the function to call as its first parameter. */
+	public static MethodHandle downcallAddress(FunctionDescriptor descriptor, Linker.Option... options) {
+		return LINKER.downcallHandle(descriptor, options);
 	}
 
 	/**
