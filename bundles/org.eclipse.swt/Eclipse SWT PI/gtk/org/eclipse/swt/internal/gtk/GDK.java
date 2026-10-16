@@ -755,12 +755,6 @@ public class GDK extends OS {
 	 * @param property cast=(const gchar *)
 	 */
 	public static final native long gdk_rgba_parse(GdkRGBA rgba, byte[] property);
-	/**
-	 * @param clipboard cast=(GdkClipboard *)
-	 * @param provider cast=(GdkContentProvider *)
-	 */
-	/* [GTK4 only, if-def'd in os.h] */
-	public static final native long gdk_clipboard_set_content(long clipboard, long provider);
 
 
 	/* GdkDisplay */
