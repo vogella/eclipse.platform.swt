@@ -4724,7 +4724,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 				}
 
 				touches[currTouchIndex++] = fakeTouchUp;
-				currentTouches.removeObject(activeTouch);
+				currentTouches.removeObject(touch);
 			}
 		}
 	}
