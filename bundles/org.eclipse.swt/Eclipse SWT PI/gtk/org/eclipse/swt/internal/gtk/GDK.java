@@ -45,7 +45,6 @@ public class GDK extends OS {
 	public static final int GDK_CONFIGURE = 13;
 	public static final int GDK_CONTROL_MASK = 0x4;
 	public static final int GDK_CROSSING_NORMAL = 0;
-	public static final int GDK_CROSSING_GRAB = 1;
 	public static final int GDK_CROSSING_UNGRAB = 2;
 	public static final int GDK_Break = 0xff6b;
 	public static final int GDK_Caps_Lock = 0xffE5;
@@ -103,7 +102,6 @@ public class GDK extends OS {
 	public static final int GDK_GRAB_SUCCESS = 0x0;
 	public static final int GDK_GRAVITY_NORTH_WEST = 1;
 	public static final int GDK_Help = 0xFF6A;
-	public static final int GDK_HINT_MIN_SIZE = 1 << 1;
 	public static final int GDK_HINT_MAX_SIZE = 1 << 2;
 	public static final int GDK_Home = 0xff50;
 	public static final int GDK_INPUT_ONLY = 1;
@@ -184,12 +182,10 @@ public class GDK extends OS {
 	public static final int GDK_Return = 0xff0d;
 	public static final int GDK_Right = 0xff53;
 	public static final int GDK_space = 0x20;
-	public static final int GDK_SEAT_CAPABILITY_NONE = 0;
 	public static final int GDK_SEAT_CAPABILITY_POINTER = 1 << 0;
 	public static final int GDK_SEAT_CAPABILITY_TOUCH = 1 << 1;
 	public static final int GDK_SEAT_CAPABILITY_TABLET_STYLUS = 1 << 2;
 	public static final int GDK_SEAT_CAPABILITY_KEYBOARD = 1 << 3;
-	public static final int GDK_SEAT_CAPABILITY_TABLET_PAD = 1 << 4;
 	public static final int GDK_SEAT_CAPABILITY_ALL_POINTING = GDK_SEAT_CAPABILITY_POINTER | GDK_SEAT_CAPABILITY_TOUCH | GDK_SEAT_CAPABILITY_TABLET_STYLUS;
 	public static final int GDK_SEAT_CAPABILITY_ALL = GDK_SEAT_CAPABILITY_ALL_POINTING | GDK_SEAT_CAPABILITY_KEYBOARD;
 	public static final int GDK_SCROLL_UP = 0;
@@ -250,11 +246,6 @@ public class GDK extends OS {
 	 */
 	/* [GTK3/GTK4, GTK3 uses GdkScreen but GTK4 uses GdkX11Screen -- method signature otherwise identical] */
 	public static final native long gdk_x11_screen_lookup_visual(long screen, int xvisualid);
-	/**
-	 * @method flags=dynamic
-	 */
-	/* [GTK3/GTK4, GTK3 uses GdkScreen but GTK4 uses GdkX11Screen -- method signature otherwise identical] */
-	public static final native long gdk_x11_screen_get_window_manager_name(long screen);
 	/**
 	* @param gdkwindow cast=(GdkWindow *)
 	*/
@@ -377,11 +368,6 @@ public class GDK extends OS {
 	 */
 	public static final native long gdk_cursor_new_from_texture(long texture, int x, int y, long fallback);
 	/**
-	 * @method flags=dynamic
-	 * @param display cast=(GdkDisplay *)
-	 */
-	public static final native long gdk_x11_display_get_default_group(long display);
-	/**
 	 *  @param window cast=(GdkWindow *)
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
@@ -473,8 +459,6 @@ public class GDK extends OS {
 
 	/* GDK Events (GTK4 only, if-def'd in os.h) */
 	/** @param event cast=(GdkEvent *) */
-	public static final native long gdk_event_ref(long event);
-	/** @param event cast=(GdkEvent *) */
 	public static final native void gdk_event_unref(long event);
 	/**
 	 * @param event cast=(GdkEvent *)
@@ -483,13 +467,7 @@ public class GDK extends OS {
 	 */
 	public static final native boolean gdk_event_get_position(long event, double[] px, double[] py);
 	/** @param event cast=(GdkEvent *) */
-	public static final native int gdk_crossing_event_get_mode(long event);
-	/** @param event cast=(GdkEvent *) */
 	public static final native int gdk_button_event_get_button(long event);
-	/** @param event cast=(GdkEvent *) */
-	public static final native boolean gdk_focus_event_get_in(long event);
-	/** @param event cast=(GdkEvent *) */
-	public static final native int gdk_key_event_get_keycode(long event);
 	/** @param event cast=(GdkEvent *) */
 	public static final native int gdk_key_event_get_keyval(long event);
 	/** @param event cast=(GdkEvent *) */
@@ -582,8 +560,6 @@ public class GDK extends OS {
 	public static final native boolean gdk_keymap_get_entries_for_keyval(long keymap, int keyval, long [] keys, int[] n_keys);
 	public static final native long gdk_keyval_to_lower(long keyval);
 	public static final native long gdk_keyval_to_unicode(long keyval);
-	/** @param keyval cast=(guint) */
-	public static final native long gdk_keyval_name(int keyval);
 	/**
 	 * @method flags=dynamic
 	 */
@@ -627,11 +603,6 @@ public class GDK extends OS {
 	 * @method flags=ignore_deprecations
 	 */
 	public static final native long gdk_pixbuf_animation_get_static_image(long animation);
-	/**
-	 * @param src_pixbuf cast=(GdkPixbuf *)
-	 * @param dest_pixbuf cast=(GdkPixbuf *)
-	 */
-	public static final native void gdk_pixbuf_copy_area(long src_pixbuf, int src_x, int src_y, int width, int height, long dest_pixbuf, int dest_x, int dest_y);
 	/** @param pixbuf cast=(const GdkPixbuf *) */
 	public static final native boolean gdk_pixbuf_get_has_alpha(long pixbuf);
 	/** @param pixbuf cast=(const GdkPixbuf *) */
@@ -719,12 +690,6 @@ public class GDK extends OS {
 	 * @param texture cast=(GdkTexture *)
 	 */
 	public static final native long gdk_pixbuf_get_from_texture(long texture);
-	/**
-	 * @method flags=dynamic
-	 * @param surface cast=(cairo_surface_t *)
-	 */
-	public static final native long gdk_pixbuf_get_from_surface(long surface, int src_x, int src_y, int width, int height);
-
 
 	/* GdkDevice */
 	/**@param device cast=(GdkDevice *) */
@@ -831,11 +796,6 @@ public class GDK extends OS {
 	 * @param display cast=(GdkDisplay *)
 	 */
 	public static final native long gdk_display_get_monitor(long display, int monitor_num);
-	/**
-	 * @method flags=dynamic
-	 * @param display cast=(GdkDisplay *)
-	 */
-	public static final native boolean gdk_display_supports_cursor_color(long display);
 	/**
 	 * @method flags=dynamic
 	 * @param display cast=(GdkDisplay *)
@@ -1034,9 +994,6 @@ public class GDK extends OS {
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native void gdk_window_destroy(long window);
-	/** @param window cast=(GdkSurface *) */
-	/* [GTK4 only, if-def'd in os.h] */
-	public static final native void gdk_surface_destroy(long window);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native long gdk_window_get_children(long window);
@@ -1068,15 +1025,6 @@ public class GDK extends OS {
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native long gdk_window_get_device_position(long window, long device, int[] x, int[] y, int[] mask);
-	/**
-	 * @param surface cast=(GdkSurface *)
-	 * @param device cast=(GdkDevice *)
-	 * @param x cast=(double *)
-	 * @param y cast=(double *)
-	 * @param mask cast=(GdkModifierType *)
-	 */
-	/* [GTK4 only, if-def'd in os.h] */
-	public static final native void gdk_surface_get_device_position(long surface, long device, double[] x, double[] y, int[] mask);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native long gdk_window_get_parent(long window);
@@ -1119,28 +1067,12 @@ public class GDK extends OS {
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native void gdk_window_move_resize(long window, int x, int y, int width, int height);
-	/**
-	 * @method flags=dynamic
-	 * @param display cast=(GdkDisplay *)
-	 */
-	/* [GTK4 only, if-def'd in os.h] */
-	public static final native long gdk_surface_new_toplevel(long display);
-	/** @param parent cast=(GdkSurface *) */
-	/* [GTK4 only, if-def'd in os.h] */
-	public static final native long gdk_surface_new_popup(long parent, boolean autohide);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native void gdk_window_lower(long window);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native void gdk_window_raise(long window);
-	/**
-	 * @method flags=dynamic
-	 * @param toplevel cast=(GdkToplevel *)
-	 * @param layout cast=(GdkToplevelLayout *)
-	 * */
-	/* [GTK4 only] */
-	public static final native boolean gdk_toplevel_present(long toplevel, int width, int height, long layout);
 	/** @param window cast=(GdkWindow *) */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native void gdk_window_resize(long window, int width, int height);
@@ -1157,12 +1089,6 @@ public class GDK extends OS {
 	 */
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native void gdk_window_set_cursor(long window, long cursor);
-	/**
-	 * @param surface cast=(GdkSurface *)
-	 * @param cursor cast=(GdkCursor *)
-	 */
-	/* [GTK4 only, if-def'd in os.h] */
-	public static final native void gdk_surface_set_cursor(long surface, long cursor);
 	/**
 	 * @param window cast=(GdkWindow *)
 	 * @param decorations cast=(GdkWMDecoration)
@@ -1197,11 +1123,6 @@ public class GDK extends OS {
 	/* [GTK3 only, if-def'd in os.h] */
 	public static final native void gdk_window_show_unraised(long window);
 
-
-	/* GdkToplevelLayout [GTK4 only] */
-	/** @method flags=dynamic */
-	public static final native long gdk_toplevel_layout_new(int min_width, int min_height);
-
 	/* GdkPopup [GTK4 only] */
 	/** @param popup cast=(GdkPopup *) */
 	public static final native long gdk_popup_get_parent(long popup);
@@ -1209,19 +1130,6 @@ public class GDK extends OS {
 	public static final native int gdk_popup_get_position_x(long popup);
 	/** @param popup cast=(GdkPopup *) */
 	public static final native int gdk_popup_get_position_y(long popup);
-	/**
-	 * @param popup cast=(GdkPopup *)
-	 * @param layout cast=(GdkPopupLayout *)
-	 */
-	public static final native boolean gdk_popup_present(long popup, int width, int height, long layout);
-
-	/* GdkPopupLayout [GTK4 only] */
-	/**
-	 * @param anchor_rect cast=(const GdkRectangle *)
-	 * @param rect_anchor cast=(GdkGravity)
-	 * @param surface_anchor cast=(GdkGravity)
-	 */
-	public static final native long gdk_popup_layout_new(GdkRectangle anchor_rect, int rect_anchor, int surface_anchor);
 
 	public static long gdk_get_pointer (long display) {
 		long default_seat = GDK.gdk_display_get_default_seat(display);
