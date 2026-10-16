@@ -86,11 +86,6 @@ static void chmod(String permision, String path) {
 	}
 }
 
-/* Use method instead of in-lined constants to avoid compiler warnings */
-static long longConst() {
-	return 0x1FFFFFFFFL;
-}
-
 static int parseVersion(String version) {
 	if (version == null) return 0;
 	int major = 0, minor = 0, micro = 0;
