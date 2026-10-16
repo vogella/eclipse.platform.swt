@@ -109,7 +109,6 @@
 #define NO_gdk_1x11_1drawable_1get_1xdisplay
 #define NO_gdk_1x11_1drawable_1get_1xid
 #define NO_gdk_1x11_1get_1default_1xdisplay
-#define NO_gdk_1x11_1screen_1get_1window_1manager_1name
 #define NO_gdk_1x11_1screen_1lookup_1visual
 #define NO_gdk_1x11_1visual_1get_1xvisual
 #define NO_gdk_1x11_1window_1get_1xid
@@ -265,13 +264,9 @@
 
 // No GdkSurface on GTK3
 #define NO_gdk_1surface_1create_1similar_1surface
-#define NO_gdk_1surface_1destroy
 #define NO_gdk_1surface_1get_1origin
 #define NO_gdk_1surface_1invalidate_1rect
 #define NO_gdk_1surface_1get_1display
-#define NO_gdk_1surface_1set_1cursor
-#define NO_gdk_1surface_1new_1popup
-#define NO_gdk_1surface_1get_1device_1position
 #define NO_gdk_1display_1get_1monitor_1at_1surface
 #define NO_gdk_1surface_1get_1width
 #define NO_gdk_1surface_1get_1height
@@ -281,7 +276,6 @@
 #define NO_gdk_1event_1get_1surface
 
 // No GdkToplevel on GTK3
-#define NO_gdk_1toplevel_1present
 
 // No GdkClipboard on GTK3
 #define NO_gdk_1clipboard_1set_1content
@@ -304,17 +298,13 @@
 #define NO_gdk_1texture_1new_1from_1file___3B_3J
 
 // GdkEvent functions which do not exist on GTK3
-#define NO_gdk_1focus_1event_1get_1in
-#define NO_gdk_1crossing_1event_1get_1mode
 #define NO_gdk_1button_1event_1get_1button
 #define NO_gdk_1event_1get_1position
 #define NO_gdk_1key_1event_1get_1keyval
-#define NO_gdk_1key_1event_1get_1keycode
 #define NO_gdk_1scroll_1event_1get_1deltas
 #define NO_gdk_1scroll_1event_1get_1direction
 #define NO_gdk_1event_1get_1modifier_1state
 #define NO_gdk_1key_1event_1get_1layout
-#define NO_gdk_1event_1ref
 #define NO_gdk_1event_1unref
 
 // GdkCursor API changes
@@ -324,8 +314,6 @@
 #define NO_gdk_1popup_1get_1parent
 #define NO_gdk_1popup_1get_1position_1x
 #define NO_gdk_1popup_1get_1position_1y
-#define NO_gdk_1popup_1layout_1new
-#define NO_gdk_1popup_1present
 
 // SWTFixed changes
 #define NO_swt_1fixed_1add
