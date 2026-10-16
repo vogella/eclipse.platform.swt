@@ -10,7 +10,6 @@
  *******************************************************************************/
 package org.eclipse.swt.internal.image;
 
-import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 
 public interface ImageColorTransformer {
@@ -49,16 +48,6 @@ public interface ImageColorTransformer {
 			int blueResult = (int) Math.min(blueFactor * blue, 255.0f);
 			int alphaResult = (int) Math.min(alphaFactor * alpha, 255.0f);
 			return new RGBA(redResult, greenResult, blueResult, alphaResult);
-		};
-	}
-
-	public static ImageColorTransformer forIntensityThreshold(Device device) {
-		RGBA lowIntensity = device.getSystemColor(SWT.COLOR_WIDGET_NORMAL_SHADOW).getRGBA();
-		RGBA highIntensity = device.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND).getRGBA();
-		return (red, green, blue, alpha) -> {
-			int intensity = red * red + green * green + blue * blue;
-			RGBA usedGraytone = intensity < 98304 ? lowIntensity : highIntensity;
-			return new RGBA(usedGraytone.rgb.red, usedGraytone.rgb.green, usedGraytone.rgb.blue, alpha);
 		};
 	}
 
