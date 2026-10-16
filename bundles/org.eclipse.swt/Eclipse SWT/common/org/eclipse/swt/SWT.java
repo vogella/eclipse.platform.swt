@@ -3735,6 +3735,19 @@ public class SWT {
 	public static final int COLOR_WIDGET_DISABLED_FOREGROUND = 39;
 
 	/**
+	 * System color used to paint accented areas (value is 40).
+	 * <p>
+	 * This is the accent color of the operating system. It is updated together with the other
+	 * system colors when the system settings change, see {@link #Settings}. Where
+	 * no accent color is available, the list selection color is used instead. On
+	 * GTK the value may only be refreshed when the theme changes.
+	 * </p>
+	 *
+	 * @since 3.136
+	 */
+	public static final int COLOR_WIDGET_ACCENT = 40;
+
+	/**
 	 * Draw constant indicating whether the drawing operation
 	 * should fill the background (value is 1&lt;&lt;0).
 	 */
