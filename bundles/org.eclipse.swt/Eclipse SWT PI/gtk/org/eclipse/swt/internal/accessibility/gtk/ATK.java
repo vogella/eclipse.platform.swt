@@ -24,7 +24,6 @@ public class ATK extends OS {
 	}
 
 	/** Constants */
-	public static final int ATK_RELATION_NULL = 0;
 	public static final int ATK_RELATION_CONTROLLED_BY = 1;
 	public static final int ATK_RELATION_CONTROLLER_FOR = 2;
 	public static final int ATK_RELATION_LABEL_FOR = 3;
@@ -92,7 +91,6 @@ public class ATK extends OS {
 	public static final int ATK_STATE_ARMED = 2;
 	public static final int ATK_STATE_BUSY = 3;
 	public static final int ATK_STATE_CHECKED = 4;
-	public static final int ATK_STATE_DEFUNCT = 5;
 	public static final int ATK_STATE_EDITABLE = 6;
 	public static final int ATK_STATE_ENABLED = 7;
 	public static final int ATK_STATE_EXPANDED = 9;
@@ -106,7 +104,6 @@ public class ATK extends OS {
 	public static final int ATK_STATE_SELECTED = 21;
 	public static final int ATK_STATE_SHOWING = 23;
 	public static final int ATK_STATE_SINGLE_LINE = 24;
-	public static final int ATK_STATE_TRANSIENT = 26;
 	public static final int ATK_STATE_REQUIRED = 32;
 	public static final int ATK_STATE_INVALID_ENTRY = 33;
 	public static final int ATK_STATE_SUPPORTS_AUTOCOMPLETION = 34;
@@ -126,33 +123,17 @@ public class ATK extends OS {
 	public static final int ATK_TEXT_GRANULARITY_SENTENCE = 2;
 	public static final int ATK_TEXT_GRANULARITY_LINE = 3;
 	public static final int ATK_TEXT_GRANULARITY_PARAGRAPH = 4;
-	public static final int ATK_TEXT_CLIP_NONE = 0;
-	public static final int ATK_TEXT_CLIP_MIN = 1;
-	public static final int ATK_TEXT_CLIP_MAX = 2;
-	public static final int ATK_TEXT_CLIP_BOTH = 3;
 	public static final int ATK_TEXT_ATTR_LEFT_MARGIN = 1;
 	public static final int ATK_TEXT_ATTR_RIGHT_MARGIN = 2;
 	public static final int ATK_TEXT_ATTR_INDENT = 3;
-	public static final int ATK_TEXT_ATTR_INVISIBLE = 4;
-	public static final int ATK_TEXT_ATTR_EDITABLE = 5;
-	public static final int ATK_TEXT_ATTR_PIXELS_ABOVE_LINES = 6;
-	public static final int ATK_TEXT_ATTR_PIXELS_BELOW_LINES = 7;
-	public static final int ATK_TEXT_ATTR_PIXELS_INSIDE_WRAP = 8;
-	public static final int ATK_TEXT_ATTR_BG_FULL_HEIGHT = 9;
 	public static final int ATK_TEXT_ATTR_RISE = 10;
 	public static final int ATK_TEXT_ATTR_UNDERLINE = 11;
 	public static final int ATK_TEXT_ATTR_STRIKETHROUGH = 12;
 	public static final int ATK_TEXT_ATTR_SIZE = 13;
-	public static final int ATK_TEXT_ATTR_SCALE = 14;
 	public static final int ATK_TEXT_ATTR_WEIGHT = 15;
-	public static final int ATK_TEXT_ATTR_LANGUAGE = 16;
 	public static final int ATK_TEXT_ATTR_FAMILY_NAME = 17;
 	public static final int ATK_TEXT_ATTR_BG_COLOR = 18;
 	public static final int ATK_TEXT_ATTR_FG_COLOR = 19;
-	public static final int ATK_TEXT_ATTR_BG_STIPPLE = 20;
-	public static final int ATK_TEXT_ATTR_FG_STIPPLE = 21;
-	public static final int ATK_TEXT_ATTR_WRAP_MODE = 22;
-	public static final int ATK__TEXT_ATTR_DIRECTION = 23;
 	public static final int ATK_TEXT_ATTR_JUSTIFICATION = 24;
 	public static final int ATK_TEXT_ATTR_STRETCH = 25;
 	public static final int ATK_TEXT_ATTR_VARIANT = 26;
