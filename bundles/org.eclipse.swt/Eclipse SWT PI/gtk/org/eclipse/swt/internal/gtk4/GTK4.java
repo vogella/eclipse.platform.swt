@@ -496,8 +496,6 @@ public class GTK4 {
 	/* GtkWindow */
 	public static final native long gtk_window_new();
 	/** @param window cast=(GtkWindow *) */
-	public static final native void gtk_window_maximize(long window);
-	/** @param window cast=(GtkWindow *) */
 	public static final native void gtk_window_minimize(long window);
 	/** @param window cast=(GtkWindow *) */
 	public static final native void gtk_window_unminimize(long window);
@@ -770,12 +768,6 @@ public class GTK4 {
 	public static final native void gtk_widget_set_overflow(long widget, int overflow);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native long gtk_widget_get_clipboard(long widget);
-	/**
-	 * @param widget cast=(GtkWidget*)
-	 * @param width cast=(int *)
-	 * @param height cast=(int *)
-	 */
-	public static final native void gtk_widget_get_size_request(long widget, int[] width, int[] height);
 	/**
 	 * @param widget cast=(GtkWidget*)
 	 * @param width cast=(int)

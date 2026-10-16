@@ -261,18 +261,6 @@ JNIEXPORT void JNICALL GDK_NATIVE(gdk_1cairo_1set_1source_1window)
 }
 #endif
 
-#ifndef NO_gdk_1clipboard_1set_1content
-JNIEXPORT jlong JNICALL GDK_NATIVE(gdk_1clipboard_1set_1content)
-	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
-{
-	jlong rc = 0;
-	GDK_NATIVE_ENTER(env, that, gdk_1clipboard_1set_1content_FUNC);
-	rc = (jlong)gdk_clipboard_set_content((GdkClipboard *)arg0, (GdkContentProvider *)arg1);
-	GDK_NATIVE_EXIT(env, that, gdk_1clipboard_1set_1content_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_gdk_1cursor_1new_1from_1name__JLjava_lang_String_2
 JNIEXPORT jlong JNICALL GDK_NATIVE(gdk_1cursor_1new_1from_1name__JLjava_lang_String_2)
 	(JNIEnv *env, jclass that, jlong arg0, jstring arg1)
@@ -11652,22 +11640,6 @@ fail:
 }
 #endif
 
-#ifndef NO_g_1menu_1item_1new_1submenu
-JNIEXPORT jlong JNICALL OS_NATIVE(g_1menu_1item_1new_1submenu)
-	(JNIEnv *env, jclass that, jbyteArray arg0, jlong arg1)
-{
-	jbyte *lparg0=NULL;
-	jlong rc = 0;
-	OS_NATIVE_ENTER(env, that, g_1menu_1item_1new_1submenu_FUNC);
-	if (arg0) if ((lparg0 = (*env)->GetByteArrayElements(env, arg0, NULL)) == NULL) goto fail;
-	rc = (jlong)g_menu_item_new_submenu((const gchar *)lparg0, (GMenuModel *)arg1);
-fail:
-	if (arg0 && lparg0) (*env)->ReleaseByteArrayElements(env, arg0, lparg0, 0);
-	OS_NATIVE_EXIT(env, that, g_1menu_1item_1new_1submenu_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_g_1menu_1item_1set_1attribute
 JNIEXPORT void JNICALL OS_NATIVE(g_1menu_1item_1set_1attribute)
 	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1, jbyteArray arg2, jlong arg3)
@@ -12854,18 +12826,6 @@ JNIEXPORT jlong JNICALL OS_NATIVE(g_1value_1get_1int64)
 	OS_NATIVE_ENTER(env, that, g_1value_1get_1int64_FUNC);
 	rc = (jlong)g_value_get_int64((GValue *)arg0);
 	OS_NATIVE_EXIT(env, that, g_1value_1get_1int64_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_g_1value_1get_1object
-JNIEXPORT jlong JNICALL OS_NATIVE(g_1value_1get_1object)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	OS_NATIVE_ENTER(env, that, g_1value_1get_1object_FUNC);
-	rc = (jlong)g_value_get_object((GValue *)arg0);
-	OS_NATIVE_EXIT(env, that, g_1value_1get_1object_FUNC);
 	return rc;
 }
 #endif
@@ -14697,22 +14657,6 @@ fail:
 	if (arg1 && lparg1) (*env)->ReleaseByteArrayElements(env, arg1, lparg1, 0);
 	if (arg0 && lparg0) (*env)->ReleaseByteArrayElements(env, arg0, lparg0, 0);
 	OS_NATIVE_EXIT(env, that, realpath_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_strcmp
-JNIEXPORT jint JNICALL OS_NATIVE(strcmp)
-	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1)
-{
-	jbyte *lparg1=NULL;
-	jint rc = 0;
-	OS_NATIVE_ENTER(env, that, strcmp_FUNC);
-	if (arg1) if ((lparg1 = (*env)->GetByteArrayElements(env, arg1, NULL)) == NULL) goto fail;
-	rc = (jint)strcmp((const char*)arg0, (const char*)lparg1);
-fail:
-	if (arg1 && lparg1) (*env)->ReleaseByteArrayElements(env, arg1, lparg1, 0);
-	OS_NATIVE_EXIT(env, that, strcmp_FUNC);
 	return rc;
 }
 #endif

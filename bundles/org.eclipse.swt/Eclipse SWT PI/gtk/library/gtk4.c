@@ -2659,23 +2659,6 @@ JNIEXPORT jlong JNICALL GTK4_NATIVE(gtk_1widget_1get_1root)
 }
 #endif
 
-#ifndef NO_gtk_1widget_1get_1size_1request
-JNIEXPORT void JNICALL GTK4_NATIVE(gtk_1widget_1get_1size_1request)
-	(JNIEnv *env, jclass that, jlong arg0, jintArray arg1, jintArray arg2)
-{
-	jint *lparg1=NULL;
-	jint *lparg2=NULL;
-	GTK4_NATIVE_ENTER(env, that, gtk_1widget_1get_1size_1request_FUNC);
-	if (arg1) if ((lparg1 = (*env)->GetIntArrayElements(env, arg1, NULL)) == NULL) goto fail;
-	if (arg2) if ((lparg2 = (*env)->GetIntArrayElements(env, arg2, NULL)) == NULL) goto fail;
-	gtk_widget_get_size_request((GtkWidget*)arg0, (int *)lparg1, (int *)lparg2);
-fail:
-	if (arg2 && lparg2) (*env)->ReleaseIntArrayElements(env, arg2, lparg2, 0);
-	if (arg1 && lparg1) (*env)->ReleaseIntArrayElements(env, arg1, lparg1, 0);
-	GTK4_NATIVE_EXIT(env, that, gtk_1widget_1get_1size_1request_FUNC);
-}
-#endif
-
 #ifndef NO_gtk_1widget_1get_1width
 JNIEXPORT jint JNICALL GTK4_NATIVE(gtk_1widget_1get_1width)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -2890,16 +2873,6 @@ JNIEXPORT jboolean JNICALL GTK4_NATIVE(gtk_1window_1is_1maximized)
 	rc = (jboolean)gtk_window_is_maximized((GtkWindow *)arg0);
 	GTK4_NATIVE_EXIT(env, that, gtk_1window_1is_1maximized_FUNC);
 	return rc;
-}
-#endif
-
-#ifndef NO_gtk_1window_1maximize
-JNIEXPORT void JNICALL GTK4_NATIVE(gtk_1window_1maximize)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	GTK4_NATIVE_ENTER(env, that, gtk_1window_1maximize_FUNC);
-	gtk_window_maximize((GtkWindow *)arg0);
-	GTK4_NATIVE_EXIT(env, that, gtk_1window_1maximize_FUNC);
 }
 #endif
 
