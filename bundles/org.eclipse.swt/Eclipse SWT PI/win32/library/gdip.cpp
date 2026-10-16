@@ -52,23 +52,6 @@ JNIEXPORT jlong JNICALL Gdip_NATIVE(BitmapData_1new)
 }
 #endif
 
-#ifndef NO_Bitmap_1GetHBITMAP
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Bitmap_1GetHBITMAP)(JNIEnv *env, jclass that, jlong arg0, jint arg1, jlongArray arg2);
-JNIEXPORT jint JNICALL Gdip_NATIVE(Bitmap_1GetHBITMAP)
-	(JNIEnv *env, jclass that, jlong arg0, jint arg1, jlongArray arg2)
-{
-	jlong *lparg2=NULL;
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, Bitmap_1GetHBITMAP_FUNC);
-	if (arg2) if ((lparg2 = env->GetLongArrayElements(arg2, NULL)) == NULL) goto fail;
-	rc = (jint)((Bitmap*)arg0)->GetHBITMAP((Color)arg1, (HBITMAP*)lparg2);
-fail:
-	if (arg2 && lparg2) env->ReleaseLongArrayElements(arg2, lparg2, 0);
-	Gdip_NATIVE_EXIT(env, that, Bitmap_1GetHBITMAP_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_Bitmap_1GetHICON
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Bitmap_1GetHICON)(JNIEnv *env, jclass that, jlong arg0, jlongArray arg1);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Bitmap_1GetHICON)
@@ -214,23 +197,6 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(ColorPalette_1sizeof)
 	Gdip_NATIVE_ENTER(env, that, ColorPalette_1sizeof_FUNC);
 	rc = (jint)ColorPalette_sizeof();
 	Gdip_NATIVE_EXIT(env, that, ColorPalette_1sizeof_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_FontFamily_1GetFamilyName
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(FontFamily_1GetFamilyName)(JNIEnv *env, jclass that, jlong arg0, jcharArray arg1, jchar arg2);
-JNIEXPORT jint JNICALL Gdip_NATIVE(FontFamily_1GetFamilyName)
-	(JNIEnv *env, jclass that, jlong arg0, jcharArray arg1, jchar arg2)
-{
-	jchar *lparg1=NULL;
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, FontFamily_1GetFamilyName_FUNC);
-	if (arg1) if ((lparg1 = env->GetCharArrayElements(arg1, NULL)) == NULL) goto fail;
-	rc = (jint)((FontFamily *)arg0)->GetFamilyName((WCHAR *)lparg1, (WCHAR)arg2);
-fail:
-	if (arg1 && lparg1) env->ReleaseCharArrayElements(arg1, lparg1, 0);
-	Gdip_NATIVE_EXIT(env, that, FontFamily_1GetFamilyName_FUNC);
 	return rc;
 }
 #endif
@@ -537,19 +503,6 @@ fail:
 	if (arg6 && lparg6) setPointFFields(env, arg6, lparg6);
 	if (arg1 && lparg1) env->ReleaseCharArrayElements(arg1, lparg1, 0);
 	Gdip_NATIVE_EXIT(env, that, GraphicsPath_1AddString_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_GraphicsPath_1Clone
-extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(GraphicsPath_1Clone)(JNIEnv *env, jclass that, jlong arg0);
-JNIEXPORT jlong JNICALL Gdip_NATIVE(GraphicsPath_1Clone)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	Gdip_NATIVE_ENTER(env, that, GraphicsPath_1Clone_FUNC);
-	rc = (jlong)((GraphicsPath *)arg0)->Clone();
-	Gdip_NATIVE_EXIT(env, that, GraphicsPath_1Clone_FUNC);
 	return rc;
 }
 #endif
@@ -1066,40 +1019,6 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1GetClip)
 }
 #endif
 
-#ifndef NO_Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_RectF_2
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_RectF_2)(JNIEnv *env, jclass that, jlong arg0, jobject arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_RectF_2)
-	(JNIEnv *env, jclass that, jlong arg0, jobject arg1)
-{
-	RectF _arg1, *lparg1=NULL;
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_RectF_2_FUNC);
-	if (arg1) if ((lparg1 = getRectFFields(env, arg1, &_arg1)) == NULL) goto fail;
-	rc = (jint)((Graphics *)arg0)->GetClipBounds(lparg1);
-fail:
-	if (arg1 && lparg1) setRectFFields(env, arg1, lparg1);
-	Gdip_NATIVE_EXIT(env, that, Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_RectF_2_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_Rect_2
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_Rect_2)(JNIEnv *env, jclass that, jlong arg0, jobject arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_Rect_2)
-	(JNIEnv *env, jclass that, jlong arg0, jobject arg1)
-{
-	Rect _arg1, *lparg1=NULL;
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_Rect_2_FUNC);
-	if (arg1) if ((lparg1 = getRectFields(env, arg1, &_arg1)) == NULL) goto fail;
-	rc = (jint)((Graphics *)arg0)->GetClipBounds(lparg1);
-fail:
-	if (arg1 && lparg1) setRectFields(env, arg1, lparg1);
-	Gdip_NATIVE_EXIT(env, that, Graphics_1GetClipBounds__JLorg_eclipse_swt_internal_gdip_Rect_2_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_Graphics_1GetHDC
 extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(Graphics_1GetHDC)(JNIEnv *env, jclass that, jlong arg0);
 JNIEXPORT jlong JNICALL Gdip_NATIVE(Graphics_1GetHDC)
@@ -1367,19 +1286,6 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1SetClipPath__JJI)
 }
 #endif
 
-#ifndef NO_Graphics_1SetCompositingQuality
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1SetCompositingQuality)(JNIEnv *env, jclass that, jlong arg0, jint arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1SetCompositingQuality)
-	(JNIEnv *env, jclass that, jlong arg0, jint arg1)
-{
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, Graphics_1SetCompositingQuality_FUNC);
-	rc = (jint)((Graphics *)arg0)->SetCompositingQuality((CompositingQuality)arg1);
-	Gdip_NATIVE_EXIT(env, that, Graphics_1SetCompositingQuality_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_Graphics_1SetInterpolationMode
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1SetInterpolationMode)(JNIEnv *env, jclass that, jlong arg0, jint arg1);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Graphics_1SetInterpolationMode)
@@ -1503,19 +1409,6 @@ JNIEXPORT void JNICALL Gdip_NATIVE(HatchBrush_1delete)
 	Gdip_NATIVE_ENTER(env, that, HatchBrush_1delete_FUNC);
 	delete (HatchBrush *)arg0;
 	Gdip_NATIVE_EXIT(env, that, HatchBrush_1delete_FUNC);
-}
-#endif
-
-#ifndef NO_HatchBrush_1new
-extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(HatchBrush_1new)(JNIEnv *env, jclass that, jint arg0, jint arg1, jint arg2);
-JNIEXPORT jlong JNICALL Gdip_NATIVE(HatchBrush_1new)
-	(JNIEnv *env, jclass that, jint arg0, jint arg1, jint arg2)
-{
-	jlong rc = 0;
-	Gdip_NATIVE_ENTER(env, that, HatchBrush_1new_FUNC);
-	rc = (jlong)new HatchBrush((HatchStyle)arg0, (Color)arg1, (Color)arg2);
-	Gdip_NATIVE_EXIT(env, that, HatchBrush_1new_FUNC);
-	return rc;
 }
 #endif
 
@@ -1717,19 +1610,6 @@ fail:
 	if (arg2 && lparg2) env->ReleaseFloatArrayElements(arg2, lparg2, JNI_ABORT);
 	if (arg1 && lparg1) env->ReleaseIntArrayElements(arg1, lparg1, JNI_ABORT);
 	Gdip_NATIVE_EXIT(env, that, LinearGradientBrush_1SetInterpolationColors_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_LinearGradientBrush_1SetWrapMode
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(LinearGradientBrush_1SetWrapMode)(JNIEnv *env, jclass that, jlong arg0, jint arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(LinearGradientBrush_1SetWrapMode)
-	(JNIEnv *env, jclass that, jlong arg0, jint arg1)
-{
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, LinearGradientBrush_1SetWrapMode_FUNC);
-	rc = (jint)((LinearGradientBrush *)arg0)->SetWrapMode((WrapMode)arg1);
-	Gdip_NATIVE_EXIT(env, that, LinearGradientBrush_1SetWrapMode_FUNC);
 	return rc;
 }
 #endif
@@ -2000,139 +1880,6 @@ fail:
 }
 #endif
 
-#ifndef NO_PathGradientBrush_1SetCenterColor
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetCenterColor)(JNIEnv *env, jclass that, jlong arg0, jint arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetCenterColor)
-	(JNIEnv *env, jclass that, jlong arg0, jint arg1)
-{
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1SetCenterColor_FUNC);
-	rc = (jint)((PathGradientBrush *)arg0)->SetCenterColor((Color)arg1);
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1SetCenterColor_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_PathGradientBrush_1SetCenterPoint
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetCenterPoint)(JNIEnv *env, jclass that, jlong arg0, jobject arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetCenterPoint)
-	(JNIEnv *env, jclass that, jlong arg0, jobject arg1)
-{
-	PointF _arg1, *lparg1=NULL;
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1SetCenterPoint_FUNC);
-	if (arg1) if ((lparg1 = getPointFFields(env, arg1, &_arg1)) == NULL) goto fail;
-	rc = (jint)((PathGradientBrush *)arg0)->SetCenterPoint(*lparg1);
-fail:
-	if (arg1 && lparg1) setPointFFields(env, arg1, lparg1);
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1SetCenterPoint_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_PathGradientBrush_1SetGraphicsPath
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetGraphicsPath)(JNIEnv *env, jclass that, jlong arg0, jlong arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetGraphicsPath)
-	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
-{
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1SetGraphicsPath_FUNC);
-	rc = (jint)((PathGradientBrush *)arg0)->SetGraphicsPath((GraphicsPath *)arg1);
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1SetGraphicsPath_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_PathGradientBrush_1SetInterpolationColors
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetInterpolationColors)(JNIEnv *env, jclass that, jlong arg0, jintArray arg1, jfloatArray arg2, jint arg3);
-JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetInterpolationColors)
-	(JNIEnv *env, jclass that, jlong arg0, jintArray arg1, jfloatArray arg2, jint arg3)
-{
-	jint *lparg1=NULL;
-	jfloat *lparg2=NULL;
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1SetInterpolationColors_FUNC);
-	if (arg1) if ((lparg1 = env->GetIntArrayElements(arg1, NULL)) == NULL) goto fail;
-	if (arg2) if ((lparg2 = env->GetFloatArrayElements(arg2, NULL)) == NULL) goto fail;
-	rc = (jint)((PathGradientBrush *)arg0)->SetInterpolationColors((const Color *)lparg1, (const REAL *)lparg2, arg3);
-fail:
-	if (arg2 && lparg2) env->ReleaseFloatArrayElements(arg2, lparg2, JNI_ABORT);
-	if (arg1 && lparg1) env->ReleaseIntArrayElements(arg1, lparg1, JNI_ABORT);
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1SetInterpolationColors_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_PathGradientBrush_1SetSurroundColors
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetSurroundColors)(JNIEnv *env, jclass that, jlong arg0, jintArray arg1, jintArray arg2);
-JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetSurroundColors)
-	(JNIEnv *env, jclass that, jlong arg0, jintArray arg1, jintArray arg2)
-{
-	jint *lparg1=NULL;
-	jint *lparg2=NULL;
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1SetSurroundColors_FUNC);
-	if (arg1) if ((lparg1 = env->GetIntArrayElements(arg1, NULL)) == NULL) goto fail;
-	if (arg2) if ((lparg2 = env->GetIntArrayElements(arg2, NULL)) == NULL) goto fail;
-	rc = (jint)((PathGradientBrush *)arg0)->SetSurroundColors((const Color *)lparg1, (INT *)lparg2);
-fail:
-	if (arg2 && lparg2) env->ReleaseIntArrayElements(arg2, lparg2, 0);
-	if (arg1 && lparg1) env->ReleaseIntArrayElements(arg1, lparg1, JNI_ABORT);
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1SetSurroundColors_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_PathGradientBrush_1SetWrapMode
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetWrapMode)(JNIEnv *env, jclass that, jlong arg0, jint arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(PathGradientBrush_1SetWrapMode)
-	(JNIEnv *env, jclass that, jlong arg0, jint arg1)
-{
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1SetWrapMode_FUNC);
-	rc = (jint)((PathGradientBrush *)arg0)->SetWrapMode((WrapMode)arg1);
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1SetWrapMode_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_PathGradientBrush_1delete
-extern "C" JNIEXPORT void JNICALL Gdip_NATIVE(PathGradientBrush_1delete)(JNIEnv *env, jclass that, jlong arg0);
-JNIEXPORT void JNICALL Gdip_NATIVE(PathGradientBrush_1delete)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1delete_FUNC);
-	delete (PathGradientBrush *)arg0;
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1delete_FUNC);
-}
-#endif
-
-#ifndef NO_PathGradientBrush_1new
-extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(PathGradientBrush_1new)(JNIEnv *env, jclass that, jlong arg0);
-JNIEXPORT jlong JNICALL Gdip_NATIVE(PathGradientBrush_1new)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	Gdip_NATIVE_ENTER(env, that, PathGradientBrush_1new_FUNC);
-	rc = (jlong)new PathGradientBrush((GraphicsPath *)arg0);
-	Gdip_NATIVE_EXIT(env, that, PathGradientBrush_1new_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_Pen_1GetBrush
-extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(Pen_1GetBrush)(JNIEnv *env, jclass that, jlong arg0);
-JNIEXPORT jlong JNICALL Gdip_NATIVE(Pen_1GetBrush)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	Gdip_NATIVE_ENTER(env, that, Pen_1GetBrush_FUNC);
-	rc = (jlong)((Pen *)arg0)->GetBrush();
-	Gdip_NATIVE_EXIT(env, that, Pen_1GetBrush_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_Pen_1SetBrush
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(Pen_1SetBrush)(JNIEnv *env, jclass that, jlong arg0, jlong arg1);
 JNIEXPORT jint JNICALL Gdip_NATIVE(Pen_1SetBrush)
@@ -2265,30 +2012,6 @@ JNIEXPORT jlong JNICALL Gdip_NATIVE(Pen_1new)
 }
 #endif
 
-#ifndef NO_Point_1delete
-extern "C" JNIEXPORT void JNICALL Gdip_NATIVE(Point_1delete)(JNIEnv *env, jclass that, jlong arg0);
-JNIEXPORT void JNICALL Gdip_NATIVE(Point_1delete)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	Gdip_NATIVE_ENTER(env, that, Point_1delete_FUNC);
-	delete (Point *)arg0;
-	Gdip_NATIVE_EXIT(env, that, Point_1delete_FUNC);
-}
-#endif
-
-#ifndef NO_Point_1new
-extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(Point_1new)(JNIEnv *env, jclass that, jint arg0, jint arg1);
-JNIEXPORT jlong JNICALL Gdip_NATIVE(Point_1new)
-	(JNIEnv *env, jclass that, jint arg0, jint arg1)
-{
-	jlong rc = 0;
-	Gdip_NATIVE_ENTER(env, that, Point_1new_FUNC);
-	rc = (jlong)new Point(arg0, arg1);
-	Gdip_NATIVE_EXIT(env, that, Point_1new_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_PrivateFontCollection_1AddFontFile
 extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(PrivateFontCollection_1AddFontFile)(JNIEnv *env, jclass that, jlong arg0, jcharArray arg1);
 JNIEXPORT jint JNICALL Gdip_NATIVE(PrivateFontCollection_1AddFontFile)
@@ -2393,19 +2116,6 @@ JNIEXPORT jlong JNICALL Gdip_NATIVE(Region_1new__J)
 }
 #endif
 
-#ifndef NO_Region_1newGraphicsPath
-extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(Region_1newGraphicsPath)(JNIEnv *env, jclass that, jlong arg0);
-JNIEXPORT jlong JNICALL Gdip_NATIVE(Region_1newGraphicsPath)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	Gdip_NATIVE_ENTER(env, that, Region_1newGraphicsPath_FUNC);
-	rc = (jlong)new Region((GraphicsPath*)arg0);
-	Gdip_NATIVE_EXIT(env, that, Region_1newGraphicsPath_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_SolidBrush_1delete
 extern "C" JNIEXPORT void JNICALL Gdip_NATIVE(SolidBrush_1delete)(JNIEnv *env, jclass that, jlong arg0);
 JNIEXPORT void JNICALL Gdip_NATIVE(SolidBrush_1delete)
@@ -2439,19 +2149,6 @@ JNIEXPORT jlong JNICALL Gdip_NATIVE(StringFormat_1Clone)
 	Gdip_NATIVE_ENTER(env, that, StringFormat_1Clone_FUNC);
 	rc = (jlong)((StringFormat *)arg0)->Clone();
 	Gdip_NATIVE_EXIT(env, that, StringFormat_1Clone_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_StringFormat_1GenericDefault
-extern "C" JNIEXPORT jlong JNICALL Gdip_NATIVE(StringFormat_1GenericDefault)(JNIEnv *env, jclass that);
-JNIEXPORT jlong JNICALL Gdip_NATIVE(StringFormat_1GenericDefault)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	Gdip_NATIVE_ENTER(env, that, StringFormat_1GenericDefault_FUNC);
-	rc = (jlong)StringFormat::GenericDefault();
-	Gdip_NATIVE_EXIT(env, that, StringFormat_1GenericDefault_FUNC);
 	return rc;
 }
 #endif
@@ -2571,19 +2268,6 @@ JNIEXPORT jint JNICALL Gdip_NATIVE(TextureBrush_1ScaleTransform)
 	Gdip_NATIVE_ENTER(env, that, TextureBrush_1ScaleTransform_FUNC);
 	rc = (jint)((TextureBrush *)arg0)->ScaleTransform(arg1, arg2, (MatrixOrder)arg3);
 	Gdip_NATIVE_EXIT(env, that, TextureBrush_1ScaleTransform_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_TextureBrush_1SetTransform
-extern "C" JNIEXPORT jint JNICALL Gdip_NATIVE(TextureBrush_1SetTransform)(JNIEnv *env, jclass that, jlong arg0, jlong arg1);
-JNIEXPORT jint JNICALL Gdip_NATIVE(TextureBrush_1SetTransform)
-	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
-{
-	jint rc = 0;
-	Gdip_NATIVE_ENTER(env, that, TextureBrush_1SetTransform_FUNC);
-	rc = (jint)((TextureBrush *)arg0)->SetTransform((Matrix *)arg1);
-	Gdip_NATIVE_EXIT(env, that, TextureBrush_1SetTransform_FUNC);
 	return rc;
 }
 #endif

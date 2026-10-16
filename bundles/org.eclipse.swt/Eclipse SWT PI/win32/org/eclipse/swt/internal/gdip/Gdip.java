@@ -181,13 +181,6 @@ public static final native void Bitmap_delete(long bitmap);
 /**
  * @method flags=cpp
  * @param bitmap cast=(Bitmap*)
- * @param colorBackground cast=(Color)
- * @param hbmReturn cast=(HBITMAP*)
- */
-public static final native int Bitmap_GetHBITMAP(long bitmap, int colorBackground, long[] hbmReturn);
-/**
- * @method flags=cpp
- * @param bitmap cast=(Bitmap*)
  * @param hicon cast=(HICON*)
  */
 public static final native int Bitmap_GetHICON(long bitmap, long[] hicon);
@@ -292,13 +285,6 @@ public static final native long FontFamily_new();
 public static final native long FontFamily_new(char[] name, long fontCollection);
 /** @method flags=delete */
 public static final native void FontFamily_delete(long family);
-/**
- * @method flags=cpp
- * @param family cast=(FontFamily *)
- * @param name cast=(WCHAR *)
- * @param language cast=(WCHAR)
- */
-public static final native int FontFamily_GetFamilyName(long family, char[] name, char language);
 /**
  * @method flags=cpp
  * @param family cast=(FontFamily *)
@@ -479,16 +465,6 @@ public static final native int Graphics_FillRectangle(long graphics, long brush,
 /**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
- */
-public static final native int Graphics_GetClipBounds(long graphics, RectF rect);
-/**
- * @method flags=cpp
- * @param graphics cast=(Graphics *)
- */
-public static final native int Graphics_GetClipBounds(long graphics, Rect rect);
-/**
- * @method flags=cpp
- * @param graphics cast=(Graphics *)
  * @param region cast=(Region *)
  */
 public static final native int Graphics_GetClip(long graphics, long region);
@@ -607,12 +583,6 @@ public static final native int Graphics_SetClipPath(long graphics, long path);
  * @param combineMode cast=(CombineMode)
  */
 public static final native int Graphics_SetClipPath(long graphics, long path, int combineMode);
-/**
- * @method flags=cpp
- * @param graphics cast=(Graphics *)
- * @param compositingQuality cast=(CompositingQuality)
- */
-public static final native int Graphics_SetCompositingQuality(long graphics, int compositingQuality);
 /**
  * @method flags=cpp
  * @param graphics cast=(Graphics *)
@@ -735,11 +705,6 @@ public static final native int GraphicsPath_CloseFigure(long path);
 /**
  * @method flags=cpp
  * @param path cast=(GraphicsPath *)
- */
-public static final native long GraphicsPath_Clone(long path);
-/**
- * @method flags=cpp
- * @param path cast=(GraphicsPath *)
  * @param matrix cast=(Matrix *)
  */
 public static final native int GraphicsPath_Flatten(long path, long matrix, float flatness);
@@ -803,13 +768,6 @@ public static final native int GraphicsPath_StartFigure(long path);
  * @param matrix cast=(Matrix *)
  */
 public static final native int GraphicsPath_Transform(long path, long matrix);
-/**
- * @method flags=new
- * @param hatchStyle cast=(HatchStyle)
- * @param foreColor cast=(Color)
- * @param backColor cast=(Color)
- */
-public static final native long HatchBrush_new(int hatchStyle, int foreColor, int backColor);
 /** @method flags=delete */
 public static final native void Image_delete(long image);
 /**
@@ -885,12 +843,6 @@ public static final native void LinearGradientBrush_delete(long brush);
  * @param blendPositions cast=(const REAL *),flags=no_out
  */
 public static final native int LinearGradientBrush_SetInterpolationColors(long brush, int [] presetColors, float[] blendPositions, int count);
-/**
- * @method flags=cpp
- * @param brush cast=(LinearGradientBrush *)
- * @param wrapMode cast=(WrapMode)
- */
-public static final native int LinearGradientBrush_SetWrapMode(long brush, int wrapMode);
 /**
  * @method flags=cpp
  * @param brush cast=(LinearGradientBrush *)
@@ -1013,62 +965,12 @@ public static final native void MoveMemory(ColorPalette Destination, long Source
 public static final native void MoveMemory(BitmapData Destination, long SourcePtr);
 /**
  * @method flags=new
- * @param path cast=(GraphicsPath *)
- */
-public static final native long PathGradientBrush_new(long path);
-/** @method flags=delete */
-public static final native void PathGradientBrush_delete(long brush);
-/**
- * @method flags=cpp
- * @param brush cast=(PathGradientBrush *)
- * @param color cast=(Color)
- */
-public static final native int PathGradientBrush_SetCenterColor(long brush, int color);
-/**
- * @method flags=cpp
- * @param brush cast=(PathGradientBrush *)
- * @param pt flags=struct
- */
-public static final native int PathGradientBrush_SetCenterPoint(long brush, PointF pt);
-/**
- * @method flags=cpp
- * @param brush cast=(PathGradientBrush *)
- * @param presetColors cast=(const Color *),flags=no_out
- * @param blendPositions cast=(const REAL *),flags=no_out
- */
-public static final native int PathGradientBrush_SetInterpolationColors(long brush, int [] presetColors, float[] blendPositions, int count);
-/**
- * @method flags=cpp
- * @param brush cast=(PathGradientBrush *)
- * @param colors cast=(const Color *),flags=no_out
- * @param count cast=(INT *)
- */
-public static final native int PathGradientBrush_SetSurroundColors(long brush, int [] colors, int[] count);
-/**
- * @method flags=cpp
- * @param brush cast=(PathGradientBrush *)
- * @param path cast=(GraphicsPath *)
- */
-public static final native int PathGradientBrush_SetGraphicsPath(long brush, long path);
-/**
- * @method flags=cpp
- * @param brush cast=(PathGradientBrush *)
- * @param wrapMode cast=(WrapMode)
- */
-public static final native int PathGradientBrush_SetWrapMode(long brush, int wrapMode);
-/**
- * @method flags=new
  * @param brush cast=(Brush *)
  * @param width cast=(REAL)
  */
 public static final native long Pen_new(long brush, float width);
 /** @method flags=delete */
 public static final native void Pen_delete(long pen);
-/**
- * @method flags=cpp
- * @param pen cast=(Pen *)
- */
-public static final native long Pen_GetBrush(long pen);
 /**
  * @method flags=cpp
  * @param pen cast=(Pen *)
@@ -1118,20 +1020,11 @@ public static final native int Pen_SetMiterLimit(long pen, float miterLimit);
  * @param width cast=(REAL)
  */
 public static final native int Pen_SetWidth(long pen, float width);
-/** @method flags=new */
-public static final native long Point_new(int x, int y);
-/** @method flags=delete */
-public static final native void Point_delete(long point);
 /**
  * @method flags=new
  * @param hRgn cast=(HRGN)
  */
 public static final native long Region_new(long hRgn);
-/**
- * @method flags=new
- * @param path cast=(GraphicsPath*)
- */
-public static final native long Region_newGraphicsPath(long path);
 /** @method flags=new */
 public static final native long Region_new();
 /** @method flags=delete */
@@ -1162,8 +1055,6 @@ public static final native void StringFormat_delete(long format);
  * @param format cast=(StringFormat *)
  */
 public static final native long StringFormat_Clone(long format);
-/** @method accessor=StringFormat::GenericDefault */
-public static final native long StringFormat_GenericDefault();
 /** @method accessor=StringFormat::GenericTypographic */
 public static final native long StringFormat_GenericTypographic();
 /**
@@ -1203,12 +1094,6 @@ public static final native long TextureBrush_new(long image, int wrapMode, float
 public static final native long TextureBrush_new(long image, Rect rect, long attribs);
 /** @method flags=delete */
 public static final native void TextureBrush_delete(long brush);
-/**
- * @method flags=cpp
- * @param brush cast=(TextureBrush *)
- * @param matrix cast=(Matrix *)
- */
-public static final native int TextureBrush_SetTransform(long brush, long matrix);
 /**
  * @method flags=cpp
  * @param brush cast=(TextureBrush *)
