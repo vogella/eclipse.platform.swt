@@ -17,9 +17,15 @@ package org.eclipse.swt.tools.internal;
 public class FFMProbeGenerator extends JNIGenerator {
 
 	final CTypes ctypes;
+	/** macOS: the natives classes, whose constants without an exported variable the probe evaluates. */
+	JNIClass[] nativesClasses = new JNIClass[0];
 
 	public FFMProbeGenerator(CTypes ctypes) {
 		this.ctypes = ctypes;
+	}
+
+	public void setNativesClasses(JNIClass[] nativesClasses) {
+		this.nativesClasses = nativesClasses;
 	}
 
 	@Override
@@ -99,6 +105,15 @@ public class FFMProbeGenerator extends JNIGenerator {
 			if (only4) outputln("#ifdef GTK4");
 			outputln("\tprintf(\"EXTRA." + extra[1] + "." + extra[2] + "=%zu\\n\", (size_t)__builtin_offsetof(" + extra[1] + ", " + extra[2] + "));");
 			if (only3 || only4) outputln("#endif");
+		}
+		for (JNIClass clazz : nativesClasses) {
+			for (JNIMethod method : clazz.getDeclaredMethods()) {
+				if (!method.getFlag(FLAG_CONST) || method.getFlag(FLAG_NO_GEN)) continue;
+				String name = method.getAccessor().length() != 0 ? method.getAccessor() : method.getName();
+				if (ctypes.hasSymbolVariable(name)) continue;
+				boolean real = method.getReturnType().isType("double") || method.getReturnType().isType("float");
+				outputln("\tprintf(\"CONST." + name + "=%" + (real ? ".17g" : "lld") + "\\n\", " + (real ? "(double)" : "(long long)") + name + ");");
+			}
 		}
 		outputln("\treturn 0;");
 		outputln("}");
