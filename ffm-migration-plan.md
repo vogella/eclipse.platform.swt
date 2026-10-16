@@ -460,6 +460,55 @@ The rewriter prints the natives that remain on JNI, which are the ones a merged 
 * The layouts were probed on x86_64 only, as for GTK3.
 * `FFMCrossCheck` compares the generated natives with the stock JNI ones, so it cannot catch a difference that both share.
 
+## Phase 6: Cocoa
+
+### What is generated
+
+`generate-cocoa.sh` dumps the clang AST of `os.c` and `c.c` as Objective-C for the target architecture (`ARCH`, default arm64) with `MACOSX_DEPLOYMENT_TARGET=11`, compiles and runs the layout probes, and writes `OS_FFM`, `Structs_FFM` and `C_FFM` to `Eclipse SWT PI/cocoa-ffm` and the report to `report-cocoa`.
+486 of the 537 natives of `OS` and `C` are generated; the 42 `CALLBACK_*` natives and the 9 `no_gen` and `flags=jni` natives are hand written.
+
+* The 132 `objc_msgSend` overloads and the `_bool`, `_fpret`, `_floatret`, `Super` and `Super_stret` variants are one downcall handle per descriptor against the single `objc_msgSend` or `objc_msgSendSuper` symbol.
+* Struct by value parameters and struct returns use the probed layouts; `*_stret` natives return the struct through a `SegmentAllocator` and copy it into the Java struct, and on x86_64 `FFM.stret` picks `objc_msgSend_stret` for structs over 16 bytes.
+* A `flags=const` native reads its exported variable, or becomes the literal the probe prints when the constant has no symbol (`NSNotFound`).
+* Symbols resolve through libobjc and the frameworks `make_macosx.mak` links, each loaded on first use; a `flags=dynamic` native resolves through the bundle its `name_LIB` macro names.
+* The JNI library links every framework up front, so their Objective-C classes are always registered.
+  With lazy loading `objc_getClass("WebView")` returned 0 and WebKit downloaded every page, so `objc_getClass` and `objc_lookUpClass` load all frameworks once when a class is not found.
+
+### Hand written code
+
+* `FFMCocoaCustom` ports `os_custom.c` and the `no_gen` natives.
+  `NewGlobalRef`, `DeleteGlobalRef` and `JNIGetObject` become a Java handle table, since every call site only stores the handle in an ivar of an SWT class and passes it back.
+  `beginSheetModalForWindow` builds an Objective-C block per the Clang Block ABI, copies it to the heap and autoreleases it as the C did.
+* `FFMCocoaCallbacks` implements the 42 `CALLBACK_*` trampolines from one table of signatures: an upcall stub with the real Objective-C signature, structs by value included, hands the SWT callback pointers to copies of its struct arguments.
+* `FFMCallback` works unchanged; Cocoa only uses callbacks with `long` arguments.
+* `SWT_AWT` stays on JNI (`libswt-awt-cocoa`).
+
+`build-cocoa.sh jni|ffm`, `test-cocoa.sh`, `test-cocoa-crosscheck.sh` and `test-cocoa-custom.sh` mirror the other platforms, and `apply-ffm.sh cocoa` rewrites `Eclipse SWT PI/cocoa` with a rewritten `C` and `Callback` in `cocoa-ffm-shared`.
+Both Cocoa fragments list `common-ffm` and `cocoa-ffm`.
+
+### NSExceptions
+
+The JNI glue wraps every native in `@try`/`@catch` and turns an `NSException` into a 0 result, while FFM cannot catch it and the process aborts.
+Running the JUnit suite against natives built with `DEBUG_EXCEPTIONS` found two call sites that relied on it, `Display.getNSColorRGB` asking catalog colors for their color space and `WebKit.convertToJava` reading `length` through `valueForKey:`, 60 exceptions in all (`report-cocoa/nsexceptions.txt`).
+Both are fixed in Java, upstream as eclipse-platform/eclipse.platform.swt#3740.
+An exception on a path the tests do not reach still aborts the FFM build.
+
+### Verification
+
+macOS aarch64, JDK 25, against the JNI libraries of the fragment:
+
+* `FFMCrossCheckCocoa`: 1,369 checks, 0 mismatches (symbols, handles, struct sizes and round trips, constants, call results, classes of lazily loaded frameworks).
+* `FFMCocoaCustomCheck`: 592 checks, 0 mismatches.
+* JUnit, 129 classes of `org.eclipse.swt.tests` and `org.eclipse.swt.tests.cocoa`, 4,357 tests, JNI build and FFM build without any SWT library except `libswt-awt`: identical outcomes (4,237 passed, 77 failed, 37 aborted and 6 skipped on both).
+* Visual Oracle, 218 specimens, zero tolerance, FFM build without any SWT library except `libswt-awt`: all equal.
+
+### Open
+
+* x86_64 is untested: layouts, `objc_msgSend_stret` and `_fpret`.
+* `TISGetInputSourceProperty`, `class_createInstance` and `instrumentObjcMessageSends` are both generated and hand written; the hand written ones win in the rewriter.
+* Not measured: performance and the cold start cost on macOS; a product build with `apply-ffm.sh cocoa` under Tycho and an IDE session.
+* The generator changes for Cocoa were not rerun against GTK and Win32.
+
 ## Next steps
 
 1. Settle where the declarations live once they are no longer `native`: generated delegating bodies in `OS.java` and friends, or a non-compiled declaration file that the generator reads.
@@ -467,7 +516,7 @@ The rewriter prints the natives that remain on JNI, which are the ones a merged 
 2. Cut the cold cost, about 1.3 s of CPU time on first use (see Performance), without an AOT cache: profile the first iteration at a finer sampling interval to split handle linking, `LambdaForm` spinning and interpreted execution, then attack the largest part.
    Replace the confined arena per copied array with a per-thread allocator for the warm cost.
 3. Propose the Java 25 baseline together with the GTK3 port upstream, starting with a discussion rather than a pull request, since both are platform wide decisions.
-4. Then Win32 (see Phase 5: Win32) and Cocoa.
+4. Then Win32 (see Phase 5: Win32) and Cocoa (see Phase 6: Cocoa).
 
 ## Open questions
 
