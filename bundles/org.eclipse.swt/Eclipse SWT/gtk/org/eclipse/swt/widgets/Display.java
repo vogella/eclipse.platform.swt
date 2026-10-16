@@ -341,7 +341,7 @@ public class Display extends Device implements Executor {
 	GdkRGBA COLOR_INFO_BACKGROUND_RGBA, COLOR_INFO_FOREGROUND_RGBA, COLOR_LINK_FOREGROUND_RGBA;
 	GdkRGBA COLOR_TITLE_FOREGROUND_RGBA, COLOR_TITLE_BACKGROUND_RGBA, COLOR_TITLE_BACKGROUND_GRADIENT_RGBA;
 	GdkRGBA COLOR_TITLE_INACTIVE_FOREGROUND_RGBA, COLOR_TITLE_INACTIVE_BACKGROUND_RGBA, COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT_RGBA;
-	GdkRGBA COLOR_WIDGET_DISABLED_FOREGROUND_RGBA, COLOR_TEXT_DISABLED_BACKGROUND_RGBA;
+	GdkRGBA COLOR_WIDGET_DISABLED_FOREGROUND_RGBA, COLOR_TEXT_DISABLED_BACKGROUND_RGBA, COLOR_WIDGET_ACCENT_RGBA;
 	GdkRGBA COLOR_TOGGLE_BUTTON_FOREGROUND_RGBA;
 
 	/* Initialize color list */
@@ -2999,6 +2999,7 @@ public Color getSystemColor (int id) {
 	case SWT.COLOR_LIST_SELECTION_TEXT: 				gdkRGBA = copyRGBA(COLOR_LIST_SELECTION_TEXT_RGBA); break;
 	case SWT.COLOR_WIDGET_DISABLED_FOREGROUND:			gdkRGBA = copyRGBA(COLOR_WIDGET_DISABLED_FOREGROUND_RGBA); break;
 	case SWT.COLOR_TEXT_DISABLED_BACKGROUND:			gdkRGBA = copyRGBA(COLOR_TEXT_DISABLED_BACKGROUND_RGBA); break;
+	case SWT.COLOR_WIDGET_ACCENT:						gdkRGBA = copyRGBA(COLOR_WIDGET_ACCENT_RGBA); break;
 	default:
 		return super.getSystemColor (id);
 	}
@@ -3311,6 +3312,7 @@ void initializeSystemColors () {
 	initializeSystemColorsTooltip();
 	initializeSystemColorsToggleButton();
 	initializeSystemColorsDisabled();
+	initializeSystemColorsAccent(shellContext);
 
 	COLOR_TITLE_FOREGROUND_RGBA = COLOR_LIST_SELECTION_TEXT_RGBA;
 	COLOR_TITLE_BACKGROUND_RGBA = COLOR_LIST_SELECTION_RGBA;
@@ -3351,6 +3353,19 @@ void initializeSystemColorsList(long shellContext) {
 
 	// Revert temporary styles
 	GTK.gtk_style_context_restore (shellContext);
+}
+
+/** Uses the named accent color of the theme, the list selection color if the theme defines none. */
+void initializeSystemColorsAccent(long shellContext) {
+	GdkRGBA accent = new GdkRGBA ();
+	byte [] accentBgColor = Converter.wcsToMbcs ("accent_bg_color", true); //$NON-NLS-1$
+	byte [] accentColor = Converter.wcsToMbcs ("accent_color", true); //$NON-NLS-1$
+	if (GTK.gtk_style_context_lookup_color (shellContext, accentBgColor, accent)
+			|| GTK.gtk_style_context_lookup_color (shellContext, accentColor, accent)) {
+		COLOR_WIDGET_ACCENT_RGBA = accent;
+	} else {
+		COLOR_WIDGET_ACCENT_RGBA = COLOR_LIST_SELECTION_RGBA;
+	}
 }
 
 void initializeSystemColorsTitle(long shellContext) {
@@ -4857,7 +4872,7 @@ void releaseDisplay () {
 	COLOR_WIDGET_FOREGROUND_RGBA = COLOR_TITLE_FOREGROUND_RGBA = COLOR_TITLE_BACKGROUND_RGBA = COLOR_TITLE_BACKGROUND_GRADIENT_RGBA =
 	COLOR_TITLE_INACTIVE_FOREGROUND_RGBA = COLOR_TITLE_INACTIVE_BACKGROUND_RGBA = COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT_RGBA =
 	COLOR_INFO_BACKGROUND_RGBA = COLOR_INFO_FOREGROUND_RGBA = COLOR_LINK_FOREGROUND_RGBA = COLOR_WIDGET_DISABLED_FOREGROUND_RGBA =
-	COLOR_TEXT_DISABLED_BACKGROUND_RGBA = null;
+	COLOR_TEXT_DISABLED_BACKGROUND_RGBA = COLOR_WIDGET_ACCENT_RGBA = null;
 	COLOR_TOGGLE_BUTTON_FOREGROUND_RGBA = null;
 
 	/* Dispose the event callback */

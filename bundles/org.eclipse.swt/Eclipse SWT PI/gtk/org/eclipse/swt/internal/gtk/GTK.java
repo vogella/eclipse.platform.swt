@@ -1033,6 +1033,12 @@ public class GTK extends OS {
 	public static final native void gtk_style_context_remove_class(long context, byte[] class_name);
 	/** @param self cast=(GtkStyleContext *) */
 	public static final native void gtk_style_context_save(long self);
+	/**
+	 * @param context cast=(GtkStyleContext *)
+	 * @param color_name cast=(const gchar *)
+	 * @param color cast=(GdkRGBA *)
+	 */
+	public static final native boolean gtk_style_context_lookup_color(long context, byte[] color_name, GdkRGBA color);
 	/** @param self cast=(GtkStyleContext *) */
 	public static final native void gtk_style_context_restore(long self);
 	/**
