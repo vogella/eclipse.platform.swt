@@ -95,7 +95,6 @@ import org.eclipse.swt.widgets.*;
  */
 class WebKit extends WebBrowser {
 	long webView;
-	long pageId;
 
 	int failureCount, lastKeyCode, lastCharCode;
 
@@ -160,24 +159,15 @@ class WebKit extends WebBrowser {
 	static Map<LONG, Integer> webKitDownloadStatus = new HashMap<> ();
 
 	static final String ABOUT_BLANK = "about:blank"; //$NON-NLS-1$
-	static final String CLASSNAME_EXTERNAL = "External"; //$NON-NLS-1$
-	static final String FUNCTIONNAME_CALLJAVA = "callJava"; //$NON-NLS-1$
-	static final String HEADER_CONTENTTYPE = "content-type"; //$NON-NLS-1$
-	static final String MIMETYPE_FORMURLENCODED = "application/x-www-form-urlencoded"; //$NON-NLS-1$
-	static final String OBJECTNAME_EXTERNAL = "external"; //$NON-NLS-1$
 	static final String PROPERTY_LENGTH = "length"; //$NON-NLS-1$
-	static final String PROPERTY_PROXYHOST = "network.proxy_host"; //$NON-NLS-1$
-	static final String PROPERTY_PROXYPORT = "network.proxy_port"; //$NON-NLS-1$
 	static final String PROTOCOL_FILE = "file://"; //$NON-NLS-1$
 	static final String PROTOCOL_HTTP = "http://"; //$NON-NLS-1$
 	static final String URI_FILEROOT = "file:///"; //$NON-NLS-1$
 	static final String USER_AGENT = "user-agent"; //$NON-NLS-1$
-	static final int MAX_PORT = 65535;
 	static final int MAX_PROGRESS = 100;
 	static final int[] MIN_VERSION = {2, 6, 0};
 	static final int SENTINEL_KEYPRESS = -1;
 	static final char SEPARATOR_FILE = File.separatorChar;
-	static final int STOP_PROPOGATE = 1;
 
 	static final String DOMEVENT_DRAGSTART = "dragstart"; //$NON-NLS-1$
 	static final String DOMEVENT_KEYDOWN = "keydown"; //$NON-NLS-1$
@@ -823,8 +813,6 @@ public void create (Composite parent, int style) {
 		OS.g_signal_connect (webView, OS.focus_out_event, JSDOMEventProc.getAddress (), WIDGET_EVENT);
 	}
 	// if connecting any other special gtk event to webkit, add SWT.* to w2_passThroughSwtEvents above.
-
-	this.pageId = WebKitGTK.webkit_web_view_get_page_id (webView);
 
 	if (!GTK.GTK4) {
 		OS.g_signal_connect (webView, OS.key_press_event, JSDOMEventProc.getAddress (),  	WIDGET_EVENT);
