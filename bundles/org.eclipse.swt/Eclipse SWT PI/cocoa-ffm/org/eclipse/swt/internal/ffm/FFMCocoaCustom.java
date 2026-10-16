@@ -51,7 +51,26 @@ public final class FFMCocoaCustom {
 	static final Map<Long, Object> REFERENCES = new ConcurrentHashMap<>();
 	static final AtomicLong NEXT_REFERENCE = new AtomicLong(1);
 
+	static {
+		Runtime.getRuntime().addShutdownHook(new Thread(FFMCocoaCustom::detachApplicationDelegate, "SWT-detach-application-delegate"));
+	}
+
 	private FFMCocoaCustom() {
+	}
+
+	/**
+	 * Takes SWTApplicationDelegate, a process wide object that Display never releases, off NSApplication
+	 * before the VM is destroyed. AppKit still sends it notifications while the process exits, and an
+	 * upcall stub has no code left to run then, where the trampolines of callback.c returned harmlessly.
+	 */
+	static void detachApplicationDelegate() {
+		long delegateClass = OS.objc_lookUpClass("SWTApplicationDelegate");
+		if (delegateClass == 0) return;
+		long application = OS.objc_msgSend(OS.class_NSApplication, OS.sel_sharedApplication);
+		long delegate = OS.objc_msgSend(application, OS.sel_delegate);
+		if (delegate != 0 && OS.object_getClass(delegate) == delegateClass) {
+			OS.objc_msgSend(application, OS.sel_setDelegate_, 0);
+		}
 	}
 
 	static SymbolLookup lookup() {
