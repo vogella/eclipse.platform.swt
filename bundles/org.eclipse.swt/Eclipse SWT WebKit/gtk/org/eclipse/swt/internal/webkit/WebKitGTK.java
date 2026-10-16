@@ -275,14 +275,8 @@ public static final native void webkit_credential_free(long credential);
 public static final native long webkit_web_context_allow_tls_certificate_for_host(long webKitWebContext, long GTlsCertificate, byte[] constGCharHost);
 
 /** @method flags=dynamic */
-public static final native long webkit_web_context_get_type();
-
-/** @method flags=dynamic */
 public static final native long webkit_credential_new(byte[] username, byte[] password, int persistence);
 
-
-/** @method flags=dynamic */
-public static final native int webkit_dom_event_target_add_event_listener(long target, byte[] name, long handler, int bubble, long userData);
 
 /** @method flags=dynamic */
 public static final native int webkit_dom_mouse_event_get_alt_key(long self);
@@ -325,9 +319,6 @@ public static final native long webkit_download_get_request(long download);
 
 /** @method flags=dynamic */
 public static final native long webkit_download_get_response(long download);
-
-/** @method flags=dynamic */
-public static final native long webkit_download_get_type();
 
 /** @method flags=dynamic */
 public static final native long webkit_uri_response_get_content_length(long response);
@@ -427,9 +418,6 @@ public static final native int webkit_web_view_can_show_mime_type(long web_view,
 
 /** @method flags=dynamic */
 public static final native double webkit_web_view_get_estimated_load_progress(long web_view);
-
-/** @method flags=dynamic */
-public static final native long webkit_web_view_get_page_id(long web_view);
 
 /** @method flags=dynamic */
 public static final native long webkit_web_view_get_settings(long web_view);
@@ -576,10 +564,6 @@ public static final native int jsc_value_to_int32(long value);
 /**
  * @method flags=dynamic
  */
-public static final native boolean jsc_value_is_typed_array(long value);
-/**
- * @method flags=dynamic
- */
 public static final native long jsc_value_object_get_property(long value, byte[] name);
 /**
  * @method flags=dynamic
@@ -592,9 +576,6 @@ public static final native void webkit_web_view_stop_loading(long web_view);
 
 /** @method flags=dynamic */
 public static final native void webkit_website_data_manager_clear(long manager, long types, long timespan, long cancellable, long callback, long user_data);
-
-/** @method flags=dynamic */
-public static final native long webkit_response_policy_decision_get_request(long decision);
 
 /** @method flags=dynamic */
 public static final native long webkit_response_policy_decision_get_response(long decision);
