@@ -89,6 +89,7 @@ public final class FFM {
 
 	static final String[] LIBRARIES = WINDOWS ? WIN32_LIBRARIES : MACOS ? MACOS_LIBRARIES : GTK4 ? GTK4_LIBRARIES : GTK_LIBRARIES;
 
+	private static final java.util.List<SymbolLookup> LAZY = new java.util.concurrent.CopyOnWriteArrayList<>();
 	static final SymbolLookup LOOKUP = createLookup();
 
 	private FFM() {
@@ -144,11 +145,26 @@ public final class FFM {
 		}
 	}
 
+	private static boolean frameworksLoaded;
+
+	/**
+	 * macOS: loads every framework SWT uses, which the JNI library links up front, so that the Objective-C classes
+	 * they register can be found. Returns whether this call loaded anything.
+	 */
+	public static synchronized boolean loadFrameworks() {
+		if (!MACOS || frameworksLoaded) return false;
+		frameworksLoaded = true;
+		for (SymbolLookup lazy : LAZY) lazy.find("");
+		return true;
+	}
+
 	static SymbolLookup createLookup() {
 		SymbolLookup lookup = SymbolLookup.loaderLookup();
 		for (String library : LIBRARIES) {
 			if (WINDOWS || MACOS) {
-				lookup = lookup.or(lazy(library));
+				SymbolLookup lazy = lazy(library);
+				LAZY.add(lazy);
+				lookup = lookup.or(lazy);
 				continue;
 			}
 			try {

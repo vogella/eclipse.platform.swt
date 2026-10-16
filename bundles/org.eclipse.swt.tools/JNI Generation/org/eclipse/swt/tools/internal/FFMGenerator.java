@@ -821,6 +821,10 @@ public class FFMGenerator extends JNIGenerator {
 		}
 		outputln(");");
 		if (plan.dynamic) outputln("\t\t}");
+		// the JNI library links every framework, so its classes are registered; here the frameworks load lazily
+		if (returns && (plan.cName.equals("objc_getClass") || plan.cName.equals("objc_lookUpClass"))) {
+			outputln("\t\tif (rc == 0 && FFM.loadFrameworks()) rc = (long) " + holder + ".MH.invokeExact(lparg0);");
+		}
 		// same order as the JNI setters, so the first of several aliased arrays is copied back last
 		for (int n = plan.params.size() - 1; n >= 0; n--) {
 			Param p = plan.params.get(n);

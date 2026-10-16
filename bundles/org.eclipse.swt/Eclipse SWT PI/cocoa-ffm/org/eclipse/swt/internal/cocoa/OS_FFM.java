@@ -2699,6 +2699,7 @@ public static long objc_getClass(String arg0) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.string(arena, arg0);
 		long rc = (long) MH_objc_1getClass.MH.invokeExact(lparg0);
+		if (rc == 0 && FFM.loadFrameworks()) rc = (long) MH_objc_1getClass.MH.invokeExact(lparg0);
 		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
@@ -2741,6 +2742,7 @@ public static long objc_lookUpClass(String arg0) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg0 = FFM.string(arena, arg0);
 		long rc = (long) MH_objc_1lookUpClass.MH.invokeExact(lparg0);
+		if (rc == 0 && FFM.loadFrameworks()) rc = (long) MH_objc_1lookUpClass.MH.invokeExact(lparg0);
 		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
