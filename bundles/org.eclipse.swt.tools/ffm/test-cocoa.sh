@@ -55,10 +55,13 @@ done
 if [ $# -gt 0 ]; then
 	classes=("$@")
 else
+	# no process substitution, which fails in the bash 3.2 of macOS
+	(cd "$B/swt-tests" && ls org/eclipse/swt/tests/junit/Test_org_eclipse_swt_{widgets,graphics,custom,browser,accessibility,dnd,layout,events,program,printing}_*.class \
+		org/eclipse/swt/tests/cocoa/*.class 2>/dev/null) | grep -v '\$' | grep -v 'Clipboard' | sed -e 's/\.class$//' -e 's#/#.#g' > "$B/test-classes.txt" || true
 	classes=()
-	while IFS= read -r class; do classes+=("$class"); done < <(cd "$B/swt-tests" && ls org/eclipse/swt/tests/junit/Test_org_eclipse_swt_{widgets,graphics,custom,browser,accessibility,dnd,layout,events,program,printing}_*.class \
-		org/eclipse/swt/tests/cocoa/*.class 2>/dev/null | grep -v '\$' | grep -v 'Clipboard' | sed -e 's/\.class$//' -e 's#/#.#g')
+	while IFS= read -r class; do classes+=("$class"); done < "$B/test-classes.txt"
 fi
+[ ${#classes[@]} -gt 0 ] || { echo "test-cocoa.sh: no test classes found in $B/swt-tests" >&2; exit 1; }
 
 for mode in jni ffm; do
 	# the JNI build loads the libraries of this checkout, the FFM build none
