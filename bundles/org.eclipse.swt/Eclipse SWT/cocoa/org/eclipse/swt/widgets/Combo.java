@@ -1295,8 +1295,12 @@ public void removeAll () {
 	if ((style & SWT.READ_ONLY) != 0) {
 		((NSPopUpButton)view).removeAllItems();
 	} else {
+		NSComboBox widget = (NSComboBox)view;
+		// removeAllItems() does not reliably reset the selected index
+		long selected = widget.indexOfSelectedItem();
+		if (selected >= 0) widget.deselectItemAtIndex(selected);
 		setText ("", true);
-		((NSComboBox)view).removeAllItems();
+		widget.removeAllItems();
 	}
 	ignoreSelection = false;
 }
