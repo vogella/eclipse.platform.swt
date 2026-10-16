@@ -1325,4 +1325,320 @@ private void executeWithNonDefaultDeviceZoom(Runnable executable) {
 		DPIUtil.setDeviceZoom(previousDeviceZoom);
 	}
 }
+
+/* Characterization tests for text extents, text colour caching and blend mode/clipping/transform state */
+
+private Point[] extentsTwice(String text, int flags) {
+	Point first = gc.textExtent(text, flags);
+	Point second = gc.textExtent(text, flags);
+	assertEquals(first, second, "cached textExtent differs for '" + text + "' flags " + flags);
+	return new Point[] {first, second};
+}
+
+private Point extent(String text, int flags) {
+	return extentsTwice(text, flags)[0];
+}
+
+@Test
+public void test_textExtentMnemonic() {
+	Point plain = extent("Hello", 0);
+	assertTrue(plain.x > 0 && plain.y > 0);
+	assertEquals(plain.x, extent("Hello", SWT.DRAW_MNEMONIC).x);
+	// a mnemonic & adds no width
+	assertEquals(plain, extent("&Hello", SWT.DRAW_MNEMONIC));
+	assertEquals(plain, extent("Hel&lo", SWT.DRAW_MNEMONIC));
+	// a trailing & is handled consistently, whatever the platform does with it
+	extent("Hello&", SWT.DRAW_MNEMONIC);
+	// without the flag the & is an ordinary character
+	assertTrue(extent("&Hello", 0).x > plain.x);
+	assertEquals(extent("&Hello", 0), extent("&Hello", SWT.DRAW_DELIMITER));
+	// && is an escaped &
+	assertEquals(extent("A&B", 0), extent("A&&B", SWT.DRAW_MNEMONIC));
+	assertTrue(extent("A&&B", SWT.DRAW_MNEMONIC).x > extent("AB", 0).x);
+	// asking for another string in between must not confuse the cache
+	extent("Something else entirely", SWT.DRAW_MNEMONIC);
+	assertEquals(plain, extent("&Hello", SWT.DRAW_MNEMONIC));
+	assertEquals(extent("&Hello", 0), gc.textExtent("&Hello", 0));
+}
+
+@Test
+public void test_textExtentDelimiter() {
+	Point one = extent("a", SWT.DRAW_DELIMITER);
+	Point two = extent("a\nb", SWT.DRAW_DELIMITER);
+	assertTrue(two.y > one.y, "a new line adds height");
+	assertEquals(extent("a\na", SWT.DRAW_DELIMITER), extent("a\r\na", SWT.DRAW_DELIMITER));
+	assertEquals(extent("a\nb", SWT.DRAW_DELIMITER), extent("a\rb", SWT.DRAW_DELIMITER));
+	assertEquals(two.y, extent("a\r\nb", SWT.DRAW_DELIMITER).y);
+	Point three = extent("a\nb\nc", SWT.DRAW_DELIMITER);
+	assertTrue(three.y > two.y);
+	// the widest line wins
+	assertEquals(extent("bbbb", SWT.DRAW_DELIMITER).x, extent("a\nbbbb\nc", SWT.DRAW_DELIMITER).x);
+	// the default textExtent(String) handles delimiters and tabs
+	assertEquals(gc.textExtent("a\nb"), extent("a\nb", SWT.DRAW_DELIMITER | SWT.DRAW_TAB));
+	// the delimiter combined with a mnemonic
+	assertEquals(extent("ab\ncd", SWT.DRAW_DELIMITER), extent("a&b\nc&d", SWT.DRAW_DELIMITER | SWT.DRAW_MNEMONIC));
+}
+
+@Test
+public void test_textExtentTab() {
+	Point noTab = extent("ab", SWT.DRAW_TAB);
+	Point tab = extent("a\tb", SWT.DRAW_TAB);
+	assertTrue(tab.x > noTab.x, "a tab adds width");
+	assertEquals(tab, extent("a\tb", SWT.DRAW_TAB | SWT.DRAW_MNEMONIC));
+	assertEquals(extent("a\tb", SWT.DRAW_TAB | SWT.DRAW_DELIMITER), extent("a\tb", SWT.DRAW_DELIMITER | SWT.DRAW_TAB));
+	assertTrue(extent("a\t\tb", SWT.DRAW_TAB).x > tab.x);
+	assertEquals(extent("a\tb", SWT.DRAW_TAB).y, noTab.y);
+}
+
+@Test
+public void test_stringExtent() {
+	assertEquals(0, gc.stringExtent("").x);
+	Point hello = gc.stringExtent("Hello");
+	assertEquals(hello, gc.stringExtent("Hello"));
+	assertTrue(hello.x > 0 && hello.y > 0);
+	// stringExtent does not handle mnemonics
+	Point mnemonic = gc.stringExtent("&Hello");
+	assertEquals(mnemonic, gc.stringExtent("&Hello"));
+	assertTrue(mnemonic.x > hello.x);
+	assertEquals(mnemonic, gc.textExtent("&Hello", 0));
+	assertEquals(hello, gc.textExtent("Hello", 0));
+	assertEquals(hello.y, mnemonic.y);
+	// alternating strings give independent results
+	assertEquals(hello, gc.stringExtent("Hello"));
+	assertEquals(mnemonic, gc.stringExtent("&Hello"));
+}
+
+@Test
+public void test_textExtentWithFontChange() {
+	Font big = new Font(display, SwtTestUtil.testFontName, 24, SWT.NORMAL);
+	try {
+		Point before = extent("Hello &World", SWT.DRAW_MNEMONIC);
+		gc.setFont(big);
+		Point bigger = extent("Hello &World", SWT.DRAW_MNEMONIC);
+		assertTrue(bigger.x > before.x && bigger.y > before.y);
+		gc.setFont(null);
+		assertEquals(before, extent("Hello &World", SWT.DRAW_MNEMONIC));
+	} finally {
+		gc.setFont(null);
+		big.dispose();
+	}
+}
+
+private static int rgbAt(ImageData data, int x, int y) {
+	RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+	return (rgb.red << 16) | (rgb.green << 8) | rgb.blue;
+}
+
+private static byte[] pixelBytes(ImageData data) {
+	return data.data.clone();
+}
+
+private void clear(GC target, Image targetImage) {
+	target.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+	target.fillRectangle(targetImage.getBounds());
+}
+
+@Test
+public void test_drawTextWithEqualColorsIsIdentical() {
+	Color first = new Color(200, 30, 90);
+	Color second = new Color(200, 30, 90);
+	Color other = new Color(10, 120, 250);
+	try {
+		assertNotEquals(System.identityHashCode(first), System.identityHashCode(second));
+		int[] flagsToTest = { 0, SWT.DRAW_TRANSPARENT, SWT.DRAW_MNEMONIC | SWT.DRAW_TRANSPARENT,
+				SWT.DRAW_DELIMITER | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT };
+		for (int flags : flagsToTest) {
+			String message = "flags " + flags;
+			clear(gc, image);
+			gc.setForeground(first);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withFirst = image.getImageData();
+
+			// intermediate use of another colour
+			clear(gc, image);
+			gc.setForeground(other);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withOther = image.getImageData();
+
+			clear(gc, image);
+			gc.setForeground(second);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withSecond = image.getImageData();
+
+			clear(gc, image);
+			gc.setForeground(first);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withFirstAgain = image.getImageData();
+
+			assertArrayEquals(pixelBytes(withFirst), pixelBytes(withSecond), message);
+			assertArrayEquals(pixelBytes(withFirst), pixelBytes(withFirstAgain), message);
+			assertFalse(Arrays.equals(pixelBytes(withFirst), pixelBytes(withOther)), message);
+		}
+	} finally {
+		first.dispose();
+		second.dispose();
+		other.dispose();
+	}
+}
+
+@Test
+public void test_drawTextWithEqualBackgroundColorsIsIdentical() {
+	Color first = new Color(250, 250, 100);
+	Color second = new Color(250, 250, 100);
+	try {
+		clear(gc, image);
+		gc.setBackground(first);
+		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.drawText("Background", 5, 5);
+		ImageData withFirst = image.getImageData();
+		clear(gc, image);
+		gc.setBackground(second);
+		gc.drawText("Background", 5, 5);
+		ImageData withSecond = image.getImageData();
+		assertArrayEquals(pixelBytes(withFirst), pixelBytes(withSecond));
+		assertEquals(0xFAFA64, rgbAt(withFirst, 5, 5));
+	} finally {
+		first.dispose();
+		second.dispose();
+	}
+}
+
+@Test
+public void test_xorModeFillsAndNormalModeIsRestored() {
+	Color red = new Color(255, 0, 0);
+	Color blue = new Color(0, 0, 255);
+	try {
+		clear(gc, image);
+		assertFalse(gc.getXORMode());
+		gc.setBackground(red);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setXORMode(true);
+		assertTrue(gc.getXORMode());
+		gc.fillRectangle(0, 40, 20, 20);
+		gc.setXORMode(false);
+		assertFalse(gc.getXORMode());
+		gc.fillRectangle(0, 80, 20, 20);
+		gc.setBackground(blue);
+		gc.fillRectangle(40, 0, 20, 20);
+		gc.setXORMode(true);
+		gc.setXORMode(false);
+		gc.fillRectangle(40, 40, 20, 20);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 10, 10), "plain fill before xor");
+		assertEquals(0xFF0000, rgbAt(data, 10, 90), "plain fill after xor");
+		assertEquals(0x0000FF, rgbAt(data, 50, 10), "colour change after xor");
+		assertEquals(0x0000FF, rgbAt(data, 50, 50), "xor toggled without drawing");
+		assertEquals(0xFFFFFF, rgbAt(data, 30, 10), "untouched");
+		assertNotEquals(0xFF0000, rgbAt(data, 10, 50), "xor fill differs from plain fill");
+		// lines and text are also not xored any more
+		gc.setForeground(red);
+		gc.drawLine(100, 10, 150, 10);
+		gc.drawRectangle(100, 30, 20, 20);
+		data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 120, 10));
+		assertEquals(0xFF0000, rgbAt(data, 100, 40));
+	} finally {
+		gc.setXORMode(false);
+		red.dispose();
+		blue.dispose();
+	}
+}
+
+@Test
+public void test_drawingAfterClippingChanges() {
+	Color red = new Color(255, 0, 0);
+	try {
+		clear(gc, image);
+		gc.setBackground(red);
+		gc.setClipping(10, 10, 30, 30);
+		gc.fillRectangle(0, 0, 100, 100);
+		gc.setClipping(new Rectangle(100, 100, 20, 20));
+		gc.fillRectangle(0, 0, 200, 200);
+		gc.setClipping((Rectangle) null);
+		gc.fillRectangle(150, 0, 20, 20);
+		gc.setForeground(red);
+		gc.setClipping(0, 150, 50, 10);
+		gc.drawLine(0, 155, 199, 155);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 20, 20), "inside first clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 5, 5), "outside first clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 50, 50), "outside first clip");
+		assertEquals(0xFF0000, rgbAt(data, 110, 110), "inside second clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 90, 90), "outside second clip");
+		assertEquals(0xFF0000, rgbAt(data, 160, 10), "clip removed");
+		assertEquals(0xFF0000, rgbAt(data, 20, 155), "line inside clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 120, 155), "line outside clip");
+	} finally {
+		gc.setClipping((Rectangle) null);
+		red.dispose();
+	}
+}
+
+@Test
+public void test_drawingAfterTransformChanges() {
+	Color red = new Color(255, 0, 0);
+	Color green = new Color(0, 255, 0);
+	Transform translate = new Transform(display);
+	Transform other = new Transform(display);
+	try {
+		translate.translate(100, 100);
+		other.translate(0, 120);
+		clear(gc, image);
+		gc.setBackground(red);
+		gc.setTransform(translate);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setBackground(green);
+		gc.setTransform(null);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setTransform(other);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setBackground(red);
+		gc.fillRectangle(40, 0, 20, 20);
+		gc.setTransform(null);
+		gc.fillRectangle(40, 0, 20, 10);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 110, 110), "translated fill");
+		assertEquals(0x00FF00, rgbAt(data, 10, 10), "fill after transform reset");
+		assertEquals(0x00FF00, rgbAt(data, 10, 130), "second transform");
+		assertEquals(0xFF0000, rgbAt(data, 50, 130), "transform and colour together");
+		assertEquals(0xFFFFFF, rgbAt(data, 50, 195), "outside the fill");
+		assertEquals(0xFF0000, rgbAt(data, 50, 5), "untransformed again");
+		assertEquals(0xFFFFFF, rgbAt(data, 150, 150), "untouched");
+	} finally {
+		gc.setTransform(null);
+		gc.setClipping((Rectangle) null);
+		translate.dispose();
+		other.dispose();
+		red.dispose();
+		green.dispose();
+	}
+}
+
+@Test
+public void test_xorModeWithClippingAndTransform() {
+	Color red = new Color(255, 0, 0);
+	Transform translate = new Transform(display);
+	try {
+		translate.translate(100, 0);
+		clear(gc, image);
+		gc.setBackground(red);
+		gc.setXORMode(true);
+		gc.setClipping(0, 0, 50, 50);
+		gc.setTransform(translate);
+		gc.setXORMode(false);
+		gc.setTransform(null);
+		gc.setClipping((Rectangle) null);
+		gc.fillRectangle(0, 0, 10, 10);
+		gc.setTransform(translate);
+		gc.fillRectangle(0, 0, 10, 10);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 5, 5));
+		assertEquals(0xFF0000, rgbAt(data, 105, 5));
+	} finally {
+		gc.setTransform(null);
+		gc.setClipping((Rectangle) null);
+		translate.dispose();
+		red.dispose();
+	}
+}
 }
