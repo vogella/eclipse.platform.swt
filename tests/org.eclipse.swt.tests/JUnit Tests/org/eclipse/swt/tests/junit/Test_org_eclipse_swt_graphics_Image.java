@@ -52,6 +52,7 @@ import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.Display;
 import org.junit.jupiter.api.BeforeEach;
@@ -1122,6 +1123,115 @@ public void test_updateWidthHeightAfterDPIChange() {
 		gc.dispose();
 		baseImage.dispose();
 	} finally {
+		DPIUtil.setDeviceZoom(deviceZoom);
+	}
+}
+
+@Test
+public void test_imageGcDrawerDrawsAtRequestedZoom() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	ImageGcDrawer halfPointDrawer = (gc, width, height) -> {
+		gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+		Transform half = new Transform(display, 0.5f, 0, 0, 0.5f, 0, 0);
+		try {
+			gc.setTransform(half);
+			gc.fillRectangle(0, 0, 1, 1);
+		} finally {
+			gc.setTransform(null);
+			half.dispose();
+		}
+	};
+	Image image = new Image(display, halfPointDrawer, 2, 2);
+	try {
+		ImageData imageData = image.getImageData(200);
+		assertEquals(4, imageData.width);
+		// A half point is exactly one pixel at 200%
+		int black = imageData.palette.getPixel(new RGB(0, 0, 0));
+		int white = imageData.palette.getPixel(new RGB(255, 255, 255));
+		assertEquals(black, imageData.getPixel(0, 0));
+		assertEquals(white, imageData.getPixel(1, 0));
+		assertEquals(white, imageData.getPixel(0, 1));
+		assertEquals(white, imageData.getPixel(1, 1));
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_rightToLeftImageGcDrawerMirrorsAtRequestedZoom() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	ImageGcDrawer leftColumnDrawer = new ImageGcDrawer() {
+		@Override
+		public void drawOn(GC gc, int width, int height) {
+			gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+			gc.fillRectangle(0, 0, 1, height);
+		}
+
+		@Override
+		public int getGcStyle() {
+			return SWT.RIGHT_TO_LEFT;
+		}
+	};
+	Image image = new Image(display, leftColumnDrawer, 2, 2);
+	try {
+		ImageData imageData = image.getImageData(200);
+		int black = imageData.palette.getPixel(new RGB(0, 0, 0));
+		int white = imageData.palette.getPixel(new RGB(255, 255, 255));
+		assertEquals(white, imageData.getPixel(0, 0));
+		assertEquals(black, imageData.getPixel(3, 0));
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_imageGcDrawerGradientAndClippingAreInPointsAtRequestedZoom() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	Rectangle[] clipping = new Rectangle[1];
+	ImageGcDrawer gradientDrawer = (gc, width, height) -> {
+		clipping[0] = gc.getClipping();
+		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.fillGradientRectangle(0, 0, width, height, false);
+	};
+	Image image = new Image(display, gradientDrawer, 2, 2);
+	try {
+		ImageData imageData = image.getImageData(200);
+		assertEquals(new Rectangle(0, 0, 2, 2), clipping[0]);
+		int black = imageData.palette.getPixel(new RGB(0, 0, 0));
+		assertEquals(black, imageData.getPixel(3, 3));
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_transparentImageGcDrawerKeepsSizeAfterDPIChange() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	ImageGcDrawer transparentDrawer = new ImageGcDrawer() {
+		@Override
+		public void drawOn(GC gc, int width, int height) {
+			gc.fillRectangle(0, 0, width, height);
+		}
+
+		@Override
+		public int getGcStyle() {
+			return SWT.TRANSPARENT;
+		}
+	};
+	int deviceZoom = DPIUtil.getDeviceZoom();
+	Image image = null;
+	GC gc = null;
+	try {
+		image = new Image(display, transparentDrawer, 16, 16);
+		gc = new GC(display);
+		DPIUtil.setDeviceZoom(deviceZoom * 2);
+		gc.drawImage(image, 0, 0);
+		assertEquals(new Rectangle(0, 0, 16, 16), image.getBounds());
+		assertEquals(DPIUtil.pointToPixel(16, deviceZoom * 2), image.getImageData(deviceZoom * 2).width);
+	} finally {
+		if (gc != null) gc.dispose();
+		if (image != null) image.dispose();
 		DPIUtil.setDeviceZoom(deviceZoom);
 	}
 }

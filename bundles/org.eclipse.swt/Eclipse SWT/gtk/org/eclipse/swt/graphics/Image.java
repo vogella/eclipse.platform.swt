@@ -1291,15 +1291,16 @@ public ImageData getImageData (int zoom) {
 
 private ImageData drawWithImageGcDrawer(int width, int height, int zoom) {
 	int gcStyle = imageGcDrawer.getGcStyle();
-	Image image;
+	// Draw on a surface at the requested zoom, so the result needs no pixel scaling
+	int scaledWidth = DPIUtil.pointToPixel(width, zoom);
+	int scaledHeight = DPIUtil.pointToPixel(height, zoom);
+	final ImageData resultData = new ImageData(scaledWidth, scaledHeight, 24, new PaletteData (0xFF, 0xFF00, 0xFF0000));
 	if ((gcStyle & SWT.TRANSPARENT) != 0) {
-		/* Create a 24 bit image data with alpha channel */
-		final ImageData resultData = new ImageData(width, height, 24, new PaletteData (0xFF, 0xFF00, 0xFF0000));
-		resultData.alphaData = new byte [width * height];
-		image = new Image(device, resultData, zoom);
+		resultData.alphaData = new byte [scaledWidth * scaledHeight];
 	} else {
-		image = new Image(device, width, height);
+		Arrays.fill(resultData.data, (byte) 0xFF);
 	}
+	Image image = new Image(device, resultData, zoom);
 	GC gc = new GC(image, gcStyle);
 	try {
 		imageGcDrawer.drawOn(gc, width, height);
