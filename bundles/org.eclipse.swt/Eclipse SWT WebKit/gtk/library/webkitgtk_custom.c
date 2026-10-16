@@ -55,18 +55,6 @@ int fps_cached = 0;
 			fp_##function = fp; \
 		}
 
-void initFPs() {
-	// Example of a dynamic function initialization.
-//	INIT_WEBKIT_FP(webkit_web_view_run_javascript_finish);
-
-	fps_cached = 1;
-	return;
-
-//	fail: // uncomment this if you make use of this function.
-	fps_cached = -1;
-	g_critical("SWT webkitgtk_custom.c: Failed to load webkit function pointer(s)");
-}
-
 // Example of a function that makes dynamic calls.
 //JNIEXPORT void Java_org_eclipse_swt_internal_webkit_WebKitGTK__1swtWebkitEvaluateJavascript
 //	(JNIEnv *env, jclass that, jlong webkit_handle, jbyteArray javascriptStringBytes, jobject swtjsreturnvalOBJ)

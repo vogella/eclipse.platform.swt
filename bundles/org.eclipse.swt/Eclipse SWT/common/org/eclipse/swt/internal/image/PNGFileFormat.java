@@ -29,9 +29,6 @@ public final class PNGFileFormat extends StaticImageFileFormat {
 	ImageData imageData;
 	byte[] data;
 	byte[] alphaPalette;
-	byte headerByte1;
-	byte headerByte2;
-	int adler;
 
 /**
  * Skip over signature data. This has already been
@@ -310,11 +307,8 @@ void setImageDataValues(byte[] data, ImageData imageData) {
  * decoding the data, filtering, and interlacing.
  */
 void readPixelData(PngIdatChunk chunk, PngChunkReader chunkReader) throws IOException {
-	//TEMPORARY CODE
-	boolean use3_2 = System.getProperty("org.eclipse.swt.internal.image.PNGFileFormat_3.2") != null;
 	try (InputStream pngStream = new PngInputStream(chunk, chunkReader);
-			InputStream stream = use3_2 ? new PngDecodingDataStream(pngStream)
-					: new BufferedInputStream(new InflaterInputStream(pngStream));) {
+			InputStream stream = new BufferedInputStream(new InflaterInputStream(pngStream));) {
 		int interlaceMethod = headerChunk.getInterlaceMethod();
 		if (interlaceMethod == PngIhdrChunk.INTERLACE_METHOD_NONE) {
 			readNonInterlacedImage(stream);

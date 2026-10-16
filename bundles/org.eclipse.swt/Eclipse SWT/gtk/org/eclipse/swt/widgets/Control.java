@@ -61,6 +61,10 @@ public abstract class Control extends Widget implements Drawable {
 	/* GTK4: where the pointer last moved over this control, relative to it */
 	double pointerX, pointerY;
 	long redrawWindow, enableWindow, provider;
+	/* Parsed content of provider, reset whenever provider is reloaded */
+	GdkRGBA providerBackground, providerForeground;
+	/* Cached when the provider sets no color, so the current theme default is used */
+	static final GdkRGBA NO_PROVIDER_COLOR = new GdkRGBA ();
 	int drawCount, backgroundAlpha = 255;
 	long dragGesture, zoomGesture, rotateGesture;
 	Composite parent;
@@ -3006,18 +3010,32 @@ public Image getBackgroundImage () {
 }
 
 GdkRGBA getContextBackgroundGdkRGBA () {
-	if ((state & BACKGROUND) == 0) {
+	if ((state & BACKGROUND) == 0 || provider == 0) {
 		return defaultBackground();
 	}
-	if (provider != 0) {
-		return display.gtk_css_parse_background (display.gtk_css_provider_to_string(provider), null);
-	} else {
-		return defaultBackground();
+	if (providerBackground == null) {
+		GdkRGBA rgba = display.gtk_css_parse_background (display.gtk_css_provider_to_string (provider), null);
+		providerBackground = rgba == display.COLOR_WIDGET_BACKGROUND_RGBA ? NO_PROVIDER_COLOR : rgba;
 	}
+	return copy (providerBackground == NO_PROVIDER_COLOR ? display.COLOR_WIDGET_BACKGROUND_RGBA : providerBackground);
 }
 
 GdkRGBA getContextColorGdkRGBA () {
-	return display.gtk_css_parse_foreground(display.gtk_css_provider_to_string(provider), null);
+	if (providerForeground == null) {
+		GdkRGBA rgba = display.gtk_css_parse_foreground (display.gtk_css_provider_to_string (provider), null);
+		providerForeground = rgba == display.COLOR_WIDGET_FOREGROUND_RGBA ? NO_PROVIDER_COLOR : rgba;
+	}
+	return copy (providerForeground == NO_PROVIDER_COLOR ? display.COLOR_WIDGET_FOREGROUND_RGBA : providerForeground);
+}
+
+/* Callers modify the returned color (e.g. alpha), so the cached instances are never handed out */
+static GdkRGBA copy (GdkRGBA rgba) {
+	GdkRGBA result = new GdkRGBA ();
+	result.red = rgba.red;
+	result.green = rgba.green;
+	result.blue = rgba.blue;
+	result.alpha = rgba.alpha;
+	return result;
 }
 
 GdkRGBA getBgGdkRGBA () {
@@ -5274,6 +5292,7 @@ void gtk_css_provider_load_from_css (long context, String css) {
 	} else {
 		GTK3.gtk_css_provider_load_from_data (provider, Converter.wcsToMbcs (css, true), -1, null);
 	}
+	providerBackground = providerForeground = null;
 }
 
 void setBackgroundGdkRGBA(GdkRGBA rgba) {

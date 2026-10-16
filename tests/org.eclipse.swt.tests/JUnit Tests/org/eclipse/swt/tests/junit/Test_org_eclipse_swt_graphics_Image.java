@@ -52,6 +52,7 @@ import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.widgets.Display;
 import org.junit.jupiter.api.BeforeEach;
@@ -1127,6 +1128,115 @@ public void test_updateWidthHeightAfterDPIChange() {
 }
 
 @Test
+public void test_imageGcDrawerDrawsAtRequestedZoom() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	ImageGcDrawer halfPointDrawer = (gc, width, height) -> {
+		gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+		Transform half = new Transform(display, 0.5f, 0, 0, 0.5f, 0, 0);
+		try {
+			gc.setTransform(half);
+			gc.fillRectangle(0, 0, 1, 1);
+		} finally {
+			gc.setTransform(null);
+			half.dispose();
+		}
+	};
+	Image image = new Image(display, halfPointDrawer, 2, 2);
+	try {
+		ImageData imageData = image.getImageData(200);
+		assertEquals(4, imageData.width);
+		// A half point is exactly one pixel at 200%
+		int black = imageData.palette.getPixel(new RGB(0, 0, 0));
+		int white = imageData.palette.getPixel(new RGB(255, 255, 255));
+		assertEquals(black, imageData.getPixel(0, 0));
+		assertEquals(white, imageData.getPixel(1, 0));
+		assertEquals(white, imageData.getPixel(0, 1));
+		assertEquals(white, imageData.getPixel(1, 1));
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_rightToLeftImageGcDrawerMirrorsAtRequestedZoom() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	ImageGcDrawer leftColumnDrawer = new ImageGcDrawer() {
+		@Override
+		public void drawOn(GC gc, int width, int height) {
+			gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+			gc.fillRectangle(0, 0, 1, height);
+		}
+
+		@Override
+		public int getGcStyle() {
+			return SWT.RIGHT_TO_LEFT;
+		}
+	};
+	Image image = new Image(display, leftColumnDrawer, 2, 2);
+	try {
+		ImageData imageData = image.getImageData(200);
+		int black = imageData.palette.getPixel(new RGB(0, 0, 0));
+		int white = imageData.palette.getPixel(new RGB(255, 255, 255));
+		assertEquals(white, imageData.getPixel(0, 0));
+		assertEquals(black, imageData.getPixel(3, 0));
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_imageGcDrawerGradientAndClippingAreInPointsAtRequestedZoom() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	Rectangle[] clipping = new Rectangle[1];
+	ImageGcDrawer gradientDrawer = (gc, width, height) -> {
+		clipping[0] = gc.getClipping();
+		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.fillGradientRectangle(0, 0, width, height, false);
+	};
+	Image image = new Image(display, gradientDrawer, 2, 2);
+	try {
+		ImageData imageData = image.getImageData(200);
+		assertEquals(new Rectangle(0, 0, 2, 2), clipping[0]);
+		int black = imageData.palette.getPixel(new RGB(0, 0, 0));
+		assertEquals(black, imageData.getPixel(3, 3));
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_transparentImageGcDrawerKeepsSizeAfterDPIChange() {
+	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
+	ImageGcDrawer transparentDrawer = new ImageGcDrawer() {
+		@Override
+		public void drawOn(GC gc, int width, int height) {
+			gc.fillRectangle(0, 0, width, height);
+		}
+
+		@Override
+		public int getGcStyle() {
+			return SWT.TRANSPARENT;
+		}
+	};
+	int deviceZoom = DPIUtil.getDeviceZoom();
+	Image image = null;
+	GC gc = null;
+	try {
+		image = new Image(display, transparentDrawer, 16, 16);
+		gc = new GC(display);
+		DPIUtil.setDeviceZoom(deviceZoom * 2);
+		gc.drawImage(image, 0, 0);
+		assertEquals(new Rectangle(0, 0, 16, 16), image.getBounds());
+		assertEquals(DPIUtil.pointToPixel(16, deviceZoom * 2), image.getImageData(deviceZoom * 2).width);
+	} finally {
+		if (gc != null) gc.dispose();
+		if (image != null) image.dispose();
+		DPIUtil.setDeviceZoom(deviceZoom);
+	}
+}
+
+@Test
 public void test_imageDataIsCached() {
 	assumeTrue(SwtTestUtil.isWindows, "On-demand image creation only implemented for Windows");
 	String imagePath = getPath("collapseall.png");
@@ -1336,5 +1446,218 @@ public void test_drawImageAtSize_reevaluatesSizabilityWhenFileNameChanges() thro
 	}
 }
 
+/* Characterization tests for IMAGE_DISABLE and alpha handling */
+
+private static final int ALPHA_TEST_SIZE = 4;
+
+private static ImageData createColorfulData(boolean withAlpha) {
+	PaletteData palette = new PaletteData(0xFF0000, 0x00FF00, 0x0000FF);
+	ImageData data = new ImageData(ALPHA_TEST_SIZE, ALPHA_TEST_SIZE, 24, palette);
+	int[] colors = { 0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00 };
+	for (int y = 0; y < ALPHA_TEST_SIZE; y++) {
+		for (int x = 0; x < ALPHA_TEST_SIZE; x++) {
+			data.setPixel(x, y, colors[(x + y) % colors.length]);
+		}
+	}
+	if (withAlpha) {
+		// fully transparent in the first row, fully opaque in the last, semi-transparent in between
+		int[] alphas = { 0, 128, 200, 255 };
+		data.alphaData = new byte[ALPHA_TEST_SIZE * ALPHA_TEST_SIZE];
+		for (int y = 0; y < ALPHA_TEST_SIZE; y++) {
+			for (int x = 0; x < ALPHA_TEST_SIZE; x++) {
+				data.setAlpha(x, y, alphas[y]);
+			}
+		}
+	}
+	return data;
 }
 
+private static int rgbOf(ImageData data, int x, int y) {
+	RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+	return (rgb.red << 16) | (rgb.green << 8) | rgb.blue;
+}
+
+private static int spread(int rgb) {
+	int r = (rgb >> 16) & 0xFF, g = (rgb >> 8) & 0xFF, b = rgb & 0xFF;
+	return Math.max(r, Math.max(g, b)) - Math.min(r, Math.min(g, b));
+}
+
+@Test
+public void test_ConstructorLorg_eclipse_swt_graphics_DeviceLorg_eclipse_swt_graphics_ImageI_imageDisableWithoutAlpha() {
+	Image source = new Image(display, createColorfulData(false));
+	Image disabled1 = new Image(display, source, SWT.IMAGE_DISABLE);
+	Image disabled2 = new Image(display, source, SWT.IMAGE_DISABLE);
+	try {
+		assertEquals(source.getBounds(), disabled1.getBounds());
+		ImageData sourceData = source.getImageData();
+		ImageData data1 = disabled1.getImageData();
+		ImageData data2 = disabled2.getImageData();
+		assertEquals(ALPHA_TEST_SIZE, data1.width);
+		assertEquals(ALPHA_TEST_SIZE, data1.height);
+		// the conversion is deterministic
+		assertEquals(java.util.Arrays.toString(data1.data), java.util.Arrays.toString(data2.data));
+		boolean changed = false;
+		for (int y = 0; y < ALPHA_TEST_SIZE; y++) {
+			for (int x = 0; x < ALPHA_TEST_SIZE; x++) {
+				int original = rgbOf(sourceData, x, y);
+				int result = rgbOf(data1, x, y);
+				changed |= original != result;
+				// the saturated colours are washed out
+				assertTrue(spread(result) < spread(original), "pixel " + x + "," + y + " must lose colour");
+				if (data1.alphaData != null) {
+					assertEquals(255, data1.getAlpha(x, y) & 0xFF, "opaque stays opaque");
+				}
+			}
+		}
+		assertTrue(changed, "disabling must change the pixels");
+		// the source is untouched
+		assertEquals(0xFF0000, rgbOf(source.getImageData(), 0, 0));
+	} finally {
+		disabled1.dispose();
+		disabled2.dispose();
+		source.dispose();
+	}
+}
+
+@Test
+public void test_ConstructorLorg_eclipse_swt_graphics_DeviceLorg_eclipse_swt_graphics_ImageI_imageDisableWithAlpha() {
+	Image source = new Image(display, createColorfulData(true));
+	Image disabled = new Image(display, source, SWT.IMAGE_DISABLE);
+	Image disabledAgain = new Image(display, source, SWT.IMAGE_DISABLE);
+	try {
+		ImageData sourceData = source.getImageData();
+		ImageData data = disabled.getImageData();
+		ImageData dataAgain = disabledAgain.getImageData();
+		assertEquals(java.util.Arrays.toString(data.data), java.util.Arrays.toString(dataAgain.data));
+		assertEquals(java.util.Arrays.toString(data.alphaData), java.util.Arrays.toString(dataAgain.alphaData));
+		for (int x = 0; x < ALPHA_TEST_SIZE; x++) {
+			assertEquals(0, data.getAlpha(x, 0) & 0xFF, "transparent stays transparent");
+			assertTrue((data.getAlpha(x, 3) & 0xFF) > 200, "opaque stays (almost) opaque");
+			int alphaSemi = data.getAlpha(x, 1) & 0xFF;
+			assertTrue(alphaSemi > 0, "semi-transparent stays visible");
+			assertTrue(spread(rgbOf(data, x, 3)) < spread(rgbOf(sourceData, x, 3)), "opaque pixel loses colour");
+		}
+	} finally {
+		disabled.dispose();
+		disabledAgain.dispose();
+		source.dispose();
+	}
+}
+
+@Test
+public void test_imageDisableOfUniformImageIsUniform() {
+	Image source = new Image(display, 8, 8);
+	Color blue = new Color(0, 0, 255);
+	GC gc = new GC(source);
+	try {
+		gc.setBackground(blue);
+		gc.fillRectangle(0, 0, 8, 8);
+	} finally {
+		gc.dispose();
+		blue.dispose();
+	}
+	Image disabled = new Image(display, source, SWT.IMAGE_DISABLE);
+	try {
+		ImageData data = disabled.getImageData();
+		int expected = rgbOf(data, 0, 0);
+		for (int y = 0; y < 8; y++) {
+			for (int x = 0; x < 8; x++) {
+				assertEquals(expected, rgbOf(data, x, y));
+			}
+		}
+		assertNotEquals(0x0000FF, expected);
+	} finally {
+		disabled.dispose();
+		source.dispose();
+	}
+}
+
+@Test
+public void test_alphaAndTransparentPixelsSurviveGetImageDataRoundTrip() {
+	ImageData original = createColorfulData(true);
+	Image image = new Image(display, original);
+	try {
+		ImageData first = image.getImageData();
+		ImageData second = image.getImageData();
+		assertEquals(ALPHA_TEST_SIZE, first.width);
+		assertEquals(ALPHA_TEST_SIZE, first.height);
+		assertNotNull(first.alphaData);
+		assertEquals(java.util.Arrays.toString(first.alphaData), java.util.Arrays.toString(second.alphaData));
+		assertEquals(java.util.Arrays.toString(first.data), java.util.Arrays.toString(second.data));
+		for (int y = 0; y < ALPHA_TEST_SIZE; y++) {
+			for (int x = 0; x < ALPHA_TEST_SIZE; x++) {
+				int expectedAlpha = original.getAlpha(x, y) & 0xFF;
+				int alpha = first.getAlpha(x, y) & 0xFF;
+				if (expectedAlpha == 0 || expectedAlpha == 255) {
+					assertEquals(expectedAlpha, alpha, "alpha at " + x + "," + y);
+				} else {
+					assertTrue(Math.abs(expectedAlpha - alpha) <= 2, "alpha at " + x + "," + y + " was " + alpha);
+				}
+				if (expectedAlpha == 255) {
+					assertEquals(rgbOf(original, x, y), rgbOf(first, x, y), "opaque colour at " + x + "," + y);
+				}
+			}
+		}
+		// a copy made from the round-tripped data looks the same
+		Image copy = new Image(display, first);
+		try {
+			ImageData copyData = copy.getImageData();
+			for (int y = 0; y < ALPHA_TEST_SIZE; y++) {
+				for (int x = 0; x < ALPHA_TEST_SIZE; x++) {
+					assertEquals(first.getAlpha(x, y) & 0xFF, copyData.getAlpha(x, y) & 0xFF, "copy alpha at " + x + "," + y);
+				}
+			}
+		} finally {
+			copy.dispose();
+		}
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_imageWithoutAlphaStaysOpaqueThroughGetImageData() {
+	Image image = new Image(display, createColorfulData(false));
+	try {
+		ImageData data = image.getImageData();
+		for (int y = 0; y < ALPHA_TEST_SIZE; y++) {
+			for (int x = 0; x < ALPHA_TEST_SIZE; x++) {
+				assertEquals(255, data.getAlpha(x, y) & 0xFF);
+				assertEquals(rgbOf(createColorfulData(false), x, y), rgbOf(data, x, y));
+			}
+		}
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_transparentPixelSurvivesRoundTrip() {
+	PaletteData palette = new PaletteData(new RGB(255, 255, 255), new RGB(255, 0, 0), new RGB(0, 0, 255));
+	ImageData original = new ImageData(4, 4, 8, palette);
+	for (int y = 0; y < 4; y++) {
+		for (int x = 0; x < 4; x++) {
+			original.setPixel(x, y, (x + y) % 2 == 0 ? 1 : 2);
+		}
+	}
+	original.transparentPixel = 2;
+	Image image = new Image(display, original);
+	try {
+		ImageData data = image.getImageData();
+		for (int y = 0; y < 4; y++) {
+			for (int x = 0; x < 4; x++) {
+				boolean transparent = (data.getAlpha(x, y) & 0xFF) == 0
+						|| (data.transparentPixel != -1 && data.getPixel(x, y) == data.transparentPixel);
+				if ((x + y) % 2 == 0) {
+					assertFalse(transparent, "opaque at " + x + "," + y);
+					assertEquals(0xFF0000, rgbOf(data, x, y), "colour at " + x + "," + y);
+				} else {
+					assertTrue(transparent, "transparent at " + x + "," + y);
+				}
+			}
+		}
+	} finally {
+		image.dispose();
+	}
+}
+}

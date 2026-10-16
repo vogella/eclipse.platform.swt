@@ -605,7 +605,10 @@ public Point getDPI() {
 								// PMPrinterGetIndexedPrinterResolution indexes are 1-based.
 								if (OS.PMPrinterGetIndexedPrinterResolution(printer[0], i, tempResolution) == OS.noErr) {
 									if (tempResolution.vRes > resolution.vRes && tempResolution.hRes > resolution.hRes) {
-										resolution = tempResolution;
+										// Copy the values: assigning the reference would make 'resolution'
+										// follow every later overwrite of tempResolution.
+										resolution.hRes = tempResolution.hRes;
+										resolution.vRes = tempResolution.vRes;
 									}
 								}
 							}

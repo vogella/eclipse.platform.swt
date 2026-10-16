@@ -343,26 +343,6 @@ JNIEXPORT jboolean JNICALL WebKitGTK_NATIVE(jsc_1value_1is_1string)
 }
 #endif
 
-#ifndef NO_jsc_1value_1is_1typed_1array
-JNIEXPORT jboolean JNICALL WebKitGTK_NATIVE(jsc_1value_1is_1typed_1array)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jboolean rc = 0;
-	WebKitGTK_NATIVE_ENTER(env, that, jsc_1value_1is_1typed_1array_FUNC);
-/*
-	rc = (jboolean)jsc_value_is_typed_array(arg0);
-*/
-	{
-		WebKitGTK_LOAD_FUNCTION(fp, jsc_value_is_typed_array)
-		if (fp) {
-			rc = (jboolean)((jboolean (CALLING_CONVENTION*)(jlong))fp)(arg0);
-		}
-	}
-	WebKitGTK_NATIVE_EXIT(env, that, jsc_1value_1is_1typed_1array_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_jsc_1value_1is_1undefined
 JNIEXPORT jboolean JNICALL WebKitGTK_NATIVE(jsc_1value_1is_1undefined)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -847,30 +827,6 @@ fail:
 }
 #endif
 
-#ifndef NO_webkit_1dom_1event_1target_1add_1event_1listener
-JNIEXPORT jint JNICALL WebKitGTK_NATIVE(webkit_1dom_1event_1target_1add_1event_1listener)
-	(JNIEnv *env, jclass that, jlong arg0, jbyteArray arg1, jlong arg2, jint arg3, jlong arg4)
-{
-	jbyte *lparg1=NULL;
-	jint rc = 0;
-	WebKitGTK_NATIVE_ENTER(env, that, webkit_1dom_1event_1target_1add_1event_1listener_FUNC);
-	if (arg1) if ((lparg1 = (*env)->GetByteArrayElements(env, arg1, NULL)) == NULL) goto fail;
-/*
-	rc = (jint)webkit_dom_event_target_add_event_listener(arg0, lparg1, arg2, arg3, arg4);
-*/
-	{
-		WebKitGTK_LOAD_FUNCTION(fp, webkit_dom_event_target_add_event_listener)
-		if (fp) {
-			rc = (jint)((jint (CALLING_CONVENTION*)(jlong, jbyte *, jlong, jint, jlong))fp)(arg0, lparg1, arg2, arg3, arg4);
-		}
-	}
-fail:
-	if (arg1 && lparg1) (*env)->ReleaseByteArrayElements(env, arg1, lparg1, 0);
-	WebKitGTK_NATIVE_EXIT(env, that, webkit_1dom_1event_1target_1add_1event_1listener_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_webkit_1dom_1mouse_1event_1get_1alt_1key
 JNIEXPORT jint JNICALL WebKitGTK_NATIVE(webkit_1dom_1mouse_1event_1get_1alt_1key)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -1145,26 +1101,6 @@ JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1download_1get_1response)
 		}
 	}
 	WebKitGTK_NATIVE_EXIT(env, that, webkit_1download_1get_1response_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_webkit_1download_1get_1type
-JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1download_1get_1type)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	WebKitGTK_NATIVE_ENTER(env, that, webkit_1download_1get_1type_FUNC);
-/*
-	rc = (jlong)webkit_download_get_type();
-*/
-	{
-		WebKitGTK_LOAD_FUNCTION(fp, webkit_download_get_type)
-		if (fp) {
-			rc = (jlong)((jlong (CALLING_CONVENTION*)())fp)();
-		}
-	}
-	WebKitGTK_NATIVE_EXIT(env, that, webkit_1download_1get_1type_FUNC);
 	return rc;
 }
 #endif
@@ -1687,26 +1623,6 @@ JNIEXPORT void JNICALL WebKitGTK_NATIVE(webkit_1policy_1decision_1ignore)
 }
 #endif
 
-#ifndef NO_webkit_1response_1policy_1decision_1get_1request
-JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1response_1policy_1decision_1get_1request)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	WebKitGTK_NATIVE_ENTER(env, that, webkit_1response_1policy_1decision_1get_1request_FUNC);
-/*
-	rc = (jlong)webkit_response_policy_decision_get_request(arg0);
-*/
-	{
-		WebKitGTK_LOAD_FUNCTION(fp, webkit_response_policy_decision_get_request)
-		if (fp) {
-			rc = (jlong)((jlong (CALLING_CONVENTION*)(jlong))fp)(arg0);
-		}
-	}
-	WebKitGTK_NATIVE_EXIT(env, that, webkit_1response_1policy_1decision_1get_1request_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_webkit_1response_1policy_1decision_1get_1response
 JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1response_1policy_1decision_1get_1response)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -2101,26 +2017,6 @@ JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1web_1context_1get_1security_1ma
 }
 #endif
 
-#ifndef NO_webkit_1web_1context_1get_1type
-JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1web_1context_1get_1type)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	WebKitGTK_NATIVE_ENTER(env, that, webkit_1web_1context_1get_1type_FUNC);
-/*
-	rc = (jlong)webkit_web_context_get_type();
-*/
-	{
-		WebKitGTK_LOAD_FUNCTION(fp, webkit_web_context_get_type)
-		if (fp) {
-			rc = (jlong)((jlong (CALLING_CONVENTION*)())fp)();
-		}
-	}
-	WebKitGTK_NATIVE_EXIT(env, that, webkit_1web_1context_1get_1type_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_webkit_1web_1context_1get_1website_1data_1manager
 JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1web_1context_1get_1website_1data_1manager)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -2408,26 +2304,6 @@ JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1web_1view_1get_1main_1resource)
 		}
 	}
 	WebKitGTK_NATIVE_EXIT(env, that, webkit_1web_1view_1get_1main_1resource_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_webkit_1web_1view_1get_1page_1id
-JNIEXPORT jlong JNICALL WebKitGTK_NATIVE(webkit_1web_1view_1get_1page_1id)
-	(JNIEnv *env, jclass that, jlong arg0)
-{
-	jlong rc = 0;
-	WebKitGTK_NATIVE_ENTER(env, that, webkit_1web_1view_1get_1page_1id_FUNC);
-/*
-	rc = (jlong)webkit_web_view_get_page_id(arg0);
-*/
-	{
-		WebKitGTK_LOAD_FUNCTION(fp, webkit_web_view_get_page_id)
-		if (fp) {
-			rc = (jlong)((jlong (CALLING_CONVENTION*)(jlong))fp)(arg0);
-		}
-	}
-	WebKitGTK_NATIVE_EXIT(env, that, webkit_1web_1view_1get_1page_1id_FUNC);
 	return rc;
 }
 #endif
