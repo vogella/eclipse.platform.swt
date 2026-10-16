@@ -277,13 +277,6 @@ public long getAddress () {
 }
 
 /**
- * Returns the SWT platform name.
- *
- * @return the platform name of the currently running SWT
- */
-public static native String getPlatform ();
-
-/**
  * Returns the number of times the system has been recursively entered
  * through a callback.
  * <p>
