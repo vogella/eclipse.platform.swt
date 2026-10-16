@@ -589,43 +589,46 @@ public void copyArea(Image image, int x, int y) {
 			rect.size.height = size.height;
 			int displayCount = 16;
 			long displays = C.malloc(4 * displayCount), countPtr = C.malloc(4);
-			if (OS.CGGetDisplaysWithRect(rect, displayCount, displays, countPtr) != 0) return;
-			int[] count = new int[1], display = new int[1];
-			C.memmove(count, countPtr, C.PTR_SIZEOF);
-			for (int i = 0; i < count[0]; i++) {
-				C.memmove(display, displays + (i * 4), 4);
-				OS.CGDisplayBounds(display[0], rect);
-				double scaling = 1;
-				if (screens != null) {
-					for (int j = 0; j < screens.count(); j++) {
-						NSScreen screen = new NSScreen(screens.objectAtIndex(j));
-						if (display[0] == new NSNumber(screen.deviceDescription().objectForKey(key)).intValue()) {
-							scaling = screen.backingScaleFactor();
-							break;
+			try {
+				if (OS.CGGetDisplaysWithRect(rect, displayCount, displays, countPtr) != 0) return;
+				int[] count = new int[1], display = new int[1];
+				C.memmove(count, countPtr, 4);
+				for (int i = 0; i < count[0]; i++) {
+					C.memmove(display, displays + (i * 4), 4);
+					OS.CGDisplayBounds(display[0], rect);
+					double scaling = 1;
+					if (screens != null) {
+						for (int j = 0; j < screens.count(); j++) {
+							NSScreen screen = new NSScreen(screens.objectAtIndex(j));
+							if (display[0] == new NSNumber(screen.deviceDescription().objectForKey(key)).intValue()) {
+								scaling = screen.backingScaleFactor();
+								break;
+							}
 						}
 					}
+					/*
+					 * Add a high resolution image representation to the image if scaling factor is > 1
+					 */
+					if (scaling > 1) {
+						int width = (int) (size.width * scaling);
+						int height = (int) (size.height * scaling);
+						NSBitmapImageRep rep = (NSBitmapImageRep)new NSBitmapImageRep().alloc();
+						rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace, OS.NSAlphaFirstBitmapFormat | OS.NSAlphaNonpremultipliedBitmapFormat, width * 4, 32);
+						C.memset(rep.bitmapData(), 0xFF, width * height * 4);
+						imageHandle.addRepresentation(rep);
+						rep.release();
+					}
+					long srcImage = 0;
+					srcImage = OS.CGDisplayCreateImage(display[0]);
+					if (srcImage != 0) {
+						copyArea(image, (int)(x * scaling - rect.origin.x), (int)(y * scaling - rect.origin.y), srcImage);
+						OS.CGImageRelease(srcImage);
+					}
 				}
-				/*
-				 * Add a high resolution image representation to the image if scaling factor is > 1
-				 */
-				if (scaling > 1) {
-					int width = (int) (size.width * scaling);
-					int height = (int) (size.height * scaling);
-					NSBitmapImageRep rep = (NSBitmapImageRep)new NSBitmapImageRep().alloc();
-					rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace, OS.NSAlphaFirstBitmapFormat | OS.NSAlphaNonpremultipliedBitmapFormat, width * 4, 32);
-					C.memset(rep.bitmapData(), 0xFF, width * height * 4);
-					imageHandle.addRepresentation(rep);
-					rep.release();
-				}
-				long srcImage = 0;
-				srcImage = OS.CGDisplayCreateImage(display[0]);
-				if (srcImage != 0) {
-					copyArea(image, (int)(x * scaling - rect.origin.x), (int)(y * scaling - rect.origin.y), srcImage);
-					OS.CGImageRelease(srcImage);
-				}
+			} finally {
+				C.free(displays);
+				C.free(countPtr);
 			}
-			C.free(displays);
-			C.free(countPtr);
 		}
 	} finally {
 		uncheckGC(pool);
@@ -4131,9 +4134,9 @@ public void setTextAntialias(int antialias) {
 public void setTransform(Transform transform) {
 	if (handle == null) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (transform != null && transform.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	if (data.transform != null) data.transform.release();
+	if (data.inverseTransform != null) data.inverseTransform.release();
 	if (transform != null) {
-		if (data.transform != null) data.transform.release();
-		if (data.inverseTransform != null) data.inverseTransform.release();
 		data.transform = ((NSAffineTransform)new NSAffineTransform().alloc()).initWithTransform(transform.handle);
 		data.inverseTransform = ((NSAffineTransform)new NSAffineTransform().alloc()).initWithTransform(transform.handle);
 		NSAffineTransformStruct struct = data.inverseTransform.transformStruct();
