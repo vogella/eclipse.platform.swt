@@ -97,47 +97,6 @@
  *     But this causes conflicting definitions during build with includes when debugging/developing,
  *     so these are only defined if not debugging.
  */
-typedef struct {
-    int version;
-    int attributes;
-    const char* className;
-    void* parentClass;
-    const void* staticValues;
-    const void* staticFunctions;
-    void* initialize;
-    void* finalize;
-    void* hasProperty;
-    void* getProperty;
-    void* setProperty;
-    void* deleteProperty;
-    void* getPropertyNames;
-    void* callAsFunction;
-    void* callAsConstructor;
-    void* hasInstance;
-    void* convertToType;
-} JSClassDefinition;
-
-typedef struct {
-	char* name;
-	char* value;
-	char* domain;
-	char* path;
-	void* expires;
-	gboolean secure;
-	gboolean http_only;
-} SoupCookie;
-
-typedef struct {
-	GObject parent;
-	const char* method;
-	guint status_code;
-	char* reason_phrase;
-	void* request_body;
-	void* request_headers;
-	void* response_body;
-	void* response_headers;
-} SoupMessage;
-
 // To avoid adding hard Gdk dependency and maintain dynamic nature of webkit calls, we re-define Gdk's struct here:
 // Alternatively one could include at the top:
 // #include <gdk/gdk.h>
