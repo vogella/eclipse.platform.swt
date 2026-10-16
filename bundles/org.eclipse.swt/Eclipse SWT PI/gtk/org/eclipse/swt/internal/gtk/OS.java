@@ -156,83 +156,11 @@ public class OS extends C {
 
 	/** Constants */
 	/* enum GFileError */
-	public static final int G_FILE_ERROR_EXIST = 0;
-	public static final int G_FILE_ERROR_ISDIR = 1;
-	public static final int G_FILE_ERROR_ACCES = 2;
-	public static final int G_FILE_ERROR_NAMETOOLONG = 3;
-	public static final int G_FILE_ERROR_NOENT = 4;
-	public static final int G_FILE_ERROR_NOTDIR = 5;
-	public static final int G_FILE_ERROR_NXIO = 6;
-	public static final int G_FILE_ERROR_NODEV = 7;
-	public static final int G_FILE_ERROR_ROFS = 8;
-	public static final int G_FILE_ERROR_TXTBSY = 9;
-	public static final int G_FILE_ERROR_FAULT = 10;
-	public static final int G_FILE_ERROR_LOOP = 11;
-	public static final int G_FILE_ERROR_NOSPC = 12;
-	public static final int G_FILE_ERROR_NOMEM = 13;
-	public static final int G_FILE_ERROR_MFILE = 14;
-	public static final int G_FILE_ERROR_NFILE = 15;
-	public static final int G_FILE_ERROR_BADF = 16;
-	public static final int G_FILE_ERROR_INVAL = 17;
-	public static final int G_FILE_ERROR_PIPE = 18;
-	public static final int G_FILE_ERROR_AGAIN = 19;
-	public static final int G_FILE_ERROR_INTR = 20;
 	public static final int G_FILE_ERROR_IO = 21;
-	public static final int G_FILE_ERROR_PERM = 22;
-	public static final int G_FILE_ERROR_NOSYS = 23;
-	public static final int G_FILE_ERROR_FAILED = 24;
 
 	/* enum GIOErrorEnum */
 	public static final int G_IO_ERROR_FAILED = 0;
-	public static final int G_IO_ERROR_NOT_FOUND = 1;
-	public static final int G_IO_ERROR_EXISTS = 2;
-	public static final int G_IO_ERROR_IS_DIRECTORY = 3;
-	public static final int G_IO_ERROR_NOT_DIRECTORY = 4;
-	public static final int G_IO_ERROR_NOT_EMPTY = 5;
-	public static final int G_IO_ERROR_NOT_REGULAR_FILE = 6;
-	public static final int G_IO_ERROR_NOT_SYMBOLIC_LINK = 7;
-	public static final int G_IO_ERROR_NOT_MOUNTABLE_FILE = 8;
-	public static final int G_IO_ERROR_FILENAME_TOO_LONG = 9;
-	public static final int G_IO_ERROR_INVALID_FILENAME = 10;
-	public static final int G_IO_ERROR_TOO_MANY_LINKS = 11;
-	public static final int G_IO_ERROR_NO_SPACE = 12;
-	public static final int G_IO_ERROR_INVALID_ARGUMENT = 13;
-	public static final int G_IO_ERROR_PERMISSION_DENIED = 14;
-	public static final int G_IO_ERROR_NOT_SUPPORTED = 15;
-	public static final int G_IO_ERROR_NOT_MOUNTED = 16;
-	public static final int G_IO_ERROR_ALREADY_MOUNTED = 17;
-	public static final int G_IO_ERROR_CLOSED = 18;
-	public static final int G_IO_ERROR_CANCELLED = 19;
-	public static final int G_IO_ERROR_PENDING = 20;
-	public static final int G_IO_ERROR_READ_ONLY = 21;
-	public static final int G_IO_ERROR_CANT_CREATE_BACKUP = 22;
-	public static final int G_IO_ERROR_WRONG_ETAG = 23;
-	public static final int G_IO_ERROR_TIMED_OUT = 24;
-	public static final int G_IO_ERROR_WOULD_RECURSE = 25;
-	public static final int G_IO_ERROR_BUSY = 26;
-	public static final int G_IO_ERROR_WOULD_BLOCK = 27;
-	public static final int G_IO_ERROR_HOST_NOT_FOUND = 28;
-	public static final int G_IO_ERROR_WOULD_MERGE = 29;
-	public static final int G_IO_ERROR_FAILED_HANDLED = 30;
-	public static final int G_IO_ERROR_TOO_MANY_OPEN_FILES = 31;
-	public static final int G_IO_ERROR_NOT_INITIALIZED = 32;
-	public static final int G_IO_ERROR_ADDRESS_IN_USE = 33;
-	public static final int G_IO_ERROR_PARTIAL_INPUT = 34;
-	public static final int G_IO_ERROR_INVALID_DATA = 35;
-	public static final int G_IO_ERROR_DBUS_ERROR = 36;
-	public static final int G_IO_ERROR_HOST_UNREACHABLE = 37;
-	public static final int G_IO_ERROR_NETWORK_UNREACHABLE = 38;
-	public static final int G_IO_ERROR_CONNECTION_REFUSED = 39;
-	public static final int G_IO_ERROR_PROXY_FAILED = 40;
-	public static final int G_IO_ERROR_PROXY_AUTH_FAILED = 41;
-	public static final int G_IO_ERROR_PROXY_NEED_AUTH = 42;
-	public static final int G_IO_ERROR_PROXY_NOT_ALLOWED = 43;
-	public static final int G_IO_ERROR_BROKEN_PIPE = 44;
-	public static final int G_IO_ERROR_CONNECTION_CLOSED = G_IO_ERROR_BROKEN_PIPE;
-	public static final int G_IO_ERROR_NOT_CONNECTED = 45;
 	public static final int G_IO_ERROR_MESSAGE_TOO_LARGE = 46;
-	public static final int G_IO_ERROR_NO_SUCH_DEVICE = 47;
-	public static final int G_IO_ERROR_DESTINATION_UNSET = 48;
 
 	public static final int G_FILE_TEST_IS_DIR = 1 << 2;
 	public static final int G_FILE_TEST_IS_EXECUTABLE = 1 << 3;
@@ -245,11 +173,9 @@ public class OS extends C {
 	public static final int G_LOG_LEVEL_DEBUG = 1 << 7;
 	public static final int G_APP_INFO_CREATE_NONE = 0;
 	public static final int G_APP_INFO_CREATE_SUPPORTS_URIS  = (1 << 1);
-	public static final int G_OUTPUT_STREAM_SPLICE_NONE = 0;
 	public static final int G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE = (1 << 0);
 	public static final int G_OUTPUT_STREAM_SPLICE_CLOSE_TARGET = (1 << 1);
 	public static final int G_PRIORITY_DEFAULT = 0;
-	public static final int GTK_TYPE_TEXT_BUFFER = 21;
 	public static final int PANGO_ALIGN_LEFT = 0;
 	public static final int PANGO_ALIGN_CENTER = 1;
 	public static final int PANGO_ALIGN_RIGHT = 2;
@@ -312,27 +238,15 @@ public class OS extends C {
 	 * https://dbus.freedesktop.org/doc/dbus-specification.html#idm423
 	 * If using these, make sure they're properly handled in all GDBus code. Only some of these are supported by some GDBus classes.
 	 * @category gdbus */
-	public static final String DBUS_TYPE_BYTE = "y"; // 8 bit, unsigned int.
-	/** @category gdbus */
 	public static final String DBUS_TYPE_BOOLEAN = "b";
-	/** @category gdbus */
-	public static final String DBUS_TYPE_ARRAY = "a";
 	/** @category gdbus */
 	public static final String DBUS_TYPE_STRING = "s";
 	/** @category gdbus */
 	public static final String DBUS_TYPE_STRING_ARRAY = "as";
 	/** @category gdbus */
-	public static final String DBUS_TYPE_STRUCT_ARRAY_BROWSER_FUNCS = "a(tss)";
-	/** @category gdbus */
 	public static final String DBUS_TYPE_INT32 = "i";
 	/** @category gdbus */
-	public static final String DBUS_TYPE_UINT64 = "t";
-	/** @category gdbus */
-	public static final String DBUS_TYPE_DOUBLE = "d";
-	/** @category gdbus */
 	public static final String DBUS_TYPE_STRUCT = "r"; // Not used by Dbus, but implemented by GDBus.
-	/** @category gdbus */
-	public static final String DBUS_TYPE_SINGLE_COMPLETE = "*";
 
 	/**
 	 * GVariant Types
@@ -341,8 +255,6 @@ public class OS extends C {
 	 *
 	 * @category gdbus
 	 */
-	public static final byte[] G_VARIANT_TYPE_BYTE = ascii(DBUS_TYPE_BYTE);
-	/** @category gdbus */
 	public static final byte[] G_VARIANT_TYPE_BOOLEAN = ascii(DBUS_TYPE_BOOLEAN);
 	/** @category gdbus */
 	public static final byte[] G_VARIANT_TYPE_STRING_ARRAY = ascii(DBUS_TYPE_STRING_ARRAY);
@@ -351,14 +263,7 @@ public class OS extends C {
 	/** @category gdbus */
 	public static final byte[] G_VARIANT_TYPE_IN32 = ascii(DBUS_TYPE_INT32);
 	/** @category gdbus */
-	public static final byte[] G_VARIANT_TYPE_UINT64 = ascii(DBUS_TYPE_UINT64);
-	/** @category gdbus */
-	public static final byte[] G_VARIANT_TYPE_DOUBLE = ascii(DBUS_TYPE_DOUBLE);
-	/** @category gdbus */
 	public static final byte[] G_VARIANT_TYPE_TUPLE = ascii(DBUS_TYPE_STRUCT);
-	/** @category gdbus */
-	public static final byte[] G_VARIANT_TYPE_ARRAY_BROWSER_FUNCS = ascii(DBUS_TYPE_STRUCT_ARRAY_BROWSER_FUNCS);
-
 
 	/** Signals */
 	public static final byte[] accel_closures_changed = ascii("accel-closures-changed");		// Gtk3,4
@@ -406,9 +311,7 @@ public class OS extends C {
 	public static final byte[] expand_collapse_cursor_row = ascii("expand-collapse-cursor-row");
 	public static final byte[] focus = ascii("focus");
 	public static final byte[] focus_in_event = ascii("focus-in-event");
-	public static final byte[] focus_in = ascii("focus-in");
 	public static final byte[] focus_out_event = ascii("focus-out-event");
-	public static final byte[] focus_out = ascii("focus-out");
 	public static final byte[] grab_focus = ascii("grab-focus");
 	public static final byte[] hide = ascii("hide");
 	public static final byte[] icon_release = ascii("icon-release");
@@ -478,7 +381,6 @@ public class OS extends C {
 
 	/** Properties */
 	public static final byte[] active = ascii("active");
-	public static final byte[] background_rgba = ascii("background-rgba");
 	public static final byte[] cell_background_rgba = ascii("cell-background-rgba");
 	public static final byte[] default_border = ascii("default-border");
 	public static final byte[] expander_size = ascii("expander-size");
@@ -689,18 +591,6 @@ public class OS extends C {
 	public static final native long content_providers_create_gvalue(long gtype, long value);
 
 	/** CUSTOM_CODE END */
-
-	/**
-	 * Gtk has a minimum glib version. (But it's not a 1:1 link, one can have a newer version of glib and older gtk).
-	 *
-	 * Minimum Glib version requirement of gtk can be found in gtk's 'configure.ac' file, see line 'm4_define([glib_required_version],[2.*.*]).
-	 *
-	 * For reference:
-	 * Gtk3.22 has min version of glib 2.49.4
-	 * Gtk3.24 has min version of glib 2.58
-	 * Gtk4.0 has min version of glib 2.66
-	 */
-	public static final int GLIB_VERSION = VERSION(glib_major_version(), glib_minor_version(), glib_micro_version());
 
 	/*
 	 * New API in GTK3.22 introduced the "popped-up" signal, which provides
@@ -973,7 +863,6 @@ public static final native long G_TYPE_INT();
 public static final native long G_TYPE_INT64();
 public static final native long G_VALUE_TYPE(long value);
 public static final native long G_VALUE_TYPE_NAME(long value);
-public static final native boolean G_IS_VALUE(long value);
 public static final native long G_OBJECT_TYPE(long instance);
 /** @method flags=const */
 public static final native long G_TYPE_STRING();
@@ -1559,12 +1448,6 @@ public static final native void g_value_set_float (long value, float v);
 public static final native long g_value_get_int64 (long value);
 /** @param value cast=(GValue *) */
 public static final native void g_value_set_int64 (long value, long v);
-/** @param value cast=(GValue *)
- *  @param v_string cast =(const gchar *)
- * */
-public static final native void g_value_set_string (long value, byte[] v_string);
-/** @param value cast=(GValue *) */
-public static final native long g_value_get_string (long value);
 /** @param value cast=(GValue *) */
 public static final native long g_value_get_object (long value);
 /** @param value cast=(GValue *) */
@@ -1578,8 +1461,6 @@ public static final native long g_value_get_boxed(long value);
  * @param boxed cast=(gconstpointer)
  */
 public static final native void g_value_take_boxed(long value, long boxed);
-/** @param value cast=(const GValue *) */
-public static final native long g_value_get_gtype(long value);
 
 /**
  * @param variable cast=(const gchar *),flags=no_out
@@ -1597,12 +1478,6 @@ public static final native long g_uri_parse (byte[] uri_string,  long flags, lon
  * @method flags=dynamic
  */
 public static final native void g_uri_unref (long uri);
-/** @method flags=const */
-public static final native int glib_major_version();
-/** @method flags=const */
-public static final native int glib_minor_version();
-/** @method flags=const */
-public static final native int glib_micro_version();
 /**
  * @param interval cast=(guint32)
  * @param function cast=(GSourceFunc)
@@ -2112,12 +1987,6 @@ public static final void setTheme(boolean isDarkTheme) {
 }
 
 /**
- * @param tmpl cast=(const gchar *)
- * @param error cast=(GError **)
- */
-public static final native long g_dir_make_tmp(long tmpl, long [] error);
-
-/**
  * @param info cast=(GDBusInterfaceInfo *)
  * @param name cast=(const gchar *)
  * @param object_path cast=(const gchar *)
@@ -2203,19 +2072,6 @@ public static final native long g_dbus_node_info_lookup_interface(long info, byt
 public static final native void g_dbus_method_invocation_return_value(long invocation, long parameters);
 
 /**
- * @param type cast=(const GVariantType *)
- * @category gdbus
- */
-public static final native long g_variant_builder_new(long type);
-
-/**
- * @param builder cast=(GVariantBuilder *)
- * @param value cast=(GVariant *)
- * @category gdbus
- */
-public static final native void g_variant_builder_add_value(long builder, long value);
-
-/**
  * @param type cast=(GVariantType *)
  * @category gdbus
  */
@@ -2226,18 +2082,6 @@ public static final native void g_variant_type_free(long type);
  * @category gdbus
  */
 public static final native long g_variant_type_new(byte [] type);
-
-/**
- * @param builder cast=(GVariantBuilder *)
- * @category gdbus
- */
-public static final native long g_variant_builder_end(long builder);
-
-/**
- * @param builder cast=(GVariantBuilder *)
- * @category gdbus
- */
-public static final native void g_variant_builder_unref(long builder);
 
 /**
  * @param format_string cast=(const gchar *),flags=no_out
@@ -2279,13 +2123,6 @@ public static final native int g_variant_get_int32(long gvariant);
 /**
  * @param gvariant cast=(GVariant *)
  * @category gdbus
- * @return guchar
- */
-public static final native byte g_variant_get_byte(long gvariant);
-
-/**
- * @param gvariant cast=(GVariant *)
- * @category gdbus
  */
 public static final native boolean g_variant_get_boolean(long gvariant);
 
@@ -2295,20 +2132,6 @@ public static final native boolean g_variant_get_boolean(long gvariant);
  * @category gdbus
  */
 public static final native long g_variant_get_child_value(long gvariant, int index);
-
-/**
- * @param gvariant cast=(GVariant *)
- * @category gdbus
- */
-public static final native double g_variant_get_double(long gvariant);
-
-public static final native long g_variant_new_uint64(long value);
-
-/**
- * @param gvariant cast=(GVariant *)
- * @category gdbus
- */
-public static final native long g_variant_get_uint64(long gvariant);
 
 /**
  * @param gvariant cast=(GVariant *)
@@ -2341,18 +2164,6 @@ public static final native long g_variant_n_children(long gvariant);
  * @category gdbus
  */
 public static final native long g_variant_new_boolean(boolean value);
-
-/**
- * @param value cast=(gboolean)
- * @category gdbus
- */
-public static final native long g_variant_new_double(double value);
-
-/**
- * @param value cast=(guchar)
- * @category gdbus
- */
-public static final native long g_variant_new_byte(byte value);
 
 /**
  * @param items cast=(GVariant * const *)
@@ -2546,31 +2357,6 @@ public static final native long g_memory_output_stream_new_resizable();
  * @param ostream cast=(GMemoryOutputStream*)
  */
 public static final native long g_memory_output_stream_get_data(long ostream);
-/**
- * @param ostream cast=(GMemoryOutputStream*)
- */
-public static final native long g_memory_output_stream_get_size(long ostream);
-/**
- * @param ostream cast=(GMemoryOutputStream*)
- */
-public static final native long g_memory_output_stream_get_data_size(long ostream);
-/**
- * @param ostream cast=(GMemoryOutputStream*)
- */
-public static final native long g_memory_output_stream_steal_data(long ostream);
-/**
- * @param ostream cast=(GMemoryOutputStream*)
- */
-public static final native long g_memory_output_stream_steal_as_bytes(long ostream);
-/**
- * @param stream cast=(GOutputStream*)
- * @param buffer cast=(void*)
- * @param count cast=(gsize)
- * @param bytes_written cast=(gsize*)
- * @param cancellable cast=(GCancellable*)
- * @param error cast=(GError**)
- */
-public static final native boolean g_output_stream_write_all(long stream, long buffer, long count, long[] bytes_written, long cancellable, long[] error);
 /**
  * @param stream cast=(GOutputStream*)
  * @param buffer cast=(void*)

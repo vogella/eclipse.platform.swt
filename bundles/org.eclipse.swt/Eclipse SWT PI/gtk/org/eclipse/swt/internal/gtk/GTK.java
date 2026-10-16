@@ -30,12 +30,9 @@ public class GTK extends OS {
 	public static final int GTK_ALIGN_START = 0x1;
 	public static final int GTK_ALIGN_END = 0x2;
 	public static final int GTK_ALIGN_CENTER = 0x3;
-	public static final int GTK_ALIGN_BASELINE = 0x4;
 	public static final int GTK_CALENDAR_SHOW_HEADING = 1 << 0;
 	public static final int GTK_CALENDAR_SHOW_DAY_NAMES = 1 << 1;
-	public static final int GTK_CALENDAR_NO_MONTH_CHANGE = 1 << 2;
 	public static final int GTK_CALENDAR_SHOW_WEEK_NUMBERS = 1 << 3;
-	public static final int GTK_CALENDAR_WEEK_START_MONDAY = 1 << 4;
 	public static final int GTK_CELL_RENDERER_MODE_ACTIVATABLE = 1;
 	public static final int GTK_CELL_RENDERER_SELECTED = 1 << 0;
 	public static final int GTK_CELL_RENDERER_FOCUSED = 1 << 4;
@@ -53,7 +50,6 @@ public class GTK extends OS {
 	public static final int GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER = 2;
 	public static final int GTK_ICON_SIZE_MENU = 1;
 	public static final int GTK_ICON_SIZE_SMALL_TOOLBAR = 2;
-	public static final int GTK_ICON_SIZE_DIALOG = 6;
 	public static final int GTK_ICON_LOOKUP_FORCE_SIZE = 4;
 	public static final int GTK_ICON_LOOKUP_FORCE_REGULAR = 32;
 	public static final int GTK_JUSTIFY_CENTER = 0x2;
@@ -74,7 +70,6 @@ public class GTK extends OS {
 	public static final int GTK_POLICY_AUTOMATIC = 0x1;
 	public static final int GTK_POLICY_NEVER = 0x2;
 	public static final int GTK_POLICY_EXTERNAL = 0x3;
-	public static final int GTK_POS_TOP = 0x2;
 	public static final int GTK_POS_BOTTOM = 0x3;
 	public static final int GTK_PRINT_CAPABILITY_PAGE_SET     = 1 << 0;
 	public static final int GTK_PRINT_CAPABILITY_COPIES       = 1 << 1;
@@ -88,10 +83,7 @@ public class GTK extends OS {
 	public static final int GTK_PRINT_DUPLEX_VERTICAL = 2;
 	public static final int GTK_EVENT_CONTROLLER_SCROLL_BOTH_AXES = 5;
 	public static final int GTK_PHASE_CAPTURE = 1;
-	public static final int GTK_PHASE_BUBBLE = 2;
 	public static final int GTK_PHASE_TARGET = 3;
-	public static final int GTK_PROGRESS_LEFT_TO_RIGHT = 0x0;
-	public static final int GTK_PROGRESS_BOTTOM_TO_TOP = 0x2;
 	public static final int GTK_RESPONSE_CANCEL = 0xfffffffa;
 	public static final int GTK_RESPONSE_OK = 0xfffffffb;
 	public static final int GTK_RESPONSE_ACCEPT = -3;
@@ -119,11 +111,9 @@ public class GTK extends OS {
 	public static final int GTK_SHADOW_NONE = 0x0;
 	public static final int GTK_SHADOW_OUT = 0x2;
 	public static final int GTK_STATE_FLAG_NORMAL = 0;
-	public static final int GTK_STATE_FLAG_ACTIVE = 1 << 0;
 	public static final int GTK_STATE_FLAG_PRELIGHT = 1 << 1;
 	public static final int GTK_STATE_FLAG_SELECTED = 1 << 2;
 	public static final int GTK_STATE_FLAG_INSENSITIVE = 1 << 3;
-	public static final int GTK_STATE_FLAG_INCONSISTENT = 1 << 4;
 	public static final int GTK_STATE_FLAG_FOCUSED = 1 << 5;
 	public static final int GTK_STATE_FLAG_BACKDROP  = 1 << 6;
 	public static final int GTK_STATE_FLAG_LINK = 1 << 9;
@@ -136,26 +126,18 @@ public class GTK extends OS {
 	public static final int GTK_TOOLBAR_BOTH = 2;
 	public static final int GTK_TOOLBAR_BOTH_HORIZ = 3;
 	public static final int GTK_TREE_VIEW_COLUMN_GROW_ONLY = 0;
-	public static final int GTK_TREE_VIEW_COLUMN_AUTOSIZE = 1;
 	public static final int GTK_TREE_VIEW_COLUMN_FIXED = 2;
 	public static final int GTK_TREE_VIEW_DROP_BEFORE = 0;
 	public static final int GTK_TREE_VIEW_DROP_AFTER = 1;
 	public static final int GTK_TREE_VIEW_DROP_INTO_OR_BEFORE = 2;
-	public static final int GTK_TREE_VIEW_DROP_INTO_OR_AFTER = 3;
 	public static final int GTK_TREE_VIEW_GRID_LINES_NONE = 0;
-	public static final int GTK_TREE_VIEW_GRID_LINES_HORIZONTAL = 1;
 	public static final int GTK_TREE_VIEW_GRID_LINES_VERTICAL = 2;
-	public static final int GTK_TREE_VIEW_GRID_LINES_BOTH = 3;
 	public static final int GTK_STYLE_PROVIDER_PRIORITY_APPLICATION = 600;
 	public static final int GTK_STYLE_PROVIDER_PRIORITY_USER = 800;
-	public static final int GTK_UNIT_PIXEL = 0;
 	public static final int GTK_UNIT_POINTS = 1;
-	public static final int GTK_UNIT_INCH = 2;
 	public static final int GTK_UNIT_MM = 3;
 	public static final int GTK_WINDOW_POPUP = 0x1;
 	public static final int GTK_WINDOW_TOPLEVEL = 0x0;
-	public static final int GTK_WRAP_NONE = 0;
-	public static final int GTK_WRAP_WORD = 2;
 	public static final int GTK_WRAP_WORD_CHAR = 3;
 	public static final int GTK_SHORTCUT_SCOPE_GLOBAL = 2;
 	public static final int GTK_INPUT_HINT_NO_EMOJI = 1024;
@@ -203,8 +185,6 @@ public class GTK extends OS {
 	public static final byte[] GTK_NAMED_ICON_GO_NEXT = OS.ascii ("go-next-symbolic");
 	public static final byte[] GTK_NAMED_ICON_GO_PREVIOUS = OS.ascii ("go-previous-symbolic");
 	public static final byte[] GTK_NAMED_ICON_PAN_DOWN = OS.ascii ("pan-down-symbolic");
-	public static final byte[] GTK_NAMED_LABEL_OK = OS.ascii("_OK");
-	public static final byte[] GTK_NAMED_LABEL_CANCEL = OS.ascii("_Cancel");
 
 	/** SWT Tools translates TYPE_sizeof() into sizeof(TYPE) at native level. os.c will have a binding to functions auto-generated in os_structs.h */
 	public static final native int GtkAllocation_sizeof();
@@ -268,12 +248,6 @@ public class GTK extends OS {
 	/* GtkButton */
 	public static final native long gtk_button_get_type();
 	public static final native long gtk_button_new();
-	/**
-	 * @method flags=dynamic
-	 * @param button cast=(GtkButton *)
-	 * @param label cast=(const char *)
-	 */
-	public static final native void gtk_button_set_label(long button, byte[] label);
 	/** @param button cast=(GtkButton *) */
 	public static final native void gtk_button_set_use_underline(long button, boolean use_underline);
 
@@ -1404,11 +1378,6 @@ public class GTK extends OS {
 	public static final native void gtk_print_unix_dialog_set_page_setup(long dialog, long page_setup);
 	/** @param dialog cast=(GtkPrintUnixDialog *) */
 	public static final native long gtk_print_unix_dialog_get_page_setup(long dialog);
-	/**
-	 * @param dialog cast=(GtkPrintUnixDialog *)
-	 * @param current_page cast=(gint)
-	 */
-	public static final native void gtk_print_unix_dialog_set_current_page(long dialog, int current_page);
 	/** @param dialog cast=(GtkPrintUnixDialog *) */
 	public static final native int gtk_print_unix_dialog_get_current_page(long dialog);
 	/**
@@ -2368,11 +2337,6 @@ public class GTK extends OS {
 	 */
 	public static final native long gtk_widget_get_parent_window(long widget);
 	/**
-	 * @method flags=dynamic
-	 * @param widget cast=(GtkWidget *)
-	 */
-	public static final native long gtk_widget_get_parent_surface(long widget);
-	/**
 	 * @param widget cast=(GtkWidget *)
 	 * @param allocation cast=(GtkAllocation *),flags=no_in
 	 * */
@@ -2457,8 +2421,6 @@ public class GTK extends OS {
 
 	/** @param widget cast=(GtkWidget *) */
 	public static final native boolean gtk_widget_activate(long widget);
-	/** @param widget cast=(GtkWidget *) */
-	public static final native long gtk_widget_get_tooltip_text(long widget);
 	/**
 	 * @param widget cast=(GtkWidget *)
 	 * @param tip_text cast=(const gchar *)
