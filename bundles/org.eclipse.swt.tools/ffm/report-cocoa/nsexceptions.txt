@@ -1,0 +1,43 @@
+NSExceptions swallowed by the Cocoa JNI glue (OS_NATIVE_ENTER/EXIT) during the SWT JUnit suite
+==========================================================================================
+Build: libswt-pi-cocoa-4975r5 etc. compiled arm64 with -DDEBUG_EXCEPTIONS (SWT_DEBUG in make_macosx.mak).
+Run: test-cocoa.sh JNI build, 129 test classes, one JVM. Total: 60 exceptions, 2 distinct call sites.
+NSAccessibilityException is filtered by DUMP_EXCEPTION and therefore not counted (none visible).
+
+1. 59x NSInvalidArgumentException
+   reason : *** -colorSpace not valid for the NSColor Catalog color: System <name>; need to first convert colorspace.
+   native : OS.objc_msgSend, selector colorSpace, wrapper NSColor.colorSpace (NSColor.java:59)
+   site   : Display.getNSColorRGB (Display.java:2040), via getWidgetColorRGB (2035) from initColors
+            (Display.java:3284-3303, once per Display creation) and Display.init (2276/2287 style direct calls);
+            also Link.getLinkForegroundColor (Link.java:286) -> getNSColorRGB (linkColor).
+   catalog colors hit: windowFrameTextColor, alternateSelectedControlColor, alternateSelectedControlTextColor,
+            selectedControlColor, selectedControlTextColor, disabledControlTextColor, secondarySelectedControlColor,
+            controlDarkShadowColor, controlLightHighlightColor, controlTextColor, textColor, textBackgroundColor,
+            selectedTextColor, selectedTextBackgroundColor, windowBackgroundColor, linkColor
+   count per Display creation: 19 (3 creations seen = 57; plus 2 extra linkColor from the Link tests)
+   triggered by (first test frame):
+     19  Test_org_eclipse_swt_accessibility_Accessible.setUp   (new Shell -> Display.getDefault)
+     19  Test_org_eclipse_swt_graphics_Path.setUp
+     19  Test_org_eclipse_swt_widgets_Widget.setUp
+      1  Test_org_eclipse_swt_widgets_Link.test_setLinkForegroundLorg_eclipse_swt_graphics_Color (Link.java:166)
+      1  Test_org_eclipse_swt_widgets_Link.test_setLinkForegroundLorg_eclipse_swt_graphics_Color (Link.java:171)
+   (Display creation is attributed to whichever test class creates the Display first after a dispose.)
+   JNI effect: objc_msgSend returns 0, NSColor.colorSpace returns null, so getNSColorRGB falls through to
+            colorUsingColorSpaceName(NSDeviceRGBColorSpace).
+   fix    : in getNSColorRGB do not call colorSpace() on a non component-based color:
+              NSColorSpace colorSpace = color.type() == NSColorTypeComponentBased ? color.colorSpace() : null;
+            Needs an NSColor.type() wrapper (sel_type exists in OS.java) and the constant
+            NSColorTypeComponentBased = 0 (Catalog = 2, Pattern = 1). Identical result: null colorSpace takes the
+            existing colorUsingColorSpaceName branch.
+
+2. 1x NSUnknownKeyException
+   reason : [<WebScriptObject 0x..> valueForUndefinedKey:]: this class is not key value coding-compliant for the key length.
+   native : OS.objc_msgSend, selector valueForKey:, wrapper NSObject.valueForKey
+   site   : WebKit.convertToJava (WebKit.java:1730) <- convertToJava (1739) <- callJava (1794)
+   triggered by: Test_org_eclipse_swt_browser_Browser.test_evaluate_invalid_return_value (lambda, Browser test line 2222)
+   JNI effect: valueForKey returns null, the code treats it as "not a JS array" and calls
+            SWT.error(ERROR_INVALID_ARGUMENT) (the expected behaviour of the test).
+   fix    : avoid KVC on a key that may be missing: ask the script object instead,
+            e.g. id id = script.evaluateWebScript(NSString.stringWith("this.length")) and treat anything that is
+            not an NSNumber (WebUndefined) as "not a JS array"; alternatively guard with
+            script.respondsToSelector/ a JS "Array.isArray(this)" check before reading length.
