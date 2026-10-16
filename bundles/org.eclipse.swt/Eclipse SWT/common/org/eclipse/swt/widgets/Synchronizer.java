@@ -42,7 +42,6 @@ public class Synchronizer {
 	final ConcurrentLinkedQueue<RunnableLock>  messages= new ConcurrentLinkedQueue<>();
 	Thread syncThread;
 	static final int GROW_SIZE = 4;
-	static final int MESSAGE_LIMIT = 64;
 
 	//TEMPORARY CODE
 	static final boolean IS_COCOA = "cocoa".equals (SWT.getPlatform ());
