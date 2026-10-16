@@ -61,8 +61,6 @@ public class WebKitGTK extends C {
 	public static final int WEBKIT_DOWNLOAD_STATUS_CANCELLED = 2;
 	public static final int WEBKIT_DOWNLOAD_STATUS_FINISHED = 3;
 
-	public static final int WEBKIT2_LOAD_STARTED = 0;
-	public static final int WEBKIT2_LOAD_REDIRECTED = 1;
 	public static final int WEBKIT2_LOAD_COMMITTED = 2;
 	public static final int WEBKIT2_LOAD_FINISHED = 3;
 
@@ -75,12 +73,9 @@ public class WebKitGTK extends C {
 	public static final int WEBKIT_POLICY_DECISION_TYPE_RESPONSE = 2;
 
 	public static final int WEBKIT_CREDENTIAL_PERSISTENCE_NONE = 0;
-	public static final int WEBKIT_CREDENTIAL_PERSISTENCE_FOR_SESSION = 1;
-	public static final int WEBKIT_CREDENTIAL_PERSISTENCE_PERMANENT = 2;
 
 	public static final int WEBKIT_TLS_ERRORS_POLICY_IGNORE = 0;
 
-	public static final int G_TLS_CERTIFICATE_NO_FLAGS = 0;
 	public static final int G_TLS_CERTIFICATE_UNKNOWN_CA = 1 << 0;
 	public static final int G_TLS_CERTIFICATE_BAD_IDENTITY = 1 << 1;
 	public static final int G_TLS_CERTIFICATE_NOT_ACTIVATED = 1 << 2;
