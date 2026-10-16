@@ -48,7 +48,6 @@ import org.eclipse.swt.internal.gtk4.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Spinner extends Composite {
-	static final int MIN_ARROW_WIDTH = 6;
 	int lastEventTime = 0;
 	long imContext;
 	long gdkEventKey = 0;
