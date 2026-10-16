@@ -44,6 +44,10 @@ public class CTypes {
 	}
 
 	static final Pattern DECL = Pattern.compile("^[|`]-(FunctionDecl|TypedefDecl) 0x\\S+ .*?(\\w+) '([^']*)'(?::'([^']*)')?(.*)$");
+	/** A global variable, such as the string constants of Cocoa, with the storage class in the rest of the line. */
+	static final Pattern VARIABLE = Pattern.compile("^[|`]-VarDecl 0x\\S+ .*?(\\w+) '([^']*)'(?::'([^']*)')?(.*)$");
+	/** An enum with a fixed underlying type, <code>NS_ENUM(NSInteger, ...)</code>, which decides how it is passed. */
+	static final Pattern ENUM = Pattern.compile("^[|`]-EnumDecl 0x\\S+ .*?(\\w+) '([^']*)'(?::'([^']*)')?$");
 
 	/** A named or, as in <code>typedef struct {...} NAME</code>, anonymous struct definition. */
 	static final Pattern RECORD = Pattern.compile("^[|`]-RecordDecl 0x\\S+ .* ((?:struct|union)(?: \\w+)?) definition(?: [\\w-]+)*$");
@@ -64,6 +68,11 @@ public class CTypes {
 	final Set<String> bitfields = new HashSet<>();
 	final Map<String, String> aliases = new HashMap<>();
 	final Map<String, String> libraries = new HashMap<>();
+	/** Global variables by name: the desugared type and whether they are <code>extern</code>, so that they have a symbol. */
+	final Map<String, String[]> variables = new HashMap<>();
+	final Map<String, String> enums = new HashMap<>();
+	/** Objective-C: <code>id</code>, <code>SEL</code>, <code>Class</code> and <code>BOOL</code> are known types. */
+	boolean objc;
 	/** C <code>long</code> is 32 bits (Windows), derived from <code>size_t</code>. */
 	final boolean llp64;
 
@@ -84,7 +93,8 @@ public class CTypes {
 	}
 
 	void parseMacros(String macroFile) throws IOException {
-		for (String line : Files.readAllLines(Paths.get(macroFile), StandardCharsets.UTF_8)) {
+		// string macros of the SDK headers are not always valid UTF-8
+		for (String line : new String(Files.readAllBytes(Paths.get(macroFile)), StandardCharsets.UTF_8).split("\\R")) {
 			line = line.trim();
 			Matcher m = MACRO_LIBRARY.matcher(line);
 			if (m.matches()) {
@@ -137,7 +147,13 @@ public class CTypes {
 				field = null;
 				if (record != null) continue;
 				Matcher m = DECL.matcher(line);
-				if (!m.matches()) continue;
+				if (!m.matches()) {
+					Matcher v = VARIABLE.matcher(line);
+					if (v.matches()) variables.put(v.group(1), new String[] {v.group(3) != null ? v.group(3) : v.group(2), v.group(4).contains(" extern") ? "extern" : ""});
+					Matcher e = ENUM.matcher(line);
+					if (e.matches()) enums.put(e.group(1), e.group(3) != null ? e.group(3) : e.group(2));
+					continue;
+				}
 				String name = m.group(2), sugared = ATTRIBUTE.matcher(m.group(3)).replaceAll(""), rest = m.group(5);
 				if (m.group(1).equals("TypedefDecl")) {
 					typedefs.put(name, sugared.startsWith("enum ") ? "enum " + name : sugared);
@@ -213,6 +229,22 @@ public class CTypes {
 		return bitfields.contains(type + "." + field);
 	}
 
+	/** Whether the AST has an <code>extern</code> variable of that name. */
+	public boolean hasSymbolVariable(String name) {
+		String[] variable = variables.get(name);
+		return variable != null && variable[1].equals("extern");
+	}
+
+	/** The type of the global variable, or <code>null</code>. */
+	public String getVariableType(String name) {
+		String[] variable = variables.get(name);
+		return variable != null ? variable[0] : null;
+	}
+
+	public void setObjc(boolean objc) {
+		this.objc = objc;
+	}
+
 	public Function getFunction(String name) {
 		return functions.get(name);
 	}
@@ -225,6 +257,13 @@ public class CTypes {
 			current = aliases.get(current);
 		}
 		return null;
+	}
+
+	/** The function a call of <code>name</code> reaches when the macros are expanded first, as the compiler does, or <code>null</code>. */
+	public String resolveMacros(String name) {
+		String current = name;
+		for (int i = 0; i < 10 && aliases.containsKey(current); i++) current = aliases.get(current);
+		return functions.containsKey(current) ? current : null;
 	}
 
 	/** The library a <code>flags=dynamic</code> function is loaded from (<code>name_LIB</code>), or <code>null</code>. */
@@ -243,9 +282,20 @@ public class CTypes {
 	Kind classify(String type, int depth) {
 		if (type == null || depth > 20) return Kind.UNKNOWN;
 		String t = type.replaceAll("\\b(const|volatile|restrict|__restrict|register)\\b", "").replaceAll("\\s+", " ").trim();
+		// nullability and the attribute macros of the SDK headers, such as CF_RELEASES_ARGUMENT, are printed into the type
+		if (objc) t = t.replaceAll("\\b(?:_Nullable|_Nonnull|_Null_unspecified|__nullable|__nonnull|(?:CF|OBJC|API|NS)_[A-Z0-9_]+)\\b", "").replaceAll("\\s+", " ").trim();
 		while (t.startsWith("(") && t.endsWith(")")) t = t.substring(1, t.length() - 1).trim();
 		if (t.contains("*") || t.contains("[")) return Kind.PTR;
-		if (t.startsWith("enum ")) return Kind.I32;
+		if (t.startsWith("enum ")) return enums.containsKey(t.substring(5)) ? classify(enums.get(t.substring(5)), depth + 1) : Kind.I32;
+		if (objc) {
+			// the blocks and the types that clang knows without a declaration
+			if (t.contains("^")) return Kind.PTR;
+			switch (t) {
+				case "id": case "SEL": case "Class": return Kind.PTR;
+				case "bool": return Kind.U8;
+				default:
+			}
+		}
 		if (t.startsWith("struct ") || t.startsWith("union ")) return Kind.STRUCT;
 		switch (t) {
 			case "void": return Kind.VOID;
