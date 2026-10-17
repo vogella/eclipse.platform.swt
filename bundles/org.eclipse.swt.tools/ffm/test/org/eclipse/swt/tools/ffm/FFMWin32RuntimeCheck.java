@@ -934,7 +934,7 @@ public class FFMWin32RuntimeCheck {
 
 		MethodHandle getMenuItemCount = FFMLastError.downcall("GetMenuItemCount", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
 		MethodHandle setLastError = FFM.downcall("SetLastError", FunctionDescriptor.ofVoid(JAVA_INT));
-		int ffmCount = (int) getMenuItemCount.invokeExact(FFMLastError.callState(), 0x1234L);
+		int ffmCount = (int) getMenuItemCount.invokeExact(FFMLastError.state(), 0x1234L);
 		// clobber the real last error, then let the JVM run
 		setLastError.invokeExact(0);
 		byte[][] garbage = new byte[1000][];
@@ -942,15 +942,15 @@ public class FFMWin32RuntimeCheck {
 		System.gc();
 		check("GetMenuItemCount", jniCount, ffmCount);
 		// JNI usually loses the error to the VM between the two natives, which is why FFM captures it
-		System.out.println("GetLastError after GetMenuItemCount: JNI " + jniError + ", FFM " + FFMLastError.GetLastError());
-		check("GetLastError value", ERROR_INVALID_MENU_HANDLE, FFMLastError.GetLastError());
+		System.out.println("GetLastError after GetMenuItemCount: JNI " + jniError + ", FFM " + FFMLastError.get());
+		check("GetLastError value", ERROR_INVALID_MENU_HANDLE, FFMLastError.get());
 
 		int[] other = new int[1];
 		Thread thread = new Thread(() -> {
 			try {
 				MethodHandle closeHandle = FFMLastError.downcall("CloseHandle", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
-				int ok = (int) closeHandle.invokeExact(FFMLastError.callState(), 0x1234L);
-				other[0] = FFMLastError.GetLastError();
+				int ok = (int) closeHandle.invokeExact(FFMLastError.state(), 0x1234L);
+				other[0] = FFMLastError.get();
 			} catch (Throwable t) {
 				other[0] = -1;
 			}
@@ -958,11 +958,11 @@ public class FFMWin32RuntimeCheck {
 		thread.start();
 		thread.join();
 		check("GetLastError of another thread", ERROR_INVALID_HANDLE, other[0]);
-		check("GetLastError kept per thread", ERROR_INVALID_MENU_HANDLE, FFMLastError.GetLastError());
+		check("GetLastError kept per thread", ERROR_INVALID_MENU_HANDLE, FFMLastError.get());
 
 		MethodHandle missing = FFMLastError.downcall("NoSuchFunctionInAnyDll", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
 		try {
-			int ignored = (int) missing.invokeExact(FFMLastError.callState(), 0L);
+			int ignored = (int) missing.invokeExact(FFMLastError.state(), 0L);
 			expect("missing capturing function throws", false);
 		} catch (UnsatisfiedLinkError e) {
 			expect("missing capturing function throws", true);
