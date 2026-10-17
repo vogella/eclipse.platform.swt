@@ -2156,6 +2156,18 @@ public static long gtk_keyval_trigger_new(int arg0, int arg1) {
 	}
 }
 
+private static final class MH_gtk_1label_1set_1max_1width_1chars {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_label_set_max_width_chars", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_label_set_max_width_chars");
+}
+public static void gtk_label_set_max_width_chars(long arg0, int arg1) {
+	try {
+		MH_gtk_1label_1set_1max_1width_1chars.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1label_1set_1wrap {
 	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_label_set_wrap", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_label_set_wrap");
 }
@@ -2228,6 +2240,22 @@ public static long gtk_native_get_surface(long arg0) {
 		long rc = (long) MH_gtk_1native_1get_1surface.MH.invokeExact(arg0);
 		FFM.checkCallbackException();
 		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1native_1get_1surface_1transform {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_native_get_surface_transform", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, ADDRESS)), "gtk_native_get_surface_transform");
+}
+public static void gtk_native_get_surface_transform(long arg0, double[] arg1, double[] arg2) {
+	try (Arena arena = Arena.ofConfined()) {
+		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
+		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
+		MH_gtk_1native_1get_1surface_1transform.MH.invokeExact(arg0, lparg1, lparg2);
+		FFM.copyOut(lparg2, arg2);
+		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -2579,6 +2607,21 @@ public static long gtk_snapshot_append_cairo(long arg0, long arg1) {
 	}
 }
 
+private static final class MH_gtk_1snapshot_1append_1color {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_snapshot_append_color", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS, JAVA_LONG)), "gtk_snapshot_append_color");
+}
+public static void gtk_snapshot_append_color(long arg0, org.eclipse.swt.internal.gtk.GdkRGBA arg1, long arg2) {
+	try (Arena arena = Arena.ofConfined()) {
+		MemorySegment lparg1 = arg1 == null ? MemorySegment.NULL : arena.allocate(org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_SIZEOF, 16);
+		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_write(lparg1, arg1);
+		MH_gtk_1snapshot_1append_1color.MH.invokeExact(arg0, lparg1, arg2);
+		if (arg1 != null) org.eclipse.swt.internal.gtk.Structs_FFM.GdkRGBA_read(lparg1, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1snapshot_1free_1to_1node {
 	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_snapshot_free_to_node", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_snapshot_free_to_node");
 }
@@ -2600,6 +2643,32 @@ public static long gtk_snapshot_new() {
 		long rc = (long) MH_gtk_1snapshot_1new.MH.invokeExact();
 		FFM.checkCallbackException();
 		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1snapshot_1pop {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_snapshot_pop", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_snapshot_pop");
+}
+public static void gtk_snapshot_pop(long arg0) {
+	try {
+		MH_gtk_1snapshot_1pop.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1snapshot_1push_1mask {
+	static final MethodHandle MH = FFM.downcallOptional("gtk_snapshot_push_mask", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+}
+public static void gtk_snapshot_push_mask(long arg0, int arg1) {
+	try {
+		if (MH_gtk_1snapshot_1push_1mask.MH != null) {
+			MH_gtk_1snapshot_1push_1mask.MH.invokeExact(arg0, arg1);
+		}
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}

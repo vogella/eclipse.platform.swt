@@ -1247,6 +1247,31 @@ public static int g_log_set_handler(byte[] arg0, int arg1, long arg2, long arg3)
 	}
 }
 
+private static final class MH_g_1log_1set_1writer_1func {
+	static final MethodHandle MH = FFM.downcall("g_log_set_writer_func", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static void g_log_set_writer_func(long arg0, long arg1, long arg2) {
+	try {
+		MH_g_1log_1set_1writer_1func.MH.invokeExact(arg0, arg1, arg2);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1log_1writer_1default {
+	static final MethodHandle MH = FFM.downcall("g_log_writer_default", FunctionDescriptor.of(JAVA_INT, JAVA_INT, JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static int g_log_writer_default(int arg0, long arg1, long arg2, long arg3) {
+	try {
+		int rc = (int) MH_g_1log_1writer_1default.MH.invokeExact(arg0, arg1, arg2, arg3);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_g_1main_1context_1acquire {
 	static final MethodHandle MH = FFM.downcall("g_main_context_acquire", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
 }
@@ -1605,6 +1630,21 @@ public static void g_menu_remove(long arg0, int arg1) {
 	try {
 		MH_g_1menu_1remove.MH.invokeExact(arg0, arg1);
 		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_g_1object_1class_1find_1property {
+	static final MethodHandle MH = FFM.downcall("g_object_class_find_property", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, ADDRESS));
+}
+public static long g_object_class_find_property(long arg0, byte[] arg1) {
+	try (Arena arena = Arena.ofConfined()) {
+		MemorySegment lparg1 = FFM.copyIn(arena, arg1);
+		long rc = (long) MH_g_1object_1class_1find_1property.MH.invokeExact(arg0, lparg1);
+		FFM.copyOut(lparg1, arg1);
+		FFM.checkCallbackException();
+		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
