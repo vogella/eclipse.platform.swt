@@ -23,7 +23,7 @@ import org.eclipse.swt.tools.internal.FFMGenerator.*;
  * Command line driver for the FFM backend of the JNI generator. Run from <code>bundles/org.eclipse.swt.tools</code>.
  *
  * <pre>
- * probe    &lt;mainClass&gt; &lt;ast&gt; &lt;out.c&gt;
+ * probe    [--cocoa] &lt;mainClass&gt; &lt;ast&gt; &lt;out.c&gt;
  * generate &lt;outputRoot&gt; &lt;reportDir&gt; [--imports &lt;imports.txt&gt;] [--cocoa] (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)... [--gtk4 (&lt;mainClass&gt; &lt;ast&gt; &lt;layout&gt;)...]
  * rewrite  &lt;supported.txt&gt; &lt;sourceRoot&gt; &lt;outputRoot&gt;
  * </pre>
@@ -34,8 +34,8 @@ import org.eclipse.swt.tools.internal.FFMGenerator.*;
  * <code>--gtk4</code> are the GTK4 compile of the units before it: a natives class that has none is generated from
  * the GTK3 compile, one that only has a GTK4 compile (<code>GTK4</code>) from that, and one with both serves
  * GTK3 and GTK4 and gets a run time choice wherever the C ABI or a struct layout differs.
- * <code>--cocoa</code> generates for macOS, where <code>CONST.</code> entries of a layout file give the values of
- * the constants that have no exported variable.
+ * <code>--cocoa</code> generates for macOS, where the probe prints and the layout file gives as <code>CONST.</code>
+ * entries the values of the constants that have no exported variable.
  */
 public class FFMGeneratorApp {
 
@@ -55,10 +55,11 @@ public class FFMGeneratorApp {
 		return out.toString(StandardCharsets.UTF_8);
 	}
 
-	static void probe(String mainClass, String ast, String outFile) throws IOException {
+	static void probe(String mainClass, String ast, String outFile, boolean cocoa) throws IOException {
 		JNIGeneratorApp app = load(mainClass);
 		FFMProbeGenerator generator = new FFMProbeGenerator(new CTypes(ast));
-		generator.setNativesClasses(app.getNativesClasses(app.getClasses()));
+		// elsewhere such a constant can be a macro calling into a library the probe does not link
+		if (cocoa) generator.setNativesClasses(app.getNativesClasses(app.getClasses()));
 		generator.setMainClass(app.getMainClass());
 		generator.setClasses(app.getStructureClasses(app.getClasses()));
 		generator.setMetaData(app.getMetaData());
@@ -392,7 +393,11 @@ public class FFMGeneratorApp {
 		JNIGeneratorApp.USE_AST = true;
 		switch (args.length > 0 ? args[0] : "") {
 			case "probe":
-				probe(args[1], args[2], args[3]);
+				if (args[1].equals("--cocoa")) {
+					probe(args[2], args[3], args[4], true);
+				} else {
+					probe(args[1], args[2], args[3], false);
+				}
 				break;
 			case "generate":
 				List<String[]> units = new ArrayList<>(), units4 = new ArrayList<>();
