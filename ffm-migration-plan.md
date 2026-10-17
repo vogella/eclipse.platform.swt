@@ -528,6 +528,7 @@ The first use costs about 175 ms more (1,004 against 1,179 ms, +17%), the linkin
 * `TISGetInputSourceProperty`, `class_createInstance` and `instrumentObjcMessageSends` are both generated and hand written; the hand written ones win in the rewriter.
 * Not measured: a product build with `apply-ffm.sh cocoa` under Tycho and an IDE session.
 * The generator changes for Cocoa were rerun on 2026-10-17 against GTK, which gives the same `gtk-ffm` and passes `FFMCrossCheck` (1,425 checks) and `FFMCrossCheck4` (988 checks) without a mismatch, and against Win32, which gives the same `win32-ffm` and passes `FFMCrossCheckWin32` (3,997 checks) and `FFMWin32RuntimeCheck` (480 checks) without a mismatch.
+  After the rebase onto master the JUnit comparison gives identical outcomes on GTK3 (4,117 passed) and Win32 (4,137 passed, 137 classes) as on Cocoa.
 
 ## Next steps
 
