@@ -97,6 +97,11 @@ public final class FFMMacros {
 		return OS_FFM.g_type_check_value(value);
 	}
 
+	/** GParamSpec.value_type, whose offset comes from the layout probe. */
+	public static long G_PARAM_SPEC_VALUE_TYPE(long pspec) {
+		return pointerField(pspec, org.eclipse.swt.internal.gtk.Extra_FFM.GPARAMSPEC_VALUE_TYPE);
+	}
+
 	static long typeName(long type) {
 		return type == 0 ? 0 : OS_FFM.g_type_name(type);
 	}
