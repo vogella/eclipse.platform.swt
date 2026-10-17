@@ -1723,6 +1723,105 @@ public static int gtk_get_minor_version() {
 	}
 }
 
+private static final class MH_gtk_1gl_1area_1attach_1buffers {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_attach_buffers", FunctionDescriptor.ofVoid(JAVA_LONG));
+}
+public static void gtk_gl_area_attach_buffers(long arg0) {
+	try {
+		MH_gtk_1gl_1area_1attach_1buffers.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1gl_1area_1get_1context {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_get_context", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+}
+public static long gtk_gl_area_get_context(long arg0) {
+	try {
+		long rc = (long) MH_gtk_1gl_1area_1get_1context.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1gl_1area_1get_1error {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_get_error", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+}
+public static long gtk_gl_area_get_error(long arg0) {
+	try {
+		long rc = (long) MH_gtk_1gl_1area_1get_1error.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1gl_1area_1make_1current {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_make_current", FunctionDescriptor.ofVoid(JAVA_LONG));
+}
+public static void gtk_gl_area_make_current(long arg0) {
+	try {
+		MH_gtk_1gl_1area_1make_1current.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1gl_1area_1new {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_new", FunctionDescriptor.of(JAVA_LONG));
+}
+public static long gtk_gl_area_new() {
+	try {
+		long rc = (long) MH_gtk_1gl_1area_1new.MH.invokeExact();
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1gl_1area_1queue_1render {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_queue_render", FunctionDescriptor.ofVoid(JAVA_LONG));
+}
+public static void gtk_gl_area_queue_render(long arg0) {
+	try {
+		MH_gtk_1gl_1area_1queue_1render.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1gl_1area_1set_1has_1depth_1buffer {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_set_has_depth_buffer", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+}
+public static void gtk_gl_area_set_has_depth_buffer(long arg0, boolean arg1) {
+	try {
+		MH_gtk_1gl_1area_1set_1has_1depth_1buffer.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1gl_1area_1set_1has_1stencil_1buffer {
+	static final MethodHandle MH = FFM.downcall("gtk_gl_area_set_has_stencil_buffer", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+}
+public static void gtk_gl_area_set_has_stencil_buffer(long arg0, boolean arg1) {
+	try {
+		MH_gtk_1gl_1area_1set_1has_1stencil_1buffer.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1im_1context_1focus_1in {
 	static final MethodHandle MH = FFM.downcall("gtk_im_context_focus_in", FunctionDescriptor.ofVoid(JAVA_LONG));
 }
@@ -4823,6 +4922,44 @@ public static boolean gtk_tree_path_up(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1tree_1row_1reference_1free {
+	static final MethodHandle MH = FFM.downcall("gtk_tree_row_reference_free", FunctionDescriptor.ofVoid(JAVA_LONG));
+}
+public static void gtk_tree_row_reference_free(long arg0) {
+	try {
+		MH_gtk_1tree_1row_1reference_1free.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1tree_1row_1reference_1get_1path {
+	static final MethodHandle MH = FFM.downcall("gtk_tree_row_reference_get_path", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+}
+public static long gtk_tree_row_reference_get_path(long arg0) {
+	try {
+		long rc = (long) MH_gtk_1tree_1row_1reference_1get_1path.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1tree_1row_1reference_1new {
+	static final MethodHandle MH = FFM.downcall("gtk_tree_row_reference_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+}
+public static long gtk_tree_row_reference_new(long arg0, long arg1) {
+	try {
+		long rc = (long) MH_gtk_1tree_1row_1reference_1new.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1tree_1selection_1count_1selected_1rows {
 	static final MethodHandle MH = FFM.downcall("gtk_tree_selection_count_selected_rows", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
 }
@@ -5173,6 +5310,18 @@ private static final class MH_gtk_1tree_1view_1column_1clear {
 public static void gtk_tree_view_column_clear(long arg0) {
 	try {
 		MH_gtk_1tree_1view_1column_1clear.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1tree_1view_1column_1clear_1attributes {
+	static final MethodHandle MH = FFM.downcall("gtk_tree_view_column_clear_attributes", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+}
+public static void gtk_tree_view_column_clear_attributes(long arg0, long arg1) {
+	try {
+		MH_gtk_1tree_1view_1column_1clear_1attributes.MH.invokeExact(arg0, arg1);
 		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);

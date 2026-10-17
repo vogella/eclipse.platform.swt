@@ -447,6 +447,10 @@ public class FFMCrossCheck {
 		check("G_OBJECT_TYPE", OS.G_OBJECT_TYPE(buttonHandle), FFMMacros.G_OBJECT_TYPE(buttonHandle));
 		check("G_OBJECT_TYPE_NAME", OS.G_OBJECT_TYPE_NAME(buttonHandle), FFMMacros.G_OBJECT_TYPE_NAME(buttonHandle));
 		check("G_OBJECT_CLASS_CONSTRUCTOR", OS.G_OBJECT_CLASS_CONSTRUCTOR(OS.G_OBJECT_GET_CLASS(buttonHandle)), FFMMacros.G_OBJECT_CLASS_CONSTRUCTOR(OS.G_OBJECT_GET_CLASS(buttonHandle)));
+		for (String property : new String[] {"label", "relief", "can-focus"}) {
+			long pspec = OS.g_object_class_find_property(OS.G_OBJECT_GET_CLASS(buttonHandle), Converter.wcsToMbcs(property, true));
+			check("G_PARAM_SPEC_VALUE_TYPE(" + property + ")", OS.G_PARAM_SPEC_VALUE_TYPE(pspec), FFMMacros.G_PARAM_SPEC_VALUE_TYPE(pspec));
+		}
 		for (int pixels : new int[] {0, 1, 511, 512, 1024, -1024, 123456}) {
 			check("PANGO_PIXELS(" + pixels + ")", OS.PANGO_PIXELS(pixels), FFMMacros.PANGO_PIXELS(pixels));
 		}

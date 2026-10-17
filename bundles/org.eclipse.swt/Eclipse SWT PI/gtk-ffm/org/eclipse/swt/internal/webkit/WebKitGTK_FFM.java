@@ -971,48 +971,42 @@ public static void webkit_find_controller_search(long arg0, byte[] arg1, int arg
 }
 
 private static final class MH_webkit_1find_1controller_1search_1finish {
-	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_find_controller_search_finish", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_find_controller_search_finish", FunctionDescriptor.ofVoid(JAVA_LONG));
 }
-public static long webkit_find_controller_search_finish(long arg0) {
+public static void webkit_find_controller_search_finish(long arg0) {
 	try {
-		long rc = 0;
 		if (MH_webkit_1find_1controller_1search_1finish.MH != null) {
-			rc = (long) MH_webkit_1find_1controller_1search_1finish.MH.invokeExact(arg0);
+			MH_webkit_1find_1controller_1search_1finish.MH.invokeExact(arg0);
 		}
 		FFM.checkCallbackException();
-		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
 }
 
 private static final class MH_webkit_1find_1controller_1search_1next {
-	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_find_controller_search_next", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_find_controller_search_next", FunctionDescriptor.ofVoid(JAVA_LONG));
 }
-public static long webkit_find_controller_search_next(long arg0) {
+public static void webkit_find_controller_search_next(long arg0) {
 	try {
-		long rc = 0;
 		if (MH_webkit_1find_1controller_1search_1next.MH != null) {
-			rc = (long) MH_webkit_1find_1controller_1search_1next.MH.invokeExact(arg0);
+			MH_webkit_1find_1controller_1search_1next.MH.invokeExact(arg0);
 		}
 		FFM.checkCallbackException();
-		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
 }
 
 private static final class MH_webkit_1find_1controller_1search_1previous {
-	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_find_controller_search_previous", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_find_controller_search_previous", FunctionDescriptor.ofVoid(JAVA_LONG));
 }
-public static long webkit_find_controller_search_previous(long arg0) {
+public static void webkit_find_controller_search_previous(long arg0) {
 	try {
-		long rc = 0;
 		if (MH_webkit_1find_1controller_1search_1previous.MH != null) {
-			rc = (long) MH_webkit_1find_1controller_1search_1previous.MH.invokeExact(arg0);
+			MH_webkit_1find_1controller_1search_1previous.MH.invokeExact(arg0);
 		}
 		FFM.checkCallbackException();
-		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1209,18 +1203,16 @@ public static long webkit_navigation_policy_decision_get_request(long arg0) {
 }
 
 private static final class MH_webkit_1network_1session_1allow_1tls_1certificate_1for_1host {
-	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_network_session_allow_tls_certificate_for_host", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_network_session_allow_tls_certificate_for_host", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, ADDRESS));
 }
-public static long webkit_network_session_allow_tls_certificate_for_host(long arg0, long arg1, byte[] arg2) {
+public static void webkit_network_session_allow_tls_certificate_for_host(long arg0, long arg1, byte[] arg2) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
-		long rc = 0;
 		if (MH_webkit_1network_1session_1allow_1tls_1certificate_1for_1host.MH != null) {
-			rc = (long) MH_webkit_1network_1session_1allow_1tls_1certificate_1for_1host.MH.invokeExact(arg0, arg1, lparg2);
+			MH_webkit_1network_1session_1allow_1tls_1certificate_1for_1host.MH.invokeExact(arg0, arg1, lparg2);
 		}
 		FFM.copyOut(lparg2, arg2);
 		FFM.checkCallbackException();
-		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1494,16 +1486,14 @@ public static long webkit_uri_scheme_request_get_web_view(long arg0) {
 }
 
 private static final class MH_webkit_1user_1content_1manager_1add_1script {
-	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_user_content_manager_add_script", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG));
+	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_user_content_manager_add_script", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
 }
-public static long webkit_user_content_manager_add_script(long arg0, long arg1) {
+public static void webkit_user_content_manager_add_script(long arg0, long arg1) {
 	try {
-		long rc = 0;
 		if (MH_webkit_1user_1content_1manager_1add_1script.MH != null) {
-			rc = (long) MH_webkit_1user_1content_1manager_1add_1script.MH.invokeExact(arg0, arg1);
+			MH_webkit_1user_1content_1manager_1add_1script.MH.invokeExact(arg0, arg1);
 		}
 		FFM.checkCallbackException();
-		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -1571,18 +1561,16 @@ public static void webkit_web_context_add_path_to_sandbox(long arg0, byte[] arg1
 }
 
 private static final class MH_webkit_1web_1context_1allow_1tls_1certificate_1for_1host {
-	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_web_context_allow_tls_certificate_for_host", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG, JAVA_LONG, ADDRESS));
+	static final MethodHandle MH = FFM.downcallOptional(LOOKUP, "webkit_web_context_allow_tls_certificate_for_host", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG, ADDRESS));
 }
-public static long webkit_web_context_allow_tls_certificate_for_host(long arg0, long arg1, byte[] arg2) {
+public static void webkit_web_context_allow_tls_certificate_for_host(long arg0, long arg1, byte[] arg2) {
 	try (Arena arena = Arena.ofConfined()) {
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
-		long rc = 0;
 		if (MH_webkit_1web_1context_1allow_1tls_1certificate_1for_1host.MH != null) {
-			rc = (long) MH_webkit_1web_1context_1allow_1tls_1certificate_1for_1host.MH.invokeExact(arg0, arg1, lparg2);
+			MH_webkit_1web_1context_1allow_1tls_1certificate_1for_1host.MH.invokeExact(arg0, arg1, lparg2);
 		}
 		FFM.copyOut(lparg2, arg2);
 		FFM.checkCallbackException();
-		return rc;
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}

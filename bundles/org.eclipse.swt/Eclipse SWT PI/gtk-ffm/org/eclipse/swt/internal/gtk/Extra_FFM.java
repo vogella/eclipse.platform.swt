@@ -11,6 +11,7 @@ public final class Extra_FFM {
 	public static final long GINTERFACEINFO = 24L;
 	public static final long GINTERFACEINFO_INTERFACE_INIT = 0L;
 	public static final long GOBJECT = 24L;
+	public static final long GPARAMSPEC_VALUE_TYPE = 24L;
 	public static final long GPOLLFD = 8L;
 	public static final long GVALUE = 24L;
 	public static final long GDKPAINTABLEINTERFACE = FFM.GTK4 ? 64L : -1L;
