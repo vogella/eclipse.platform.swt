@@ -1,25 +1,25 @@
 org.eclipse.swt.internal.C                              FFM    23  JNI     1
-org.eclipse.swt.internal.gtk.OS                         FFM   385  JNI    52
-org.eclipse.swt.internal.gtk.GDK                        FFM   206  JNI     4
+org.eclipse.swt.internal.gtk.OS                         FFM   388  JNI    53
 org.eclipse.swt.internal.gtk.Graphene                   FFM     3  JNI     0
-org.eclipse.swt.internal.gtk.GTK                        FFM   525  JNI    30
+org.eclipse.swt.internal.gtk.GTK                        FFM   526  JNI    30
+org.eclipse.swt.internal.gtk.GDK                        FFM   208  JNI     4
 org.eclipse.swt.internal.gtk3.GTK3                      FFM   239  JNI     2
 org.eclipse.swt.internal.cairo.Cairo                    FFM   119  JNI     1
 org.eclipse.swt.internal.accessibility.gtk.ATK          FFM    25  JNI    20
 org.eclipse.swt.internal.opengl.glx.GLX                 FFM    11  JNI     0
 org.eclipse.swt.internal.webkit.WebKitGTK               FFM   136  JNI     0
-org.eclipse.swt.internal.gtk4.GTK4                      FFM   245  JNI     1
+org.eclipse.swt.internal.gtk4.GTK4                      FFM   250  JNI     1
 
-Total FFM 1917, JNI 111
+Total FFM 1928, JNI 112
 
 Kept on JNI by reason:
      1  JNI caller context
     34  const
      9  function pointer call
-    57  no C function declaration (macro or custom C)
+    58  no C function declaration (macro or custom C)
     10  no_gen
 
 GTK3 and GTK4 (gtk4-differences.txt), 8 struct layouts differ:
     77  GTK3 only (no declaration in the GTK4 headers)
-    37  GTK4 only
-  1030  same C ABI in both
+    39  GTK4 only
+  1034  same C ABI in both
