@@ -66,6 +66,7 @@ org.eclipse.swt.internal.gtk.OS#G_OBJECT_CLASS_SET_CONSTRUCTOR(long,long)	no C f
 org.eclipse.swt.internal.gtk.OS#G_OBJECT_GET_CLASS(long)	no C function declaration (macro or custom C): G_OBJECT_GET_CLASS
 org.eclipse.swt.internal.gtk.OS#G_OBJECT_TYPE(long)	no C function declaration (macro or custom C): G_OBJECT_TYPE
 org.eclipse.swt.internal.gtk.OS#G_OBJECT_TYPE_NAME(long)	no C function declaration (macro or custom C): G_OBJECT_TYPE_NAME
+org.eclipse.swt.internal.gtk.OS#G_PARAM_SPEC_VALUE_TYPE(long)	no C function declaration (macro or custom C): G_PARAM_SPEC_VALUE_TYPE
 org.eclipse.swt.internal.gtk.OS#G_TYPE_BOOLEAN()	const: macro or constant
 org.eclipse.swt.internal.gtk.OS#G_TYPE_DOUBLE()	const: macro or constant
 org.eclipse.swt.internal.gtk.OS#G_TYPE_FLOAT()	const: macro or constant

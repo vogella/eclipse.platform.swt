@@ -5179,6 +5179,18 @@ public static void gtk_tree_view_column_clear(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1tree_1view_1column_1clear_1attributes {
+	static final MethodHandle MH = FFM.downcall("gtk_tree_view_column_clear_attributes", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG));
+}
+public static void gtk_tree_view_column_clear_attributes(long arg0, long arg1) {
+	try {
+		MH_gtk_1tree_1view_1column_1clear_1attributes.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1tree_1view_1column_1get_1button {
 	static final MethodHandle MH = FFM.downcall("gtk_tree_view_column_get_button", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG));
 }
