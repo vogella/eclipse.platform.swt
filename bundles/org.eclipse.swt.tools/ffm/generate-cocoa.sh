@@ -81,7 +81,7 @@ for unit in "${UNITS[@]}"; do
 	clang -fsyntax-only -Xclang -ast-dump -fno-color-diagnostics "${CFLAGS[@]}" -iquote "$(dirname "$src")" "$src" > "$BUILD_DIR/$name.ast" 2> "$BUILD_DIR/$name.ast.log" || true
 	[ -s "$BUILD_DIR/$name.ast" ] || { cat "$BUILD_DIR/$name.ast.log" >&2; exit 1; }
 	clang -E -dM "${CFLAGS[@]}" -iquote "$(dirname "$src")" "$src" > "$BUILD_DIR/$name.macros" 2>> "$BUILD_DIR/$name.ast.log" || true
-	run_generator probe "$main" "$BUILD_DIR/$name.ast" "$BUILD_DIR/${name}_probe.c"
+	run_generator probe --cocoa "$main" "$BUILD_DIR/$name.ast" "$BUILD_DIR/${name}_probe.c"
 	clang "${CFLAGS[@]}" -iquote "$(dirname "$src")" "$BUILD_DIR/${name}_probe.c" -o "$BUILD_DIR/${name}_probe" "${LFLAGS[@]}"
 	"$BUILD_DIR/${name}_probe" > "$BUILD_DIR/${name}_layout.txt"
 	args+=("$main" "$BUILD_DIR/$name.ast" "$BUILD_DIR/${name}_layout.txt")
