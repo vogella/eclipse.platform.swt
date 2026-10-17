@@ -81,6 +81,7 @@ public class FFMProbeGenerator extends JNIGenerator {
 		{GTK_OS, "GtkWidgetClass", "size_allocate"}, {GTK_OS, "GtkWidgetClass", "get_accessible"},
 		{GTK_OS, "GtkContainerClass", "add"}, {GTK_OS, "GtkContainerClass", "remove"}, {GTK_OS, "GtkContainerClass", "forall"},
 		{GTK_OS, "GtkWidgetClass", "measure"}, {GTK_OS, "GInterfaceInfo", "interface_init"},
+		{GTK_OS, "GParamSpec", "value_type"},
 		{GTK_OS, "GdkPaintableInterface", "snapshot"}, {GTK_OS, "GdkPaintableInterface", "get_flags"},
 		{GTK_OS, "GdkPaintableInterface", "get_intrinsic_width"}, {GTK_OS, "GdkPaintableInterface", "get_intrinsic_height"},
 		{GTK_OS, "GdkPaintableInterface", "get_intrinsic_aspect_ratio"},
