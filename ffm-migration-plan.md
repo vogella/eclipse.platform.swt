@@ -350,6 +350,9 @@ Verification, Windows 11 x64, JDK 25, against JNI DLLs built from this checkout:
   The 8 differences are focus and position dependent (`Browser.test_toControl*`/`test_toDisplay*` flip in both directions, `Shell.test_Issue450_NoShellActivateOnSetFocus`) or remote URLs (`Browser_IE.test_setUrl_remote*`); rerunning those classes gave identical outcomes.
   The failures on both builds come from the environment (no SVG rasterizer, off by one pixel positions).
 
+Building on Windows with only the VS Build Tools: `build.bat` finds Community, Professional and Enterprise but not the Build Tools, so `MSVC_HOME` has to be set, and cmd runs it as `.\build.bat`; `make_win32.mak` needs the sources of `common`, `PI/common`, AWT and OpenGL staged next to the library folder.
+`generate-win32.sh` expects LLVM in `C:/Program Files/LLVM/bin`, so the Build Tools' `Llvm\x64\bin` goes on the `PATH`, and `P2_BUNDLES` needs a short path, since `cygpath` prefixes a long one with `//?/` and breaks the class path.
+
 Open:
 
 * `GetLastError` returns what the last capturing call left; `FFMGenerator.CAPTURE_LAST_ERROR` has to follow the call sites.
@@ -524,7 +527,7 @@ The first use costs about 175 ms more (1,004 against 1,179 ms, +17%), the linkin
 * x86_64 is untested: layouts, `objc_msgSend_stret` and `_fpret`.
 * `TISGetInputSourceProperty`, `class_createInstance` and `instrumentObjcMessageSends` are both generated and hand written; the hand written ones win in the rewriter.
 * Not measured: a product build with `apply-ffm.sh cocoa` under Tycho and an IDE session.
-* The generator changes for Cocoa were rerun against GTK, which gives the same `gtk-ffm` and passes `FFMCrossCheck` (1,422 checks) and `FFMCrossCheck4` (988 checks) without a mismatch, but not against Win32.
+* The generator changes for Cocoa were rerun on 2026-10-17 against GTK, which gives the same `gtk-ffm` and passes `FFMCrossCheck` (1,425 checks) and `FFMCrossCheck4` (988 checks) without a mismatch, and against Win32, which gives the same `win32-ffm` and passes `FFMCrossCheckWin32` (3,997 checks) and `FFMWin32RuntimeCheck` (480 checks) without a mismatch.
 
 ## Next steps
 
