@@ -524,7 +524,7 @@ The first use costs about 175 ms more (1,004 against 1,179 ms, +17%), the linkin
 * x86_64 is untested: layouts, `objc_msgSend_stret` and `_fpret`.
 * `TISGetInputSourceProperty`, `class_createInstance` and `instrumentObjcMessageSends` are both generated and hand written; the hand written ones win in the rewriter.
 * Not measured: a product build with `apply-ffm.sh cocoa` under Tycho and an IDE session.
-* The generator changes for Cocoa were not rerun against GTK and Win32.
+* The generator changes for Cocoa were rerun against GTK, which gives the same `gtk-ffm` and passes `FFMCrossCheck` (1,422 checks) and `FFMCrossCheck4` (988 checks) without a mismatch, but not against Win32.
 
 ## Next steps
 
