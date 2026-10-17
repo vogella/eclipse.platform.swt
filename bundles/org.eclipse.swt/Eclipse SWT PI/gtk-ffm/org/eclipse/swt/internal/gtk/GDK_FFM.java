@@ -1697,6 +1697,32 @@ public static long gdk_popup_get_parent(long arg0) {
 	}
 }
 
+private static final class MH_gdk_1popup_1get_1position_1x {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gdk_popup_get_position_x", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gdk_popup_get_position_x");
+}
+public static int gdk_popup_get_position_x(long arg0) {
+	try {
+		int rc = (int) MH_gdk_1popup_1get_1position_1x.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gdk_1popup_1get_1position_1y {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gdk_popup_get_position_y", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gdk_popup_get_position_y");
+}
+public static int gdk_popup_get_position_y(long arg0) {
+	try {
+		int rc = (int) MH_gdk_1popup_1get_1position_1y.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gdk_1popup_1layout_1new {
 	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gdk_popup_layout_new", FunctionDescriptor.of(JAVA_LONG, ADDRESS, JAVA_INT, JAVA_INT)), "gdk_popup_layout_new");
 }

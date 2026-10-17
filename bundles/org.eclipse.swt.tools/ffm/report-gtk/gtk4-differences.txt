@@ -47,6 +47,8 @@ Natives by what the GTK3 and GTK4 compile declare:
   org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_keyval(long)	GTK4 only
   org.eclipse.swt.internal.gtk.GDK#gdk_key_event_get_layout(long)	GTK4 only
   org.eclipse.swt.internal.gtk.GDK#gdk_popup_get_parent(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_popup_get_position_x(long)	GTK4 only
+  org.eclipse.swt.internal.gtk.GDK#gdk_popup_get_position_y(long)	GTK4 only
   org.eclipse.swt.internal.gtk.GDK#gdk_popup_layout_new(GdkRectangle,int,int)	GTK4 only
   org.eclipse.swt.internal.gtk.GDK#gdk_popup_present(long,int,int,long)	GTK4 only
   org.eclipse.swt.internal.gtk.GDK#gdk_property_get(long,long,long,long,long,int,long[],int[],int[],long[])	GTK3 only (no C function declaration (macro or custom C): gdk_property_get)
