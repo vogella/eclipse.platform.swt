@@ -4465,6 +4465,7 @@ public long internal_new_GC (GCData data) {
 			}
 		}
 		data.drawable = gdkResource;
+		if (GTK.GTK4) data.widget = paintHandle ();
 		data.device = display;
 
 		Control control = findBackgroundControl ();
