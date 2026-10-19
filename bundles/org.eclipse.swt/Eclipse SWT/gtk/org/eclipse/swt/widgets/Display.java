@@ -4489,6 +4489,39 @@ public boolean post (Event event) {
 				}
 				return true;
 			}
+			case SWT.MouseWheel: {
+				// GdkEventScroll has no Java struct; the offsets below are the 64-bit layout
+				final int GDK_SCROLL_EVENT = 31; // GdkEventType GDK_SCROLL, not exposed by GDK.java
+				if (C.PTR_SIZEOF != 8 || event.count == 0) return false;
+				int[] x = new int[1], y = new int[1];
+				final long gdkPointerDevice = GDK.gdk_seat_get_pointer(gdkSeat);
+				final long gdkWindow = GDK.gdk_device_get_window_at_position(gdkPointerDevice, x, y);
+				if (gdkWindow == 0) return false;
+				int[] originX = new int[1], originY = new int[1];
+				GDK.gdk_window_get_origin(gdkWindow, originX, originY);
+
+				/* Construct one GdkEventScroll per click */
+				for (int i = 0; i < Math.abs(event.count); i++) {
+					final long eventPtr = GDK.gdk_event_new(GDK_SCROLL_EVENT);
+					OS.g_object_ref(gdkWindow);
+					java.nio.ByteBuffer scroll = java.nio.ByteBuffer.allocate(72).order(java.nio.ByteOrder.nativeOrder());
+					scroll.putInt(0, GDK_SCROLL_EVENT);
+					scroll.putLong(8, gdkWindow);
+					scroll.put(16, (byte) 1);
+					scroll.putInt(20, GDK.GDK_CURRENT_TIME);
+					scroll.putDouble(24, x[0]);
+					scroll.putDouble(32, y[0]);
+					scroll.putInt(44, event.count > 0 ? GDK.GDK_SCROLL_UP : GDK.GDK_SCROLL_DOWN);
+					scroll.putDouble(56, originX[0] + x[0]);
+					scroll.putDouble(64, originY[0] + y[0]);
+					C.memmove(eventPtr, scroll.array(), scroll.capacity());
+					GDK.gdk_event_set_device(eventPtr, gdkPointerDevice);
+
+					GDK.gdk_event_put(eventPtr);
+					GDK.gdk_event_free(eventPtr);
+				}
+				return true;
+			}
 		}
 		return false;
 	}

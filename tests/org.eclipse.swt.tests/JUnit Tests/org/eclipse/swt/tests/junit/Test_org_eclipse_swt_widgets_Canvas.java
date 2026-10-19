@@ -14,9 +14,16 @@
 package org.eclipse.swt.tests.junit;
 
 
+import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_ENV_VAR;
+import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_REGEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
@@ -24,14 +31,19 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Caret;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 /**
  * Automated Test Suite for class org.eclipse.swt.widgets.Canvas
@@ -214,6 +226,46 @@ public void test_drawBackgroundIntoImageIsNotMirrored() {
 @Test
 public void test_consistency_MenuDetect() {
 	consistencyEvent(10, 10, 3, 0, ConsistencyUtility.MOUSE_CLICK);
+}
+
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postMouseWheel() throws InterruptedException {
+	shell.setBounds(100, 100, 300, 300);
+	canvas.setBounds(0, 0, 300, 300);
+	shell.open();
+	// findFocusedWindow() needs a drawn and focused shell
+	SwtTestUtil.processEvents();
+
+	Display display = Display.getDefault();
+	List<Integer> counts = new ArrayList<>();
+	canvas.addListener(SWT.MouseWheel, e -> counts.add(e.count));
+
+	Point center = canvas.toDisplay(150, 150);
+	Event move = new Event();
+	move.type = SWT.MouseMove;
+	move.x = center.x;
+	move.y = center.y;
+	assumeTrue(display.post(move), "Display.post is not supported on GTK4");
+	SwtTestUtil.processEvents(500, () -> false);
+
+	Event up = new Event();
+	up.type = SWT.MouseWheel;
+	up.detail = SWT.SCROLL_LINE;
+	up.count = 3;
+	assertTrue(display.post(up));
+	SwtTestUtil.processEvents(10000, () -> !counts.isEmpty());
+	assertTrue(counts.size() > 0 && counts.stream().allMatch(c -> c > 0), "positive count scrolls up: " + counts);
+
+	counts.clear();
+	Event down = new Event();
+	down.type = SWT.MouseWheel;
+	down.detail = SWT.SCROLL_LINE;
+	down.count = -3;
+	assertTrue(display.post(down));
+	SwtTestUtil.processEvents(10000, () -> !counts.isEmpty());
+	assertTrue(counts.size() > 0 && counts.stream().allMatch(c -> c < 0), "negative count scrolls down: " + counts);
 }
 
 @Test
