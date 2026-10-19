@@ -70,6 +70,5 @@ public final class GCData {
 	public int stringWidth = -1;
 	public int stringHeight = -1;
 	public int drawFlags;
-	public boolean realDrawable;
 	public int width = -1, height = -1;
 }
