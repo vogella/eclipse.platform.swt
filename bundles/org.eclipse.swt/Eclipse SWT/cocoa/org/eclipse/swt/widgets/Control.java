@@ -1270,6 +1270,10 @@ void fillBackground (NSView view, NSGraphicsContext context, NSRect rect, int im
 	if (control == null) control = this;
 	Image image = control.backgroundImage;
 	if (image != null && !image.isDisposed()) {
+		if (imgHeight == -1 && view.isFlipped()) {
+			fillBackgroundTiles(view, context, rect, image, control.view, gcView, tx, ty);
+			return;
+		}
 		context.saveGraphicsState();
 		NSColor.colorWithPatternImage(image.handle).setFill();
 		NSPoint phase = new NSPoint();
@@ -1311,6 +1315,40 @@ void fillBackground (NSView view, NSGraphicsContext context, NSRect rect, int im
 	NSColor.colorWithDeviceRed (background [0], background [1], background [2], alpha).setFill ();
 	NSBezierPath.fillRect (rect);
 	context.restoreGraphicsState ();
+}
+
+// A pattern fill paints the tile upside down in a flipped view, so tile the image from the top left of the control instead.
+private void fillBackgroundTiles (NSView view, NSGraphicsContext context, NSRect rect, Image image, NSView controlView, NSView gcView, int tx, int ty) {
+	NSSize size = image.handle.size();
+	if (size.width <= 0 || size.height <= 0) return;
+	NSPoint origin = controlView.convertPoint_toView_(new NSPoint(), view);
+	if (gcView != null) {
+		NSPoint pt = gcView.convertPoint_toView_(new NSPoint(), view);
+		origin.x += pt.x;
+		origin.y += pt.y;
+	}
+	origin.x -= tx;
+	origin.y -= ty;
+	context.saveGraphicsState();
+	NSBezierPath.bezierPathWithRect(rect).addClip();
+	NSRect dest = new NSRect();
+	dest.width = size.width;
+	dest.height = size.height;
+	NSRect whole = new NSRect();
+	double startX = origin.x + Math.floor((rect.x - origin.x) / size.width) * size.width;
+	double startY = origin.y + Math.floor((rect.y - origin.y) / size.height) * size.height;
+	for (double y = startY; y < rect.y + rect.height; y += size.height) {
+		for (double x = startX; x < rect.x + rect.width; x += size.width) {
+			context.saveGraphicsState();
+			NSAffineTransform transform = NSAffineTransform.transform();
+			transform.translateXBy(x, y + size.height);
+			transform.scaleXBy(1, -1);
+			transform.concat();
+			image.handle.drawInRect(dest, whole, OS.NSCompositingOperationSourceOver, 1);
+			context.restoreGraphicsState();
+		}
+	}
+	context.restoreGraphicsState();
 }
 
 Cursor findCursor () {
