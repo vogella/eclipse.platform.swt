@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -38,7 +39,12 @@ import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.DeviceData;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
@@ -1637,6 +1643,56 @@ public void test_setWarningsZ() {
 @Test
 public void test_isSystemDarkTheme() {
 	System.out.println("org.eclipse.swt.widgets.Display.isSystemDarkTheme(): " + Display.isSystemDarkTheme());
+}
+
+@Test
+public void test_setDarkThemePreferredUpdatesSystemColors() {
+	assumeTrue(SwtTestUtil.isGTK, "Only GTK has a switchable theme variant");
+	Display display = new Display();
+	Shell shell = new Shell(display);
+	try {
+		shell.setSize(100, 100);
+		shell.open();
+		SwtTestUtil.processEvents();
+		int renderedBefore = renderedLuma(shell);
+		int widgetBefore = luma(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND).getRGB());
+		int listBefore = luma(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND).getRGB());
+
+		display.setDarkThemePreferred(true);
+		SwtTestUtil.processEvents();
+
+		// The rendered shell tells whether the theme has a dark variant at all.
+		assumeTrue(renderedLuma(shell) < renderedBefore, "Current GTK theme has no dark variant");
+		assertTrue(luma(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND).getRGB()) < widgetBefore,
+				"COLOR_WIDGET_BACKGROUND must get darker");
+		assertTrue(luma(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND).getRGB()) < listBefore,
+				"COLOR_LIST_BACKGROUND must get darker");
+	} finally {
+		display.setDarkThemePreferred(false);
+		shell.dispose();
+		display.dispose();
+	}
+}
+
+private static int renderedLuma(Shell shell) {
+	Image image = new Image(shell.getDisplay(), shell.getSize().x, shell.getSize().y);
+	try {
+		GC gc = new GC(image);
+		try {
+			shell.print(gc);
+		} finally {
+			gc.dispose();
+		}
+		ImageData data = image.getImageData();
+		PaletteData palette = data.palette;
+		return luma(palette.getRGB(data.getPixel(data.width / 2, data.height / 2)));
+	} finally {
+		image.dispose();
+	}
+}
+
+private static int luma(RGB rgb) {
+	return (299 * rgb.red + 587 * rgb.green + 114 * rgb.blue) / 1000;
 }
 
 }
