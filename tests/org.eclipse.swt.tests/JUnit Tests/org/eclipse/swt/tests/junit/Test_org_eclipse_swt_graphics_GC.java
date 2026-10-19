@@ -864,6 +864,28 @@ public void test_fillGradientRectangle_doesNotChangeLaterDrawing() {
 	}
 }
 
+@Test
+public void test_fillGradientRectangle_spansRectangleOnImage() {
+	Image image = new Image(display, 1, 30);
+	try {
+		GC gradientGC = new GC(image);
+		gradientGC.setForeground(new Color(200, 200, 200));
+		gradientGC.setBackground(new Color(230, 230, 230));
+		gradientGC.fillGradientRectangle(0, 0, 1, 30, true);
+		gradientGC.dispose();
+		ImageData data = image.getImageData(100);
+		int previous = 0;
+		for (int y = 0; y < 30; y++) {
+			int red = data.palette.getRGB(data.getPixel(0, y)).red;
+			assertTrue(red >= previous, "gradient must be monotonic at y=" + y);
+			previous = red;
+		}
+		assertTrue(previous >= 224, "gradient must reach the background color at the bottom, was " + previous);
+	} finally {
+		image.dispose();
+	}
+}
+
 private ImageData drawGradientAndRectangle(boolean gradientFirst) {
 	Image image = new Image(display, 40, 40);
 	try {
