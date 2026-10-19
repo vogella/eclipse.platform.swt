@@ -2937,9 +2937,30 @@ boolean forceFocus (long focusHandle) {
 	if (GTK.gtk_widget_has_focus (focusHandle)) return true;
 	/* When the control is zero sized it must be realized */
 	GTK.gtk_widget_realize (focusHandle);
-	GTK.gtk_widget_grab_focus (focusHandle);
+	boolean replayed = false;
+	if (GTK.GTK4) {
+		if (display.gtk4Focusing) {
+			display.gtk4PendingFocus = focusHandle;
+			return true;
+		}
+		display.gtk4Focusing = true;
+		try {
+			GTK.gtk_widget_grab_focus (focusHandle);
+		} finally {
+			display.gtk4Focusing = false;
+		}
+		long pending = display.gtk4PendingFocus;
+		display.gtk4PendingFocus = 0;
+		if (pending != 0 && !isDisposed ()) {
+			GTK.gtk_widget_grab_focus (pending);
+			replayed = true;
+		}
+	} else {
+		GTK.gtk_widget_grab_focus (focusHandle);
+	}
 	// widget could be disposed at this point
 	if (isDisposed ()) return false;
+	if (replayed) return true;
 	Shell shell = getShell ();
 	long handle = GTK.gtk_window_get_focus (shell.focusWindowHandle ());
 	while (handle != 0) {
