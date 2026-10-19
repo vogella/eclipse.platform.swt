@@ -1454,4 +1454,29 @@ public void test_adjacentUnderlineAndBorderStylesDrawLikeMergedRange() {
 public void test_drawingTwiceGivesSamePixels() {
 	assertArrayEquals(drawAdjacentOrMerged(true, true, true), drawAdjacentOrMerged(true, true, true));
 }
+
+@Test
+public void test_getLocation_insideEmojiWithSkinTone_staysWithinLineWidth() {
+	TextLayout layout = new TextLayout(display);
+	try {
+		// 2nd emoji is a thumbs up (2 chars) plus a skin tone modifier (2 chars)
+		String text = "a\uD83D\uDE00b\uD83D\uDC4D\uD83C\uDFFDc";
+		layout.setText(text);
+		int width = layout.getBounds().width;
+		StringBuilder positions = new StringBuilder();
+		for (int i = 0; i <= text.length(); i++) {
+			for (boolean trailing : new boolean[] { false, true }) {
+				positions.append(i).append(trailing ? "t=" : "=").append(layout.getLocation(i, trailing).x).append(' ');
+			}
+		}
+		for (int i = 0; i <= text.length(); i++) {
+			for (boolean trailing : new boolean[] { false, true }) {
+				int x = layout.getLocation(i, trailing).x;
+				assertTrue(x >= 0 && x <= width, "offset " + i + " trailing " + trailing + " at x=" + x + " exceeds width " + width + ": " + positions);
+			}
+		}
+	} finally {
+		layout.dispose();
+	}
+}
 }

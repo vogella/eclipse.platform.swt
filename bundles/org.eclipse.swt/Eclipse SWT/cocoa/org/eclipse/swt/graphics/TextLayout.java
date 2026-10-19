@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.swt.graphics;
 
+import java.text.BreakIterator;
 import java.util.*;
 
 import org.eclipse.swt.*;
@@ -1197,7 +1198,16 @@ public Point getLocation(int offset, boolean trailing) {
 			// the end of a right-to-left run is its left edge
 			return new Point((int)(rtl ? rect.x : rect.x + rect.width), (int)rect.y);
 		} else {
-			offset = translateOffset(offset);
+			// Offsets inside a surrogate pair or emoji sequence share the edges of their cluster
+			int clusterStart = offset, clusterEnd = offset + 1;
+			if (isClusterCandidate(offset)) {
+				BreakIterator clusters = BreakIterator.getCharacterInstance();
+				clusters.setText(text);
+				clusterStart = clusters.isBoundary(offset) ? offset : clusters.preceding(offset);
+				clusterEnd = clusters.following(clusterStart);
+			}
+			offset = translateOffset(clusterStart);
+			int clusterLength = translateOffset(clusterEnd) - offset;
 			long glyphIndex = layoutManager.glyphIndexForCharacterAtIndex(offset);
 			NSRect rect = layoutManager.lineFragmentUsedRectForGlyphAtIndex(glyphIndex, 0);
 			NSPoint point = layoutManager.locationForGlyphAtIndex(glyphIndex);
@@ -1209,6 +1219,12 @@ public Point getLocation(int offset, boolean trailing) {
 			long result = layoutManager.getGlyphsInRange(range, 0, 0, 0, 0, bidiLevels);
 			if (result > 0) {
 				rtl = (bidiLevels[0] & 1) != 0;
+			}
+			if (clusterLength > 1) {
+				NSRange charRange = new NSRange();
+				charRange.location = offset;
+				charRange.length = clusterLength;
+				range = layoutManager.glyphRangeForCharacterRange(charRange, 0);
 			}
 			if (trailing != rtl) {
 				long [] rectCount = new long [1];
@@ -2447,6 +2463,14 @@ static long textLayoutProc(long id, long sel) {
 		return 0;
 	}
 	return 0;
+}
+
+boolean isClusterCandidate(int offset) {
+	for (int i = Math.max(offset - 1, 0); i <= offset; i++) {
+		char ch = text.charAt(i);
+		if (Character.isSurrogate(ch) || ch == 0x200D || ch == 0xFE0F) return true;
+	}
+	return false;
 }
 
 /*
