@@ -17,7 +17,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
@@ -183,6 +185,25 @@ public void test_setFocus_withVisibleAndInvisibleChild() {
 	composite.setFocus();
 	assertFalse(wasSetFocusCalledOnInvisibleChildWidget.get());
 	assertTrue(getElementExpectedToHaveFocusAfterSetFocusOnParent(visibleChildWidget).isFocusControl());
+}
+
+@Test
+public void test_focusEventsReportedToFocusedControlOnly() {
+	Composite outer = new Composite(composite, SWT.NONE);
+	outer.setLayout(new FillLayout());
+	Text text = new Text(outer, SWT.SINGLE);
+	ArrayList<Integer> outerEvents = new ArrayList<>();
+	outer.addListener(SWT.FocusIn, e -> outerEvents.add(e.type));
+	outer.addListener(SWT.FocusOut, e -> outerEvents.add(e.type));
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+
+	text.setFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(text.isFocusControl(), "focus not granted in this environment");
+	new Button(composite, SWT.PUSH).setFocus();
+	SwtTestUtil.processEvents();
+
+	assertTrue(outerEvents.isEmpty(), "composite got focus events of its child: " + outerEvents);
 }
 
 @Test

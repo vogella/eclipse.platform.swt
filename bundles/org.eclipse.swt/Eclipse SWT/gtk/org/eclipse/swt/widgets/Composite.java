@@ -1971,6 +1971,29 @@ void updateLayout (boolean all) {
 	}
 }
 
+private boolean gtk4Focused;
+
+/** GTK3 reports focus only to the widget that has it, GTK4 also reports the focus of a descendant to its ancestors. */
+@Override
+void gtk4_focus_enter_event(long controller, long event) {
+	if (!(this instanceof Decorations)) {
+		int[] isFocus = new int[1];
+		OS.g_object_get(controller, Converter.javaStringToCString("is-focus"), isFocus, 0);
+		if (isFocus[0] == 0) return;
+		gtk4Focused = true;
+	}
+	super.gtk4_focus_enter_event(controller, event);
+}
+
+@Override
+void gtk4_focus_leave_event(long controller, long event) {
+	if (!(this instanceof Decorations)) {
+		if (!gtk4Focused) return;
+		gtk4Focused = false;
+	}
+	super.gtk4_focus_leave_event(controller, event);
+}
+
 @Override
 public String toString() {
 	return super.toString() + " [layout=" + layout + "]";
