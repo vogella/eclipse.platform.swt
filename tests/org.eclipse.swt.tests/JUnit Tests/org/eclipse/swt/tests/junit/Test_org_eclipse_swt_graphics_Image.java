@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -48,6 +49,7 @@ import org.eclipse.swt.graphics.ImageDataAtSizeProvider;
 import org.eclipse.swt.graphics.ImageDataProvider;
 import org.eclipse.swt.graphics.ImageFileNameProvider;
 import org.eclipse.swt.graphics.ImageGcDrawer;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
@@ -1659,5 +1661,55 @@ public void test_transparentPixelSurvivesRoundTrip() {
 	} finally {
 		image.dispose();
 	}
+}
+
+private static ImageData asymmetricImageData(Display display) {
+	Image image = new Image(display, 340, 150);
+	try {
+		GC gc = new GC(image);
+		try {
+			gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+			gc.fillRectangle(0, 0, 340, 150);
+			gc.setForeground(display.getSystemColor(SWT.COLOR_RED));
+			gc.drawLine(0, 0, 339, 149);
+			gc.setBackground(display.getSystemColor(SWT.COLOR_BLUE));
+			gc.fillRectangle(300, 120, 40, 30);
+			gc.setBackground(display.getSystemColor(SWT.COLOR_GREEN));
+			gc.fillRectangle(10, 100, 60, 20);
+		} finally {
+			gc.dispose();
+		}
+		return image.getImageData();
+	} finally {
+		image.dispose();
+	}
+}
+
+private static void assertSamePixels(ImageData expected, ImageData actual) {
+	int[][] points = { {0, 0}, {5, 5}, {170, 85}, {20, 110}, {320, 135}, {339, 0}, {339, 100}, {339, 149}, {0, 149}, {338, 148} };
+	for (int[] p : points) {
+		assertEquals(expected.getPixel(p[0], p[1]), actual.getPixel(p[0], p[1]), "pixel " + p[0] + "," + p[1]);
+	}
+}
+
+@Test
+public void test_getImageData_bytesPerLineMatchesScanlinePad() {
+	ImageData d = asymmetricImageData(display);
+	int expected = ((d.width * d.depth + 7) / 8 + d.scanlinePad - 1) / d.scanlinePad * d.scanlinePad;
+	assertEquals(expected, d.bytesPerLine);
+	assertSamePixels(d, new ImageData(d.width, d.height, d.depth, d.palette, d.scanlinePad, d.data));
+}
+
+@Test
+public void test_getImageData_pngRoundTripKeepsPixels() {
+	ImageData d = asymmetricImageData(display);
+	ByteArrayOutputStream out = new ByteArrayOutputStream();
+	ImageLoader saver = new ImageLoader();
+	saver.data = new ImageData[] { d };
+	saver.save(out, SWT.IMAGE_PNG);
+	ImageData loaded = new ImageLoader().load(new ByteArrayInputStream(out.toByteArray()))[0];
+	assertEquals(d.width, loaded.width);
+	assertEquals(d.height, loaded.height);
+	assertSamePixels(d, loaded);
 }
 }
