@@ -12,9 +12,13 @@ package org.eclipse.swt.tests.cocoa;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.internal.C;
 import org.eclipse.swt.internal.cocoa.NSBitmapImageRep;
 import org.eclipse.swt.internal.cocoa.NSImage;
@@ -64,6 +68,59 @@ public class Test_cocoa_ImageAlphaData {
 			} finally {
 				image.dispose();
 			}
+		}
+	}
+
+	@Test
+	public void test_getImageData_packsPaddedRowsToDeclaredScanlinePad() {
+		int width = 340;
+		int height = 150;
+		NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
+		rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
+				OS.NSAlphaFirstBitmapFormat | OS.NSAlphaNonpremultipliedBitmapFormat, 64 * ((width * 4 + 63) / 64), 32);
+		long bytesPerRow = rep.bytesPerRow();
+		assertEquals(1408, bytesPerRow);
+		byte[] pixels = new byte[(int) (bytesPerRow * height)];
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				int offset = (int) (y * bytesPerRow + x * 4);
+				pixels[offset] = (byte) 0xFF;
+				pixels[offset + 1] = (byte) x;
+				pixels[offset + 2] = (byte) y;
+				pixels[offset + 3] = (byte) (x ^ y);
+			}
+		}
+		C.memmove(rep.bitmapData(), pixels, pixels.length);
+
+		NSImage nsImage = (NSImage) new NSImage().alloc();
+		NSSize size = new NSSize();
+		size.width = width;
+		size.height = height;
+		nsImage = nsImage.initWithSize(size);
+		nsImage.addRepresentation(rep);
+		rep.release();
+
+		Image image = Image.cocoa_new(Display.getDefault(), SWT.BITMAP, nsImage);
+		try {
+			ImageData data = image.getImageData(100);
+			assertEquals(((data.width * data.depth + 7) / 8 + data.scanlinePad - 1) / data.scanlinePad * data.scanlinePad,
+					data.bytesPerLine);
+			ImageData copy = new ImageData(data.width, data.height, data.depth, data.palette, data.scanlinePad, data.data);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ImageLoader saver = new ImageLoader();
+			saver.data = new ImageData[] { data };
+			saver.save(out, SWT.IMAGE_PNG);
+			ImageData loaded = new ImageLoader().load(new ByteArrayInputStream(out.toByteArray()))[0];
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					int expected = ((x & 0xFF) << 16) | ((y & 0xFF) << 8) | ((x ^ y) & 0xFF);
+					assertEquals(expected, data.getPixel(x, y), "pixel " + x + "," + y);
+					assertEquals(expected, copy.getPixel(x, y), "copy pixel " + x + "," + y);
+					assertEquals(data.palette.getRGB(expected), loaded.palette.getRGB(loaded.getPixel(x, y)), "png pixel " + x + "," + y);
+				}
+			}
+		} finally {
+			image.dispose();
 		}
 	}
 
