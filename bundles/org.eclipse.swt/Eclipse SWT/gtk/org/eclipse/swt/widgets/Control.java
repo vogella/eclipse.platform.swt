@@ -3488,11 +3488,6 @@ int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long
 
 	display.clickCount = n_press;
 	if (n_press == 1) {
-		gtk4DragStart = null;
-		if (eventButton == 1 && (state & DRAG_DETECT) != 0 && wantDragDropDetection ()) {
-			gtk4DragStart = new Point ((int) x, (int) y);
-			gtk4DragStateMask = eventState;
-		}
 		boolean cancelled = sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
 		if (!cancelled) {
 			result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
@@ -3509,14 +3504,11 @@ int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long
 			}
 		}
 	} else if (n_press >= 2) {
-		// like GTK3: the MouseDown of the second press comes first, then the MouseDoubleClick
-		boolean cancelled = sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
-		if (n_press == 2 && !isDisposed()) {
-			cancelled &= sendMouseEvent(SWT.MouseDoubleClick, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
-		}
-
-		if (!cancelled) {
-			result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+		// Like GTK3, send the MouseDown of the second press before the MouseDoubleClick
+		// and no MouseDoubleClick for the third press
+		sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
+		if (n_press == 2) {
+			sendMouseEvent(SWT.MouseDoubleClick, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
 		}
 	}
 	return result;
