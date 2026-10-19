@@ -232,6 +232,8 @@ public void test_consistency_MenuDetect() {
 @Tag("gtk4-todo")
 @DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
 public void test_postMouseWheel() throws InterruptedException {
+	// posted input does not reach a background app on Cocoa and Win32, and the fix under test is GTK only
+	assumeTrue(SwtTestUtil.isGTK);
 	shell.setBounds(100, 100, 300, 300);
 	canvas.setBounds(0, 0, 300, 300);
 	shell.open();
