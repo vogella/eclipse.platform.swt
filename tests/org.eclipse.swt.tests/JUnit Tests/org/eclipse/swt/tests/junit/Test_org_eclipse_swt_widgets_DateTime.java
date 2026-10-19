@@ -14,6 +14,8 @@
 package org.eclipse.swt.tests.junit;
 
 
+import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_ENV_VAR;
+import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_REGEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -26,9 +28,11 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.DateTime;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 
 /**
@@ -706,5 +710,50 @@ public void test_consistency_DragDetect () {
 	consistencyEvent(5, 5, 15, 15, ConsistencyUtility.MOUSE_DRAG);
 }
 
+@Test
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_keyDownIsSent() throws InterruptedException {
+	assumeTrue((style & SWT.CALENDAR) == 0);
+	int[] keyDowns = {0};
+	datetime.addListener(SWT.KeyDown, e -> keyDowns[0]++);
+	postArrowUp();
+	SwtTestUtil.processEvents(5000, () -> keyDowns[0] > 0);
+	assertEquals(1, keyDowns[0]);
+}
 
+@Test
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_keyDownDoitFalseVetoesKey() throws InterruptedException {
+	assumeTrue((style & SWT.CALENDAR) == 0);
+	int[] keyDowns = {0};
+	datetime.addListener(SWT.KeyDown, e -> {
+		keyDowns[0]++;
+		e.doit = false;
+	});
+	int hours = datetime.getHours();
+	int day = datetime.getDay();
+	postArrowUp();
+	SwtTestUtil.processEvents(5000, () -> keyDowns[0] > 0);
+	SwtTestUtil.processEvents();
+	assertEquals(1, keyDowns[0]);
+	assertEquals(hours, datetime.getHours());
+	assertEquals(day, datetime.getDay());
+}
+
+/** Posts ARROW_UP to the focused DateTime, skipping the test if its Shell cannot get the focus. */
+private void postArrowUp() throws InterruptedException {
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+	datetime.forceFocus();
+	SwtTestUtil.processEvents();
+	Display display = shell.getDisplay();
+	assumeTrue(display.getFocusControl() == datetime, "DateTime did not get the focus");
+	Event down = new Event();
+	down.type = SWT.KeyDown;
+	down.keyCode = SWT.ARROW_UP;
+	Event up = new Event();
+	up.type = SWT.KeyUp;
+	up.keyCode = SWT.ARROW_UP;
+	assumeTrue(display.post(down), "Display.post is not supported on this platform");
+	assertTrue(display.post(up));
+}
 }
