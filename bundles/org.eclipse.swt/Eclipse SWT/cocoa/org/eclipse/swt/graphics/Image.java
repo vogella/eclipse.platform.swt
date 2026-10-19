@@ -968,8 +968,18 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 	long bitmapData = imageRep.bitmapData();
 	long bitmapFormat = imageRep.bitmapFormat();
 	long dataSize = height * bpr;
-	byte[] srcData = new byte[(int)dataSize];
-	C.memmove(srcData, bitmapData, dataSize);
+	byte[] paddedData = new byte[(int)dataSize];
+	C.memmove(paddedData, bitmapData, dataSize);
+	/* bytesPerRow is padded by Cocoa; repack to the unpadded stride that scanlinePad 1 declares */
+	int rowBytes = (int)((width * bpp + 7) / 8);
+	byte[] srcData = paddedData;
+	if (rowBytes != bpr) {
+		srcData = new byte[(int)(height * rowBytes)];
+		for (int y = 0; y < height; y++) {
+			System.arraycopy(paddedData, (int)(y * bpr), srcData, y * rowBytes, rowBytes);
+		}
+	}
+	bpr = rowBytes;
 
 	PaletteData palette;
 	if (bpp == 32 && (bitmapFormat & OS.NSAlphaFirstBitmapFormat) == 0) {
@@ -978,7 +988,6 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 		palette = new PaletteData(0xFF0000, 0xFF00, 0xFF);
 	}
 	ImageData data = new ImageData((int)width, (int)height, (int)bpp, palette, 1, srcData);
-	data.bytesPerLine = (int)bpr;
 	if (imageRep.hasAlpha() && info.transparentPixel == -1 && info.alpha == -1 && info.alphaData == null) {
 		byte[] alphaD = new byte[(int) (width * height)];
 		int offset = (bitmapFormat & OS.NSAlphaFirstBitmapFormat) != 0 ? 0 : 3;
