@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk4.*;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -459,6 +460,27 @@ long convertRgn(long rgn, double[] matrix) {
 	return newRgn;
 }
 
+/** Renders the widget into the cairo context through a snapshot, since a GdkSurface cannot be read back on GTK4. */
+private static void copyWidgetSnapshot(long cairo, long widget) {
+	long paintable = GTK4.gtk_widget_paintable_new(widget);
+	if (paintable == 0) return;
+	long snapshot = GTK4.gtk_snapshot_new();
+	if (snapshot == 0) {
+		OS.g_object_unref(paintable);
+		return;
+	}
+	GTK4.gdk_paintable_snapshot(paintable, snapshot, GTK4.gtk_widget_get_width(widget), GTK4.gtk_widget_get_height(widget));
+	long renderNode = GTK4.gtk_snapshot_free_to_node(snapshot);
+	OS.g_object_unref(paintable);
+	if (renderNode == 0) return;
+	Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_SOURCE);
+	Cairo.cairo_set_source_rgba(cairo, 0, 0, 0, 0);
+	Cairo.cairo_paint(cairo);
+	Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_OVER);
+	GTK4.gsk_render_node_draw(renderNode, cairo);
+	GTK4.gsk_render_node_unref(renderNode);
+}
+
 /**
  * Copies a rectangular area of the receiver at the specified
  * position into the image, which must be of type <code>SWT.BITMAP</code>.
@@ -482,6 +504,11 @@ public void copyArea(Image image, int x, int y) {
 	long cairo = Cairo.cairo_create(image.surface);
 	if (cairo == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 	Cairo.cairo_translate(cairo, -x, -y);
+	if (GTK.GTK4 && data.image == null && data.widget != 0) {
+		copyWidgetSnapshot(cairo, data.widget);
+		Cairo.cairo_destroy(cairo);
+		return;
+	}
 	Cairo.cairo_push_group(cairo);
 	if (data.image != null) {
 		Cairo.cairo_set_source_surface(cairo, data.image.surface, 0, 0);
