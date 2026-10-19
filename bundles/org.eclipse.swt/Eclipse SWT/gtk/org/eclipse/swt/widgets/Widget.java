@@ -250,6 +250,7 @@ public abstract class Widget {
 	/* GtkTreeSelection::changed, not blocked by the selection API of Tree, Table and List like CHANGED */
 	static final int SELECTION_CHANGED = 111;
 	static final int LAST_SIGNAL = 112;
+	static final int NOTIFY_FOCUS = 1000;
 
 	static final String IS_ACTIVE = "org.eclipse.swt.internal.control.isactive"; //$NON-NLS-1$
 	static final String KEY_CHECK_SUBWINDOW = "org.eclipse.swt.internal.control.checksubwindow"; //$NON-NLS-1$
