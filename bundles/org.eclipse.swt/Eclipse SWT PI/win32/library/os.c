@@ -8164,22 +8164,6 @@ fail:
 }
 #endif
 
-#ifndef NO_SendMessage__JIJLorg_eclipse_swt_internal_win32_TVSORTCB_2
-JNIEXPORT jlong JNICALL OS_NATIVE(SendMessage__JIJLorg_eclipse_swt_internal_win32_TVSORTCB_2)
-	(JNIEnv *env, jclass that, jlong arg0, jint arg1, jlong arg2, jobject arg3)
-{
-	TVSORTCB _arg3, *lparg3=NULL;
-	jlong rc = 0;
-	OS_NATIVE_ENTER(env, that, SendMessage__JIJLorg_eclipse_swt_internal_win32_TVSORTCB_2_FUNC);
-	if (arg3) if ((lparg3 = getTVSORTCBFields(env, arg3, &_arg3)) == NULL) goto fail;
-	rc = (jlong)SendMessage((HWND)arg0, arg1, (WPARAM)arg2, (LPARAM)lparg3);
-fail:
-	if (arg3 && lparg3) setTVSORTCBFields(env, arg3, lparg3);
-	OS_NATIVE_EXIT(env, that, SendMessage__JIJLorg_eclipse_swt_internal_win32_TVSORTCB_2_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_SendMessage__JIJLorg_eclipse_swt_internal_win32_UDACCEL_2
 JNIEXPORT jlong JNICALL OS_NATIVE(SendMessage__JIJLorg_eclipse_swt_internal_win32_UDACCEL_2)
 	(JNIEnv *env, jclass that, jlong arg0, jint arg1, jlong arg2, jobject arg3)
@@ -9199,18 +9183,6 @@ JNIEXPORT jint JNICALL OS_NATIVE(TVITEM_1sizeof)
 	OS_NATIVE_ENTER(env, that, TVITEM_1sizeof_FUNC);
 	rc = (jint)TVITEM_sizeof();
 	OS_NATIVE_EXIT(env, that, TVITEM_1sizeof_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_TVSORTCB_1sizeof
-JNIEXPORT jint JNICALL OS_NATIVE(TVSORTCB_1sizeof)
-	(JNIEnv *env, jclass that)
-{
-	jint rc = 0;
-	OS_NATIVE_ENTER(env, that, TVSORTCB_1sizeof_FUNC);
-	rc = (jint)TVSORTCB_sizeof();
-	OS_NATIVE_EXIT(env, that, TVSORTCB_1sizeof_FUNC);
 	return rc;
 }
 #endif

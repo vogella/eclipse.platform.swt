@@ -1353,8 +1353,6 @@ public class OS extends C {
 	public static final int TVM_SETITEMHEIGHT = TV_FIRST + 27;
 	public static final int TVM_SETSCROLLTIME = TV_FIRST + 33;
 	public static final int TVM_SETTEXTCOLOR = 0x111e;
-	public static final int TVM_SORTCHILDREN = TV_FIRST + 19;
-	public static final int TVM_SORTCHILDRENCB = TV_FIRST + 21;
 	public static final int TVN_BEGINDRAG = 0xfffffe38;
 	public static final int TVN_BEGINRDRAG = 0xfffffe37;
 	public static final int TVN_FIRST = 0xfffffe70;
@@ -1456,7 +1454,6 @@ public class OS extends C {
 	public static final int VK_RBUTTON = 0x2;
 	public static final int VK_RETURN = 0xd;
 	public static final int VK_RIGHT = 0x27;
-	public static final int VK_RMENU = 0xA5;
 	public static final int VK_RSHIFT = 0xA1;
 	public static final int VK_SCROLL = 0x91;
 	public static final int VK_SEPARATOR = 0x6C;
@@ -1766,7 +1763,6 @@ public static final native int TRIVERTEX_sizeof ();
 public static final native int TVHITTESTINFO_sizeof ();
 public static final native int TVINSERTSTRUCT_sizeof ();
 public static final native int TVITEM_sizeof ();
-public static final native int TVSORTCB_sizeof ();
 public static final native int UDACCEL_sizeof ();
 public static final native int WINDOWPLACEMENT_sizeof ();
 public static final native int WINDOWPOS_sizeof ();
@@ -3953,12 +3949,6 @@ public static final native long SendMessage (long hWnd, int Msg, long wParam, TV
  * @param lParam cast=(LPARAM)
  */
 public static final native long SendMessage (long hWnd, int Msg, long wParam, TVITEM lParam);
-/**
- * @param hWnd cast=(HWND)
- * @param wParam cast=(WPARAM)
- * @param lParam cast=(LPARAM)
- */
-public static final native long SendMessage (long hWnd, int Msg, long wParam, TVSORTCB lParam);
 /**
  * @param hWnd cast=(HWND)
  * @param wParam cast=(WPARAM)
