@@ -138,6 +138,13 @@ Point computeNativeSize (long h, int wHint, int hHint, boolean changed) {
 		return super.computeNativeSize(h, wHint, hHint, changed);
 	}
 }
+
+Point computeFrameTrim () {
+	Point thickness = getThickness (frameHandle);
+	int border = gtk_container_get_border_width_or_margin (frameHandle);
+	return new Point (2 * (thickness.x + border), 2 * (thickness.y + border));
+}
+
 @Override
 Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	checkWidget ();
@@ -169,17 +176,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 		int [] w = new int [1], h = new int [1];
 		OS.pango_layout_get_pixel_size (labelLayout, w, h);
 		OS.pango_layout_set_width (labelLayout, pangoWidth);
-		if (frameHandle != 0) {
-			int [] labelWidth = new int [1], labelHeight = new int [1];
-			GTK.gtk_widget_get_size_request (labelHandle, labelWidth, labelHeight);
-			GTK.gtk_widget_set_size_request (labelHandle, 1, 1);
-			size = computeNativeSize (frameHandle, -1, -1, changed);
-			GTK.gtk_widget_set_size_request (labelHandle, labelWidth [0], labelHeight [0]);
-			size.x = size.x - 1;
-			size.y = size.y - 1;
-		} else {
-			size = new Point (0,0);
-		}
+		size = frameHandle != 0 ? computeFrameTrim () : new Point (0,0);
 		size.x += wHint == SWT.DEFAULT ? w [0] : wHint;
 		size.y += hHint == SWT.DEFAULT ? h [0] : hHint;
 	} else {
@@ -189,6 +186,10 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 			GTK.gtk_widget_set_size_request (handle, wHint, hHint);
 			size = computeNativeSize (frameHandle, -1, -1, changed);
 			GTK.gtk_widget_set_size_request (handle, reqWidth [0], reqHeight [0]);
+			/* A size request does not cap the natural size, so a hint smaller than the content is lost. */
+			Point trim = computeFrameTrim ();
+			if (wHint != SWT.DEFAULT) size.x = wHint + trim.x;
+			if (hHint != SWT.DEFAULT) size.y = hHint + trim.y;
 		} else {
 			size = computeNativeSize (handle, wHint, hHint, changed);
 		}
