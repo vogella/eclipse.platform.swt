@@ -1986,6 +1986,7 @@ void setText(String dateTimeText) {
 @Override
 boolean gtk4_key_press_event(long controller, int keyval, int keycode, int state, long event) {
 	if (!isReadOnly() && (isTime() || isDate())) {
+		if (!sendKeyEvent(SWT.KeyDown, event)) return true;
 		switch (keyval) {
 		case GDK.GDK_Up:
 		case GDK.GDK_KP_Up:
@@ -2023,14 +2024,16 @@ boolean gtk4_key_press_event(long controller, int keyval, int keycode, int state
 		default:
 			onNumberKeyInput(keyval);
 		}
+		return true;
 	}
 
-	return true;
+	return super.gtk4_key_press_event(controller, keyval, keycode, state, event);
 }
 
 @Override
 long gtk3_key_press_event (long widget, long event) {
 	if (!isReadOnly () && (isTime () || isDate ())) {
+		if (!sendKeyEvent (SWT.KeyDown, event)) return 1;
 		int [] key = new int[1];
 		GDK.gdk_event_get_keyval(event, key);
 
@@ -2073,8 +2076,9 @@ long gtk3_key_press_event (long widget, long event) {
 		default:
 			onNumberKeyInput(key[0]);
 		}
+		return 1;
 	}
-	return 1;
+	return super.gtk3_key_press_event (widget, event);
 }
 
 void commitData() {
