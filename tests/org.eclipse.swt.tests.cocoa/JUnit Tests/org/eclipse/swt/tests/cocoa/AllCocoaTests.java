@@ -33,6 +33,7 @@ import org.junit.platform.suite.api.Suite;
 	Test_cocoa_ReleasedChildren.class,
 	Test_cocoa_DefaultFont.class,
 	Test_cocoa_GCCopyArea.class,
+	Test_cocoa_AccessibleChildValue.class,
 	Test_cocoa_SystemMenu.class
 })
 
