@@ -29,7 +29,8 @@ import org.junit.platform.suite.api.Suite;
 	Test_cocoa_Table.class,
 	Test_cocoa_ImageAlphaData.class,
 	Test_cocoa_SystemColorsAppearance.class,
-	Test_cocoa_ReleasedChildren.class
+	Test_cocoa_ReleasedChildren.class,
+	Test_cocoa_DefaultFont.class
 })
 
 public class AllCocoaTests {
