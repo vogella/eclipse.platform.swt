@@ -411,8 +411,10 @@ public Rectangle getBounds (int index) {
 	if (index == 0 && (parent.style & SWT.CHECK) != 0) {
 		int [] x = new int [1], w = new int [1];
 		gtk_tree_view_column_cell_get_position (column, parent.checkRenderer, x, w);
-		rect.x += x [0] + w [0];
-		rect.width -= x [0] + w [0];
+		// GTK packs the check box at the right end in RTL, so only its width lies before the item
+		int checkOffset = (parent.getStyle () & SWT.MIRRORED) != 0 ? w [0] : x [0] + w [0];
+		rect.x += checkOffset;
+		rect.width -= checkOffset;
 	}
 	int width = GTK.gtk_tree_view_column_get_visible (column) ? rect.width + 1 : 0;
 	Rectangle r = new Rectangle (rect.x, rect.y, width, rect.height + 1);
