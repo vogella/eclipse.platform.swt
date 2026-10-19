@@ -162,10 +162,20 @@ public final class FFMTypes {
 
 	/* ---------------------------------------------------------------- sizes of C types */
 
-	/** Types that only GTK3 has, and that the JNI library has no natives for under GTK4. */
-	static int gtk3Only(long size, String name) {
-		if (FFM.GTK4) throw new UnsatisfiedLinkError(name);
-		return (int) size;
+	/* g_type_query(GType type, GTypeQuery *query), GTypeQuery is {GType type; const gchar *type_name; guint class_size; guint instance_size} */
+	static final MethodHandle G_TYPE_QUERY = FFM.downcall("g_type_query", FunctionDescriptor.ofVoid(JAVA_LONG, ADDRESS));
+
+	/** GTK4 keeps the cell renderer structs private, so like the JNI library this asks GLib for the registered sizes. */
+	static int registeredSize(String getter, boolean instance) {
+		long type = FFMMacros.type(getter);
+		if (type == 0) throw new UnsatisfiedLinkError(getter);
+		try (Arena arena = Arena.ofConfined()) {
+			MemorySegment query = arena.allocate(24, 8);
+			G_TYPE_QUERY.invokeExact(type, query);
+			return query.get(JAVA_INT_UNALIGNED, instance ? 20 : 16);
+		} catch (Throwable t) {
+			throw FFM.rethrow(t);
+		}
 	}
 
 	public static int GValue_sizeof() {
@@ -193,19 +203,19 @@ public final class FFMTypes {
 	}
 
 	public static int GtkCellRendererPixbuf_sizeof() {
-		return gtk3Only(Extra_FFM.GTKCELLRENDERERPIXBUF, "GtkCellRendererPixbuf_sizeof");
+		return FFM.GTK4 ? registeredSize("gtk_cell_renderer_pixbuf_get_type", true) : (int) Extra_FFM.GTKCELLRENDERERPIXBUF;
 	}
 
 	public static int GtkCellRendererPixbufClass_sizeof() {
-		return gtk3Only(Extra_FFM.GTKCELLRENDERERPIXBUFCLASS, "GtkCellRendererPixbufClass_sizeof");
+		return FFM.GTK4 ? registeredSize("gtk_cell_renderer_pixbuf_get_type", false) : (int) Extra_FFM.GTKCELLRENDERERPIXBUFCLASS;
 	}
 
 	public static int GtkCellRendererToggle_sizeof() {
-		return gtk3Only(Extra_FFM.GTKCELLRENDERERTOGGLE, "GtkCellRendererToggle_sizeof");
+		return FFM.GTK4 ? registeredSize("gtk_cell_renderer_toggle_get_type", true) : (int) Extra_FFM.GTKCELLRENDERERTOGGLE;
 	}
 
 	public static int GtkCellRendererToggleClass_sizeof() {
-		return gtk3Only(Extra_FFM.GTKCELLRENDERERTOGGLECLASS, "GtkCellRendererToggleClass_sizeof");
+		return FFM.GTK4 ? registeredSize("gtk_cell_renderer_toggle_get_type", false) : (int) Extra_FFM.GTKCELLRENDERERTOGGLECLASS;
 	}
 
 	/* ---------------------------------------------------------------- boxed types for content providers */
