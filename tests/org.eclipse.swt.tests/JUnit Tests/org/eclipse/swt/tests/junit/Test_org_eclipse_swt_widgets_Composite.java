@@ -207,6 +207,23 @@ public void test_focusEventsReportedToFocusedControlOnly() {
 }
 
 @Test
+public void test_forceFocus_requestedFromFocusInListener() {
+	Text first = new Text(composite, SWT.SINGLE);
+	Text second = new Text(composite, SWT.SINGLE);
+	Text third = new Text(composite, SWT.SINGLE);
+	first.addListener(SWT.FocusIn, e -> second.forceFocus());
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+
+	third.setFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(third.isFocusControl(), "focus not granted in this environment");
+	first.forceFocus();
+	SwtTestUtil.processEvents();
+
+	assertTrue(second.isFocusControl(), "focus handed over from the FocusIn listener was lost");
+}
+
+@Test
 public void test_setTabList$Lorg_eclipse_swt_widgets_Control() {
 	Button button1 = new Button(composite, SWT.PUSH);
 	Button button2 = new Button(composite, SWT.PUSH);
