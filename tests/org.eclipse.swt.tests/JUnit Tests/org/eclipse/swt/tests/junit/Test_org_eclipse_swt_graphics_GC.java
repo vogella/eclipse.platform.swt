@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -253,6 +254,8 @@ public void test_copyAreaLorg_eclipse_swt_graphics_ImageII() {
 
 @Test
 public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_controlIncludesParentBackground() throws InterruptedException {
+	// only Cocoa draws a Label without background mode transparently, Win32 paints its own background
+	assumeTrue(SwtTestUtil.isCocoa);
 	Shell shell = new Shell(display);
 	shell.setLayout(new org.eclipse.swt.layout.FillLayout());
 	shell.setBackground(display.getSystemColor(SWT.COLOR_RED));
