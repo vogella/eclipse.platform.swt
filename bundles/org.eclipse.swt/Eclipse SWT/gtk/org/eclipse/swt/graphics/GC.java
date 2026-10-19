@@ -803,17 +803,30 @@ public void drawFocus(int x, int y, int width, int height) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	long cairo = data.cairo;
 	checkGC(FOREGROUND);
+	long context = GTK.gtk_widget_get_style_context(data.device.shellHandle);
 	if (GTK.GTK4) {
-		// GTK4 draws focus through the CSS outline of focused nodes, gtk_render_focus paints nothing
+		/*
+		 * GTK4 themes draw an outline only on widgets in the :focus-visible state,
+		 * so gtk_render_focus() paints nothing. Draw the focus rectangle like the
+		 * GTK3 theme does instead: a 1 pixel dotted line inside the rectangle, in
+		 * the text color of the theme at 30% opacity.
+		 */
+		if (width <= 0 || height <= 0) return;
+		GdkRGBA color = new GdkRGBA();
+		GTK4.gtk_style_context_get_color(context, color);
 		Cairo.cairo_save(cairo);
+		Cairo.cairo_rectangle(cairo, x, y, width, height);
+		Cairo.cairo_clip(cairo);
+		Cairo.cairo_set_source_rgba(cairo, color.red, color.green, color.blue, color.alpha * 0.3);
 		Cairo.cairo_set_line_width(cairo, 1);
+		Cairo.cairo_set_line_cap(cairo, Cairo.CAIRO_LINE_CAP_BUTT);
+		// The path runs through pixel centers, start the dashes at pixel edges
 		Cairo.cairo_set_dash(cairo, new double[] {1, 1}, 2, 1.5);
-		Cairo.cairo_rectangle(cairo, x + 0.5, y + 0.5, width - 1, height - 1);
+		Cairo.cairo_rectangle(cairo, x + 1.5, y + 1.5, width - 3, height - 3);
 		Cairo.cairo_stroke(cairo);
 		Cairo.cairo_restore(cairo);
 		return;
 	}
-	long  context = GTK.gtk_widget_get_style_context(data.device.shellHandle);
 	GTK.gtk_render_focus(context, cairo, x, y, width, height);
 }
 
