@@ -94,6 +94,11 @@ public final class TextLayout extends Resource {
 	 * will search for a break before forcing a break at {@link #MAX_RUN_LENGTH}.
 	 */
 	static final int MAX_SEARCH_RUN_BREAK = 1000;
+	/**
+	 * Base of the Unicode control pictures block, used to draw C0 control characters visibly (U+2400 + ch),
+	 * to avoid Uniscribe's expensive missing-glyph font fallback (issue #414).
+	 */
+	static final char CONTROL_PICTURES_BASE = 0x2400;
 	{
 		// While developing the splitting long runs it can be useful to
 		// make these constants smaller, but these invariants must
@@ -2937,6 +2942,7 @@ StyleItem[] itemize () {
 		}
 	}
 
+	replaceUnrenderableControlChars(chars);
 	OS.ScriptItemize(chars, length, MAX_ITEM, scriptControl, scriptState, pItems, pcItems);
 
 //	if (hr == E_OUTOFMEMORY) //TODO handle it
@@ -3757,6 +3763,21 @@ long createMetafileWithChars(long hdc, long hFont, char[] chars, int charCount) 
 }
 
 /*
+ * Replaces C0 control chars in place by their control pictures (U+2400 + ch)
+ * before itemizing and shaping (issue #414). Itemizing must see the substitutes,
+ * otherwise Uniscribe classifies the run as control script with zero-width glyphs.
+ * Tab/CR/LF are excluded; they form their own runs and keep their code points.
+ */
+static void replaceUnrenderableControlChars (char[] chars) {
+	for (int i = 0; i < chars.length; i++) {
+		char ch = chars[i];
+		if (ch < 0x20 && ch != '\t' && ch != '\n' && ch != '\r') {
+			chars[i] = (char) (CONTROL_PICTURES_BASE + ch);
+		}
+	}
+}
+
+/*
  * Generate glyphs for one Run.
  */
 void shape (GC  gc, final long hdc, final StyleItem run) {
@@ -3765,6 +3786,7 @@ void shape (GC  gc, final long hdc, final StyleItem run) {
 	final int[] buffer = new int[1];
 	final char[] chars = new char[run.length];
 	segmentsText.getChars(run.start, run.start + run.length, chars, 0);
+	replaceUnrenderableControlChars(chars);
 
 	final int maxGlyphs = (chars.length * 3 / 2) + 16;
 	long hHeap = OS.GetProcessHeap();

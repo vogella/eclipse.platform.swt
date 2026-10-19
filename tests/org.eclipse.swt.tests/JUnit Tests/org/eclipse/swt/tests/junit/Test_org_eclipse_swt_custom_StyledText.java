@@ -6328,4 +6328,26 @@ public void test_keyWithoutCharacterDoesNotFallBackToCharacter() {
 		assertEquals(new Point(0, 0), text.getSelection(), "keyCode " + keyCode);
 	}
 }
+
+@Tag("clipboard")
+@Test
+public void test_copyPasteKeepsControlCharacters() {
+	assumeFalse(SwtTestUtil.isCocoa, "Disabled on Mac because similar clipboard tests are also disabled.");
+
+	String content = "abcdef";
+	text.setText(content);
+	text.selectAll();
+	text.copy();
+
+	Clipboard clipboard = new Clipboard(text.getDisplay());
+	try {
+		assertEquals(content, clipboard.getContents(TextTransfer.getInstance()));
+	} finally {
+		clipboard.dispose();
+	}
+
+	text.setText("");
+	text.paste();
+	assertEquals(content, text.getText());
+}
 }
