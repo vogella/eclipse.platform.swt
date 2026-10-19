@@ -182,7 +182,7 @@ public class GTK extends OS {
 	public static final byte[] GTK_PRINT_SETTINGS_OUTPUT_URI = OS.ascii("output-uri");
 
 	/**
-	 * Tells GTK 3 and GTK 4 before 4.20 to prefer a dark or light theme.
+	 * Tells GTK 3 and GTK 4 to prefer a dark or light theme, deprecated since GTK 4.20 but still the only switch without a settings portal.
 	 */
 	public static final byte[] gtk_application_prefer_dark_theme = OS.ascii("gtk-application-prefer-dark-theme");
 	/** Replaces gtk-application-prefer-dark-theme since GTK 4.20 */
