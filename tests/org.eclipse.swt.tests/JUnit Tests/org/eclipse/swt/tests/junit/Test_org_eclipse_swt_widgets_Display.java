@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -1648,4 +1649,26 @@ public void test_isSystemDarkTheme() {
 	}
 }
 
+
+@Test
+public void test_setDarkThemePreferredChangesSystemColorsOnGtk4() {
+	Display display = new Display();
+	try {
+		assumeTrue(SwtTestUtil.isGTK4(), "GTK4 only");
+		int before = brightness(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		display.setDarkThemePreferred(true);
+		SwtTestUtil.processEvents(3000, () -> brightness(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND)) < before);
+		assertTrue(brightness(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND)) < before,
+				"COLOR_LIST_BACKGROUND must get darker");
+		display.setDarkThemePreferred(false);
+	} catch (InterruptedException e) {
+		Thread.currentThread().interrupt();
+	} finally {
+		display.dispose();
+	}
+}
+
+private static int brightness(Color color) {
+	return color.getRed() + color.getGreen() + color.getBlue();
+}
 }

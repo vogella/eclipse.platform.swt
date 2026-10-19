@@ -2078,9 +2078,10 @@ public static final byte [] getThemeNameBytes() {
 	public static final void setDarkThemePreferred(boolean preferred) {
 		long settings = GTK.gtk_settings_get_default();
 		if (GTK.GTK_VERSION >= OS.VERSION(4, 20, 0)) {
-			// gtk-application-prefer-dark-theme is deprecated and warns when set
 			g_object_set(settings, GTK.gtk_interface_color_scheme,
 					preferred ? GTK.GTK_INTERFACE_COLOR_SCHEME_DARK : GTK.GTK_INTERFACE_COLOR_SCHEME_LIGHT, 0);
+			// Without a settings portal (Xvfb, bare X11) only the deprecated property switches the theme
+			g_object_set(settings, GTK.gtk_application_prefer_dark_theme, preferred, 0);
 			// Reload the theme so themes with a separate gtk-dark.css (Yaru, Breeze) switch too
 			g_object_notify(settings, GTK.gtk_theme_name);
 			return;
