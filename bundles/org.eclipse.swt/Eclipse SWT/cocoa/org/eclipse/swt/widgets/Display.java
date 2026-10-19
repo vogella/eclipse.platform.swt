@@ -4503,10 +4503,7 @@ boolean runPopups () {
 	return result;
 }
 
-boolean runSettings () {
-	if (!runSettings) return false;
-	runSettings = false;
-
+boolean ignoreColorChange () {
 	boolean ignoreColorChange = false;
 	/*
 	 * Feature in Cocoa: When dark mode is enabled on OSX version >= 10.10 and a SWT TrayItem (NSStatusItem) is present in the menubar,
@@ -4523,7 +4520,29 @@ boolean runSettings () {
 			ignoreColorChange = true;
 		}
 	}
-	initColors (ignoreColorChange);
+	return ignoreColorChange;
+}
+
+/** Re-reads the cached system colors as the app appearance shows them, since NSColor resolves against the current appearance. */
+void appAppearanceColorsChanged () {
+	APPEARANCE mode = appAppearance != null ? appAppearance : OS.isSystemDarkAppearance () ? APPEARANCE.Dark : APPEARANCE.Light;
+	NSAppearance appearance = getAppearance (mode);
+	if (appearance == null) return;
+	long setCurrent = OS.sel_registerName ("setCurrentAppearance:");
+	long previous = OS.objc_msgSend (OS.class_NSAppearance, OS.sel_currentAppearance);
+	try {
+		OS.objc_msgSend (OS.class_NSAppearance, setCurrent, appearance.id);
+		initColors (ignoreColorChange ());
+	} finally {
+		OS.objc_msgSend (OS.class_NSAppearance, setCurrent, previous);
+	}
+}
+
+boolean runSettings () {
+	if (!runSettings) return false;
+	runSettings = false;
+
+	appAppearanceColorsChanged ();
 
 	sendEvent (SWT.Settings, null);
 	Shell [] shells = getShells ();
@@ -5828,6 +5847,7 @@ static long applicationProc(long id, long sel, long arg0) {
 
 	if (sel == OS.sel_appAppearanceChanged) {
 		display.setAppAppearance(arg0 == 1 ? APPEARANCE.Dark : APPEARANCE.Light);
+		display.appAppearanceColorsChanged();
 		return 0;
 	}
 
