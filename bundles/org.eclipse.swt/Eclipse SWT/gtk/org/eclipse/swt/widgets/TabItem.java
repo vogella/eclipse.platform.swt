@@ -334,7 +334,7 @@ public void setControl(Control control) {
 			}
 		}
 		if (newControl != null) {
-			newControl.setBoundsInPixels (parent.getClientAreaInPixels ());
+			newControl.setBoundsInPixels (parent.getPageAreaInPixels ());
 			newControl.setVisible (true);
 		}
 

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
@@ -81,6 +82,24 @@ public void test_TabFolder_getChildren() {
 @Override
 @Test
 public void test_getClientArea() {
+}
+
+@Test
+public void test_getClientAreaStartsBelowTabs() {
+	new TabItem(tabFolder, SWT.NONE).setText("Tab");
+	tabFolder.setBounds(0, 0, 260, 150);
+	shell.open();
+	SwtTestUtil.processEvents();
+
+	Rectangle client = tabFolder.getClientArea();
+	assertTrue(client.y > 0, "The page of a top tab row must start below the tabs, but client area is " + client);
+	assertTrue(client.x >= 0 && client.width > 0 && client.height > 0, "Unexpected client area " + client);
+	assertTrue(client.y + client.height <= tabFolder.getSize().y && client.x + client.width <= tabFolder.getSize().x,
+			"Client area " + client + " must lie inside the folder " + tabFolder.getSize());
+
+	Rectangle trim = tabFolder.computeTrim(0, 0, 0, 0);
+	assertEquals(-client.x, trim.x, "computeTrim x must be the negated client area x");
+	assertEquals(-client.y, trim.y, "computeTrim y must be the negated client area y");
 }
 
 @Test

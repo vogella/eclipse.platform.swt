@@ -210,8 +210,11 @@ Rectangle computeTrimInPixels (int x, int y, int width, int height) {
 	return new Rectangle (x, y, width, height);
 }
 
-@Override
-Rectangle getClientAreaInPixels () {
+/**
+ * Returns the page area at origin 0, 0, which is the coordinate system of the
+ * tab item controls because they are children of the page handle.
+ */
+Rectangle getPageAreaInPixels () {
 	Rectangle clientRectangle = super.getClientAreaInPixels ();
 
 	/*
@@ -356,7 +359,7 @@ void destroyItem (TabItem item) {
 		if (newIndex != -1) {
 			Control control = items [newIndex].getControl ();
 			if (control != null && !control.isDisposed ()) {
-				control.setBoundsInPixels (getClientAreaInPixels());
+				control.setBoundsInPixels (getPageAreaInPixels());
 				control.setVisible (true);
 			}
 			Event event = new Event ();
@@ -590,7 +593,7 @@ long gtk_switch_page(long notebook, long page, int page_num) {
 	if (GTK.GTK4) {
 		Control control = item.getControl();
 		if (control != null && !control.isDisposed()) {
-			control.setBoundsInPixels(getClientAreaInPixels());
+			control.setBoundsInPixels(getPageAreaInPixels());
 			control.setVisible(true);
 		}
 	} else {
@@ -606,7 +609,7 @@ long gtk_switch_page(long notebook, long page, int page_num) {
 
 		Control control = item.getControl();
 		if (control != null && !control.isDisposed()) {
-			control.setBoundsInPixels(getClientAreaInPixels());
+			control.setBoundsInPixels(getPageAreaInPixels());
 			control.setVisible(true);
 		}
 	}
@@ -796,7 +799,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 			TabItem item = items [index];
 			Control control = item.control;
 			if (control != null && !control.isDisposed ()) {
-				control.setBoundsInPixels (getClientAreaInPixels ());
+				control.setBoundsInPixels (getPageAreaInPixels ());
 			}
 		}
 	}
@@ -873,7 +876,7 @@ void setSelection (int index, boolean notify) {
 		TabItem item = items [newIndex];
 		Control control = item.control;
 		if (control != null && !control.isDisposed ()) {
-			control.setBoundsInPixels (getClientAreaInPixels ());
+			control.setBoundsInPixels (getPageAreaInPixels ());
 			control.setVisible (true);
 		}
 		if (notify) {
