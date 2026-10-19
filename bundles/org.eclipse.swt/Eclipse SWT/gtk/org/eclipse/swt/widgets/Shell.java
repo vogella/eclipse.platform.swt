@@ -3358,7 +3358,6 @@ public void setVisible (boolean visible) {
 			Shell shell = parent != null ? parent.getShell() : null;
 			long resizeDeadline = System.currentTimeMillis () + 200;
 			int [] afterMap = {
-				GDK.GDK_EXPOSE,
 				GDK.GDK_CONFIGURE,
 				GDK.GDK_MAP,
 				GDK.GDK_UNMAP,
@@ -3374,9 +3373,12 @@ public void setVisible (boolean visible) {
 				if (isDisposed ()) break;
 				iconic = minimized || (shell != null && shell.minimized);
 				// while waiting for the resize, a focus change would consume the focus open() restores
+				// and an expose would paint before open() returns, both unlike native
 				if (mapped) display.dispatchEvents = afterMap;
 			} while (!iconic && (!mapped || (resizePending () && System.currentTimeMillis () < resizeDeadline)));
 			display.dispatchEvents = null;
+			// queue the held events now, an expose would otherwise wait for the next event to arrive
+			display.putGdkEvents ();
 			if (isDisposed ()) return;
 			if (!iconic) {
 				update (true, true);

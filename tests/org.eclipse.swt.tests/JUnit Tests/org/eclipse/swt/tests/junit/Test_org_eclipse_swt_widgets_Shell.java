@@ -44,6 +44,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.junit.jupiter.api.BeforeEach;
@@ -1124,6 +1125,34 @@ private static void assertEventuallySize(Shell sized, int width, int height) thr
 	SwtTestUtil.processEvents();
 	SwtTestUtil.processEvents(10000, () -> sized.getSize().equals(expected));
 	assertEquals(expected, sized.getSize());
+}
+
+@Test
+public void test_open_paintsAfterReturning() throws InterruptedException {
+	// natively the first paint comes from the event loop, so a listener added right after open() sees it
+	Display display = shell.getDisplay();
+	Shell first = new Shell(display, SWT.NO_TRIM);
+	first.setSize(184, 48);
+	first.open();
+	SwtTestUtil.processEvents();
+	first.dispose();
+	Shell host = new Shell(display, SWT.NO_TRIM);
+	try {
+		host.setSize(184, 48);
+		Label label = new Label(host, SWT.NONE);
+		label.setText("File name:");
+		label.setBounds(12, 12, 160, 24);
+		int[] paints = new int[1];
+		label.addListener(SWT.Paint, e -> paints[0]++);
+		host.open();
+		assertEquals(0, paints[0], "painted inside open()");
+		boolean[] painted = new boolean[1];
+		label.addListener(SWT.Paint, e -> painted[0] = true);
+		SwtTestUtil.processEvents(3000, () -> painted[0]);
+		assertTrue(painted[0], "no paint after open()");
+	} finally {
+		host.dispose();
+	}
 }
 
 @Test
