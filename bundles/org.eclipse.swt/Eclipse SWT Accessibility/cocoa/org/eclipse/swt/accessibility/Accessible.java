@@ -1956,7 +1956,7 @@ public class Accessible {
 			listener.getState(event);
 		}
 		boolean enabled = (event.detail & ACC.STATE_DISABLED) == 0;
-		if (!enabled && delegate == null) enabled = control.isEnabled();
+		if (enabled && delegate == null) enabled = control.isEnabled();
 		return NSNumber.numberWithBool(enabled);
 	}
 
