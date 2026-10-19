@@ -201,6 +201,7 @@ public static String cCharPtrToJavaString(long cCharPtr, boolean freecCharPtr) {
  * @return byte array that can be passed to a native function.
  */
 public static byte [] wcsToMbcs (char [] chars, boolean terminate) {
+	chars = replaceUnpairedSurrogates (chars);
 	long [] items_read = new long [1], items_written = new long [1];
 	/*
 	* Note that g_utf16_to_utf8()  stops converting
@@ -216,6 +217,22 @@ public static byte [] wcsToMbcs (char [] chars, boolean terminate) {
 }
 
 
+
+/** Returns {@code chars}, or a copy with each unpaired surrogate replaced by U+FFFD, which g_utf16_to_utf8 rejects. */
+private static char [] replaceUnpairedSurrogates (char [] chars) {
+	char [] result = chars;
+	for (int i = 0; i < chars.length && chars [i] != 0; i++) {
+		char c = chars [i];
+		if (!Character.isSurrogate (c)) continue;
+		if (Character.isHighSurrogate (c) && i + 1 < chars.length && Character.isLowSurrogate (chars [i + 1])) {
+			i++;
+			continue;
+		}
+		if (result == chars) result = chars.clone ();
+		result [i] = '\uFFFD';
+	}
+	return result;
+}
 
 /**
  * Convert a Java UTF-16 Wide character into a single C UTF-8 Multibyte character
