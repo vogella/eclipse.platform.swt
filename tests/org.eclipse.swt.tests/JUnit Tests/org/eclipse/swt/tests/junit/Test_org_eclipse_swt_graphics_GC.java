@@ -58,6 +58,7 @@ import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.tests.graphics.ImageDataTestHelper;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -245,6 +246,26 @@ public void test_copyAreaLorg_eclipse_swt_graphics_ImageII() {
 	pixel = imageData.getPixel(scaleWithDeviceZoom(11), 0);
 	assertEquals(whiteRGB, palette.getRGB(pixel));
 	image.dispose();
+}
+
+@Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_controlIncludesParentBackground() throws InterruptedException {
+	Shell shell = new Shell(display);
+	shell.setLayout(new org.eclipse.swt.layout.FillLayout());
+	shell.setBackground(display.getSystemColor(SWT.COLOR_RED));
+	Label label = new Label(shell, SWT.NONE);
+	shell.setSize(200, 100);
+	shell.open();
+	SwtTestUtil.processEvents(500, () -> false);
+	Image target = new Image(display, 10, 10);
+	GC gcCopy = new GC(label);
+	gcCopy.copyArea(target, 0, 0);
+	gcCopy.dispose();
+	ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
+	RGB pixel = data.palette.getRGB(data.getPixel(0, 0));
+	target.dispose();
+	shell.dispose();
+	assertEquals(new RGB(255, 0, 0), pixel, "the parent background must show behind a transparent control");
 }
 
 private int scaleWithDeviceZoom(int value) {

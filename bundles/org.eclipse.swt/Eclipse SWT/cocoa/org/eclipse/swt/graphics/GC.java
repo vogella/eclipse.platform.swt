@@ -560,6 +560,13 @@ public void copyArea(Image image, int x, int y) {
 			rect.height = size.height;
 			// the document view of a scroll view sits inside the bezel, capture relative to it
 			if (topView.id != data.view.id) rect = topView.convertRect_fromView_(rect, data.view);
+			// capture from the window content so the parent background shows behind transparent pixels
+			NSWindow window = data.view.window();
+			NSView contentView = window != null ? window.contentView() : null;
+			if (contentView != null && contentView.id != topView.id) {
+				rect = contentView.convertRect_fromView_(rect, topView);
+				topView = contentView;
+			}
 			NSBitmapImageRep imageRep = topView.bitmapImageRepForCachingDisplayInRect(rect);
 			imageRep.setSize(size);
 			/*
