@@ -1158,6 +1158,45 @@ public void test_imageGcDrawerDrawsAtRequestedZoom() {
 }
 
 @Test
+public void test_opaqueImageGcDrawerMatchesPlainImageDrawing() {
+	assumeTrue(SwtTestUtil.isGTK, "The drawing surface type of ImageGcDrawer images is only verified on GTK");
+	int size = 24;
+	ImageGcDrawer drawer = (gc, width, height) -> draw(gc);
+	Image plain = new Image(display, size, size);
+	Image drawn = new Image(display, drawer, size, size);
+	try {
+		GC gc = new GC(plain);
+		try {
+			draw(gc);
+		} finally {
+			gc.dispose();
+		}
+		ImageData expected = plain.getImageData();
+		ImageData actual = drawn.getImageData();
+		assertEquals(expected.width, actual.width);
+		assertEquals(expected.height, actual.height);
+		for (int y = 0; y < expected.height; y++) {
+			for (int x = 0; x < expected.width; x++) {
+				assertEquals(expected.palette.getRGB(expected.getPixel(x, y)), actual.palette.getRGB(actual.getPixel(x, y)), "pixel " + x + "," + y);
+			}
+		}
+	} finally {
+		plain.dispose();
+		drawn.dispose();
+	}
+}
+
+private void draw(GC gc) {
+	gc.setAntialias(SWT.ON);
+	gc.setForeground(display.getSystemColor(SWT.COLOR_DARK_GRAY));
+	gc.drawLine(4, 4, 9, 11);
+	gc.drawLine(9, 11, 4, 18);
+	gc.drawLine(12, 4, 17, 11);
+	gc.drawLine(17, 11, 12, 18);
+	gc.drawString("x", 2, 2, true);
+}
+
+@Test
 public void test_rightToLeftImageGcDrawerMirrorsAtRequestedZoom() {
 	assumeTrue(SwtTestUtil.isGTK, "Drawing ImageGcDrawer variants at their zoom is verified on GTK only");
 	ImageGcDrawer leftColumnDrawer = new ImageGcDrawer() {

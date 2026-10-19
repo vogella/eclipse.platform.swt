@@ -461,6 +461,12 @@ public Image(Device device, ImageData data) {
 	this(device, DPIUtil.autoScaleImageData(device, data, 100), DPIUtil.getDeviceZoom());
 }
 
+private Image(Device device, int width, int height, int zoom) {
+	super(device);
+	init(width, height, zoom);
+	init();
+}
+
 private Image(Device device, ImageData data, int zoom) {
 	super(device);
 	if (data == null) SWT.error(SWT.ERROR_NULL_ARGUMENT);
@@ -1294,13 +1300,15 @@ private ImageData drawWithImageGcDrawer(int width, int height, int zoom) {
 	// Draw on a surface at the requested zoom, so the result needs no pixel scaling
 	int scaledWidth = DPIUtil.pointToPixel(width, zoom);
 	int scaledHeight = DPIUtil.pointToPixel(height, zoom);
-	final ImageData resultData = new ImageData(scaledWidth, scaledHeight, 24, new PaletteData (0xFF, 0xFF00, 0xFF0000));
+	Image image;
 	if ((gcStyle & SWT.TRANSPARENT) != 0) {
+		final ImageData resultData = new ImageData(scaledWidth, scaledHeight, 24, new PaletteData (0xFF, 0xFF00, 0xFF0000));
 		resultData.alphaData = new byte [scaledWidth * scaledHeight];
+		image = new Image(device, resultData, zoom);
 	} else {
-		Arrays.fill(resultData.data, (byte) 0xFF);
+		// Same surface as Image(device, width, height), so antialiasing matches plain GC drawing
+		image = new Image(device, width, height, zoom);
 	}
-	Image image = new Image(device, resultData, zoom);
 	GC gc = new GC(image, gcStyle);
 	try {
 		imageGcDrawer.drawOn(gc, width, height);
@@ -1385,22 +1393,28 @@ public int hashCode () {
 }
 
 void init(int width, int height) {
+	init(width, height, 100);
+}
+
+/** Creates a blank opaque image of the given size in points, backed by a surface of the given zoom. */
+private void init(int width, int height, int zoom) {
 	if (width <= 0 || height <= 0) {
 		SWT.error (SWT.ERROR_INVALID_ARGUMENT);
 	}
 	this.type = SWT.BITMAP;
+	int pixelWidth = DPIUtil.pointToPixel(width, zoom);
+	int pixelHeight = DPIUtil.pointToPixel(height, zoom);
 
 	/* Create the pixmap */
 	if (GTK.GTK4) {
-		surface = Cairo.cairo_image_surface_create(Cairo.CAIRO_FORMAT_RGB24, width, height);
+		surface = Cairo.cairo_image_surface_create(Cairo.CAIRO_FORMAT_RGB24, pixelWidth, pixelHeight);
 	} else {
-		surface = GDK.gdk_window_create_similar_surface(GDK.gdk_get_default_root_window(), Cairo.CAIRO_CONTENT_COLOR, width, height);
+		surface = GDK.gdk_window_create_similar_surface(GDK.gdk_get_default_root_window(), Cairo.CAIRO_CONTENT_COLOR, pixelWidth, pixelHeight);
 	}
 	if (surface == 0) SWT.error(SWT.ERROR_NO_HANDLES);
-	// When we create a blank image we need to set it to 100 in GTK3 as we draw using 100% scale.
-	// Cairo will take care of scaling for us when image needs to be scaled.
-	currentDeviceZoom = 100;
-	Cairo.cairo_surface_set_device_scale(surface, 1f, 1f);
+	// A blank image is drawn at 100% unless a zoom is requested; Cairo scales it when drawn at another zoom.
+	currentDeviceZoom = zoom;
+	Cairo.cairo_surface_set_device_scale(surface, zoom / 100f, zoom / 100f);
 	long cairo = Cairo.cairo_create(surface);
 	if (cairo == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 	Cairo.cairo_set_source_rgb(cairo, 1, 1, 1);
