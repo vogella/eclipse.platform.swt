@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
@@ -32,6 +33,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.List;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
@@ -244,6 +246,37 @@ public void test_setBounds_hiddenChildInMirroredParentAfterResize() throws Inter
 	SwtTestUtil.processEvents(300, () -> false);
 
 	assertEquals(new Rectangle(110, 10, 50, 20), child.getBounds());
+}
+
+@Test
+public void test_focusMovesBetweenCompositeAndChild() {
+	Composite outer = new Composite(composite, SWT.NONE);
+	outer.setLayout(new FillLayout());
+	Text text = new Text(outer, SWT.SINGLE);
+	ArrayList<String> events = new ArrayList<>();
+	Listener log = e -> events.add((e.widget == outer ? "outer " : "text ") + (e.type == SWT.FocusIn ? "in" : "out"));
+	outer.addListener(SWT.FocusIn, log);
+	outer.addListener(SWT.FocusOut, log);
+	text.addListener(SWT.FocusIn, log);
+	text.addListener(SWT.FocusOut, log);
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+
+	text.forceFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(text.isFocusControl(), "focus not granted in this environment");
+	events.clear();
+
+	outer.forceFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(outer.isFocusControl(), "composite cannot take the focus on this platform");
+	assertEquals(1, Collections.frequency(events, "text out"), "text FocusOut: " + events);
+	assertEquals(1, Collections.frequency(events, "outer in"), "composite FocusIn: " + events);
+
+	events.clear();
+	text.forceFocus();
+	SwtTestUtil.processEvents();
+	assertEquals(1, Collections.frequency(events, "outer out"), "composite FocusOut: " + events);
+	assertEquals(1, Collections.frequency(events, "text in"), "text FocusIn: " + events);
 }
 
 @Test

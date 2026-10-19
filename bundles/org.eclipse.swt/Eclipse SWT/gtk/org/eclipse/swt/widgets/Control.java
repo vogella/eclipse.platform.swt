@@ -57,7 +57,7 @@ public abstract class Control extends Widget implements Drawable {
 	static final boolean DISABLE_EMOJI = Boolean.getBoolean("SWT_GTK_INPUT_HINT_NO_EMOJI");
 
 	long fixedHandle;
-	long keyController;
+	long keyController, focusController;
 	/* GTK4: where the pointer last moved over this control, relative to it */
 	double pointerX, pointerY;
 	long redrawWindow, enableWindow, provider;
@@ -411,7 +411,7 @@ private void hookKeyboardAndFocusSignals(long focusHandle) {
 		OS.g_signal_connect(keyController, OS.key_pressed, display.keyPressReleaseProc, KEY_PRESSED);
 		OS.g_signal_connect(keyController, OS.key_released, display.keyPressReleaseProc, KEY_RELEASED);
 
-		long focusController = GTK4.gtk_event_controller_focus_new();
+		focusController = GTK4.gtk_event_controller_focus_new();
 		GTK4.gtk_widget_add_controller(focusHandle, focusController);
 		OS.g_signal_connect(focusController, OS.enter, display.focusProc, FOCUS_IN);
 		OS.g_signal_connect(focusController, OS.leave, display.focusProc, FOCUS_OUT);

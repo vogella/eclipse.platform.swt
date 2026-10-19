@@ -149,6 +149,8 @@ public class Display extends Device implements Executor {
 	double untargetableMenuRowX, untargetableMenuRowY;
 	boolean untargetableMenuRowSeen;
 	long notifyProc;
+	/** GTK4 only: composites that follow is-focus of their focus controller. */
+	final java.util.Map<Long, Composite> focusNotifyControllers = new java.util.HashMap<>();
 	long computeSizeProc;
 	Callback windowCallback2, windowCallback3, windowCallback4, windowCallback5, windowCallback6;
 	Callback changeValue;
@@ -6233,6 +6235,11 @@ void layoutProc(long surface, int width, int height, long user_data) {
 }
 
 long notifyProc (long object, long param_spec, long user_data) {
+	if (user_data == Widget.NOTIFY_FOCUS) {
+		Composite composite = focusNotifyControllers.get (object);
+		if (composite != null) composite.gtk4_focusNotify (object);
+		return 0;
+	}
 	Widget widget = getWidget (object);
 	if (widget == null) {
 		widget = getWidget (user_data);
