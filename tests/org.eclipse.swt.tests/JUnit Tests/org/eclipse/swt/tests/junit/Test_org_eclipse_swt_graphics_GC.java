@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -59,9 +60,11 @@ import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.tests.graphics.ImageDataTestHelper;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterEach;
@@ -361,6 +364,74 @@ public void test_drawImage_nonAutoScalableGC_bug_2504() throws InterruptedExcept
 	shell.dispose();
     target.dispose();
     image.dispose();
+}
+
+@Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_fromControl() throws InterruptedException {
+	Shell shell = new Shell(display);
+	Canvas canvas = new Canvas(shell, SWT.NONE);
+	canvas.setSize(100, 80);
+	AtomicBoolean painted = new AtomicBoolean();
+	canvas.addPaintListener(e -> {
+		e.gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+		e.gc.fillRectangle(0, 0, 100, 80);
+		painted.set(true);
+	});
+	shell.open();
+	SwtTestUtil.processEvents(2000, () -> painted.get());
+	assertTrue(painted.get(), "paint listener was never called");
+
+	Image target = new Image(display, 40, 30);
+	GC controlGC = new GC(canvas);
+	controlGC.copyArea(target, 20, 10);
+	controlGC.dispose();
+
+	ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
+	RGB center = data.palette.getRGB(data.getPixel(data.width / 2, data.height / 2));
+	assertEquals(getRealRGB(display.getSystemColor(SWT.COLOR_RED)), center);
+	target.dispose();
+	shell.dispose();
+}
+
+@Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_fromScrolledBorderedComposite() throws InterruptedException {
+	assertCopyAreaFromControlStartsAtClientOrigin(shell -> new Composite(shell, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL));
+}
+
+@Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_fromGroup() throws InterruptedException {
+	assertCopyAreaFromControlStartsAtClientOrigin(shell -> new Group(shell, SWT.NONE));
+}
+
+private void assertCopyAreaFromControlStartsAtClientOrigin(Function<Shell, Composite> factory) throws InterruptedException {
+	Shell shell = new Shell(display);
+	shell.setLayout(new FillLayout());
+	Composite control = factory.apply(shell);
+	AtomicBoolean painted = new AtomicBoolean();
+	control.addPaintListener(e -> {
+		e.gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		e.gc.fillRectangle(0, 0, 100, 100);
+		e.gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+		e.gc.fillRectangle(0, 0, 4, 4);
+		painted.set(true);
+	});
+	shell.setSize(300, 300);
+	shell.open();
+	SwtTestUtil.processEvents(2000, () -> painted.get());
+	assertTrue(painted.get(), "paint listener was never called");
+
+	Image target = new Image(display, 20, 20);
+	GC controlGC = new GC(control);
+	controlGC.copyArea(target, 0, 0);
+	controlGC.dispose();
+
+	ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
+	RGB red = getRealRGB(display.getSystemColor(SWT.COLOR_RED));
+	RGB white = getRealRGB(display.getSystemColor(SWT.COLOR_WHITE));
+	assertEquals(red, data.palette.getRGB(data.getPixel(scaleWithDeviceZoom(1), scaleWithDeviceZoom(1))));
+	assertEquals(white, data.palette.getRGB(data.getPixel(scaleWithDeviceZoom(8), scaleWithDeviceZoom(8))));
+	target.dispose();
+	shell.dispose();
 }
 
 @Test
