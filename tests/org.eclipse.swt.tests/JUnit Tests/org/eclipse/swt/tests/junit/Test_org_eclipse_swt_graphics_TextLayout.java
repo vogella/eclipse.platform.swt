@@ -1465,4 +1465,29 @@ public void test_getLocation_insideEmojiWithSkinTone_staysWithinLineWidth() {
 		layout.dispose();
 	}
 }
+
+@Test
+public void test_controlCharactersAreCaretStops() {
+	// Cocoa and GTK draw control characters with zero width, so positions coincide there
+	assumeTrue(SwtTestUtil.isWindows);
+	String text = "abcdef";
+	TextLayout layout = new TextLayout(display);
+	try {
+		layout.setText(text);
+		int previousX = -1;
+		for (int i = 0; i < text.length(); i++) {
+			assertEquals(i + 1, layout.getNextOffset(i, SWT.MOVEMENT_CLUSTER), "next caret stop after " + i);
+			assertEquals(i, layout.getPreviousOffset(i + 1, SWT.MOVEMENT_CLUSTER), "previous caret stop before " + (i + 1));
+			Point location = layout.getLocation(i, false);
+			int[] trailing = new int[1];
+			int offset = layout.getOffset(location, trailing);
+			assertEquals(i, offset + trailing[0], "round trip at " + i);
+			assertTrue(location.x > previousX, "x must increase at " + i);
+			previousX = location.x;
+		}
+		assertTrue(layout.getLocation(text.length(), false).x > previousX, "the last control character has a width");
+	} finally {
+		layout.dispose();
+	}
+}
 }
