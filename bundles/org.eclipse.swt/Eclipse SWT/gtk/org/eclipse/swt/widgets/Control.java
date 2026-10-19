@@ -4777,6 +4777,11 @@ public void redraw (int x, int y, int width, int height, boolean all) {
 	if (!GTK.gtk_widget_get_visible (topHandle ())) return;
 	if ((style & SWT.MIRRORED) != 0) x = getClientWidth () - width - x;
 	redrawWidget (x, y, width, height, false, all, false);
+	// GTK4 reuses the render nodes of children that were not queued, so they would get no Paint
+	if (GTK.GTK4 && all) redrawVisibleChildren (x, y, width, height);
+}
+
+void redrawVisibleChildren (int x, int y, int width, int height) {
 }
 
 void redrawChildren () {

@@ -1635,6 +1635,18 @@ void propagateDraw (long container, long cairo) {
 }
 
 @Override
+void redrawVisibleChildren (int x, int y, int width, int height) {
+	Rectangle area = new Rectangle (x, y, width, height);
+	for (Control child : _getChildren ()) {
+		if (!GTK.gtk_widget_get_visible (child.topHandle ())) continue;
+		Rectangle bounds = child.getBoundsInPixels ();
+		if (!bounds.intersects (area)) continue;
+		child.redrawWidget (0, 0, 0, 0, true, false, false);
+		child.redrawVisibleChildren (x - bounds.x, y - bounds.y, width, height);
+	}
+}
+
+@Override
 void redrawChildren () {
 	super.redrawChildren ();
 	for (Control child : _getChildren ()) {
