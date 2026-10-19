@@ -564,6 +564,8 @@ void adjustTrim (int widthHint, int heightHint) {
 	oldWidth += widthAdjustment;
 	oldHeight += heightAdjustment;
 	if (!getMaximized()) {
+		// Keep the requested outer size when the real trim differs from the guess, e.g. without a window manager
+		if (!GTK.GTK4) GTK3.gtk_window_resize (shellHandle, width + widthAdjustment, height + heightAdjustment);
 		resizeBounds (width + widthAdjustment, height + heightAdjustment, false);
 	}
 	display.trimWidths[trimStyle] = trimWidth;
@@ -651,7 +653,12 @@ void bringToTop (boolean force) {
 		if (GTK.GTK4) {
 			GTK4.gdk_toplevel_focus (gdkResource, display.lastUserEventTime);
 		} else {
-			GDK.gdk_window_focus (gdkResource, display.lastUserEventTime);
+			/*
+			 * Without a window manager gdk_window_focus() calls XSetInputFocus() itself, which the
+			 * X server ignores when the time is older than the last focus change, so use the current time.
+			 */
+			boolean noWindowManager = OS.isX11 () && display.getWorkArea () == null;
+			GDK.gdk_window_focus (gdkResource, noWindowManager ? GDK.GDK_CURRENT_TIME : display.lastUserEventTime);
 		}
 	}
 	display.activeShell = this;
@@ -3349,6 +3356,7 @@ public void setVisible (boolean visible) {
 			display.putGdkEvents();
 			boolean iconic = false;
 			Shell shell = parent != null ? parent.getShell() : null;
+			long resizeDeadline = System.currentTimeMillis () + 200;
 			do {
 				if (GTK.GTK4) {
 					OS.g_main_context_iteration (0, false);
@@ -3357,7 +3365,7 @@ public void setVisible (boolean visible) {
 				}
 				if (isDisposed ()) break;
 				iconic = minimized || (shell != null && shell.minimized);
-			} while (!mapped && !iconic);
+			} while (!iconic && (!mapped || (resizePending () && System.currentTimeMillis () < resizeDeadline)));
 			display.dispatchEvents = null;
 			if (isDisposed ()) return;
 			if (!iconic) {
@@ -3398,6 +3406,19 @@ public void setVisible (boolean visible) {
 		gtk_widget_hide (shellHandle);
 		sendEvent (SWT.Hide);
 	}
+}
+
+/*
+ * Without a window manager the window is mapped at the GTK default size and resized
+ * afterwards, so adjustTrim() would measure the trim against a stale allocation.
+ */
+private boolean resizePending () {
+	if (GTK.GTK4) return false;
+	int[] width = new int[1], height = new int[1];
+	GTK3.gtk_window_get_size (shellHandle, width, height);
+	GtkAllocation allocation = new GtkAllocation ();
+	GTK.gtk_widget_get_allocation (shellHandle, allocation);
+	return allocation.width != width[0] || allocation.height != height[0];
 }
 
 @Override
