@@ -370,6 +370,29 @@ public void test_drawFocusIIII() {
 	gc.drawFocus(1, 1, 50, 25);
 }
 
+@Test
+public void test_drawFocusPaintsPixels() {
+	Image target = new Image(display, 60, 30);
+	GC targetGc = new GC(target);
+	try {
+		targetGc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		targetGc.fillRectangle(0, 0, 60, 30);
+		targetGc.drawFocus(10, 10, 40, 12);
+	} finally {
+		targetGc.dispose();
+	}
+	ImageData data = target.getImageData();
+	target.dispose();
+	int nonWhite = 0;
+	for (int y = 0; y < data.height; y++) {
+		for (int x = 0; x < data.width; x++) {
+			RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+			if (!rgb.equals(new RGB(255, 255, 255))) nonWhite++;
+		}
+	}
+	assertTrue(nonWhite > 0, "drawFocus painted nothing");
+}
+
 private static class TestImages {
     final Image normal;
     final Image transparent;

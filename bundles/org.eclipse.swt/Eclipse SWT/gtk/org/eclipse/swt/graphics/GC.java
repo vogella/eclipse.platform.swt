@@ -776,6 +776,16 @@ public void drawFocus(int x, int y, int width, int height) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	long cairo = data.cairo;
 	checkGC(FOREGROUND);
+	if (GTK.GTK4) {
+		// GTK4 draws focus through the CSS outline of focused nodes, gtk_render_focus paints nothing
+		Cairo.cairo_save(cairo);
+		Cairo.cairo_set_line_width(cairo, 1);
+		Cairo.cairo_set_dash(cairo, new double[] {1, 1}, 2, 1.5);
+		Cairo.cairo_rectangle(cairo, x + 0.5, y + 0.5, width - 1, height - 1);
+		Cairo.cairo_stroke(cairo);
+		Cairo.cairo_restore(cairo);
+		return;
+	}
 	long  context = GTK.gtk_widget_get_style_context(data.device.shellHandle);
 	GTK.gtk_render_focus(context, cairo, x, y, width, height);
 }
