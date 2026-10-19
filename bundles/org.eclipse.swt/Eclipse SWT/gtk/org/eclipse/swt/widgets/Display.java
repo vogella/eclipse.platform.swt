@@ -203,6 +203,9 @@ public class Display extends Device implements Executor {
 	/* GTK4: depth of focusProc() calls, and popovers disposed meanwhile, see Shell.releaseHandle() */
 	int focusProcDepth;
 	ArrayList<Long> disposedPopovers = new ArrayList<>();
+	/* GTK4 drops a focus change made while another one is being delivered, so it is replayed afterwards */
+	boolean gtk4Focusing;
+	long gtk4PendingFocus;
 
 	Tracker tracker;
 
