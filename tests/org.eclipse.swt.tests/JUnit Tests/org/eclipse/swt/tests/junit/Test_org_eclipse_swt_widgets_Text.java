@@ -810,6 +810,15 @@ public void test_getTextLimit() {
 }
 
 @Test
+public void test_getTextLimitDefault() {
+	Text single = new Text(shell, SWT.SINGLE);
+	assertEquals(0x7FFFFFFF, single.getTextLimit());
+	single.setTextLimit(10);
+	single.setTextLimit(Text.LIMIT);
+	assertEquals(0x7FFFFFFF, single.getTextLimit());
+}
+
+@Test
 public void test_getTopIndex() {
 	if (SwtTestUtil.isCocoa) {
 		//TODO Fix Cocoa failure.

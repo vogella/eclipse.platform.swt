@@ -68,7 +68,7 @@ public class Spinner extends Composite {
 	* to stop the compiler from inlining.
 	*/
 	static {
-		LIMIT = 0xFFFF;
+		LIMIT = 0x7FFFFFFF;
 	}
 	/* Spinner uses non-standard CSS to set its background color, so we need
 	 * a global variable to keep track of its background color.
@@ -568,7 +568,8 @@ public int getTextLimit () {
 	} else {
 		limit = GTK.gtk_entry_get_max_length (handle);
 	}
-	return limit == 0 ? LIMIT : limit;
+	// GTK clamps the entry limit to 0xFFFF, which is also what it reports when no limit is set
+	return limit <= 0 || limit >= 0xFFFF ? LIMIT : limit;
 }
 
 /**

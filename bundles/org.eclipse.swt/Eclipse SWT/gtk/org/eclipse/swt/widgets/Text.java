@@ -1470,7 +1470,8 @@ public int getTextLimit () {
 	checkWidget ();
 	if ((style & SWT.MULTI) != 0) return LIMIT;
 	int limit = GTK.gtk_entry_get_max_length (handle);
-	return limit == 0 ? 0xFFFF : untranslateOffset (limit);
+	// GTK clamps the entry limit to 0xFFFF, which is also what it reports when no limit is set
+	return limit == 0 || limit >= 0xFFFF ? LIMIT : untranslateOffset (limit);
 }
 
 /**
