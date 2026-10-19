@@ -242,6 +242,7 @@ public class FFMGtk4CustomCheck {
 			compareTraces("SwtFixed, scaled paintable and content providers", jni, ffm);
 			if (traceFile != null) Files.write(Path.of(traceFile), jni);
 			if (VERBOSE) jni.forEach(line -> System.out.println("  trace " + line));
+			sizes();
 			macros();
 		}
 		System.out.println(checks + " checks, " + failures + " failures");
@@ -258,6 +259,22 @@ public class FFMGtk4CustomCheck {
 			check("line " + line, a, b);
 		}
 		System.out.println(what + ": " + n + " observations, " + (failures - before) + " mismatches");
+	}
+
+	/* ---------------------------------------------------------------- sizes */
+
+	/** The struct sizes of the cell renderers, of which GTK4 keeps some private, JNI against FFM. */
+	static void sizes() {
+		check("GtkCellRendererPixbuf_sizeof", GTK.GtkCellRendererPixbuf_sizeof(), FFMTypes.GtkCellRendererPixbuf_sizeof());
+		check("GtkCellRendererPixbufClass_sizeof", GTK.GtkCellRendererPixbufClass_sizeof(), FFMTypes.GtkCellRendererPixbufClass_sizeof());
+		check("GtkCellRendererToggle_sizeof", GTK.GtkCellRendererToggle_sizeof(), FFMTypes.GtkCellRendererToggle_sizeof());
+		check("GtkCellRendererToggleClass_sizeof", GTK.GtkCellRendererToggleClass_sizeof(), FFMTypes.GtkCellRendererToggleClass_sizeof());
+		check("GtkCellRendererText_sizeof", GTK.GtkCellRendererText_sizeof(), FFMTypes.GtkCellRendererText_sizeof());
+		check("GtkCellRendererTextClass_sizeof", GTK.GtkCellRendererTextClass_sizeof(), FFMTypes.GtkCellRendererTextClass_sizeof());
+		check("GtkTextIter_sizeof", GTK.GtkTextIter_sizeof(), FFMTypes.GtkTextIter_sizeof());
+		check("GtkTreeIter_sizeof", GTK.GtkTreeIter_sizeof(), FFMTypes.GtkTreeIter_sizeof());
+		check("GValue_sizeof", OS.GValue_sizeof(), FFMTypes.GValue_sizeof());
+		check("GPollFD_sizeof", OS.GPollFD_sizeof(), FFMTypes.GPollFD_sizeof());
 	}
 
 	/* ---------------------------------------------------------------- layouts */
