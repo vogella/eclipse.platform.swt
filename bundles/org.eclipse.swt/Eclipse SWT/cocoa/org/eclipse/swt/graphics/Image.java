@@ -973,10 +973,12 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 	ImageData data = new ImageData((int)width, (int)height, (int)bpp, palette, 1, srcData);
 	data.bytesPerLine = (int)bpr;
 	if (imageRep.hasAlpha() && info.transparentPixel == -1 && info.alpha == -1 && info.alphaData == null) {
-		byte[] alphaD = new byte[(int) (dataSize/4)];
-		int offset = (bitmapFormat & OS.NSAlphaFirstBitmapFormat) != 0 ? 0 : 3, a = 0;
-		for (int i = offset; i < srcData.length && a < alphaD.length; i+= 4, a++) {
-			alphaD[a] = srcData[i];
+		byte[] alphaD = new byte[(int) (width * height)];
+		int offset = (bitmapFormat & OS.NSAlphaFirstBitmapFormat) != 0 ? 0 : 3;
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				alphaD[(int) (y * width + x)] = srcData[(int) (y * bpr + x * 4 + offset)];
+			}
 		}
 		data.alphaData = alphaD;
 	} else {
@@ -986,8 +988,9 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 			int maskPad = 2;
 			long maskBpl = (((width + 7) / 8) + (maskPad - 1)) / maskPad * maskPad;
 			byte[] maskData = new byte[(int)(height * maskBpl)];
-			int offset = 0, maskOffset = 0;
+			int maskOffset = 0;
 			for (int y = 0; y<height; y++) {
+				int offset = (int) (y * bpr);
 				for (int x = 0; x<width; x++) {
 					if (srcData[offset] != 0) {
 						maskData[maskOffset + (x >> 3)] |= (1 << (7 - (x & 0x7)));
