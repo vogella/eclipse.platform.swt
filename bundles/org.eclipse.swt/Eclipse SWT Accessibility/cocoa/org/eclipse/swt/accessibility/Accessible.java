@@ -1883,9 +1883,6 @@ public class Accessible {
 			switch (role) {
 				case ACC.ROLE_RADIOBUTTON: // 1 = on, 0 = off
 				case ACC.ROLE_CHECKBUTTON: // 1 = checked, 0 = unchecked, 2 = mixed
-				case ACC.ROLE_SCROLLBAR: // numeric value representing the position of the scroller
-				case ACC.ROLE_SLIDER: // the value associated with the position of the slider thumb
-				case ACC.ROLE_PROGRESSBAR: // the value associated with the fill level of the progress bar
 					if (value != null) {
 						try {
 							int number = Integer.parseInt(value);
@@ -1899,6 +1896,19 @@ public class Accessible {
 						}
 					} else {
 						returnValue = NSNumber.numberWithBool(false);
+					}
+					break;
+				case ACC.ROLE_SCROLLBAR: // numeric value representing the position of the scroller
+				case ACC.ROLE_SLIDER: // the value associated with the position of the slider thumb
+				case ACC.ROLE_PROGRESSBAR: // the value associated with the fill level of the progress bar
+					if (value != null) {
+						try {
+							returnValue = NSNumber.numberWithDouble(Double.parseDouble(value));
+						} catch (NumberFormatException ex) {
+							// not a number, leave the value unset
+						}
+					} else {
+						returnValue = NSNumber.numberWithInt(0);
 					}
 					break;
 				case ACC.ROLE_TABFOLDER: // the accessibility object representing the currently selected tab item
