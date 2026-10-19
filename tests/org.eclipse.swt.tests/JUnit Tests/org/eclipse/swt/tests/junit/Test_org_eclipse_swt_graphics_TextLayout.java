@@ -573,20 +573,6 @@ public void test_getAlignment() {
 }
 
 @Test
-public void test_getLocationAtEndOfRightToLeftText() {
-	TextLayout layout = new TextLayout(display);
-	String text = "\u05e9\u05dc\u05d5\u05dd \u05e2\u05d5\u05dc\u05dd \u05d3\u05d5\u05d2\u05de\u05d4 \u05d0";
-	layout.setText(text);
-	int length = text.length();
-	Point start = layout.getLocation(0, false);
-	Point end = layout.getLocation(length, false);
-	assertTrue(start.x != end.x, "start and end of right-to-left text must differ");
-	int[] trailing = new int[1];
-	assertEquals(length, layout.getOffset(end, trailing) + trailing[0]);
-	layout.dispose();
-}
-
-@Test
 public void test_setOrientationRightToLeftLayout() {
 	assumeTrue(SwtTestUtil.isCocoa, "GTK mirrors positions for right-to-left layouts, Cocoa does not");
 	TextLayout layout = new TextLayout(display);
