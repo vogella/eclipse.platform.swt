@@ -200,6 +200,11 @@ void computeRuns() {
 				case SWT.RIGHT:
 					align = OS.NSTextAlignmentRight;
 			}
+			// like GTK, SWT.LEFT and SWT.RIGHT name the leading and trailing edge in right-to-left layouts
+			if ((orientation & SWT.RIGHT_TO_LEFT) != 0 && !justify) {
+				if (align == OS.NSTextAlignmentLeft) align = OS.NSTextAlignmentRight;
+				else if (align == OS.NSTextAlignmentRight) align = OS.NSTextAlignmentLeft;
+			}
 		}
 	}
 	if ((orientation & SWT.RIGHT_TO_LEFT) != 0) {
