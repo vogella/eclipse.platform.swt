@@ -1342,7 +1342,7 @@ public class Accessible {
 			return null;
 
 		if (event.accessible != null) {
-			return new id(OS.NSAccessibilityUnignoredAncestor(event.accessible.delegate.id));
+			return new id(OS.NSAccessibilityUnignoredAncestor(accessibleHandle(event.accessible).id));
 		}
 
 		if (event.childID == ACC.CHILDID_SELF || event.childID == ACC.CHILDID_NONE) {
