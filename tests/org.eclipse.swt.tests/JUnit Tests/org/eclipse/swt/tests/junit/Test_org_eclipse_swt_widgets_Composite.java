@@ -30,6 +30,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.List;
@@ -67,6 +68,27 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 	int[] cases = {SWT.H_SCROLL, SWT.V_SCROLL, SWT.H_SCROLL | SWT.V_SCROLL};
 	for (int style : cases)
 		composite = new Composite(shell, style);
+}
+
+@Test
+public void test_redrawIIIIZ_allRepaintsChildren() throws InterruptedException {
+	Shell host = new Shell(shell.getDisplay());
+	try {
+		host.setLayout(new FillLayout());
+		Canvas canvas = new Canvas(host, SWT.NONE);
+		int[] paints = new int[1];
+		canvas.addListener(SWT.Paint, e -> paints[0]++);
+		host.setSize(200, 150);
+		host.open();
+		SwtTestUtil.processEvents(1000, () -> false);
+		int before = paints[0];
+		assertTrue(before > 0, "no initial paint");
+		host.redraw(0, 0, 200, 150, true);
+		SwtTestUtil.processEvents(3000, () -> paints[0] > before);
+		assertTrue(paints[0] > before, "child not repainted by redraw(..., true)");
+	} finally {
+		host.dispose();
+	}
 }
 
 @Test
