@@ -14,9 +14,14 @@
 package org.eclipse.swt.tests.junit;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+}
+
+@Test
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
@@ -24,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
@@ -221,6 +227,26 @@ public void test_forceFocus_requestedFromFocusInListener() {
 	SwtTestUtil.processEvents();
 
 	assertTrue(second.isFocusControl(), "focus handed over from the FocusIn listener was lost");
+}
+
+@Test
+public void test_setBounds_hiddenChildInMirroredParentAfterResize() throws InterruptedException {
+	assumeFalse(SwtTestUtil.isGTK4(), "a hidden widget reports empty bounds on GTK4");
+	Composite mirrored = new Composite(shell, SWT.RIGHT_TO_LEFT);
+	assumeTrue((mirrored.getStyle() & SWT.MIRRORED) != 0, "parent is not mirrored on this platform");
+	mirrored.setBounds(0, 0, 200, 100);
+	Button child = new Button(mirrored, SWT.PUSH);
+	shell.open();
+	SwtTestUtil.processEvents();
+	child.setVisible(false);
+	child.setBounds(10, 10, 50, 20);
+	mirrored.setSize(300, 100);
+
+	child.setBounds(110, 10, 50, 20);
+	child.setVisible(true);
+	SwtTestUtil.processEvents(300, () -> false);
+
+	assertEquals(new Rectangle(110, 10, 50, 20), child.getBounds());
 }
 
 @Test

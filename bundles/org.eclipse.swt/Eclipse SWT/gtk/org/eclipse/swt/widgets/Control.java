@@ -1129,7 +1129,8 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 		int oldX = allocation.x;
 		int oldY = allocation.y;
 		sameOrigin = x == oldX && y == oldY;
-		if (!sameOrigin) {
+		// moveChildren leaves a stale allocation behind, so a mirrored move always reaches the fixed
+		if (!sameOrigin || (parent.style & SWT.MIRRORED) != 0) {
 			if (!GTK.GTK4) {
 				if (enableWindow != 0) {
 					GDK.gdk_window_move (enableWindow, x, y);
