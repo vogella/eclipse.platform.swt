@@ -601,8 +601,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 			srcRect.height = height;
 			long invalidateRegion = Cairo.cairo_region_create_rectangle (srcRect);
 			if (GTK.GTK4) {
-				/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-				 * invalid regions ourselves and do gdk_surface_queue_expose */
+				// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+				if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 			} else {
 				long visibleRegion = GDK.gdk_window_get_visible_region (drawable);
 				long copyRegion = Cairo.cairo_region_create_rectangle (srcRect);
@@ -625,8 +625,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 			rect.width = Math.max (0, width);
 			rect.height = Math.max (0, height);
 			if (GTK.GTK4) {
-				/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-				 * invalid regions ourselves and do gdk_surface_queue_expose */
+				// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+				if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 			} else {
 				GDK.gdk_window_invalidate_rect (drawable, rect, false);
 			}
@@ -639,8 +639,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 				rect.width = Math.abs(deltaX);
 				rect.height = Math.max (0, height);
 				if (GTK.GTK4) {
-					/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-					 * invalid regions ourselves and do gdk_surface_queue_expose */
+					// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+					if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 				} else {
 					GDK.gdk_window_invalidate_rect (drawable, rect, false);
 				}
@@ -653,8 +653,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 				rect.width = Math.max (0, width);
 				rect.height = Math.abs(deltaY);
 				if (GTK.GTK4) {
-					/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-					 * invalid regions ourselves and do gdk_surface_queue_expose */
+					// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+					if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 				} else {
 					GDK.gdk_window_invalidate_rect (drawable, rect, false);
 				}
