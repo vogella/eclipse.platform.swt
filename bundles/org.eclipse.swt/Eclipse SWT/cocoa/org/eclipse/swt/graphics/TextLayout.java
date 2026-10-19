@@ -1190,13 +1190,7 @@ public Point getLocation(int offset, boolean trailing) {
 		if (length == 0) return new Point(0, 0);
 		if (offset == length) {
 			NSRect rect = lineBounds[lineBounds.length - 1];
-			NSRange range = new NSRange();
-			range.location = layoutManager.glyphIndexForCharacterAtIndex(translateOffset(length - 1));
-			range.length = 1;
-			byte[] bidiLevels = new byte[1];
-			boolean rtl = layoutManager.getGlyphsInRange(range, 0, 0, 0, 0, bidiLevels) > 0 && (bidiLevels[0] & 1) != 0;
-			// the end of a right-to-left run is its left edge
-			return new Point((int)(rtl ? rect.x : rect.x + rect.width), (int)rect.y);
+			return new Point((int)(rect.x + rect.width), (int)rect.y);
 		} else {
 			// Offsets inside a surrogate pair or emoji sequence share the edges of their cluster
 			int clusterStart = offset, clusterEnd = offset + 1;
