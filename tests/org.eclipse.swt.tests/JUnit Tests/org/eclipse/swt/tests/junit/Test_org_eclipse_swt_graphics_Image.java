@@ -56,7 +56,9 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.internal.DPIUtil;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -1711,5 +1713,44 @@ public void test_getImageData_pngRoundTripKeepsPixels() {
 	assertEquals(d.width, loaded.width);
 	assertEquals(d.height, loaded.height);
 	assertSamePixels(d, loaded);
+}
+
+@Test
+public void test_getImageData_copyAreaCaptureKeepsRowsAligned() throws InterruptedException {
+	Shell shell = new Shell(display);
+	try {
+		Composite composite = new Composite(shell, SWT.NONE);
+		composite.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		AtomicInteger paints = new AtomicInteger();
+		composite.addPaintListener(e -> {
+			e.gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+			e.gc.drawLine(0, 0, 339, 149);
+			e.gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+			e.gc.fillRectangle(300, 20, 36, 100);
+			paints.incrementAndGet();
+		});
+		composite.setBounds(0, 0, 340, 150);
+		shell.setSize(shell.computeTrim(0, 0, 340, 150).width, shell.computeTrim(0, 0, 340, 150).height);
+		shell.open();
+		SwtTestUtil.processEvents(5000, () -> paints.get() > 0);
+		SwtTestUtil.processEvents();
+		Image img = new Image(display, 340, 150);
+		try {
+			GC gc = new GC(composite);
+			try {
+				gc.copyArea(img, 0, 0);
+			} finally {
+				gc.dispose();
+			}
+			ImageData d = img.getImageData();
+			int expected = ((d.width * d.depth + 7) / 8 + d.scanlinePad - 1) / d.scanlinePad * d.scanlinePad;
+			assertEquals(expected, d.bytesPerLine);
+			assertSamePixels(d, new ImageData(d.width, d.height, d.depth, d.palette, d.scanlinePad, d.data));
+		} finally {
+			img.dispose();
+		}
+	} finally {
+		shell.dispose();
+	}
 }
 }
