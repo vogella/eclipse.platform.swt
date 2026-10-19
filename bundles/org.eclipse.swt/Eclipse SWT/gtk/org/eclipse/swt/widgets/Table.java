@@ -594,6 +594,13 @@ void copyModel(long oldModel, int oldStart, long newModel, int newStart, int mod
 	OS.g_free (value);
 }
 
+// gtk_tree_view_set_model clears the sort indicator of every column
+void restoreSortIndicator () {
+	if (sortColumn == null || sortColumn.isDisposed () || sortDirection == SWT.NONE) return;
+	GTK.gtk_tree_view_column_set_sort_indicator (sortColumn.handle, true);
+	GTK.gtk_tree_view_column_set_sort_order (sortColumn.handle, sortDirection == SWT.DOWN ? 0 : 1);
+}
+
 void createColumn (TableColumn column, int index) {
 	int modelIndex = FIRST_COLUMN;
 	if (columnCount != 0) {
@@ -626,6 +633,7 @@ void createColumn (TableColumn column, int index) {
 			copyModel (oldModel, FIRST_COLUMN, newModel, FIRST_COLUMN, modelLength);
 			GTK.gtk_tree_view_set_model (handle, newModel);
 			setModel (newModel);
+			restoreSortIndicator ();
 		}
 	}
 	long columnHandle = GTK.gtk_tree_view_column_new ();
