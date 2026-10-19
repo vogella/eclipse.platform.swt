@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -63,6 +64,22 @@ public void test_ConstructorLorg_eclipse_swt_widgets_TableI() {
 public void test_ConstructorLorg_eclipse_swt_widgets_TableII() {
 	assertThrows (IllegalArgumentException.class, () ->
 		new TableItem(table, SWT.NONE, 5),"No exception thrown for illegal index argument");
+}
+
+@Test
+public void test_getBoundsI_checkStyleRightToLeft() {
+	assumeFalse(SwtTestUtil.isGTK4(), "The GTK4 cell rectangle of a right-to-left tree view is not mirrored like GTK3");
+	Table rtlTable = new Table(shell, SWT.CHECK | SWT.RIGHT_TO_LEFT);
+	rtlTable.setBounds(0, 0, 200, 150);
+	TableItem item = new TableItem(rtlTable, SWT.NONE);
+	item.setText("Item");
+	shell.open();
+	SwtTestUtil.processEvents();
+
+	Rectangle bounds = item.getBounds(0);
+	assertTrue(bounds.width > 0, "Cell bounds must have a positive width but are " + bounds);
+	assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= rtlTable.getSize().x,
+			"Cell bounds " + bounds + " must lie inside the table of width " + rtlTable.getSize().x);
 }
 
 @Test
