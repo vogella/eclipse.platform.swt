@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.Arrays;
 
@@ -582,6 +583,19 @@ public void test_getLocationAtEndOfRightToLeftText() {
 	assertTrue(start.x != end.x, "start and end of right-to-left text must differ");
 	int[] trailing = new int[1];
 	assertEquals(length, layout.getOffset(end, trailing) + trailing[0]);
+	layout.dispose();
+}
+
+@Test
+public void test_setOrientationRightToLeftLayout() {
+	assumeTrue(SwtTestUtil.isCocoa, "GTK mirrors positions for right-to-left layouts, Cocoa does not");
+	TextLayout layout = new TextLayout(display);
+	layout.setText("abc.");
+	layout.setWidth(200);
+	assertEquals(0, layout.getLineBounds(0).x);
+	layout.setOrientation(SWT.RIGHT_TO_LEFT);
+	assertTrue(layout.getLineBounds(0).x > 0, "line must be aligned to the right edge");
+	assertTrue(layout.getBounds(3, 3).x < layout.getBounds(0, 0).x, "period must be left of the letters");
 	layout.dispose();
 }
 
