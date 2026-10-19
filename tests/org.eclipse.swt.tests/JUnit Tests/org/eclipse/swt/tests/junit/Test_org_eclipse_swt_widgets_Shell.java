@@ -1127,6 +1127,36 @@ private static void assertEventuallySize(Shell sized, int width, int height) thr
 }
 
 @Test
+public void test_open_keepsFocusWhenTheWindowIsFocusedWhileMapping() {
+	// without a window manager the X focus follows the pointer once it reverted to the root window,
+	// so the new shell is focused by the X server while open() still waits for it
+	assumeTrue(SwtTestUtil.isGTK && SwtTestUtil.isX11());
+	Display display = shell.getDisplay();
+	Point cursor = display.getCursorLocation();
+	Shell focused = new Shell(display);
+	focused.setBounds(500, 500, 100, 100);
+	focused.open();
+	SwtTestUtil.processEvents();
+	focused.dispose();
+	SwtTestUtil.processEvents();
+	Shell dialog = new Shell(display, SWT.DIALOG_TRIM | SWT.RESIZE);
+	try {
+		dialog.setLayout(new GridLayout());
+		new Text(dialog, SWT.SINGLE | SWT.BORDER);
+		Text second = new Text(dialog, SWT.SINGLE | SWT.BORDER);
+		dialog.setBounds(100, 50, 500, 400);
+		display.setCursorLocation(300, 200);
+		SwtTestUtil.processEvents();
+		second.setFocus();
+		dialog.open();
+		assertTrue(second.isFocusControl(), "focus moved to " + display.getFocusControl());
+	} finally {
+		dialog.dispose();
+		display.setCursorLocation(cursor);
+	}
+}
+
+@Test
 public void test_open_keepsRequestedSize() throws InterruptedException {
 	openSizedShell(400, 300).dispose();
 }

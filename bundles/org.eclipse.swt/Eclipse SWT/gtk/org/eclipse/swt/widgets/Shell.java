@@ -3357,6 +3357,14 @@ public void setVisible (boolean visible) {
 			boolean iconic = false;
 			Shell shell = parent != null ? parent.getShell() : null;
 			long resizeDeadline = System.currentTimeMillis () + 200;
+			int [] afterMap = {
+				GDK.GDK_EXPOSE,
+				GDK.GDK_CONFIGURE,
+				GDK.GDK_MAP,
+				GDK.GDK_UNMAP,
+				GDK.GDK_NO_EXPOSE,
+				GDK.GDK_WINDOW_STATE
+			};
 			do {
 				if (GTK.GTK4) {
 					OS.g_main_context_iteration (0, false);
@@ -3365,6 +3373,8 @@ public void setVisible (boolean visible) {
 				}
 				if (isDisposed ()) break;
 				iconic = minimized || (shell != null && shell.minimized);
+				// while waiting for the resize, a focus change would consume the focus open() restores
+				if (mapped) display.dispatchEvents = afterMap;
 			} while (!iconic && (!mapped || (resizePending () && System.currentTimeMillis () < resizeDeadline)));
 			display.dispatchEvents = null;
 			if (isDisposed ()) return;
