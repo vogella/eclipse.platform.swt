@@ -124,6 +124,16 @@ public Rectangle computeTrim (int x, int y, int width, int height) {
 	return new Rectangle (x, y, width, height);
 }
 
+@Override
+public int getBorderWidth () {
+	checkWidget();
+	if (scrollView == null || !hasBorder()) return 0;
+	// Same bezel computeTrim adds around the content
+	NSSize size = new NSSize();
+	size = NSScrollView.frameSizeForContentSize(size, 0, 0, OS.NSBezelBorder, OS.NSControlSizeRegular, OS.NSScrollerStyleLegacy);
+	return (int)(size.width / 2);
+}
+
 ScrollBar createScrollBar (int style) {
 	if (scrollView == null) return null;
 	ScrollBar bar = new ScrollBar ();
