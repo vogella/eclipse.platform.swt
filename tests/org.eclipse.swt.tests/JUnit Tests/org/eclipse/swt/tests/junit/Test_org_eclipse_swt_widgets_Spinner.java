@@ -120,6 +120,14 @@ public class Test_org_eclipse_swt_widgets_Spinner extends Test_org_eclipse_swt_w
 	}
 
 	@Test
+	public void test_getTextLimitDefault() {
+		assertEquals(0x7FFFFFFF, spinner.getTextLimit());
+		spinner.setTextLimit(5);
+		spinner.setTextLimit(Spinner.LIMIT);
+		assertEquals(0x7FFFFFFF, spinner.getTextLimit());
+	}
+
+	@Test
 	public void test_setValues() {
 		int cases = 4;
 		int [] selection = {5,10,15,20};
