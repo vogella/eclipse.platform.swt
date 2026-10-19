@@ -15,6 +15,7 @@ package org.eclipse.swt.tests.junit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
@@ -48,6 +49,19 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI(){
 	int[] cases = {SWT.LEFT, SWT.RIGHT, SWT.CENTER, SWT.SEPARATOR, SWT.HORIZONTAL, SWT.VERTICAL, SWT.SHADOW_IN, SWT.SHADOW_OUT};
 	for (int style : cases)
 		label = new Label(shell, style);
+}
+
+@Test
+public void test_computeSizeWidthHintNarrowerThanBorderedText() {
+	String text = "A fairly long label text that is much wider than the hint";
+	for (int style : new int[] {SWT.BORDER, SWT.BORDER | SWT.WRAP}) {
+		Label bordered = new Label(shell, style);
+		bordered.setText(text);
+		int natural = bordered.computeSize(SWT.DEFAULT, SWT.DEFAULT).x;
+		int width = bordered.computeSize(120, SWT.DEFAULT).x;
+		assertTrue(natural > 160, "Test text must be wider than the hint plus border");
+		assertTrue(width >= 120 && width <= 128, "Width hint 120 with border gave width " + width + " for style " + style);
+	}
 }
 
 @Override
