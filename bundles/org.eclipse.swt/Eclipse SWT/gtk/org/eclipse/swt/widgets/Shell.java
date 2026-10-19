@@ -572,6 +572,7 @@ void adjustTrim (int widthHint, int heightHint) {
 	}
 	display.trimWidths[trimStyle] = trimWidth;
 	display.trimHeights[trimStyle] = trimHeight;
+	display.saveTrims ();
 }
 
 void bringToTop (boolean force) {
