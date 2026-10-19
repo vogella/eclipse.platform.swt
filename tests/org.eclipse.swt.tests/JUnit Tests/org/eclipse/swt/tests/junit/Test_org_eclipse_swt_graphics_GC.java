@@ -32,7 +32,9 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -57,6 +59,7 @@ import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.tests.graphics.ImageDataTestHelper;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
@@ -266,6 +269,31 @@ public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_controlIncludesParent
 	target.dispose();
 	shell.dispose();
 	assertEquals(new RGB(255, 0, 0), pixel, "the parent background must show behind a transparent control");
+}
+
+@Test
+public void test_copyAreaIIIIIIZ_doesNotRepaintSiblings() throws InterruptedException {
+	Shell shell = new Shell(display);
+	Composite first = new Composite(shell, SWT.NONE);
+	Composite second = new Composite(shell, SWT.NONE);
+	first.setBounds(0, 0, 80, 60);
+	second.setBounds(100, 0, 80, 60);
+	List<Rectangle> firstPaints = new ArrayList<>();
+	List<Rectangle> secondPaints = new ArrayList<>();
+	first.addPaintListener(e -> firstPaints.add(new Rectangle(e.x, e.y, e.width, e.height)));
+	second.addPaintListener(e -> secondPaints.add(new Rectangle(e.x, e.y, e.width, e.height)));
+	shell.setSize(300, 200);
+	shell.open();
+	SwtTestUtil.processEvents(500, () -> false);
+	firstPaints.clear();
+	secondPaints.clear();
+	GC gcFirst = new GC(first);
+	gcFirst.copyArea(0, 10, 80, 50, 0, 0);
+	gcFirst.dispose();
+	SwtTestUtil.processEvents(500, () -> false);
+	shell.dispose();
+	assertEquals(List.of(), secondPaints, "a sibling must not be repainted");
+	assertFalse(firstPaints.isEmpty(), "the receiver must be repainted");
 }
 
 private int scaleWithDeviceZoom(int value) {
