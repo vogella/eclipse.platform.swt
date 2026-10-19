@@ -586,6 +586,28 @@ public class Display extends Device implements Executor {
 
 	boolean ignoreTrim;
 
+	/* The stored trims are only a start hint, so each measured value is written back at once */
+	void saveTrims () {
+		String userHome = System.getProperty ("user.home"); //$NON-NLS-1$
+		if (userHome == null) return;
+		File dir = new File (userHome, ".swt");
+		if ((dir.exists () && dir.isDirectory ()) || dir.mkdirs ()) {
+			File file = new File (dir, "trims.prefs");
+			Properties props = new Properties ();
+			StringBuilder buf = new StringBuilder ();
+			for (int w : trimWidths) buf.append (w).append (' ');
+			props.put ("trimWidths", buf.toString ());
+			buf = new StringBuilder();
+			for (int h : trimHeights) buf.append (h).append (' ');
+			props.put ("trimHeights", buf.toString ());
+			try (FileOutputStream fos = new FileOutputStream (file)){
+				props.store (fos, null);
+			} catch (IOException e) {
+				// skip saving trim caches
+			}
+		}
+	}
+
 	/*
 	* TEMPORARY CODE.  Install the runnable that
 	* gets the current display. This code will
@@ -4974,27 +4996,6 @@ void releaseDisplay () {
 	flushRect = null;
 	exposeEvent = null;
 	idleLock = null;
-
-	/* Save window trim caches */
-	String userHome = System.getProperty ("user.home"); //$NON-NLS-1$
-	if (userHome != null) {
-		File dir = new File (userHome, ".swt");
-		if ((dir.exists () && dir.isDirectory ()) || dir.mkdirs ()) {
-			File file = new File (dir, "trims.prefs");
-			Properties props = new Properties ();
-			StringBuilder buf = new StringBuilder ();
-			for (int w : trimWidths) buf.append (w).append (' ');
-			props.put ("trimWidths", buf.toString ());
-			buf = new StringBuilder();
-			for (int h : trimHeights) buf.append (h).append (' ');
-			props.put ("trimHeights", buf.toString ());
-			try (FileOutputStream fos = new FileOutputStream (file)){
-				props.store (fos, null);
-			} catch (IOException e) {
-				// skip saving trim caches
-			}
-		}
-	}
 }
 
 /**

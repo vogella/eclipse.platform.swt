@@ -23,6 +23,7 @@ import org.junit.platform.suite.api.Suite;
 	Test_GtkConverter.class,
 	Test_GtkMenu.class,
 	Test_GtkScaleFactor.class,
+	Test_GtkShellTrims.class,
 	Test_GtkSortIndicator.class
 })
 
