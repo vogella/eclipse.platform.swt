@@ -3697,8 +3697,8 @@ public void setItemCount (int count) {
 	if (count == itemCount) return;
 	boolean isVirtual = (style & SWT.VIRTUAL) != 0;
 	if (!isVirtual) setRedraw (false);
-	// Removing many rows from an attached model is far slower than detaching it first
-	boolean detachModel = isVirtual && count > 0 && itemCount - count >= Math.max (100, itemCount / 10);
+	// Removing many rows from an attached model is far slower than detaching it first, but not while a SetData listener runs inside GTK
+	boolean detachModel = isVirtual && currentItem == null && count > 0 && itemCount - count >= Math.max (100, itemCount / 10);
 	int [] selection = null;
 	int focusIndex = -1, topIndex = -1;
 	double hValue = 0;
