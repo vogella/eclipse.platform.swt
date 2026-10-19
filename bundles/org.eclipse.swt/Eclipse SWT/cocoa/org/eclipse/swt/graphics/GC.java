@@ -563,6 +563,8 @@ public void copyArea(Image image, int x, int y) {
 			rect.y = y;
 			rect.width = size.width;
 			rect.height = size.height;
+			// the document view of a scroll view sits inside the bezel, capture relative to it
+			if (topView.id != data.view.id) rect = topView.convertRect_fromView_(rect, data.view);
 			NSBitmapImageRep imageRep = topView.bitmapImageRepForCachingDisplayInRect(rect);
 			imageRep.setSize(size);
 			/*
