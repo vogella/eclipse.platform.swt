@@ -27,11 +27,6 @@ public NSSearchField(id id) {
 	super(id);
 }
 
-public NSArray recentSearches() {
-	long result = OS.objc_msgSend(this.id, OS.sel_recentSearches);
-	return result != 0 ? new NSArray(result) : null;
-}
-
 public static long cellClass() {
 	return OS.objc_msgSend(OS.class_NSSearchField, OS.sel_cellClass);
 }

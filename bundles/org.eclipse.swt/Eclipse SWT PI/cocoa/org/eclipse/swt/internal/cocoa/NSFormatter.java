@@ -27,9 +27,4 @@ public NSFormatter(id id) {
 	super(id);
 }
 
-public NSString stringForObjectValue(id obj) {
-	long result = OS.objc_msgSend(this.id, OS.sel_stringForObjectValue_, obj != null ? obj.id : 0);
-	return result != 0 ? new NSString(result) : null;
-}
-
 }

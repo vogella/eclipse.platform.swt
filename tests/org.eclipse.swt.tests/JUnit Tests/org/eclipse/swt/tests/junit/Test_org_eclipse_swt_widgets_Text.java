@@ -19,6 +19,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyListener;
@@ -289,7 +293,6 @@ public void test_copy() throws InterruptedException {
 	text.setSelection(2);
 	assertEquals("", text.getSelectionText());
 
-	System.out.println(text.getText());
 	text.setText("");
 	pasteFromClipboard(text);
 	assertEquals("00000", text.getText());
@@ -808,6 +811,15 @@ public void test_getTextLimit() {
 	}
 	text.setTextLimit(10);
 	assertEquals(10, text.getTextLimit());
+}
+
+@Test
+public void test_getTextLimitDefault() {
+	Text single = new Text(shell, SWT.SINGLE);
+	assertEquals(0x7FFFFFFF, single.getTextLimit());
+	single.setTextLimit(10);
+	single.setTextLimit(Text.LIMIT);
+	assertEquals(0x7FFFFFFF, single.getTextLimit());
 }
 
 @Test
@@ -1585,6 +1597,37 @@ public void test_backspaceAndDelete() throws InterruptedException {
 
 	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 0);
 	assertEquals(0, text.getText().length());
+}
+
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeyDownIsSentOnce() throws InterruptedException {
+	shell.open();
+	text.setSize(100, 50);
+	// findFocusedWindow() needs a drawn and focused shell
+	SwtTestUtil.processEvents();
+
+	Display display = Display.getDefault();
+	List<Character> keyDowns = new ArrayList<>();
+	text.addListener(SWT.KeyDown, e -> keyDowns.add(e.character));
+
+	Event a = new Event();
+	a.type = SWT.KeyDown;
+	a.keyCode = 'a';
+	a.character = 'a';
+	Event aUp = new Event();
+	aUp.type = SWT.KeyUp;
+	aUp.keyCode = 'a';
+	aUp.character = 'a';
+	assumeTrue(display.post(a), "Display.post is not supported on GTK4");
+	assumeTrue(display.post(aUp), "Display.post is not supported on GTK4");
+
+	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 1);
+	// give a duplicate KeyDown the chance to arrive
+	SwtTestUtil.processEvents(500, () -> false);
+	assertEquals("a", text.getText());
+	assertEquals(List.of('a'), keyDowns);
 }
 
 private Event keyEvent(int key, int type, Widget w) {

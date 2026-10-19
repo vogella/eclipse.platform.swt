@@ -86,7 +86,7 @@ public class Combo extends Composite {
 	* to stop the compiler from inlining.
 	*/
 	static {
-		LIMIT = 0xFFFF;
+		LIMIT = 0x7FFFFFFF;
 	}
 
 	private boolean delayedEnableWrap = false; // Bug 489640. Gtk3.
@@ -1406,7 +1406,8 @@ public int getTextHeight () {
 public int getTextLimit () {
 	checkWidget();
 	int limit = entryHandle != 0 ? GTK.gtk_entry_get_max_length (entryHandle) : 0;
-	return limit == 0 ? LIMIT : limit;
+	// GTK clamps the entry limit to 0xFFFF, which is also what it reports when no limit is set
+	return limit <= 0 || limit >= 0xFFFF ? LIMIT : limit;
 }
 
 /**

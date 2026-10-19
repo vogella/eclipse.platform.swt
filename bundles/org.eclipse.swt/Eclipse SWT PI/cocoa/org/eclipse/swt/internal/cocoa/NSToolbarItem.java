@@ -65,10 +65,6 @@ public void setMinSize(NSSize minSize) {
 	OS.objc_msgSend(this.id, OS.sel_setMinSize_, minSize);
 }
 
-public void setPaletteLabel(NSString paletteLabel) {
-	OS.objc_msgSend(this.id, OS.sel_setPaletteLabel_, paletteLabel != null ? paletteLabel.id : 0);
-}
-
 public void setTarget(id target) {
 	OS.objc_msgSend(this.id, OS.sel_setTarget_, target != null ? target.id : 0);
 }

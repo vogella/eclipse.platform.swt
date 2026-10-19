@@ -162,11 +162,6 @@ public boolean isOpaque() {
 	return OS.objc_msgSend_bool(this.id, OS.sel_isOpaque);
 }
 
-public CALayer layer() {
-	long result = OS.objc_msgSend(this.id, OS.sel_layer);
-	return result != 0 ? new CALayer(result) : null;
-}
-
 public void lockFocus() {
 	OS.objc_msgSend(this.id, OS.sel_lockFocus);
 }
@@ -274,10 +269,6 @@ public void setNeedsDisplayInRect(NSRect invalidRect) {
 
 public void setToolTip(NSString toolTip) {
 	OS.objc_msgSend(this.id, OS.sel_setToolTip_, toolTip != null ? toolTip.id : 0);
-}
-
-public void setWantsRestingTouches(boolean wantsRestingTouches) {
-	OS.objc_msgSend(this.id, OS.sel_setWantsRestingTouches_, wantsRestingTouches);
 }
 
 public boolean shouldDelayWindowOrderingForEvent(NSEvent theEvent) {

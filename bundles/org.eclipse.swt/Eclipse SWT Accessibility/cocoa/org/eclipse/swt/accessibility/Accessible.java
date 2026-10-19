@@ -16,6 +16,7 @@ package org.eclipse.swt.accessibility;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
@@ -1351,6 +1352,9 @@ public class Accessible {
 	 * @nooverride This method is not intended to be re-implemented or extended by clients.
 	 */
 	public id internal_accessibilityHitTest(NSPoint point, int childID) {
+		// Without listeners nothing can respond, so let Cocoa figure it out.
+		if (accessibleControlListenersSize() == 0) return null;
+
 		AccessibleControlEvent event = new AccessibleControlEvent(this);
 		event.x = (int) point.x;
 		Monitor primaryMonitor = Display.getCurrent().getPrimaryMonitor();
@@ -1368,7 +1372,7 @@ public class Accessible {
 			return null;
 
 		if (event.accessible != null) {
-			return new id(OS.NSAccessibilityUnignoredAncestor(event.accessible.delegate.id));
+			return new id(OS.NSAccessibilityUnignoredAncestor(accessibleHandle(event.accessible).id));
 		}
 
 		if (event.childID == ACC.CHILDID_SELF || event.childID == ACC.CHILDID_NONE) {
@@ -1909,9 +1913,6 @@ public class Accessible {
 			switch (role) {
 				case ACC.ROLE_RADIOBUTTON: // 1 = on, 0 = off
 				case ACC.ROLE_CHECKBUTTON: // 1 = checked, 0 = unchecked, 2 = mixed
-				case ACC.ROLE_SCROLLBAR: // numeric value representing the position of the scroller
-				case ACC.ROLE_SLIDER: // the value associated with the position of the slider thumb
-				case ACC.ROLE_PROGRESSBAR: // the value associated with the fill level of the progress bar
 					if (value != null) {
 						try {
 							int number = Integer.parseInt(value);
@@ -1925,6 +1926,19 @@ public class Accessible {
 						}
 					} else {
 						returnValue = NSNumber.numberWithBool(false);
+					}
+					break;
+				case ACC.ROLE_SCROLLBAR: // numeric value representing the position of the scroller
+				case ACC.ROLE_SLIDER: // the value associated with the position of the slider thumb
+				case ACC.ROLE_PROGRESSBAR: // the value associated with the fill level of the progress bar
+					if (value != null) {
+						try {
+							returnValue = NSNumber.numberWithDouble(Double.parseDouble(value));
+						} catch (NumberFormatException ex) {
+							// not a number, leave the value unset
+						}
+					} else {
+						returnValue = NSNumber.numberWithInt(0);
 					}
 					break;
 				case ACC.ROLE_TABFOLDER: // the accessibility object representing the currently selected tab item
@@ -1982,7 +1996,7 @@ public class Accessible {
 			listener.getState(event);
 		}
 		boolean enabled = (event.detail & ACC.STATE_DISABLED) == 0;
-		if (!enabled && delegate == null) enabled = control.isEnabled();
+		if (enabled && delegate == null) enabled = control.isEnabled();
 		return NSNumber.numberWithBool(enabled);
 	}
 
@@ -2166,10 +2180,9 @@ public class Accessible {
 			listener.getLocation(event);
 		}
 
-		Monitor primaryMonitor = Display.getCurrent().getPrimaryMonitor();
-
 		NSPoint osPositionAttribute = new NSPoint ();
 		if (event.width != -1) {
+			Monitor primaryMonitor = Display.getCurrent().getPrimaryMonitor();
 			// The point returned is the lower-left coordinate of the widget in lower-left relative screen coordinates.
 			osPositionAttribute.x = event.x;
 			osPositionAttribute.y = primaryMonitor.getBounds().height - event.y - event.height;
@@ -3408,7 +3421,20 @@ public class Accessible {
 		return returnValue;
 	}
 
+	/* Cache of the native role strings; ROLE_TEXT depends on the control style and is not cached. */
+	private static final Map<Integer, String> roleToOsCache = new ConcurrentHashMap<>();
+
 	String roleToOs(int role) {
+		if (role == ACC.ROLE_TEXT) return computeRoleToOs(role);
+		String result = roleToOsCache.get(role);
+		if (result == null) {
+			result = computeRoleToOs(role);
+			roleToOsCache.put(role, result);
+		}
+		return result;
+	}
+
+	private String computeRoleToOs(int role) {
 		NSString nsReturnValue = null; //OS.NSAccessibilityUnknownRole;
 
 		switch (role) {

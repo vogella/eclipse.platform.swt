@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -6059,6 +6060,37 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	assertEquals(0, text.getText().length());
 }
 
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeyDownIsSentOnce() throws InterruptedException {
+	shell.open();
+	text.setSize(100, 50);
+	// findFocusedWindow() needs a drawn and focused shell
+	SwtTestUtil.processEvents();
+
+	Display display = Display.getDefault();
+	List<Character> keyDowns = new ArrayList<>();
+	text.addListener(SWT.KeyDown, e -> keyDowns.add(e.character));
+
+	Event a = new Event();
+	a.type = SWT.KeyDown;
+	a.keyCode = 'a';
+	a.character = 'a';
+	Event aUp = new Event();
+	aUp.type = SWT.KeyUp;
+	aUp.keyCode = 'a';
+	aUp.character = 'a';
+	assumeTrue(display.post(a), "Display.post is not supported on GTK4");
+	assumeTrue(display.post(aUp), "Display.post is not supported on GTK4");
+
+	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 1);
+	// give a duplicate KeyDown the chance to arrive
+	SwtTestUtil.processEvents(500, () -> false);
+	assertEquals("a", text.getText());
+	assertEquals(List.of('a'), keyDowns);
+}
+
 /**
  * Bug 568033 - Splitting CRLF shall not be forbidden if already on different lines
  */
@@ -6387,5 +6419,27 @@ public void test_keyWithoutCharacterDoesNotFallBackToCharacter() {
 		keyDown(keyCode, (char) 0, SWT.SHIFT);
 		assertEquals(new Point(0, 0), text.getSelection(), "keyCode " + keyCode);
 	}
+}
+
+@Tag("clipboard")
+@Test
+public void test_copyPasteKeepsControlCharacters() {
+	assumeFalse(SwtTestUtil.isCocoa, "Disabled on Mac because similar clipboard tests are also disabled.");
+
+	String content = "abcdef";
+	text.setText(content);
+	text.selectAll();
+	text.copy();
+
+	Clipboard clipboard = new Clipboard(text.getDisplay());
+	try {
+		assertEquals(content, clipboard.getContents(TextTransfer.getInstance()));
+	} finally {
+		clipboard.dispose();
+	}
+
+	text.setText("");
+	text.paste();
+	assertEquals(content, text.getText());
 }
 }

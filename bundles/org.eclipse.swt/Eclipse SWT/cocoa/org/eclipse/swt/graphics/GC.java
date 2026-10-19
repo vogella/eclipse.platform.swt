@@ -84,8 +84,6 @@ public final class GC extends Resource {
 	double[] points;
 	double [] point;
 
-	static final int TAB_COUNT = 32;
-
 	final static int FOREGROUND = 1 << 0;
 	final static int BACKGROUND = 1 << 1;
 	final static int FONT = 1 << 2;
@@ -123,9 +121,15 @@ public final class GC extends Resource {
 		private NSRange range;
 
 		/**
-		 * Key object to use for Cache consisting of text string, alpho, font and foreground color
+		 * Key object to use for Cache consisting of text string, alpha, font and foreground color
+		 * (as primitive RGBA components, so that equal colors result in equal keys)
 		 */
-		private static record Key(String string, int alpha, long font, double[] fgColor) {}
+		private static record Key(String string, int alpha, long font, boolean hasFg, double r, double g, double b, double a) {
+			static Key of(String string, int alpha, long font, double[] fg) {
+				if (fg == null) return new Key(string, alpha, font, false, 0, 0, 0, 0);
+				return new Key(string, alpha, font, true, fg[0], fg[1], fg[2], fg[3]);
+			}
+		}
 
 		/**
 		 * Simple {@link GCTextData} cache limited to a set number of items.
@@ -137,7 +141,7 @@ public final class GC extends Resource {
 
 				@Override
 				protected boolean removeEldestEntry(Map.Entry<Key, GCTextData> eldest) {
-					if (size() >= cacheSize) {
+					if (size() > cacheSize) {
 						((GCTextData) eldest.getValue()).release();
 						return true;
 					}
@@ -169,20 +173,11 @@ public final class GC extends Resource {
 			NSSize size = new NSSize();
 			size.width = OS.MAX_TEXT_CONTAINER_SIZE;
 			size.height = OS.MAX_TEXT_CONTAINER_SIZE;
-			NSTextStorage textStorage = (NSTextStorage) new NSTextStorage().alloc().init();
-			NSLayoutManager layoutManager = (NSLayoutManager) new NSLayoutManager().alloc().init();
-			layoutManager.setBackgroundLayoutEnabled(NSThread.isMainThread());
-			NSTextContainer textContainer = (NSTextContainer) new NSTextContainer().alloc();
-			textContainer = textContainer.initWithContainerSize(size);
-			textContainer.setLineFragmentPadding(0);
-			textStorage.addLayoutManager(layoutManager);
-			layoutManager.addTextContainer(textContainer);
-			layoutManager.release();
-			textContainer.release();
-			this.layoutManager = layoutManager;
-			this.textStorage = textStorage;
+			TextLayout.TextSystem system = new TextLayout.TextSystem(size);
+			this.layoutManager = system.layoutManager;
+			this.textStorage = system.textStorage;
 			textStorage.setAttributedString(attribStr);
-			this.range = layoutManager.glyphRangeForTextContainer(textContainer);
+			this.range = layoutManager.glyphRangeForTextContainer(system.textContainer);
 		}
 
 		public void release() {
@@ -563,6 +558,15 @@ public void copyArea(Image image, int x, int y) {
 			rect.y = y;
 			rect.width = size.width;
 			rect.height = size.height;
+			// the document view of a scroll view sits inside the bezel, capture relative to it
+			if (topView.id != data.view.id) rect = topView.convertRect_fromView_(rect, data.view);
+			// capture from the window content so the parent background shows behind transparent pixels
+			NSWindow window = data.view.window();
+			NSView contentView = window != null ? window.contentView() : null;
+			if (contentView != null && contentView.id != topView.id) {
+				rect = contentView.convertRect_fromView_(rect, topView);
+				topView = contentView;
+			}
 			NSBitmapImageRep imageRep = topView.bitmapImageRepForCachingDisplayInRect(rect);
 			imageRep.setSize(size);
 			/*
@@ -589,43 +593,46 @@ public void copyArea(Image image, int x, int y) {
 			rect.size.height = size.height;
 			int displayCount = 16;
 			long displays = C.malloc(4 * displayCount), countPtr = C.malloc(4);
-			if (OS.CGGetDisplaysWithRect(rect, displayCount, displays, countPtr) != 0) return;
-			int[] count = new int[1], display = new int[1];
-			C.memmove(count, countPtr, C.PTR_SIZEOF);
-			for (int i = 0; i < count[0]; i++) {
-				C.memmove(display, displays + (i * 4), 4);
-				OS.CGDisplayBounds(display[0], rect);
-				double scaling = 1;
-				if (screens != null) {
-					for (int j = 0; j < screens.count(); j++) {
-						NSScreen screen = new NSScreen(screens.objectAtIndex(j));
-						if (display[0] == new NSNumber(screen.deviceDescription().objectForKey(key)).intValue()) {
-							scaling = screen.backingScaleFactor();
-							break;
+			try {
+				if (OS.CGGetDisplaysWithRect(rect, displayCount, displays, countPtr) != 0) return;
+				int[] count = new int[1], display = new int[1];
+				C.memmove(count, countPtr, 4);
+				for (int i = 0; i < count[0]; i++) {
+					C.memmove(display, displays + (i * 4), 4);
+					OS.CGDisplayBounds(display[0], rect);
+					double scaling = 1;
+					if (screens != null) {
+						for (int j = 0; j < screens.count(); j++) {
+							NSScreen screen = new NSScreen(screens.objectAtIndex(j));
+							if (display[0] == new NSNumber(screen.deviceDescription().objectForKey(key)).intValue()) {
+								scaling = screen.backingScaleFactor();
+								break;
+							}
 						}
 					}
+					/*
+					 * Add a high resolution image representation to the image if scaling factor is > 1
+					 */
+					if (scaling > 1) {
+						int width = (int) (size.width * scaling);
+						int height = (int) (size.height * scaling);
+						NSBitmapImageRep rep = (NSBitmapImageRep)new NSBitmapImageRep().alloc();
+						rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace, OS.NSAlphaFirstBitmapFormat | OS.NSAlphaNonpremultipliedBitmapFormat, width * 4, 32);
+						C.memset(rep.bitmapData(), 0xFF, width * height * 4);
+						imageHandle.addRepresentation(rep);
+						rep.release();
+					}
+					long srcImage = 0;
+					srcImage = OS.CGDisplayCreateImage(display[0]);
+					if (srcImage != 0) {
+						copyArea(image, (int)(x * scaling - rect.origin.x), (int)(y * scaling - rect.origin.y), srcImage);
+						OS.CGImageRelease(srcImage);
+					}
 				}
-				/*
-				 * Add a high resolution image representation to the image if scaling factor is > 1
-				 */
-				if (scaling > 1) {
-					int width = (int) (size.width * scaling);
-					int height = (int) (size.height * scaling);
-					NSBitmapImageRep rep = (NSBitmapImageRep)new NSBitmapImageRep().alloc();
-					rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace, OS.NSAlphaFirstBitmapFormat | OS.NSAlphaNonpremultipliedBitmapFormat, width * 4, 32);
-					C.memset(rep.bitmapData(), 0xFF, width * height * 4);
-					imageHandle.addRepresentation(rep);
-					rep.release();
-				}
-				long srcImage = 0;
-				srcImage = OS.CGDisplayCreateImage(display[0]);
-				if (srcImage != 0) {
-					copyArea(image, (int)(x * scaling - rect.origin.x), (int)(y * scaling - rect.origin.y), srcImage);
-					OS.CGImageRelease(srcImage);
-				}
+			} finally {
+				C.free(displays);
+				C.free(countPtr);
 			}
-			C.free(displays);
-			C.free(countPtr);
 		}
 	} finally {
 		uncheckGC(pool);
@@ -733,82 +740,31 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 			NSView view = data.view;
 			NSRect visibleRect = view.visibleRect();
 			if (visibleRect.width <= 0 || visibleRect.height <= 0) return;
-			NSRect damage = new NSRect();
-			damage.x = srcX;
-			damage.y = srcY;
-			damage.width = width;
-			damage.height = height;
-			NSPoint dest = new NSPoint();
-			dest.x = destX;
-			dest.y = destY;
-
-			view.lockFocus();
-			NSSize delta = new NSSize();
-			delta.width = deltaX;
-			delta.height = deltaY;
-			view.scrollRect(damage, delta);
-			view.unlockFocus();
-
 			if (paint) {
-				boolean disjoint = (destX + width < srcX) || (srcX + width < destX) || (destY + height < srcY) || (srcY + height < destY);
-				if (disjoint) {
-					view.setNeedsDisplayInRect(damage);
-				} else {
-					if (deltaX != 0) {
-						int newX = destX - deltaX;
-						if (deltaX < 0) newX = destX + width;
-						damage.x = newX;
-						damage.width = Math.abs(deltaX);
-						view.setNeedsDisplayInRect(damage);
-					}
-					if (deltaY != 0) {
-						int newY = destY - deltaY;
-						if (deltaY < 0) newY = destY + height;
-						damage.x = srcX;
-						damage.y = newY;
-						damage.width = width;
-						damage.height =  Math.abs (deltaY);
-						view.setNeedsDisplayInRect(damage);
-					}
-				}
-
-				NSRect srcRect = new NSRect();
-				srcRect.x = srcX;
-				srcRect.y = srcY;
-				srcRect.width = width;
-				srcRect.height = height;
-				OS.NSIntersectionRect(visibleRect, visibleRect, srcRect);
-
-				if (!OS.NSEqualRects(visibleRect, srcRect)) {
-					if (srcRect.x != visibleRect.x) {
-						damage.x = srcRect.x + deltaX;
-						damage.y = srcRect.y + deltaY;
-						damage.width = visibleRect.x - srcRect.x;
-						damage.height = srcRect.height;
-						view.setNeedsDisplayInRect(damage);
-					}
-					if (visibleRect.x + visibleRect.width != srcRect.x + srcRect.width) {
-						damage.x = srcRect.x + visibleRect.width + deltaX;
-						damage.y = srcRect.y + deltaY;
-						damage.width = srcRect.width - visibleRect.width;
-						damage.height = srcRect.height;
-						view.setNeedsDisplayInRect(damage);
-					}
-					if (visibleRect.y != srcRect.y) {
-						damage.x = visibleRect.x + deltaX;
-						damage.y = srcRect.y + deltaY;
-						damage.width = visibleRect.width;
-						damage.height = visibleRect.y - srcRect.y;
-						view.setNeedsDisplayInRect(damage);
-					}
-					if (visibleRect.y + visibleRect.height != srcRect.y + srcRect.height) {
-						damage.x = visibleRect.x + deltaX;
-						damage.y = visibleRect.y + visibleRect.height + deltaY;
-						damage.width = visibleRect.width;
-						damage.height = srcRect.y + srcRect.height - (visibleRect.y + visibleRect.height);
-						view.setNeedsDisplayInRect(damage);
-					}
-				}
+				/*
+				 * lockFocus on a layer-backed view makes AppKit repaint the siblings too, so
+				 * the pixels are not moved and the union of source and destination is repainted.
+				 */
+				int left = Math.min(srcX, destX), top = Math.min(srcY, destY);
+				int right = Math.max(srcX, destX) + width, bottom = Math.max(srcY, destY) + height;
+				NSRect damage = new NSRect();
+				damage.x = left;
+				damage.y = top;
+				damage.width = right - left;
+				damage.height = bottom - top;
+				view.setNeedsDisplayInRect(damage);
+			} else {
+				NSRect source = new NSRect();
+				source.x = srcX;
+				source.y = srcY;
+				source.width = width;
+				source.height = height;
+				NSSize delta = new NSSize();
+				delta.width = deltaX;
+				delta.height = deltaY;
+				view.lockFocus();
+				view.scrollRect(source, delta);
+				view.unlockFocus();
 			}
 			return;
 		}
@@ -855,26 +811,23 @@ void createLayout () {
 	NSSize size = new NSSize();
 	size.width = OS.MAX_TEXT_CONTAINER_SIZE;
 	size.height = OS.MAX_TEXT_CONTAINER_SIZE;
-	NSTextStorage textStorage = (NSTextStorage)new NSTextStorage().alloc().init();
-	NSLayoutManager layoutManager = (NSLayoutManager)new NSLayoutManager().alloc().init();
-	layoutManager.setBackgroundLayoutEnabled(NSThread.isMainThread());
-	NSTextContainer textContainer = (NSTextContainer)new NSTextContainer().alloc();
-	textContainer = textContainer.initWithContainerSize(size);
-	textContainer.setLineFragmentPadding(0);
-	textStorage.addLayoutManager(layoutManager);
-	layoutManager.addTextContainer(textContainer);
-	layoutManager.release();
-	textContainer.release();
-	data.textContainer = textContainer;
-	data.layoutManager = layoutManager;
-	data.textStorage = textStorage;
+	TextLayout.TextSystem system = new TextLayout.TextSystem(size);
+	data.textContainer = system.textContainer;
+	data.layoutManager = system.layoutManager;
+	data.textStorage = system.textStorage;
 }
 
 NSAttributedString createString(String string, int flags, boolean draw) {
-	NSMutableDictionary dict = ((NSMutableDictionary)new NSMutableDictionary().alloc()).initWithCapacity(5);
 	Font font = data.font;
-	dict.setObject(font.handle, OS.NSFontAttributeName);
-	font.addTraits(dict);
+	NSMutableDictionary dict;
+	if (!draw) {
+		// cached on the font, owned by it and never released here
+		dict = font.getTextAttributes((flags & SWT.DRAW_TAB) == 0 ? device.paragraphStyle : null);
+	} else {
+		dict = ((NSMutableDictionary)new NSMutableDictionary().alloc()).initWithCapacity(5);
+		dict.setObject(font.handle, OS.NSFontAttributeName);
+		font.addTraits(dict);
+	}
 	if (draw) {
 		Pattern pattern = data.foregroundPattern;
 		if (pattern != null) {
@@ -889,7 +842,7 @@ NSAttributedString createString(String string, int flags, boolean draw) {
 			dict.setObject(fg, OS.NSForegroundColorAttributeName);
 		}
 	}
-	if ((flags & SWT.DRAW_TAB) == 0) {
+	if (draw && (flags & SWT.DRAW_TAB) == 0) {
 		dict.setObject(device.paragraphStyle, OS.NSParagraphStyleAttributeName);
 	}
 	int length = string.length();
@@ -922,7 +875,7 @@ NSAttributedString createString(String string, int flags, boolean draw) {
 	}
 	NSString str = ((NSString)new NSString().alloc()).initWithCharacters(chars, length);
 	NSAttributedString attribStr = ((NSAttributedString)new NSAttributedString().alloc()).initWithString(str, dict);
-	dict.release();
+	if (draw) dict.release();
 	str.release();
 	return attribStr;
 }
@@ -1277,9 +1230,6 @@ void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, 
 		srcWidth = destWidth = imgWidth;
 		srcHeight = destHeight = imgHeight;
 	} else {
-		simple = srcX == 0 && srcY == 0 &&
-			srcWidth == destWidth && destWidth == imgWidth &&
-			srcHeight == destHeight && destHeight == imgHeight;
 		if (srcX + srcWidth > imgWidth || srcY + srcHeight > imgHeight) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
@@ -1894,7 +1844,7 @@ private void doFastDrawText(String string, int x, int y) {
 private GCTextData getTextData(String string) {
 	// Create a cache key from the string, alpha, font and foreground color
 	// This ensures that the same string with different attributes is drawn correctly
-	GCTextData.Key key = new GCTextData.Key(string, data.alpha,
+	GCTextData.Key key = GCTextData.Key.of(string, data.alpha,
 			(data.font == null || data.font.handle == null) ? 0 : data.font.handle.id,
 			data.foreground);
 
@@ -4131,9 +4081,9 @@ public void setTextAntialias(int antialias) {
 public void setTransform(Transform transform) {
 	if (handle == null) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	if (transform != null && transform.isDisposed()) SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+	if (data.transform != null) data.transform.release();
+	if (data.inverseTransform != null) data.inverseTransform.release();
 	if (transform != null) {
-		if (data.transform != null) data.transform.release();
-		if (data.inverseTransform != null) data.inverseTransform.release();
 		data.transform = ((NSAffineTransform)new NSAffineTransform().alloc()).initWithTransform(transform.handle);
 		data.inverseTransform = ((NSAffineTransform)new NSAffineTransform().alloc()).initWithTransform(transform.handle);
 		NSAffineTransformStruct struct = data.inverseTransform.transformStruct();

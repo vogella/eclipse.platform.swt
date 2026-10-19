@@ -2458,10 +2458,27 @@ public Color getSystemColor (int id) {
 			pixel = OS.GetSysColor (OS.COLOR_GRADIENTINACTIVECAPTION);
 			if (pixel == 0) pixel = OS.GetSysColor (OS.COLOR_INACTIVECAPTION);
 			break;
+		case SWT.COLOR_WIDGET_ACCENT: pixel = getAccentPixel (); break;
 		default:
 			return super.getSystemColor (id);
 	}
 	return Color.win32_new (this, pixel);
+}
+
+int getAccentPixel () {
+	if (!getHighContrast ()) {
+		String key = "Software\\Microsoft\\Windows\\DWM"; //$NON-NLS-1$
+		/* AccentColor is stored as 0xAABBGGRR, which is a COLORREF with an alpha byte */
+		int [] accent = OS.readRegistryDwords (OS.HKEY_CURRENT_USER, key, "AccentColor"); //$NON-NLS-1$
+		if (accent != null) return accent [0] & 0xFFFFFF;
+		/* ColorizationColor is stored as 0xAARRGGBB */
+		int [] colorization = OS.readRegistryDwords (OS.HKEY_CURRENT_USER, key, "ColorizationColor"); //$NON-NLS-1$
+		if (colorization != null) {
+			int argb = colorization [0];
+			return ((argb >> 16) & 0xFF) | (argb & 0xFF00) | ((argb & 0xFF) << 16);
+		}
+	}
+	return OS.GetSysColor (OS.COLOR_HIGHLIGHT);
 }
 
 /**

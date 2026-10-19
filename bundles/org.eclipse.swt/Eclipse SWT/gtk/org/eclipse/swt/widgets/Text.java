@@ -881,7 +881,8 @@ long eventWindow () {
 @Override
 boolean filterKey (long event) {
 	int time = GDK.gdk_event_get_time (event);
-	if (time != lastEventTime) {
+	// Posted events carry GDK_CURRENT_TIME, so they never differ from lastEventTime and would reach the IM twice
+	if (time != lastEventTime || time == GDK.GDK_CURRENT_TIME) {
 		lastEventTime = time;
 		if (imContext != 0) {
 			if (GTK.GTK4)
@@ -1470,7 +1471,8 @@ public int getTextLimit () {
 	checkWidget ();
 	if ((style & SWT.MULTI) != 0) return LIMIT;
 	int limit = GTK.gtk_entry_get_max_length (handle);
-	return limit == 0 ? 0xFFFF : untranslateOffset (limit);
+	// GTK clamps the entry limit to 0xFFFF, which is also what it reports when no limit is set
+	return limit == 0 || limit >= 0xFFFF ? LIMIT : untranslateOffset (limit);
 }
 
 /**

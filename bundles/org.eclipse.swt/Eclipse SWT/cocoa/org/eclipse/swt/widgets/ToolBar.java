@@ -389,8 +389,7 @@ public Rectangle getBounds () {
 @Override
 boolean forceFocus (NSView focusView) {
 	if (lastFocus != null && lastFocus.setFocus ()) return true;
-	ToolItem [] items = getItems ();
-	for (int i = 0; i < items.length; i++) {
+	for (int i = 0; i < itemCount; i++) {
 		ToolItem item = items [i];
 		if (item.setFocus ()) {
 			lastFocus = item;
@@ -872,9 +871,8 @@ boolean translateTraversal (int key, NSEvent theEvent, boolean[] consume) {
 		if (lastFocus.handleKeyDown()) return false;
 	}
 
-	ToolItem[] items = getItems();
 	ToolItem item = lastFocus;
-	int length = items.length;
+	int length = itemCount;
 	int index = 0;
 	while (index < length) {
 		if (items [index] == item) break;
@@ -890,7 +888,7 @@ boolean translateTraversal (int key, NSEvent theEvent, boolean[] consume) {
 	int start = index, offset = (next) ? 1 : -1;
 	while ((index = (index + offset + length) % length) != start) {
 		ToolItem child = items [index];
-		if (!child.isDisposed ()) {
+		if (child != null && !child.isDisposed ()) {
 			if (child.setFocus ()) {
 				lastFocus = child;
 				return false;

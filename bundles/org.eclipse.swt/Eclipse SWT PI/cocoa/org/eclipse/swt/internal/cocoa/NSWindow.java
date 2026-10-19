@@ -341,16 +341,8 @@ public void setRepresentedFilename(NSString representedFilename) {
 	OS.objc_msgSend(this.id, OS.sel_setRepresentedFilename_, representedFilename != null ? representedFilename.id : 0);
 }
 
-public void setRepresentedURL(NSURL representedURL) {
-	OS.objc_msgSend(this.id, OS.sel_setRepresentedURL_, representedURL != null ? representedURL.id : 0);
-}
-
 public void setShowsResizeIndicator(boolean showsResizeIndicator) {
 	OS.objc_msgSend(this.id, OS.sel_setShowsResizeIndicator_, showsResizeIndicator);
-}
-
-public void setShowsToolbarButton(boolean showsToolbarButton) {
-	OS.objc_msgSend(this.id, OS.sel_setShowsToolbarButton_, showsToolbarButton);
 }
 
 public void setTitle(NSString title) {

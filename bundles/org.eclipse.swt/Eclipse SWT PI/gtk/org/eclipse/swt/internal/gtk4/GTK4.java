@@ -36,18 +36,13 @@ public class GTK4 {
 	public static final int GDK_ACTION_COPY = 1 << 0;
 	public static final int GDK_ACTION_MOVE = 1 << 1;
 	public static final int GDK_ACTION_LINK = 1 << 2;
-	public static final int GDK_ACTION_ASK = 1 << 3;
 
 	public static final int GTK_EVENT_SEQUENCE_NONE = 0;
 	public static final int GTK_EVENT_SEQUENCE_CLAIMED = 1;
-	public static final int GTK_EVENT_SEQUENCE_DENIED = 2;
 
-	public static final int GTK_OVERFLOW_VISIBLE = 0;
 	public static final int GTK_OVERFLOW_HIDDEN = 1;
 
 	public static final int GTK_PICK_DEFAULT = 0;
-	public static final int GTK_PICK_INSENSITIVE = 1;
-	public static final int GTK_PICK_NON_TARGETABLE = 2;
 
 	public static final native boolean GTK_IS_POPOVER_MENU(long obj);
 
@@ -138,8 +133,6 @@ public class GTK4 {
 
 	/* GtkCheckButton */
 	/** @param check_button cast=(GtkCheckButton *) */
-	public static final native void gtk_check_button_set_use_underline(long check_button, boolean use_underline);
-	/** @param check_button cast=(GtkCheckButton *) */
 	public static final native void gtk_check_button_set_inconsistent(long check_button, boolean inconsistent);
 	/**
 	 * @param check_button cast=(GtkCheckButton *)
@@ -151,8 +144,6 @@ public class GTK4 {
 	/** @param check_button cast=(GtkCheckButton *) */
 	public static final native boolean gtk_check_button_get_active(long check_button);
 
-	/** @param editable cast=(GtkEditable *) */
-	public static final native long gtk_editable_get_text(long editable);
 	/** @param editable cast=(GtkEditable *) */
 	public static final native long gtk_editable_get_delegate(long editable);
 	/**
@@ -200,8 +191,6 @@ public class GTK4 {
 	 * @param textures cast=(GList *)
 	 */
 	public static final native void gdk_toplevel_set_icon_list(long toplevel, long textures);
-	/** @param toplevel cast=(GdkToplevel *) */
-	public static final native boolean gdk_toplevel_lower(long toplevel);
 	/** @param surface cast=(GdkToplevel *) */
 	public static final native void gdk_toplevel_focus(long surface, int timestamp);
 
@@ -507,8 +496,6 @@ public class GTK4 {
 	/* GtkWindow */
 	public static final native long gtk_window_new();
 	/** @param window cast=(GtkWindow *) */
-	public static final native void gtk_window_maximize(long window);
-	/** @param window cast=(GtkWindow *) */
 	public static final native void gtk_window_minimize(long window);
 	/** @param window cast=(GtkWindow *) */
 	public static final native void gtk_window_unminimize(long window);
@@ -632,11 +619,6 @@ public class GTK4 {
 	 * @return cast=(GMenuModel *)
 	 */
 	public static final native long gtk_popover_menu_get_menu_model(long popover);
-	/**
-	 * @param popover cast=(GtkPopoverMenu *)
-	 * @param model cast=(GMenuModel *)
-	 */
-	public static final native void gtk_popover_menu_set_menu_model(long popover, long model);
 
 	/* GtkPopover */
 	public static final native long gtk_popover_new();
@@ -680,11 +662,6 @@ public class GTK4 {
 	public static final native void gtk_native_get_surface_transform(long self, double[] x, double[] y);
 
 	/* GtkEntry */
-	/**
-	 * @param entry cast=(GtkEntry *)
-	 * @param buffer cast=(GtkEntryBuffer *)
-	 */
-	public static final native void gtk_entry_set_buffer(long entry, long buffer);
 	/** @param entry cast=(GtkEntryBuffer *) */
 	public static final native long gtk_entry_buffer_get_text(long entry);
 	/** @param entry cast=(GtkEntry *) */
@@ -719,10 +696,6 @@ public class GTK4 {
 	 * @param child cast=(GtkWidget *)
 	 */
 	public static final native void gtk_frame_set_child(long frame, long child);
-
-	/* GtkScrollbar */
-	/** @param scrollbar cast=(GtkScrollbar *) */
-	public static final native long gtk_scrollbar_get_adjustment(long scrollbar);
 
 	/* GtkWidget */
 	/**
@@ -763,11 +736,6 @@ public class GTK4 {
 	public static final native boolean gtk_widget_activate_action(long widget, byte[] name, byte[] format_string);
 	/**
 	 * @param widget cast=(GtkWidget *)
-	 * @param action_name cast=(const char *)
-	 */
-	public static final native void gtk_widget_action_set_enabled(long widget, byte[] action_name, boolean enabled);
-	/**
-	 * @param widget cast=(GtkWidget *)
 	 * @param controller cast=(GtkEventController *)
 	 */
 	public static final native void gtk_widget_add_controller(long widget, long controller);
@@ -786,13 +754,6 @@ public class GTK4 {
 	public static final native long gtk_widget_get_prev_sibling(long widget);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native long gtk_widget_get_root(long widget);
-	/**
-	 * @param widget_class cast=(GtkWidgetClass *)
-	 * @param mods cast=(GdkModifierType)
-	 * @param signal cast=(const char *)
-	 * @param format_string cast=(const char *)
-	 */
-	public static final native void gtk_widget_class_add_binding_signal(long widget_class, int keyval, int mods, byte[] signal, byte[] format_string, boolean arg1, boolean arg2, boolean arg3);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native boolean gtk_widget_get_receives_default(long widget);
 	/**
@@ -807,12 +768,6 @@ public class GTK4 {
 	public static final native void gtk_widget_set_overflow(long widget, int overflow);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native long gtk_widget_get_clipboard(long widget);
-	/**
-	 * @param widget cast=(GtkWidget*)
-	 * @param width cast=(int *)
-	 * @param height cast=(int *)
-	 */
-	public static final native void gtk_widget_get_size_request(long widget, int[] width, int[] height);
 	/**
 	 * @param widget cast=(GtkWidget*)
 	 * @param width cast=(int)
@@ -972,37 +927,7 @@ public class GTK4 {
 	 */
 	public static final native void gtk_tree_view_column_cell_get_size(long tree_column, int[] x_offset, int[] y_offset, int[] width, int[] height);
 
-	/* GdkToplevelSize */
-	/**
-	 * @param size cast=(GdkToplevelSize*)
-	 * @param bounds_width cast=(int *)
-	 * @param bounds_height cast=(int *)
-	 */
-	public static final native void gdk_toplevel_size_get_bounds(long size, int[] bounds_width, int[] bounds_height);
-	/**
-	 * @param size cast=(GdkToplevelSize*)
-	 * @param min_width cast=(int)
-	 * @param min_height cast=(int)
-	 */
-	public static final native void gdk_toplevel_size_set_min_size(long size, int min_width, int min_height);
-	/**
-	 * @param size cast=(GdkToplevelSize*)
-	 * @param width cast=(int)
-	 * @param height cast=(int)
-	 */
-	public static final native void gdk_toplevel_size_set_size(long size, int width, int height);
-
 	/* GdkClipboard */
-	/**
-	 * @param clipboard cast=(GdkClipboard*)
-	 * @param text cast=(const char *)
-	 */
-	public static final native void gdk_clipboard_set_text(long clipboard, byte[] text);
-	/**
-	 * @param clipboard cast=(GdkClipboard*)
-	 * @param type cast=(GType)
-	 */
-	public static final native void gdk_clipboard_set(long clipboard, long type, long data);
 	/**
 	 * @param clipboard cast=(GdkClipboard*)
 	 * @param provider cast=(GdkContentProvider*)
@@ -1012,10 +937,6 @@ public class GTK4 {
 	 * @param clipboard cast=(GdkClipboard*)
 	 */
 	public static final native long gdk_clipboard_get_formats(long clipboard);
-	/**
-	 * @param clipboard cast=(GdkClipboard*)
-	 */
-	public static final native long gdk_clipboard_get_content(long clipboard);
 	/**
 	 * @param clipboard cast=(GdkClipboard*)
 	 * @param type cast=(GType)
@@ -1031,22 +952,6 @@ public class GTK4 {
 	 * @param error cast=(GError **)
 	 */
 	public static final native long gdk_clipboard_read_value_finish(long clipboard, long result, long[] error);
-	/**
-	 * @param clipboard cast=(GdkClipboard*)
-	 * @param mime_types cast=(const char **)
-	 * @param io_priority cast=(int)
-	 * @param cancellable cast=(GCancellable *)
-	 * @param callback cast=(GAsyncReadyCallback)
-	 * @param user_data cast=(gpointer)
-	 */
-	public static final native void gdk_clipboard_read_async(long clipboard, String[] mime_types, int io_priority, long cancellable, long callback, long user_data);
-	/**
-	 * @param clipboard cast=(GdkClipboard*)
-	 * @param result cast=(GAsyncResult *)
-	 * @param out_mime_type cast=(const char**)
-	 * @param error cast=(GError **)
-	 */
-	public static final native long gdk_clipboard_read_finish(long clipboard, long result, long[] out_mime_type, long[] error);
 	/**
 	 * @param clipboard cast=(GdkClipboard*)
 	 */
@@ -1066,16 +971,6 @@ public class GTK4 {
 	 */
 	public static final native boolean gdk_clipboard_store_finish(long clipboard, long result, long[] error);
 	/**
-	 * @param provider cast=(GdkContentProvider *)
-	 * @param value cast=(GValue *)
-	 * @param error cast=(GError **)
-	 */
-	public static final native boolean gdk_content_provider_get_value(long provider, long value, long[] error);
-	/**
-	 * @param type cast=(GType)
-	 */
-	public static final native long gdk_content_provider_new_typed(long type, long data);
-	/**
 	 * @param value cast=(const GValue*)
 	 */
 	public static final native long gdk_content_provider_new_for_value(long value);
@@ -1084,8 +979,6 @@ public class GTK4 {
 	 * @param n_providers cast=(gsize)
 	 */
 	public static final native long gdk_content_provider_new_union(long[] providers, int n_providers);
-	/** @param formats cast=(GdkContentFormats *) */
-	public static final native long gdk_content_formats_to_string(long formats);
 	/**
 	 * @param formats cast=(GdkContentFormats *)
 	 * @param n_gtypes cast=(gsize *)
@@ -1127,14 +1020,6 @@ public class GTK4 {
 	/**
 	 * @param serializer cast=(GdkContentSerializer*)
 	 */
-	public static final native long gdk_content_serializer_get_task_data(long serializer);
-	/**
-	 * @param serializer cast=(GdkContentSerializer*)
-	 */
-	public static final native long gdk_content_serializer_get_user_data(long serializer);
-	/**
-	 * @param serializer cast=(GdkContentSerializer*)
-	 */
 	public static final native long gdk_content_serializer_get_value(long serializer);
 	/**
 	 * @param serializer cast=(GdkContentSerializer*)
@@ -1145,12 +1030,6 @@ public class GTK4 {
 	 * @param serializer cast=(GdkContentSerializer*)
 	 */
 	public static final native void gdk_content_serializer_return_success(long serializer);
-	/**
-	 * @param serializer cast=(GdkContentSerializer*)
-	 * @param data cast=(gpointer)
-	 * @param notify cast=(GDestroyNotify)
-	 */
-	public static final native void gdk_content_serializer_set_task_data(long serializer, long data, long notify);
 	/**
 	 * @param mime_type cast=(const char*)
 	 * @param type cast=(GType)
@@ -1182,14 +1061,6 @@ public class GTK4 {
 	/**
 	 * @param deserializer cast=(GdkContentDeserializer*)
 	 */
-	public static final native long gdk_content_deserializer_get_task_data(long deserializer);
-	/**
-	 * @param deserializer cast=(GdkContentDeserializer*)
-	 */
-	public static final native long gdk_content_deserializer_get_user_data(long deserializer);
-	/**
-	 * @param deserializer cast=(GdkContentDeserializer*)
-	 */
 	public static final native long gdk_content_deserializer_get_value(long deserializer);
 	/**
 	 * @param deserializer cast=(GdkContentDeserializer*)
@@ -1200,13 +1071,6 @@ public class GTK4 {
 	 * @param deserializer cast=(GdkContentDeserializer*)
 	 */
 	public static final native void gdk_content_deserializer_return_success(long deserializer);
-	/**
-	 * @param deserializer cast=(GdkContentDeserializer*)
-	 * @param data cast=(gpointer)
-	 * @param notify cast=(GDestroyNotify)
-	 */
-	public static final native void gdk_content_deserializer_set_task_data(long deserializer, long data, long notify);
-
 
 	public static final native long gtk_gesture_rotate_new();
 

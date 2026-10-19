@@ -31,12 +31,4 @@ public int wheelDelta() {
 	return (int)OS.objc_msgSend(this.id, OS.sel_wheelDelta);
 }
 
-public int wheelDeltaX() {
-	return (int)OS.objc_msgSend(this.id, OS.sel_wheelDeltaX);
-}
-
-public int wheelDeltaY() {
-	return (int)OS.objc_msgSend(this.id, OS.sel_wheelDeltaY);
-}
-
 }

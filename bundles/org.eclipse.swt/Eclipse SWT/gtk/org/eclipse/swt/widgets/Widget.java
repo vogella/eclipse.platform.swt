@@ -246,6 +246,7 @@ public abstract class Widget {
 	static final int NOTIFY_MAXIMIZED = 107;
 	static final int COMPUTE_SIZE = 108;
 	static final int LAST_SIGNAL = 109;
+	static final int NOTIFY_FOCUS = 1000;
 
 	static final String IS_ACTIVE = "org.eclipse.swt.internal.control.isactive"; //$NON-NLS-1$
 	static final String KEY_CHECK_SUBWINDOW = "org.eclipse.swt.internal.control.checksubwindow"; //$NON-NLS-1$
@@ -2031,6 +2032,10 @@ boolean setInputState (Event event, int state) {
 	return true;
 }
 
+/** The shifted and unshifted ASCII punctuation of a US layout, the best GTK4 offers without a keymap. */
+private static final String SHIFTED_ASCII = "!@#$%^&*()_+{}|:\"<>?~";
+private static final String UNSHIFTED_ASCII = "1234567890-=[]\\;',./`";
+
 /**
  * On Linux, the most common way to handle keyboard input is XKB.
  * The rest of the description explains XKB and related GTK stuff.
@@ -2162,8 +2167,14 @@ boolean setKeyState (Event javaEvent, long event) {
 
 				short [] keyCode = new short [1];
 				if (GTK.GTK4) {
-					keyval[0] = (short) GDK.gdk_key_event_get_keyval(event);
-					javaEvent.keyCode = (int) GDK.gdk_keyval_to_unicode (keyval [0]);
+					// GTK3 asks the keymap for the unshifted key, GTK4 has no such call, so the keyval is unshifted by hand
+					keyval[0] = (int) GDK.gdk_keyval_to_lower (GDK.gdk_key_event_get_keyval(event));
+					int unshifted = (int) GDK.gdk_keyval_to_unicode (keyval [0]);
+					if ((eventState[0] & GDK.GDK_SHIFT_MASK) != 0) {
+						int index = SHIFTED_ASCII.indexOf(unshifted);
+						if (index >= 0) unshifted = UNSHIFTED_ASCII.charAt(index);
+					}
+					javaEvent.keyCode = unshifted;
 				} else {
 					GDK.gdk_event_get_keycode(event, keyCode);
 					if (GDK.gdk_keymap_translate_keyboard_state (keymap, keyCode[0],

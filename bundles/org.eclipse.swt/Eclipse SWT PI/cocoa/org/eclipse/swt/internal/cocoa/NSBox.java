@@ -62,10 +62,6 @@ public void setContentViewMargins(NSSize contentViewMargins) {
 	OS.objc_msgSend(this.id, OS.sel_setContentViewMargins_, contentViewMargins);
 }
 
-public void setFillColor(NSColor fillColor) {
-	OS.objc_msgSend(this.id, OS.sel_setFillColor_, fillColor != null ? fillColor.id : 0);
-}
-
 public void setFrameFromContentFrame(NSRect contentFrame) {
 	OS.objc_msgSend(this.id, OS.sel_setFrameFromContentFrame_, contentFrame);
 }

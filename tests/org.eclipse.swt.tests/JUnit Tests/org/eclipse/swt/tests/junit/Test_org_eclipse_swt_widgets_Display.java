@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
@@ -35,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.DeviceData;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
@@ -451,10 +453,9 @@ public void test_getShells() {
 }
 
 @Test
-public void test_getSyncThread() {
+public void test_getSyncThread() throws InterruptedException {
 	final Display display = new Display();
 	try {
-		final boolean[] threadRan = new boolean[] {false};
 		Thread nonUIThread = new Thread(() -> {
 			// Assume no syncExec runnable is currently being invoked.
 			assertNull(display.getSyncThread());
@@ -478,14 +479,9 @@ public void test_getSyncThread() {
 				}
 			} catch (InterruptedException ex) {
 			}
-			threadRan[0] = true;
-			display.wake();
 		});
 		nonUIThread.start();
-
-		while (!threadRan[0]) {
-			if (!display.readAndDispatch()) display.sleep ();
-		}
+		dispatchUntilTerminated(display, nonUIThread);
 	} finally {
 		display.dispose();
 	}
@@ -501,11 +497,23 @@ public void test_getSystemColorI() {
 			SWT.COLOR_WIDGET_BACKGROUND, SWT.COLOR_WIDGET_BORDER,
 			SWT.COLOR_WIDGET_FOREGROUND, SWT.COLOR_LIST_FOREGROUND,
 			SWT.COLOR_LIST_BACKGROUND, SWT.COLOR_LIST_SELECTION,
-			SWT.COLOR_LIST_SELECTION_TEXT,
+			SWT.COLOR_LIST_SELECTION_TEXT, SWT.COLOR_WIDGET_ACCENT,
 		};
 		for (int colorId : colorIds) {
 			assertNotNull(display.getSystemColor(colorId));
 		}
+	} finally {
+		display.dispose();
+	}
+}
+
+@Test
+public void test_getSystemColor_widgetAccent() {
+	Display display = new Display();
+	try {
+		Color accent = display.getSystemColor(SWT.COLOR_WIDGET_ACCENT);
+		assertNotNull(accent);
+		assertFalse(accent.isDisposed());
 	} finally {
 		display.dispose();
 	}
@@ -1225,7 +1233,7 @@ public void test_setCursorLocationII(TestInfo info) {
 				Screenshots.takeScreenshot(getClass(), info.getDisplayName()); // Bug 528968 This call causes crash on Wayland.
 				fail("\nExpected:"+location.toString()+"  Actual:"+actual.toString());
 			}
-		} else {
+		} else if (SwtTestUtil.verbose) {
 			System.out.println(getClass().getName() + "#" + info.getDisplayName() + ": actual == " + actual);
 		}
 
@@ -1256,7 +1264,7 @@ public void test_setCursorLocationLorg_eclipse_swt_graphics_Point(TestInfo info)
 				Screenshots.takeScreenshot(getClass(), info.getDisplayName()); // Bug 528968 This call causes crash on Wayland.
 				fail("\nExpected:"+location.toString()+"  Actual:"+actual.toString());
 			}
-		} else {
+		} else if (SwtTestUtil.verbose) {
 			System.out.println(getClass().getName() + "#" + info.getDisplayName() + ": actual == " + actual);
 		}
 	} finally {
@@ -1348,7 +1356,7 @@ public void test_setSynchronizerLorg_eclipse_swt_widgets_Synchronizer() {
  */
 @Tag("gtk4-todo")
 @Test
-public void test_sleep() {
+public void test_sleep() throws InterruptedException {
 	final Display display = new Display();
 	try {
 		Thread thread;
@@ -1372,6 +1380,9 @@ public void test_sleep() {
 		// Note that sleep seems to always return true, at least
 		// on Windows, since wake() uses a null event.
 		eventQueued = display.sleep();
+		// sleep() may return early for other events, make sure the thread
+		// is done before continuing, otherwise it outlives the display
+		dispatchUntilTerminated(display, thread);
 
 		// Ensure event queue is empty, otherwise sleep() will just return.
 		while(display.readAndDispatch()) {}
@@ -1393,9 +1404,18 @@ public void test_sleep() {
 		};
 		thread.start();
 		eventQueued = display.sleep();
+		dispatchUntilTerminated(display, thread);
 		assertTrue(eventQueued);
 	} finally {
 		display.dispose();
+	}
+}
+
+private static void dispatchUntilTerminated(Display display, Thread thread) throws InterruptedException {
+	while (thread.isAlive()) {
+		if (!display.readAndDispatch()) {
+			thread.join(10);
+		}
 	}
 }
 
@@ -1636,7 +1656,32 @@ public void test_setWarningsZ() {
 
 @Test
 public void test_isSystemDarkTheme() {
-	System.out.println("org.eclipse.swt.widgets.Display.isSystemDarkTheme(): " + Display.isSystemDarkTheme());
+	boolean isDarkTheme = Display.isSystemDarkTheme();
+	if (SwtTestUtil.verbose) {
+		System.out.println("org.eclipse.swt.widgets.Display.isSystemDarkTheme(): " + isDarkTheme);
+	}
 }
 
+
+@Test
+public void test_setDarkThemePreferredChangesSystemColorsOnGtk4() {
+	Display display = new Display();
+	try {
+		assumeTrue(SwtTestUtil.isGTK4(), "GTK4 only");
+		int before = brightness(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+		display.setDarkThemePreferred(true);
+		SwtTestUtil.processEvents(3000, () -> brightness(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND)) < before);
+		assertTrue(brightness(display.getSystemColor(SWT.COLOR_LIST_BACKGROUND)) < before,
+				"COLOR_LIST_BACKGROUND must get darker");
+		display.setDarkThemePreferred(false);
+	} catch (InterruptedException e) {
+		Thread.currentThread().interrupt();
+	} finally {
+		display.dispose();
+	}
+}
+
+private static int brightness(Color color) {
+	return color.getRed() + color.getGreen() + color.getBlue();
+}
 }

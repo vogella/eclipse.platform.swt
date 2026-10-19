@@ -131,10 +131,6 @@ public void setTextStorage(NSTextStorage textStorage) {
 	OS.objc_msgSend(this.id, OS.sel_setTextStorage_, textStorage != null ? textStorage.id : 0);
 }
 
-public void setUsesScreenFonts(boolean usesScreenFonts) {
-	OS.objc_msgSend(this.id, OS.sel_setUsesScreenFonts_, usesScreenFonts);
-}
-
 public NSTypesetter typesetter() {
 	long result = OS.objc_msgSend(this.id, OS.sel_typesetter);
 	return result != 0 ? new NSTypesetter(result) : null;

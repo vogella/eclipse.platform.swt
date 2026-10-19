@@ -50,13 +50,12 @@ import org.eclipse.swt.internal.win32.version.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Button extends Control {
-	String text = "", message = "";
+	String text = "";
 	Image image, disabledImage;
 	ImageList imageList;
 	boolean ignoreMouse, grayed, useDarkModeExplorerTheme;
 	static final int MARGIN = 4;
 	private int checkWidth, checkHeight;
-	static final int ICON_WIDTH = 128, ICON_HEIGHT = 128;
 	static /*final*/ boolean COMMAND_LINK = false;
 	static final char[] STRING_WITH_ZERO_CHAR = new char[] {'0'};
 	static final long ButtonProc;
@@ -561,25 +560,6 @@ public Image getImage () {
 	return image;
 }
 
-/**
- * Returns the widget message. When the widget is created
- * with the style <code>SWT.COMMAND</code>, the message text
- * is displayed to provide further information for the user.
- *
- * @return the widget message
- *
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @since 3.3
- */
-/*public*/ String getMessage () {
-	checkWidget ();
-	return message;
-}
-
 @Override
 String getNameText () {
 	return getText ();
@@ -861,35 +841,6 @@ public void setGrayed (boolean grayed) {
 		if (flags == OS.BST_CHECKED) updateSelection (OS.BST_INDETERMINATE);
 	} else {
 		if (flags == OS.BST_INDETERMINATE) updateSelection (OS.BST_CHECKED);
-	}
-}
-
-/**
- * Sets the widget message. When the widget is created
- * with the style <code>SWT.COMMAND</code>, the message text
- * is displayed to provide further information for the user.
- *
- * @param message the new message
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the string is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @since 3.3
- */
-/*public*/ void setMessage (String message) {
-	checkWidget ();
-	if (message == null) error (SWT.ERROR_NULL_ARGUMENT);
-	this.message = message;
-	if ((style & SWT.COMMAND) != 0) {
-		int length = message.length ();
-		char [] chars = new char [length + 1];
-		message.getChars(0, length, chars, 0);
-		OS.SendMessage (handle, OS.BCM_SETNOTE, 0, chars);
 	}
 }
 

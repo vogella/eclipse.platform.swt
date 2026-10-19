@@ -40,7 +40,7 @@ public class TreeItem extends Item {
 	Tree parent;
 	TreeItem parentItem;
 	TreeItem[] items;
-	int itemCount;
+	int itemCount, lastIndexOf;
 	String [] strings;
 	Image [] images;
 	boolean checked, grayed, cached, expanded;
@@ -238,8 +238,6 @@ int calculateWidth (int index, GC gc) {
 	NSSize size = new NSSize();
 	OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
 	if (image != null) size.width += parent.imageBounds.width + Tree.IMAGE_GAP;
-//	cell.setImage (image != null ? image.handle : null);
-//	NSSize size = cell.cellSize ();
 
 	int width = (int)Math.ceil (size.width);
 	width += Tree.TEXT_GAP; // To fix truncation
@@ -364,13 +362,6 @@ void dealloc (long id, long sel) {
 }
 
 @Override
-void deregister () {
-	super.deregister ();
-	//This is done in #dealloc
-//	display.removeWidget (handle);
-}
-
-@Override
 void destroyJNIRef () {
 	//Do nothing - see #dealloc
 }
@@ -472,7 +463,6 @@ public Rectangle getBounds () {
 	super_struct.super_class = OS.objc_msgSend(cell.id, OS.sel_superclass);
 	NSSize size = new NSSize();
 	OS.objc_msgSendSuper_stret(size, super_struct, OS.sel_cellSize);
-//	NSSize size = cell.cellSize ();
 	NSRect columnRect = widget.rectOfColumn (columnIndex);
 	size.width = Math.min (size.width, columnRect.width - (titleRect.x - columnRect.x));
 	return new Rectangle ((int)titleRect.x, (int)titleRect.y, (int)Math.ceil (size.width), (int)Math.ceil (titleRect.height));
@@ -922,8 +912,19 @@ public int indexOf (TreeItem item) {
 	if (item == null) error (SWT.ERROR_NULL_ARGUMENT);
 	if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
 	if (item.parentItem != this) return -1;
-	for (int i = 0; i < itemCount; i++) {
-		if (item == items [i]) return i;
+	if (1 <= lastIndexOf && lastIndexOf < itemCount - 1) {
+		if (items [lastIndexOf] == item) return lastIndexOf;
+		if (items [lastIndexOf + 1] == item) return ++lastIndexOf;
+		if (items [lastIndexOf - 1] == item) return --lastIndexOf;
+	}
+	if (lastIndexOf < itemCount / 2) {
+		for (int i = 0; i < itemCount; i++) {
+			if (items [i] == item) return lastIndexOf = i;
+		}
+	} else {
+		for (int i = itemCount - 1; i >= 0; --i) {
+			if (items [i] == item) return lastIndexOf = i;
+		}
 	}
 	return -1;
 }

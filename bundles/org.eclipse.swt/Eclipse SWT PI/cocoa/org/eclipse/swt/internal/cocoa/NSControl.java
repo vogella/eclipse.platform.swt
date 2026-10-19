@@ -102,10 +102,6 @@ public void setFont(NSFont font) {
 	OS.objc_msgSend(this.id, OS.sel_setFont_, font != null ? font.id : 0);
 }
 
-public void setFormatter(NSFormatter formatter) {
-	OS.objc_msgSend(this.id, OS.sel_setFormatter_, formatter != null ? formatter.id : 0);
-}
-
 public void setStringValue(NSString stringValue) {
 	OS.objc_msgSend(this.id, OS.sel_setStringValue_, stringValue != null ? stringValue.id : 0);
 }

@@ -58,10 +58,6 @@ public void setHeaderCell(NSTableHeaderCell headerCell) {
 	OS.objc_msgSend(this.id, OS.sel_setHeaderCell_, headerCell != null ? headerCell.id : 0);
 }
 
-public void setIdentifier(NSString identifier) {
-	OS.objc_msgSend(this.id, OS.sel_setIdentifier_, identifier != null ? identifier.id : 0);
-}
-
 public void setMinWidth(double minWidth) {
 	OS.objc_msgSend(this.id, OS.sel_setMinWidth_, minWidth);
 }

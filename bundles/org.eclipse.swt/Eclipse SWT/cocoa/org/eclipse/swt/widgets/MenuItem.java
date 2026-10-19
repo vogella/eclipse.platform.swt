@@ -404,8 +404,6 @@ int keyChar (int key) {
 		case SWT.ESC: return SWT.ESC;
 		case SWT.LF: return OS.NSNewlineCharacter;
 		case SWT.TAB: return OS.NSTabCharacter;
-//		case ' ': return OS.kMenuBlankGlyph;
-//		case ' ': return OS.kMenuSpaceGlyph;
 		case SWT.ALT: return 0x2325;
 		case SWT.SHIFT: return 0x21E7;
 		case SWT.CONTROL: return 0xF2303;
@@ -420,7 +418,6 @@ int keyChar (int key) {
 		case SWT.HELP: return OS.NSHelpFunctionKey;
 		case SWT.HOME: return 0xF729;
 		case SWT.END: return 0xF72B;
-//		case SWT.CAPS_LOCK: return ??;
 		case SWT.F1: return 0xF704;
 		case SWT.F2: return 0xF705;
 		case SWT.F3: return 0xF706;
@@ -436,10 +433,6 @@ int keyChar (int key) {
 		case SWT.F13: return 0xF710;
 		case SWT.F14: return 0xF711;
 		case SWT.F15: return 0xF712;
-		/*
-		* The following lines are intentionally commented.
-		*/
-//		case SWT.INSERT: return ??;
 	}
 	return 0;
 }

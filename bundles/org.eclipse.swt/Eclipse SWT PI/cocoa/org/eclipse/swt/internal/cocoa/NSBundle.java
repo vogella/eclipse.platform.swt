@@ -41,11 +41,6 @@ public NSString bundlePath() {
 	return result != 0 ? new NSString(result) : null;
 }
 
-public static NSBundle bundleWithIdentifier(NSString identifier) {
-	long result = OS.objc_msgSend(OS.class_NSBundle, OS.sel_bundleWithIdentifier_, identifier != null ? identifier.id : 0);
-	return result != 0 ? new NSBundle(result) : null;
-}
-
 public static NSBundle bundleWithPath(NSString path) {
 	long result = OS.objc_msgSend(OS.class_NSBundle, OS.sel_bundleWithPath_, path != null ? path.id : 0);
 	return result != 0 ? new NSBundle(result) : null;

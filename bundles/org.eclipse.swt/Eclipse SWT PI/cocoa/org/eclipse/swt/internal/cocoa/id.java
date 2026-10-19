@@ -41,11 +41,26 @@ public boolean equals(Object other) {
 	return (this.id == ((id)other).id);
 }
 
-public long objc_getClass() {
-	String name = getClass().getName();
+private static final ClassValue<Long> OBJC_CLASSES = new ClassValue<>() {
+	@Override
+	protected Long computeValue(Class<?> type) {
+		return Long.valueOf(lookupObjcClass(type));
+	}
+};
+
+private static long lookupObjcClass(Class<?> type) {
+	String name = type.getName();
 	int index = name.lastIndexOf('.');
 	if (index != -1) name = name.substring(index + 1);
 	return OS.objc_getClass(name);
+}
+
+public long objc_getClass() {
+	Class<?> type = getClass();
+	long cls = OBJC_CLASSES.get(type).longValue();
+	// do not keep a failed lookup, the Objective-C class might be registered later
+	if (cls == 0) OBJC_CLASSES.remove(type);
+	return cls;
 }
 
 @Override

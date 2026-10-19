@@ -75,6 +75,11 @@ public static NSColor colorWithPatternImage(NSImage image) {
 	return result != 0 ? new NSColor(result) : null;
 }
 
+public static NSColor controlAccentColor() {
+	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlAccentColor);
+	return result != 0 ? new NSColor(result) : null;
+}
+
 public static NSColor controlBackgroundColor() {
 	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlBackgroundColor);
 	return result != 0 ? new NSColor(result) : null;
@@ -85,18 +90,8 @@ public static NSColor controlDarkShadowColor() {
 	return result != 0 ? new NSColor(result) : null;
 }
 
-public static NSColor controlHighlightColor() {
-	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlHighlightColor);
-	return result != 0 ? new NSColor(result) : null;
-}
-
 public static NSColor controlLightHighlightColor() {
 	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlLightHighlightColor);
-	return result != 0 ? new NSColor(result) : null;
-}
-
-public static NSColor controlShadowColor() {
-	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_controlShadowColor);
 	return result != 0 ? new NSColor(result) : null;
 }
 
@@ -171,6 +166,10 @@ public static NSColor textBackgroundColor() {
 public static NSColor textColor() {
 	long result = OS.objc_msgSend(OS.class_NSColor, OS.sel_textColor);
 	return result != 0 ? new NSColor(result) : null;
+}
+
+public long type() {
+	return OS.objc_msgSend(this.id, OS.sel_type);
 }
 
 public static NSColor windowBackgroundColor() {

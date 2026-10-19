@@ -149,6 +149,8 @@ public class Display extends Device implements Executor {
 	double untargetableMenuRowX, untargetableMenuRowY;
 	boolean untargetableMenuRowSeen;
 	long notifyProc;
+	/** GTK4 only: composites that follow is-focus of their focus controller. */
+	final java.util.Map<Long, Composite> focusNotifyControllers = new java.util.HashMap<>();
 	long computeSizeProc;
 	Callback windowCallback2, windowCallback3, windowCallback4, windowCallback5, windowCallback6;
 	Callback changeValue;
@@ -199,6 +201,9 @@ public class Display extends Device implements Executor {
 	Shell activeShell;
 	boolean activePending;
 	boolean ignoreFocus;
+	/* GTK4 drops a focus change made while another one is being delivered, so it is replayed afterwards */
+	boolean gtk4Focusing;
+	long gtk4PendingFocus;
 
 	Tracker tracker;
 
@@ -341,7 +346,7 @@ public class Display extends Device implements Executor {
 	GdkRGBA COLOR_INFO_BACKGROUND_RGBA, COLOR_INFO_FOREGROUND_RGBA, COLOR_LINK_FOREGROUND_RGBA;
 	GdkRGBA COLOR_TITLE_FOREGROUND_RGBA, COLOR_TITLE_BACKGROUND_RGBA, COLOR_TITLE_BACKGROUND_GRADIENT_RGBA;
 	GdkRGBA COLOR_TITLE_INACTIVE_FOREGROUND_RGBA, COLOR_TITLE_INACTIVE_BACKGROUND_RGBA, COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT_RGBA;
-	GdkRGBA COLOR_WIDGET_DISABLED_FOREGROUND_RGBA, COLOR_TEXT_DISABLED_BACKGROUND_RGBA;
+	GdkRGBA COLOR_WIDGET_DISABLED_FOREGROUND_RGBA, COLOR_TEXT_DISABLED_BACKGROUND_RGBA, COLOR_WIDGET_ACCENT_RGBA;
 	GdkRGBA COLOR_TOGGLE_BUTTON_FOREGROUND_RGBA;
 
 	/* Initialize color list */
@@ -580,6 +585,28 @@ public class Display extends Device implements Executor {
 	}
 
 	boolean ignoreTrim;
+
+	/* The stored trims are only a start hint, so each measured value is written back at once */
+	void saveTrims () {
+		String userHome = System.getProperty ("user.home"); //$NON-NLS-1$
+		if (userHome == null) return;
+		File dir = new File (userHome, ".swt");
+		if ((dir.exists () && dir.isDirectory ()) || dir.mkdirs ()) {
+			File file = new File (dir, "trims.prefs");
+			Properties props = new Properties ();
+			StringBuilder buf = new StringBuilder ();
+			for (int w : trimWidths) buf.append (w).append (' ');
+			props.put ("trimWidths", buf.toString ());
+			buf = new StringBuilder();
+			for (int h : trimHeights) buf.append (h).append (' ');
+			props.put ("trimHeights", buf.toString ());
+			try (FileOutputStream fos = new FileOutputStream (file)){
+				props.store (fos, null);
+			} catch (IOException e) {
+				// skip saving trim caches
+			}
+		}
+	}
 
 	/*
 	* TEMPORARY CODE.  Install the runnable that
@@ -2263,7 +2290,7 @@ String gtk_css_create_css_color_string (String background, String foreground, in
 GdkRGBA gtk_css_parse_background (String css, String precise) {
 	String shortOutput;
 	int startIndex;
-	GdkRGBA rgba = new GdkRGBA ();
+	GdkRGBA rgba = null;
 	if (css.isEmpty()) return COLOR_WIDGET_BACKGROUND_RGBA;
 	String searched = "";
 	/*
@@ -2299,7 +2326,7 @@ GdkRGBA gtk_css_parse_background (String css, String precise) {
 		shortOutput = searched.substring (startIndex + 13);
 		rgba = gtk_css_property_to_rgba (shortOutput);
 	}
-	return rgba;
+	return rgba != null ? rgba : new GdkRGBA ();
 }
 
 String gtk_css_provider_to_string (long provider) {
@@ -2333,7 +2360,7 @@ String gtk_css_provider_to_string (long provider) {
  */
 GdkRGBA gtk_css_parse_foreground (String css, String precise) {
 	if (css.isEmpty()) return COLOR_WIDGET_FOREGROUND_RGBA;
-	GdkRGBA rgba = new GdkRGBA ();
+	GdkRGBA rgba;
 	String searched = "";
 	/*
 	 * This section allows for finer searching: for example
@@ -2388,10 +2415,9 @@ GdkRGBA gtk_css_parse_foreground (String css, String precise) {
  */
 GdkRGBA gtk_css_property_to_rgba(String property) {
 	GdkRGBA rgba = new GdkRGBA ();
-	String [] propertyParsed = new String [1];
-	//Note that we still need to remove the ";" character from the input string
-	propertyParsed = property.split (";");
-	GDK.gdk_rgba_parse (rgba, Converter.wcsToMbcs (propertyParsed[0], true));
+	// Strip the ";" and anything after it
+	int end = property.indexOf (';');
+	GDK.gdk_rgba_parse (rgba, Converter.wcsToMbcs (end >= 0 ? property.substring (0, end) : property, true));
 	return rgba;
 }
 
@@ -3019,6 +3045,7 @@ public Color getSystemColor (int id) {
 	case SWT.COLOR_LIST_SELECTION_TEXT: 				gdkRGBA = copyRGBA(COLOR_LIST_SELECTION_TEXT_RGBA); break;
 	case SWT.COLOR_WIDGET_DISABLED_FOREGROUND:			gdkRGBA = copyRGBA(COLOR_WIDGET_DISABLED_FOREGROUND_RGBA); break;
 	case SWT.COLOR_TEXT_DISABLED_BACKGROUND:			gdkRGBA = copyRGBA(COLOR_TEXT_DISABLED_BACKGROUND_RGBA); break;
+	case SWT.COLOR_WIDGET_ACCENT:						gdkRGBA = copyRGBA(COLOR_WIDGET_ACCENT_RGBA); break;
 	default:
 		return super.getSystemColor (id);
 	}
@@ -3331,6 +3358,7 @@ void initializeSystemColors () {
 	initializeSystemColorsTooltip();
 	initializeSystemColorsToggleButton();
 	initializeSystemColorsDisabled();
+	initializeSystemColorsAccent(shellContext);
 
 	COLOR_TITLE_FOREGROUND_RGBA = COLOR_LIST_SELECTION_TEXT_RGBA;
 	COLOR_TITLE_BACKGROUND_RGBA = COLOR_LIST_SELECTION_RGBA;
@@ -3371,6 +3399,19 @@ void initializeSystemColorsList(long shellContext) {
 
 	// Revert temporary styles
 	GTK.gtk_style_context_restore (shellContext);
+}
+
+/** Uses the named accent color of the theme, the list selection color if the theme defines none. */
+void initializeSystemColorsAccent(long shellContext) {
+	GdkRGBA accent = new GdkRGBA ();
+	byte [] accentBgColor = Converter.wcsToMbcs ("accent_bg_color", true); //$NON-NLS-1$
+	byte [] accentColor = Converter.wcsToMbcs ("accent_color", true); //$NON-NLS-1$
+	if (GTK.gtk_style_context_lookup_color (shellContext, accentBgColor, accent)
+			|| GTK.gtk_style_context_lookup_color (shellContext, accentColor, accent)) {
+		COLOR_WIDGET_ACCENT_RGBA = accent;
+	} else {
+		COLOR_WIDGET_ACCENT_RGBA = COLOR_LIST_SELECTION_RGBA;
+	}
 }
 
 void initializeSystemColorsTitle(long shellContext) {
@@ -4504,6 +4545,39 @@ public boolean post (Event event) {
 				}
 				return true;
 			}
+			case SWT.MouseWheel: {
+				// GdkEventScroll has no Java struct; the offsets below are the 64-bit layout
+				final int GDK_SCROLL_EVENT = 31; // GdkEventType GDK_SCROLL, not exposed by GDK.java
+				if (C.PTR_SIZEOF != 8 || event.count == 0) return false;
+				int[] x = new int[1], y = new int[1];
+				final long gdkPointerDevice = GDK.gdk_seat_get_pointer(gdkSeat);
+				final long gdkWindow = GDK.gdk_device_get_window_at_position(gdkPointerDevice, x, y);
+				if (gdkWindow == 0) return false;
+				int[] originX = new int[1], originY = new int[1];
+				GDK.gdk_window_get_origin(gdkWindow, originX, originY);
+
+				/* Construct one GdkEventScroll per click */
+				for (int i = 0; i < Math.abs(event.count); i++) {
+					final long eventPtr = GDK.gdk_event_new(GDK_SCROLL_EVENT);
+					OS.g_object_ref(gdkWindow);
+					java.nio.ByteBuffer scroll = java.nio.ByteBuffer.allocate(72).order(java.nio.ByteOrder.nativeOrder());
+					scroll.putInt(0, GDK_SCROLL_EVENT);
+					scroll.putLong(8, gdkWindow);
+					scroll.put(16, (byte) 1);
+					scroll.putInt(20, GDK.GDK_CURRENT_TIME);
+					scroll.putDouble(24, x[0]);
+					scroll.putDouble(32, y[0]);
+					scroll.putInt(44, event.count > 0 ? GDK.GDK_SCROLL_UP : GDK.GDK_SCROLL_DOWN);
+					scroll.putDouble(56, originX[0] + x[0]);
+					scroll.putDouble(64, originY[0] + y[0]);
+					C.memmove(eventPtr, scroll.array(), scroll.capacity());
+					GDK.gdk_event_set_device(eventPtr, gdkPointerDevice);
+
+					GDK.gdk_event_put(eventPtr);
+					GDK.gdk_event_free(eventPtr);
+				}
+				return true;
+			}
 		}
 		return false;
 	}
@@ -4877,7 +4951,7 @@ void releaseDisplay () {
 	COLOR_WIDGET_FOREGROUND_RGBA = COLOR_TITLE_FOREGROUND_RGBA = COLOR_TITLE_BACKGROUND_RGBA = COLOR_TITLE_BACKGROUND_GRADIENT_RGBA =
 	COLOR_TITLE_INACTIVE_FOREGROUND_RGBA = COLOR_TITLE_INACTIVE_BACKGROUND_RGBA = COLOR_TITLE_INACTIVE_BACKGROUND_GRADIENT_RGBA =
 	COLOR_INFO_BACKGROUND_RGBA = COLOR_INFO_FOREGROUND_RGBA = COLOR_LINK_FOREGROUND_RGBA = COLOR_WIDGET_DISABLED_FOREGROUND_RGBA =
-	COLOR_TEXT_DISABLED_BACKGROUND_RGBA = null;
+	COLOR_TEXT_DISABLED_BACKGROUND_RGBA = COLOR_WIDGET_ACCENT_RGBA = null;
 	COLOR_TOGGLE_BUTTON_FOREGROUND_RGBA = null;
 
 	/* Dispose the event callback */
@@ -4956,27 +5030,6 @@ void releaseDisplay () {
 	flushRect = null;
 	exposeEvent = null;
 	idleLock = null;
-
-	/* Save window trim caches */
-	String userHome = System.getProperty ("user.home"); //$NON-NLS-1$
-	if (userHome != null) {
-		File dir = new File (userHome, ".swt");
-		if ((dir.exists () && dir.isDirectory ()) || dir.mkdirs ()) {
-			File file = new File (dir, "trims.prefs");
-			Properties props = new Properties ();
-			StringBuilder buf = new StringBuilder ();
-			for (int w : trimWidths) buf.append (w).append (' ');
-			props.put ("trimWidths", buf.toString ());
-			buf = new StringBuilder();
-			for (int h : trimHeights) buf.append (h).append (' ');
-			props.put ("trimHeights", buf.toString ());
-			try (FileOutputStream fos = new FileOutputStream (file)){
-				props.store (fos, null);
-			} catch (IOException e) {
-				// skip saving trim caches
-			}
-		}
-	}
 }
 
 /**
@@ -6256,6 +6309,11 @@ void layoutProc(long surface, int width, int height, long user_data) {
 }
 
 long notifyProc (long object, long param_spec, long user_data) {
+	if (user_data == Widget.NOTIFY_FOCUS) {
+		Composite composite = focusNotifyControllers.get (object);
+		if (composite != null) composite.gtk4_focusNotify (object);
+		return 0;
+	}
 	Widget widget = getWidget (object);
 	if (widget == null) {
 		widget = getWidget (user_data);

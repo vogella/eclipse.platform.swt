@@ -427,6 +427,14 @@ public void test_getTextLimit() {
 }
 
 @Test
+public void test_getTextLimitDefault() {
+	assertEquals(0x7FFFFFFF, combo.getTextLimit());
+	combo.setTextLimit(3);
+	combo.setTextLimit(Combo.LIMIT);
+	assertEquals(0x7FFFFFFF, combo.getTextLimit());
+}
+
+@Test
 public void test_hasFocus() {
 	// not public api
 }

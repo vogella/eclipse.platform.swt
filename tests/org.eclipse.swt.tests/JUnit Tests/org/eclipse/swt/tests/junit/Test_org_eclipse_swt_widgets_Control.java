@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import org.eclipse.swt.SWT;
@@ -51,6 +53,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
@@ -606,6 +609,21 @@ public void test_requestLayoutL() {
 	control.requestLayout();
 }
 @Test
+public void test_setBackgroundParentBackgroundKeepsParentOpaque() {
+	Composite parent = new Composite(shell, SWT.NONE);
+	parent.setBackgroundMode(SWT.INHERIT_FORCE);
+	Color color = new Color(255, 0, 0);
+	parent.setBackground(color);
+	new Button(parent, SWT.PUSH);
+	assertEquals(color, parent.getBackground());
+	GC gc = new GC(parent);
+	try {
+		assertEquals(color, gc.getBackground());
+	} finally {
+		gc.dispose();
+	}
+}
+@Test
 public void test_setBackgroundLorg_eclipse_swt_graphics_Color() {
 	Color color = new Color(255, 0, 0);
 	control.setBackground(color);
@@ -715,6 +733,12 @@ public void test_setTextDirection() {
 @Test
 public void test_setFocus() {
 	control.setFocus();
+}
+@Test
+public void test_getFont_defaultIsSameInstance() {
+	Font font = control.getFont();
+	assertNotNull(font);
+	assertSame(font, control.getFont());
 }
 @Test
 public void test_setFontLorg_eclipse_swt_graphics_Font() {
@@ -999,58 +1023,68 @@ protected void consistencyEvent(final int paramA, final int paramB,
 		if(focus && !control.setFocus())
 			control.forceFocus();
 		String[] expectedEvents = hookExpectedEvents(test, events);
+		final AtomicReference<Throwable> helperFailure = new AtomicReference<>();
 		new Thread() {
 			@Override
 			public void run() {
-				display.wake();
-				switch(method) {
-					case ConsistencyUtility.MOUSE_CLICK:
-						assertTrue(
-							ConsistencyUtility.postClick(display, pt[0], paramC));
-						if(paramD == ConsistencyUtility.ESCAPE_MENU) {
+				try {
+					display.wake();
+					switch(method) {
+						case ConsistencyUtility.MOUSE_CLICK:
 							assertTrue(
-								ConsistencyUtility.postClick(display, pt[1], 1));
-						}
-						break;
-					case ConsistencyUtility.MOUSE_DOUBLECLICK:
-						assertTrue(
-								ConsistencyUtility.postDoubleClick(display, pt[0], paramC));
-						break;
-					case ConsistencyUtility.KEY_PRESS:
-						assertTrue(
-							ConsistencyUtility.postKeyPress(display, paramA, paramB));
-						break;
-					case ConsistencyUtility.DOUBLE_KEY_PRESS:
-						assertTrue(
-							ConsistencyUtility.postDoubleKeyPress(display, paramA, paramB, paramC, paramD));
-						break;
-					case ConsistencyUtility.MOUSE_DRAG:
-						assertTrue(
-							ConsistencyUtility.postDrag(display,
-									pt[0], pt[1]));
-						break;
-					case ConsistencyUtility.SELECTION:
+								ConsistencyUtility.postClick(display, pt[0], paramC));
+							if(paramD == ConsistencyUtility.ESCAPE_MENU) {
+								assertTrue(
+									ConsistencyUtility.postClick(display, pt[1], 1));
+							}
+							break;
+						case ConsistencyUtility.MOUSE_DOUBLECLICK:
+							assertTrue(
+									ConsistencyUtility.postDoubleClick(display, pt[0], paramC));
+							break;
+						case ConsistencyUtility.KEY_PRESS:
+							assertTrue(
+								ConsistencyUtility.postKeyPress(display, paramA, paramB));
+							break;
+						case ConsistencyUtility.DOUBLE_KEY_PRESS:
+							assertTrue(
+								ConsistencyUtility.postDoubleKeyPress(display, paramA, paramB, paramC, paramD));
+							break;
+						case ConsistencyUtility.MOUSE_DRAG:
+							assertTrue(
+								ConsistencyUtility.postDrag(display,
+										pt[0], pt[1]));
+							break;
+						case ConsistencyUtility.SELECTION:
 
-						assertTrue(
-							ConsistencyUtility.postSelection(display,
-									pt[0], pt[1]));
-						break;
-					case ConsistencyUtility.SHELL_ICONIFY:
-						assertTrue(
-							ConsistencyUtility.postShellIconify(display, pt[1], paramA));
-						if(control instanceof Shell) {
-							display.syncExec(() -> ((Shell)control).setMinimized(false));
-						} else
-							fail("Iconifying a non shell control");
-						break;
+							assertTrue(
+								ConsistencyUtility.postSelection(display,
+										pt[0], pt[1]));
+							break;
+						case ConsistencyUtility.SHELL_ICONIFY:
+							assertTrue(
+								ConsistencyUtility.postShellIconify(display, pt[1], paramA));
+							if(control instanceof Shell) {
+								display.syncExec(() -> ((Shell)control).setMinimized(false));
+							} else
+								fail("Iconifying a non shell control");
+							break;
+					}
+				} catch (Throwable t) {
+					helperFailure.set(t);
+				} finally {
+					display.asyncExec(() -> shell.dispose());
 				}
-				display.asyncExec(() -> shell.dispose());
 			}
 		}.start();
 
 		while(!shell.isDisposed()) {
 			if(!display.readAndDispatch()) display.sleep();
 		}
+		Throwable failure = helperFailure.get();
+		if (failure instanceof Error error) throw error;
+		if (failure instanceof RuntimeException rte) throw rte;
+		if (failure != null) throw new AssertionError(failure);
 		setUp();
 		String[] results = new String[events.size()];
 		results = events.toArray(results);

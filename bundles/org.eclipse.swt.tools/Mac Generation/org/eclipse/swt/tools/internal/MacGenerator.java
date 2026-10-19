@@ -1210,6 +1210,14 @@ boolean getGen(Node node) {
 	return gen != null && !gen.getNodeValue().equals("false");
 }
 
+/** Returns false if the class_/protocol_ constant must not be generated (swt_gen_const="false"). */
+boolean getGenConst(Node node) {
+	NamedNodeMap attributes = node.getAttributes();
+	if (attributes == null) return true;
+	Node gen = attributes.getNamedItem("swt_gen_const");
+	return gen == null || !gen.getNodeValue().equals("false");
+}
+
 boolean getGenSuper(Node node) {
 	NamedNodeMap attributes = node.getAttributes();
 	if (attributes == null) return false;
@@ -1659,7 +1667,7 @@ void generateClassesConst() {
 		for (int i = 0; i < list.getLength(); i++) {
 			Node node = list.item(i);
 			if ("class".equals(node.getNodeName())) {
-				if (getGen(node)) {
+				if (getGen(node) && getGenConst(node)) {
 					NamedNodeMap attributes = node.getAttributes();
 					String name = attributes.getNamedItem("name").getNodeValue();
 					set.add(name);
@@ -1688,7 +1696,7 @@ void generateProtocolsConst() {
 		for (int i = 0; i < list.getLength(); i++) {
 			Node node = list.item(i);
 			if ("informal_protocol".equals(node.getNodeName())) {
-				if (getGen(node)) {
+				if (getGen(node) && getGenConst(node)) {
 					NamedNodeMap attributes = node.getAttributes();
 					String name = attributes.getNamedItem("name").getNodeValue();
 					set.add(name);

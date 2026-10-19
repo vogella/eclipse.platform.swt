@@ -45,10 +45,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSAppleEventDescriptor" swt_gen="mixed">
-		<method selector="initListDescriptor" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
+	<class name="NSAppleEventDescriptor" swt_gen="mixed" swt_gen_const="false">
 	</class>
 	<class name="NSArray" swt_gen="mixed">
 		<method class_method="true" selector="array" swt_gen="true">
@@ -107,17 +104,13 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSAutoreleasePool" swt_gen="mixed">
+	<class name="NSAutoreleasePool" swt_gen="mixed" swt_gen_const="false">
 	</class>
 	<class name="NSBundle" swt_gen="mixed">
 		<method selector="bundleIdentifier" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="bundlePath" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method class_method="true" selector="bundleWithIdentifier:" swt_gen="true">
-			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 		<method class_method="true" selector="bundleWithPath:" swt_gen="true">
@@ -183,10 +176,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSCoder" swt_gen="mixed">
-		<method selector="systemVersion" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
+	<class name="NSCoder" swt_gen="mixed" swt_gen_const="false">
 	</class>
 	<class name="NSData" swt_gen="mixed">
 		<method selector="bytes" swt_gen="true">
@@ -243,17 +233,17 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSDirectoryEnumerator" swt_gen="mixed" swt_superclass="NSEnumerator">
+	<class name="NSDirectoryEnumerator" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSEnumerator">
 		<method selector="skipDescendents" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSEnumerator" swt_gen="mixed">
+	<class name="NSEnumerator" swt_gen="mixed" swt_gen_const="false">
 		<method selector="nextObject" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSError" swt_gen="mixed">
+	<class name="NSError" swt_gen="mixed" swt_gen_const="false">
 		<method selector="code" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -286,11 +276,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSFormatter" swt_gen="mixed">
-		<method selector="stringForObjectValue:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
+	<class name="NSFormatter" swt_gen="mixed" swt_gen_const="false">
 	</class>
 	<class name="NSHTTPCookie" swt_gen="mixed">
 		<method class_method="true" selector="cookiesWithResponseHeaderFields:forURL:" swt_gen="true">
@@ -328,7 +314,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSIndexSet" swt_gen="mixed">
+	<class name="NSIndexSet" swt_gen="mixed" swt_gen_const="false">
 		<method selector="containsIndex:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -363,7 +349,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSLocale" swt_gen="mixed">
+	<class name="NSLocale" swt_gen="mixed" swt_gen_const="false">
 		<method selector="displayNameForKey:value:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -412,7 +398,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSMutableAttributedString" swt_gen="mixed" swt_superclass="NSAttributedString">
+	<class name="NSMutableAttributedString" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSAttributedString">
 		<method selector="addAttribute:value:range:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -472,7 +458,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSMutableIndexSet" swt_gen="mixed" swt_superclass="NSIndexSet">
+	<class name="NSMutableIndexSet" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSIndexSet">
 		<method selector="addIndex:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
@@ -485,10 +471,6 @@
 		</method>
 	</class>
 	<class name="NSMutableString" swt_gen="mixed" swt_superclass="NSString">
-		<method selector="appendString:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="replaceCharactersInRange:withString:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -512,17 +494,13 @@
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setURL:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setValue:forHTTPHeaderField:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSNotification" swt_gen="mixed">
+	<class name="NSNotification" swt_gen="mixed" swt_gen_const="false">
 		<method selector="object" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -579,43 +557,15 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSNumberFormatter" swt_gen="mixed" swt_superclass="NSFormatter">
+	<class name="NSNumberFormatter" swt_gen="mixed" swt_gen_const="false" swt_superclass="NSFormatter">
 		<method selector="decimalSeparator" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setAllowsFloats:" swt_gen="true">
-			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 		<method selector="setMaximum:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-		<method selector="setMaximumFractionDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setMaximumIntegerDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="setMinimum:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setMinimumFractionDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setMinimumIntegerDigits:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setNumberStyle:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="setPartialStringValidationEnabled:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
@@ -836,10 +786,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSTimeZone" swt_gen="mixed">
-		<method class_method="true" selector="defaultTimeZone" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
+	<class name="NSTimeZone" swt_gen="mixed" swt_gen_const="false">
 	</class>
 	<class name="NSTimer" swt_gen="mixed">
 		<method selector="invalidate" swt_gen="true">
@@ -883,7 +830,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSURLAuthenticationChallenge" swt_gen="mixed">
+	<class name="NSURLAuthenticationChallenge" swt_gen="mixed" swt_gen_const="false">
 		<method selector="previousFailureCount" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -914,7 +861,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSURLDownload" swt_gen="mixed">
+	<class name="NSURLDownload" swt_gen="mixed" swt_gen_const="false">
 		<method selector="cancel" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -924,7 +871,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSURLProtectionSpace" swt_gen="mixed">
+	<class name="NSURLProtectionSpace" swt_gen="mixed" swt_gen_const="false">
 		<method selector="host" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -944,7 +891,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="NSUndoManager" swt_gen="mixed">
+	<class name="NSUndoManager" swt_gen="mixed" swt_gen_const="false">
 		<method selector="beginUndoGrouping" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -1047,7 +994,7 @@
 		<arg swt_gen="true"></arg>
 		<retval swt_gen="true"></retval>
 	</function>
-	<informal_protocol name="NSURLDownloadDelegate" swt_gen="mixed">
+	<informal_protocol name="NSURLDownloadDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="download:decideDestinationWithSuggestedFilename:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>

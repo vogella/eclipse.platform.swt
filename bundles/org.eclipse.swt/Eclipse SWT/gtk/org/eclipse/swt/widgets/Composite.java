@@ -1083,6 +1083,10 @@ void hookEvents () {
 			OS.g_signal_connect_closure (scrolledHandle, OS.scroll_child, display.getClosure (SCROLL_CHILD), false);
 		}
 	}
+	if (GTK.GTK4 && focusController != 0 && !(this instanceof Decorations)) {
+		display.focusNotifyControllers.put (focusController, this);
+		OS.g_signal_connect (focusController, Converter.javaStringToCString ("notify::is-focus"), display.notifyProc, Widget.NOTIFY_FOCUS);
+	}
 }
 
 boolean hooksKeys () {
@@ -1631,6 +1635,18 @@ void propagateDraw (long container, long cairo) {
 }
 
 @Override
+void redrawVisibleChildren (int x, int y, int width, int height) {
+	Rectangle area = new Rectangle (x, y, width, height);
+	for (Control child : _getChildren ()) {
+		if (!GTK.gtk_widget_get_visible (child.topHandle ())) continue;
+		Rectangle bounds = child.getBoundsInPixels ();
+		if (!bounds.intersects (area)) continue;
+		child.redrawWidget (0, 0, 0, 0, true, false, false);
+		child.redrawVisibleChildren (x - bounds.x, y - bounds.y, width, height);
+	}
+}
+
+@Override
 void redrawChildren () {
 	super.redrawChildren ();
 	for (Control child : _getChildren ()) {
@@ -1673,6 +1689,7 @@ void releaseHandle () {
 @Override
 void releaseWidget () {
 	super.releaseWidget ();
+	if (focusController != 0) display.focusNotifyControllers.remove (focusController);
 	if (imHandle != 0) OS.g_object_unref (imHandle);
 	imHandle = 0;
 	layout = null;
@@ -1968,6 +1985,43 @@ void updateLayout (boolean all) {
 		for (Control child : _getChildren ()) {
 			child.updateLayout (all);
 		}
+	}
+}
+
+private boolean gtk4Focused;
+
+/** GTK3 reports focus only to the widget that has it, GTK4 also reports the focus of a descendant to its ancestors. */
+@Override
+void gtk4_focus_enter_event(long controller, long event) {
+	if (!(this instanceof Decorations)) {
+		int[] isFocus = new int[1];
+		OS.g_object_get(controller, Converter.javaStringToCString("is-focus"), isFocus, 0);
+		if (isFocus[0] == 0 || gtk4Focused) return;
+		gtk4Focused = true;
+	}
+	super.gtk4_focus_enter_event(controller, event);
+}
+
+@Override
+void gtk4_focus_leave_event(long controller, long event) {
+	if (!(this instanceof Decorations)) {
+		if (!gtk4Focused) return;
+		gtk4Focused = false;
+	}
+	super.gtk4_focus_leave_event(controller, event);
+}
+
+/** GTK4 emits no enter or leave when the focus moves between this composite and a descendant, so is-focus is followed as well. */
+void gtk4_focusNotify (long controller) {
+	if (isDisposed ()) return;
+	int[] isFocus = new int[1];
+	OS.g_object_get(controller, Converter.javaStringToCString("is-focus"), isFocus, 0);
+	if ((isFocus[0] != 0) == gtk4Focused) return;
+	gtk4Focused = isFocus[0] != 0;
+	if (gtk4Focused) {
+		super.gtk4_focus_enter_event(controller, 0);
+	} else {
+		super.gtk4_focus_leave_event(controller, 0);
 	}
 }
 

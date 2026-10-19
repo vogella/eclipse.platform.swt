@@ -27,8 +27,4 @@ public NSCoder(id id) {
 	super(id);
 }
 
-public int systemVersion() {
-	return (int)OS.objc_msgSend(this.id, OS.sel_systemVersion);
-}
-
 }

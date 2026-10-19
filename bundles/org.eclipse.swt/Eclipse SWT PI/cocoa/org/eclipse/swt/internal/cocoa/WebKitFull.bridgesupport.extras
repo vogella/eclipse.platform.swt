@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF8"?>
 <signatures swt_gen="mixed">
-	<class name="DOMDocument" swt_gen="mixed">
+	<class name="DOMDocument" swt_gen="mixed" swt_gen_const="false">
 		<method selector="webFrame" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="DOMEvent" swt_gen="mixed">
+	<class name="DOMEvent" swt_gen="mixed" swt_gen_const="false">
 		<method selector="preventDefault" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="DOMKeyboardEvent" swt_gen="mixed" swt_superclass="DOMUIEvent">
+	<class name="DOMKeyboardEvent" swt_gen="mixed" swt_gen_const="false" swt_superclass="DOMUIEvent">
 		<method selector="altKey" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -30,7 +30,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="DOMMouseEvent" swt_gen="mixed" swt_superclass="DOMUIEvent">
+	<class name="DOMMouseEvent" swt_gen="mixed" swt_gen_const="false" swt_superclass="DOMUIEvent">
 		<method selector="altKey" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -53,19 +53,13 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="DOMUIEvent" swt_gen="mixed" swt_superclass="DOMEvent">
+	<class name="DOMUIEvent" swt_gen="mixed" swt_gen_const="false" swt_superclass="DOMEvent">
 		<method selector="detail" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="DOMWheelEvent" swt_gen="mixed" swt_superclass="DOMMouseEvent">
+	<class name="DOMWheelEvent" swt_gen="mixed" swt_gen_const="false" swt_superclass="DOMMouseEvent">
 		<method selector="wheelDelta" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="wheelDeltaX" swt_gen="true">
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="wheelDeltaY" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
@@ -81,7 +75,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="WebDataSource" swt_gen="mixed">
+	<class name="WebDataSource" swt_gen="mixed" swt_gen_const="false">
 		<method selector="pageTitle" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -95,7 +89,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="WebFrame" swt_gen="mixed">
+	<class name="WebFrame" swt_gen="mixed" swt_gen_const="false">
 		<method selector="DOMDocument" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -115,7 +109,7 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="WebFrameView" swt_gen="mixed">
+	<class name="WebFrameView" swt_gen="mixed" swt_gen_const="false">
 		<method selector="documentViewShouldHandlePrint" swt_gen="true">
 			<retval swt_gen="true"></retval>
 		</method>
@@ -140,14 +134,18 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<class name="WebScriptObject" swt_gen="mixed">
-		<method selector="webScriptValueAtIndex:" swt_gen="true">
+	<class name="WebScriptObject" swt_gen="mixed" swt_gen_const="false">
+		<method selector="callWebScriptMethod:withArguments:" swt_gen="true">
+			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
-	</class>
-	<class name="WebUndefined" swt_gen="true">
-		<method class_method="true" selector="undefined" swt_gen="true">
+		<method selector="evaluateWebScript:" swt_gen="true">
+			<arg swt_gen="true"></arg>
+			<retval swt_gen="true"></retval>
+		</method>
+		<method selector="webScriptValueAtIndex:" swt_gen="true">
+			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
@@ -230,12 +228,12 @@
 			<retval swt_gen="true"></retval>
 		</method>
 	</class>
-	<informal_protocol name="WebDocumentRepresentation" swt_gen="true">
+	<informal_protocol name="WebDocumentRepresentation" swt_gen="true" swt_gen_const="false">
 		<method selector="documentSource" swt_gen="true">
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="WebFrameLoadDelegate" swt_gen="mixed">
+	<informal_protocol name="WebFrameLoadDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="webView:didChangeLocationWithinPageForFrame:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -274,13 +272,13 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="WebOpenPanelResultListener" swt_gen="true">
+	<informal_protocol name="WebOpenPanelResultListener" swt_gen="true" swt_gen_const="false">
 		<method selector="chooseFilename:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="WebPolicyDecisionListener" swt_gen="true">
+	<informal_protocol name="WebPolicyDecisionListener" swt_gen="true" swt_gen_const="false">
 		<method selector="download" swt_gen="true">
 			<retval></retval>
 		</method>
@@ -291,7 +289,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="WebPolicyDelegate" swt_gen="true">
+	<informal_protocol name="WebPolicyDelegate" swt_gen="true" swt_gen_const="false">
 		<method selector="webView:decidePolicyForMIMEType:request:frame:decisionListener:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -323,7 +321,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="WebResourceLoadDelegate" swt_gen="mixed">
+	<informal_protocol name="WebResourceLoadDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="webView:identifierForInitialRequest:fromDataSource:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
@@ -359,7 +357,7 @@
 			<retval></retval>
 		</method>
 	</informal_protocol>
-	<informal_protocol name="WebUIDelegate" swt_gen="mixed">
+	<informal_protocol name="WebUIDelegate" swt_gen="mixed" swt_gen_const="false">
 		<method selector="webView:contextMenuItemsForElement:defaultMenuItems:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<arg swt_gen="true"></arg>
