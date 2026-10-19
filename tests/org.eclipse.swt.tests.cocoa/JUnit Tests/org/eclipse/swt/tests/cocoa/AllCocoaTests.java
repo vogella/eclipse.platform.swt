@@ -28,6 +28,7 @@ import org.junit.platform.suite.api.Suite;
 	Test_cocoa_GC.class,
 	Test_cocoa_Canvas.class,
 	Test_cocoa_Table.class,
+	Test_cocoa_ImageAlphaData.class,
 	Test_cocoa_SystemMenu.class
 })
 
