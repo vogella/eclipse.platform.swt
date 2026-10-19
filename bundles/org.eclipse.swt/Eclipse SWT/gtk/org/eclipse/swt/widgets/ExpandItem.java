@@ -285,9 +285,16 @@ long gtk3_button_press_event (long widget, long event) {
 }
 
 @Override
+long gtk_focus_in_event (long widget, long event) {
+	parent.sendFocusEvent (SWT.FocusIn);
+	return 0;
+}
+
+@Override
 long gtk_focus_out_event (long widget, long event) {
 	GTK.gtk_widget_set_can_focus (handle, false);
 	parent.lastFocus = this;
+	parent.sendFocusEvent (SWT.FocusOut);
 	return 0;
 }
 
@@ -330,6 +337,7 @@ void hookEvents () {
 
 		OS.g_signal_connect_closure_by_id (handle, display.signalIds [ENTER_NOTIFY_EVENT], 0, display.getClosure (ENTER_NOTIFY_EVENT), false);
 		OS.g_signal_connect_closure_by_id (handle, display.signalIds [BUTTON_PRESS_EVENT], 0, display.getClosure (BUTTON_PRESS_EVENT), false);
+		OS.g_signal_connect_closure_by_id (handle, display.signalIds [FOCUS_IN_EVENT], 0, display.getClosure (FOCUS_IN_EVENT), false);
 		OS.g_signal_connect_closure_by_id (handle, display.signalIds [FOCUS_OUT_EVENT], 0, display.getClosure (FOCUS_OUT_EVENT), false);
 	}
 }
