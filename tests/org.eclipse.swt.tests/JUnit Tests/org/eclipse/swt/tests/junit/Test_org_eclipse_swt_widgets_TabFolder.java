@@ -17,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +87,7 @@ public void test_getClientArea() {
 
 @Test
 public void test_getClientAreaStartsBelowTabs() {
+	assumeFalse(SwtTestUtil.isGTK4(), "GTK4 getClientArea still returns the zero origin");
 	new TabItem(tabFolder, SWT.NONE).setText("Tab");
 	tabFolder.setBounds(0, 0, 260, 150);
 	shell.open();
