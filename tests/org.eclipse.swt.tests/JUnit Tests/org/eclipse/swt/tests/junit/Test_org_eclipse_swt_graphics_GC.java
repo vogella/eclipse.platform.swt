@@ -1096,6 +1096,14 @@ public void test_textExtentLjava_lang_String() {
 }
 
 @Test
+public void test_textExtent_unpairedSurrogate() {
+	Point plain = gc.textExtent("ab");
+	Point lone = gc.textExtent("a\uD83Db");
+	// the lone surrogate must be drawn as a glyph instead of dropping the whole string
+	assertTrue(lone.x > plain.x, "lone surrogate extent " + lone + " not wider than " + plain);
+}
+
+@Test
 public void test_textExtentLjava_lang_StringI() {
 	Point pt = gc.textExtent("abc", 0);
 	assertTrue(pt.x > 0);
