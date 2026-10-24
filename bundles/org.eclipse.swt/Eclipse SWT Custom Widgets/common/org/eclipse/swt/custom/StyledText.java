@@ -2344,13 +2344,24 @@ void doLineUp(boolean select) {
 	columnX = oldColumnX + hScrollChange;
 }
 void doMouseLinkCursor() {
+	if (!renderer.hasLinks) {
+		/*
+		 * Without links the cursor does not depend on the pointer location, so
+		 * do not query it. That costs two round trips to the X server on GTK,
+		 * for every style change and redraw.
+		 */
+		setLinkCursor(-1);
+		return;
+	}
 	Display display = getDisplay();
 	Point point = display.getCursorLocation();
 	point = display.map(null, this, point);
 	doMouseLinkCursor(point.x, point.y);
 }
 void doMouseLinkCursor(int x, int y) {
-	int offset = getOffsetAtPoint(x, y, null, true);
+	setLinkCursor(getOffsetAtPoint(x, y, null, true));
+}
+void setLinkCursor(int offset) {
 	Display display = getDisplay();
 	Cursor newCursor = cursor;
 	if (renderer.hasLink(offset)) {

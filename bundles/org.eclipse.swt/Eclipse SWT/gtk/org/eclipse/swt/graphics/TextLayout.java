@@ -301,7 +301,7 @@ void computeRuns () {
 		int lineCount = OS.pango_layout_get_line_count(layout);
 		chars = new char[segementsLength + lineCount * 2];
 		lineOffsets = new int [lineCount];
-		int oldPos = 0, lineIndex = 0;
+		int oldPos = 0, oldBytePos = 0, lineIndex = 0;
 		PangoLayoutLine line = new PangoLayoutLine();
 		while (lineIndex < lineCount) {
 			long linePtr = OS.pango_layout_get_line(layout, lineIndex);
@@ -323,7 +323,9 @@ void computeRuns () {
 			OS.memmove (attr, attribute, PangoAttribute.sizeof);
 			OS.pango_attr_list_insert(attrList, attr);
 			OS.pango_attr_list_insert(selAttrList, OS.pango_attribute_copy(attr));
-			int pos = (int)OS.g_utf16_pointer_to_offset(ptr, ptr + bytePos);
+			/* Count from the previous line start, counting from the text start is quadratic */
+			int pos = oldPos + (int)OS.g_utf16_pointer_to_offset(ptr + oldBytePos, ptr + bytePos);
+			oldBytePos = bytePos;
 			chars[pos + lineIndex * 2] = ZWS;
 			chars[pos + lineIndex * 2 + 1] = ZWNBS;
 			segmentsText.getChars(oldPos, pos, chars,  oldPos + lineIndex * 2);
@@ -644,21 +646,32 @@ void drawInPixels(GC gc, int x, int y, int selectionStart, int selectionEnd, Col
 		Cairo.cairo_save(cairo);
 		GdkRGBA rgba = selectionBackground.handle;
 		Cairo.cairo_set_source_rgba(cairo, rgba.red, rgba.green, rgba.blue, rgba.alpha);
-		int lineIndex = 0;
+		int lineIndex = 0, prevLineEnd = 0, prevLineEndChar = 0, prevBytePos = 0;
 		do {
-			int lineEnd;
+			/* lineEnd counts UTF-16 units like the selection, lineEndChar counts characters like the log attributes */
+			int lineEnd, lineEndChar;
 			metricsAdapter.pango_layout_iter_get_line_extents(iter, null, rect);
 			if (OS.pango_layout_iter_next_line(iter)) {
 				int bytePos = OS.pango_layout_iter_get_index(iter);
-				lineEnd = (int)OS.g_utf16_pointer_to_offset(ptr, ptr + bytePos);
+				if (bytePos >= prevBytePos) {
+					lineEnd = prevLineEnd + (int)OS.g_utf16_pointer_to_offset(ptr + prevBytePos, ptr + bytePos);
+					lineEndChar = prevLineEndChar + (int)OS.g_utf8_pointer_to_offset(ptr + prevBytePos, ptr + bytePos);
+				} else {
+					lineEnd = (int)OS.g_utf16_pointer_to_offset(ptr, ptr + bytePos);
+					lineEndChar = (int)OS.g_utf8_pointer_to_offset(ptr, ptr + bytePos);
+				}
+				prevLineEnd = lineEnd;
+				prevLineEndChar = lineEndChar;
+				prevBytePos = bytePos;
 			} else {
 				lineEnd = (int)OS.g_utf16_strlen(ptr, -1);
+				lineEndChar = (int)OS.g_utf8_strlen(ptr, -1);
 			}
 			if (lineIndex == lineCount - 1 && (flags & SWT.LAST_LINE_SELECTION) != 0) {
 				extent = true;
 			} else {
 				if (attrs[0] == 0) OS.pango_layout_get_log_attrs(layout, attrs, nAttrs);
-				OS.memmove(logAttr, attrs[0] + lineEnd * PangoLogAttr.sizeof, PangoLogAttr.sizeof);
+				OS.memmove(logAttr, attrs[0] + lineEndChar * PangoLogAttr.sizeof, PangoLogAttr.sizeof);
 				if (!logAttr.is_line_break) {
 					if (selectionStart <= lineEnd && lineEnd <= selectionEnd) extent = true;
 				} else {
@@ -1262,10 +1275,13 @@ public int[] getLineOffsets() {
 	int[] offsets = new int [lineCount + 1];
 	long ptr = OS.pango_layout_get_text(layout);
 	PangoLayoutLine line = new PangoLayoutLine();
+	int pos = 0, bytePos = 0;
 	for (int i = 0; i < lineCount; i++) {
 		long linePtr = OS.pango_layout_get_line(layout, i);
 		OS.memmove(line, linePtr, PangoLayoutLine.sizeof);
-		int pos = (int)OS.g_utf16_pointer_to_offset(ptr, ptr + line.start_index);
+		/* Count from the previous line start, counting from the text start is quadratic */
+		pos += (int)OS.g_utf16_pointer_to_offset(ptr + bytePos, ptr + line.start_index);
+		bytePos = line.start_index;
 		offsets[i] = untranslateOffset(pos);
 	}
 	offsets[lineCount] = text.length();

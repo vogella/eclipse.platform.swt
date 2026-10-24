@@ -52,6 +52,7 @@ public class BenchmarkStyledText {
 		paintAdjacentStyles(display);
 		locationAndOffsetLoops(display);
 		typing(display);
+		scatteredEdits(display);
 		wordWrapReflow(display);
 		longLineHorizontalScroll(display);
 	}
@@ -195,6 +196,23 @@ public class BenchmarkStyledText {
 					text.replaceTextRange(offset + i, 0, "x");
 					text.setCaretOffset(offset + i + 1);
 					BenchmarkUtil.paintNow(display, text);
+				}
+			};
+		}, () -> shell[0].dispose());
+	}
+
+	private static void scatteredEdits(Display display) {
+		int edits = BenchmarkUtil.scaled(TYPING_EDITS);
+		int lines = BenchmarkUtil.scaled(LINES) * 2;
+		String doc = document(lines);
+		Shell[] shell = new Shell[1];
+		BenchmarkUtil.measure("StyledText " + edits + " edits spread over " + lines + " lines (replace all)", () -> {
+			StyledText text = open(display, shell, SWT.V_SCROLL | SWT.H_SCROLL);
+			text.setText(doc);
+			return () -> {
+				int step = doc.length() / (edits + 1);
+				for (int i = 0; i < edits; i++) {
+					text.replaceTextRange(i * step + i, 1, "xy");
 				}
 			};
 		}, () -> shell[0].dispose());
