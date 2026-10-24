@@ -631,8 +631,6 @@ void writeToStream(LEDataOutputStream byteStream) throws IOException {
 	out = byteStream;
 	int photometricInterpretation = -1;
 
-	/* Scanline pad must be 1 */
-	if (image.scanlinePad != 1) SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);
 	switch (image.depth) {
 		case 1: {
 			/* Palette must be black and white or white and black */
@@ -652,10 +650,13 @@ void writeToStream(LEDataOutputStream byteStream) throws IOException {
 		}
 		case 4:
 		case 8: {
+			if (image.palette.isDirect) SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);
 			photometricInterpretation = 3;
 			break;
 		}
 		case 24: {
+			if (!image.palette.isDirect) SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);
+			image = toRGB(image);
 			photometricInterpretation = 2;
 			break;
 		}
@@ -663,7 +664,45 @@ void writeToStream(LEDataOutputStream byteStream) throws IOException {
 			SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);
 		}
 	}
+	/* TIFF rows are not padded */
+	if (image.scanlinePad != 1) image = unpadded(image);
 	write(photometricInterpretation);
+}
+
+/**
+ * Answer the given direct image with its pixels stored as red, green and
+ * blue bytes, the sample order of a TIFF RGB image.
+ */
+static ImageData toRGB(ImageData image) {
+	PaletteData palette = image.palette;
+	if (palette.redMask == 0xFF0000 && palette.greenMask == 0xFF00 && palette.blueMask == 0xFF) return image;
+	int width = image.width, height = image.height;
+	byte[] data = new byte[width * 3 * height];
+	int[] pixels = new int[width];
+	for (int y = 0, offset = 0; y < height; y++) {
+		image.getPixels(0, y, width, pixels, 0);
+		for (int x = 0; x < width; x++) {
+			int r = pixels[x] & palette.redMask;
+			int g = pixels[x] & palette.greenMask;
+			int b = pixels[x] & palette.blueMask;
+			data[offset++] = (byte) (palette.redShift < 0 ? r >>> -palette.redShift : r << palette.redShift);
+			data[offset++] = (byte) (palette.greenShift < 0 ? g >>> -palette.greenShift : g << palette.greenShift);
+			data[offset++] = (byte) (palette.blueShift < 0 ? b >>> -palette.blueShift : b << palette.blueShift);
+		}
+	}
+	return new ImageData(width, height, 24, new PaletteData(0xFF0000, 0xFF00, 0xFF), 1, data);
+}
+
+/**
+ * Answer the given image with a scanline pad of 1.
+ */
+static ImageData unpadded(ImageData image) {
+	int rowByteSize = (image.width * image.depth + 7) / 8;
+	byte[] data = new byte[rowByteSize * image.height];
+	for (int y = 0; y < image.height; y++) {
+		System.arraycopy(image.data, y * image.bytesPerLine, data, y * rowByteSize, rowByteSize);
+	}
+	return new ImageData(image.width, image.height, image.depth, image.palette, 1, data);
 }
 
 }
