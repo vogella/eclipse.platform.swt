@@ -1600,13 +1600,14 @@ public TableItem getItem (int index) {
  */
 public TableItem getItem (Point point) {
 	checkWidget ();
+	if (point == null) error (SWT.ERROR_NULL_ARGUMENT);
 	NSTableView widget = (NSTableView)view;
 	NSPoint pt = new NSPoint();
 	pt.x = point.x;
 	pt.y = point.y;
 	int row = (int)widget.rowAtPoint(pt);
 	if (row == -1) return null;
-	return items[row];
+	return _getItem (row);
 }
 
 /**
@@ -2127,7 +2128,7 @@ long nextState (long id, long sel) {
 	NSTableView tableView = (NSTableView)view;
 	int index = (int)tableView.clickedRow();
 	if (index == -1) index = (int)tableView.selectedRow ();
-	TableItem item = items[index];
+	TableItem item = _getItem (index);
 	if (item.grayed) {
 		return item.checked ? OS.NSControlStateValueOff : OS.NSControlStateValueMixed;
 	}
@@ -3497,11 +3498,11 @@ void tableView_setObjectValue_forTableColumn_row (long id, long sel, long aTable
 			selection.getIndexes (indices, count, 0);
 			for (int i = 0; i < indices.length; i++) {
 				int index = (int)indices [i];
-				TableItem item = items [index];
+				TableItem item = _getItem (index);
 				toggleCheckedItem (item, index);
 			}
 		} else {
-			TableItem item = items [(int)rowIndex];
+			TableItem item = _getItem ((int)rowIndex);
 			toggleCheckedItem (item, rowIndex);
 		}
 	}
