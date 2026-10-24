@@ -7101,7 +7101,23 @@ LRESULT wmNotifyToolTip (NMHDR hdr, long wParam, long lParam) {
 			LRESULT result = super.wmNotify (hdr, wParam, lParam);
 			if (result != null) return result;
 			if (toolTipText != null) break;
-			return positionTooltip(hdr, lParam) ? LRESULT.ONE : null;
+			if (hdr.code == OS.TTN_SHOW) {
+				return positionTooltip(hdr, lParam) ? LRESULT.ONE : null;
+			}
+			/*
+			* Let the list view fill in the text of its label tip first, so
+			* that LVN_GETDISPINFO knows that a tool tip is requested and
+			* removes the line delimiters, then let a custom tool tip clear it.
+			*/
+			tipRequested = true;
+			long code;
+			try {
+				code = callWindowProc (handle, OS.WM_NOTIFY, wParam, lParam);
+			} finally {
+				tipRequested = false;
+			}
+			if (isCustomToolTip ()) positionTooltip(hdr, lParam);
+			return new LRESULT (code);
 		}
 	}
 	return null;
