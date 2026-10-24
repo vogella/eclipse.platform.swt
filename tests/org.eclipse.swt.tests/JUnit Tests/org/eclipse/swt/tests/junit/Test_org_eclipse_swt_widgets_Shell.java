@@ -1145,6 +1145,11 @@ public void test_open_paintsAfterReturning() throws InterruptedException {
 		int[] paints = new int[1];
 		label.addListener(SWT.Paint, e -> paints[0]++);
 		host.open();
+		if (SwtTestUtil.isWindows) {
+			// win32 paints the shell synchronously in open() with UpdateWindow
+			assertTrue(paints[0] > 0, "no paint inside open()");
+			return;
+		}
 		assertEquals(0, paints[0], "painted inside open()");
 		boolean[] painted = new boolean[1];
 		label.addListener(SWT.Paint, e -> painted[0] = true);

@@ -1690,7 +1690,8 @@ private static ImageData asymmetricImageData(Display display) {
 private static void assertSamePixels(ImageData expected, ImageData actual) {
 	int[][] points = { {0, 0}, {5, 5}, {170, 85}, {20, 110}, {320, 135}, {339, 0}, {339, 100}, {339, 149}, {0, 149}, {338, 148} };
 	for (int[] p : points) {
-		assertEquals(expected.getPixel(p[0], p[1]), actual.getPixel(p[0], p[1]), "pixel " + p[0] + "," + p[1]);
+		// compare colors, the palettes of a saved and reloaded image can differ
+		assertEquals(expected.palette.getRGB(expected.getPixel(p[0], p[1])), actual.palette.getRGB(actual.getPixel(p[0], p[1])), "pixel " + p[0] + "," + p[1]);
 	}
 }
 
