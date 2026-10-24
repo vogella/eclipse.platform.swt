@@ -1624,6 +1624,16 @@ public void drawRoundRectangle(int x, int y, int width, int height, int arcWidth
 		drawRectangle(x, y, width, height);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
+	arcWidth = Math.abs(arcWidth);
+	arcHeight = Math.abs(arcHeight);
 	NSAutoreleasePool pool = checkGC(DRAW);
 	try {
 		NSBezierPath path = data.path;
@@ -2346,6 +2356,16 @@ public void fillRoundRectangle(int x, int y, int width, int height, int arcWidth
 		fillRectangle(x, y, width, height);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
+	arcWidth = Math.abs(arcWidth);
+	arcHeight = Math.abs(arcHeight);
 	NSAutoreleasePool pool = checkGC(FILL);
 	try {
 		NSBezierPath path = data.path;
