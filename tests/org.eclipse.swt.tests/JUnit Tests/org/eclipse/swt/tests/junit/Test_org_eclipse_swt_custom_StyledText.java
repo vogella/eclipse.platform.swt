@@ -916,6 +916,37 @@ public void test_getCaretOffset() {
 }
 
 @Test
+public void test_linkCursorFollowsLinkStyles() {
+	assumeFalse(SwtTestUtil.isGTK4(), "GTK4 cannot move the pointer");
+	Display display = text.getDisplay();
+	shell.setLayout(new FillLayout());
+	text.setText("link and plain text");
+	shell.setSize(300, 100);
+	shell.open();
+	SwtTestUtil.processEvents();
+	StyleRange link = new StyleRange(0, 4, null, null);
+	link.underline = true;
+	link.underlineStyle = SWT.UNDERLINE_LINK;
+	text.setStyleRanges(new StyleRange[] { link });
+	SwtTestUtil.processEvents();
+	Point location = text.getLocationAtOffset(1);
+	display.setCursorLocation(text.toDisplay(location.x + 1, location.y + text.getLineHeight() / 2));
+	SwtTestUtil.processEvents();
+	assumeTrue(display.getCursorControl() == text, "pointer could not be moved over the text");
+	text.redraw();
+	assertEquals(display.getSystemCursor(SWT.CURSOR_HAND), text.getCursor());
+	// without links the cursor no longer depends on the pointer location
+	text.setStyleRanges(new StyleRange[0]);
+	assertEquals(display.getSystemCursor(SWT.CURSOR_IBEAM), text.getCursor());
+	text.setStyleRanges(new StyleRange[] { link });
+	text.redraw();
+	assertEquals(display.getSystemCursor(SWT.CURSOR_HAND), text.getCursor());
+	text.setBlockSelection(true);
+	text.setStyleRange(null);
+	assertEquals(display.getSystemCursor(SWT.CURSOR_CROSS), text.getCursor());
+}
+
+@Test
 public void test_contentRandomEditsMatchModel() {
 	StyledTextContent content = text.getContent();
 	// no lone \r: the content does not merge a \r and a \n that an edit puts next to each other
