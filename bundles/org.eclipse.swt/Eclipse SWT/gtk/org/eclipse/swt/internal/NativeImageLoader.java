@@ -283,73 +283,46 @@ public class NativeImageLoader {
 		boolean has_alpha = imgData.alphaData != null && alpha_supported;
 		int width = imgData.width;
 		int height = imgData.height;
-		// original n_channels. Native implementation will only be used in case of 3 or 4
-		int n_channels = imgData.bytesPerLine / width;
+		PaletteData palette = imgData.palette;
 
 		// Native implementation only supports a subset of possible image configurations.
 		// Redirect the not supported variants to the Java implementation.
 		// See also https://bugs.eclipse.org/bugs/show_bug.cgi?id=558043
-		if (!imgData.palette.isDirect || n_channels < 3 || n_channels > 4) {
+		if (!palette.isDirect || (imgData.depth != 24 && imgData.depth != 32)) {
 			FileFormat.save(stream, format, imageLoader);
 			return;
 		}
 
 		/*
-		 * Destination offsets, GdkPixbuf data is stored in RGBA format.
-		 */
-		int da = 3, dr = 0, dg = 1, db = 2;
-
-		/*
-		 * ImageData offsets. These can vary depending on how the ImageData.data field
-		 * was populated. In most cases it will be RGB format, so this case is assumed
-		 * (blue shift is 0).
+		 * Build the pixel buffer for the GdkPixbuf, which stores pixels as RGB or RGBA
+		 * bytes. The channels are taken from the pixel values through the palette masks,
+		 * because the byte order of ImageData.data depends on the palette and its rows
+		 * may be padded to the scanline pad.
 		 *
-		 * If blue is negatively shifted, then we are dealing with BGR byte ordering, so
-		 * adjust the offsets accordingly.
+		 * Formats that support an alpha channel are saved as 32 bit RGBA, all others as
+		 * 24 bit RGB. The pixbuf must not carry an alpha channel for formats that don't
+		 * support it (e.g. JPEG), otherwise the encoder fails and produces an empty
+		 * result. When the format supports alpha but the source has none, the alpha
+		 * channel is filled with 255.
 		 */
-		int or = 0, og = 1, ob = 2;
-		PaletteData palette = imgData.palette;
-		if (palette.isDirect && palette.blueShift < 0) {
-			or = 2;
-			og = 1;
-			ob = 0;
-		}
-
-		// Build the pixel buffer for the GdkPixbuf. Formats that support an alpha
-		// channel are saved as 32 bit RGBA, all others as 24 bit RGB. The pixbuf must
-		// not carry an alpha channel for formats that don't support it (e.g. JPEG),
-		// otherwise the encoder fails and produces an empty result. When the format
-		// supports alpha but the source has none, the alpha channel is filled with 255.
 		int bytes_per_pixel = alpha_supported ? 4 : 3;
 		byte[] srcData = new byte[(width * height * bytes_per_pixel)];
-
-		int alpha_offset = n_channels == 4 ? 1 : 0;
-		if (alpha_supported) {
-			for (int y = 0, offset = 0, new_offset = 0, alphaIndex = 0; y < height; y++) {
-				for (int x = 0; x < width; x++, offset += n_channels, new_offset += bytes_per_pixel) {
-					byte a = has_alpha ? imgData.alphaData[alphaIndex++] : (byte) 255;
-					byte r = imgData.data[offset + alpha_offset + or];
-					byte g = imgData.data[offset + alpha_offset + og];
-					byte b = imgData.data[offset + alpha_offset + ob];
-
-					// GdkPixbuf expects RGBA format
-					srcData[new_offset + db] = b;
-					srcData[new_offset + dg] = g;
-					srcData[new_offset + dr] = r;
-					srcData[new_offset + da] = a;
-				}
-			}
-		} else {
-			for (int y = 0, offset = 0, new_offset = 0; y < height; y++) {
-				for (int x = 0; x < width; x++, offset += n_channels, new_offset += bytes_per_pixel) {
-					byte r = imgData.data[offset + alpha_offset + or];
-					byte g = imgData.data[offset + alpha_offset + og];
-					byte b = imgData.data[offset + alpha_offset + ob];
-
-					// GdkPixbuf expects RGB format
-					srcData[new_offset + db] = b;
-					srcData[new_offset + dg] = g;
-					srcData[new_offset + dr] = r;
+		int redMask = palette.redMask, redShift = palette.redShift;
+		int greenMask = palette.greenMask, greenShift = palette.greenShift;
+		int blueMask = palette.blueMask, blueShift = palette.blueShift;
+		int[] pixels = new int[width];
+		for (int y = 0, new_offset = 0, alphaIndex = 0; y < height; y++) {
+			imgData.getPixels(0, y, width, pixels, 0);
+			for (int x = 0; x < width; x++, new_offset += bytes_per_pixel) {
+				int pixel = pixels[x];
+				int r = pixel & redMask;
+				int g = pixel & greenMask;
+				int b = pixel & blueMask;
+				srcData[new_offset] = (byte) (redShift < 0 ? r >>> -redShift : r << redShift);
+				srcData[new_offset + 1] = (byte) (greenShift < 0 ? g >>> -greenShift : g << greenShift);
+				srcData[new_offset + 2] = (byte) (blueShift < 0 ? b >>> -blueShift : b << blueShift);
+				if (alpha_supported) {
+					srcData[new_offset + 3] = has_alpha ? imgData.alphaData[alphaIndex++] : (byte) 255;
 				}
 			}
 		}
