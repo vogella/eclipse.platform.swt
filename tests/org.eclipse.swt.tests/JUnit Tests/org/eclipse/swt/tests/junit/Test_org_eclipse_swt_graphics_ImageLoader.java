@@ -411,6 +411,35 @@ public void test_decodeInterlacedPng() throws IOException {
 }
 
 @Test
+public void test_decodeLzwTiff() throws IOException {
+	assertRedBlueHalves(decodeWithJavaCodec("lzw_16x16.tif"), 0);
+	assertRedBlueHalves(decodeWithJavaCodec("lzw_predictor_16x16.tif"), 0);
+	// Long enough for 12 bit codes and a clear code
+	ImageData lzw = decodeWithJavaCodec("pattern_64x48_lzw.tif");
+	ImageData uncompressed = decodeWithJavaCodec("pattern_64x48.tif");
+	for (int y = 0; y < uncompressed.height; y++) {
+		for (int x = 0; x < uncompressed.width; x++) {
+			assertEquals(uncompressed.palette.getRGB(uncompressed.getPixel(x, y)), lzw.palette.getRGB(lzw.getPixel(x, y)),
+					"pixel " + x + "," + y);
+		}
+	}
+}
+
+@Test
+public void test_decodeDeflateTiff() throws IOException {
+	assertRedBlueHalves(decodeWithJavaCodec("deflate_16x16.tif"), 0);
+}
+
+/**
+ * A compression the decoder does not know must be reported instead of decoding to a black image.
+ */
+@Test
+public void test_decodeJpegCompressedTiffIsUnsupported() {
+	SWTException e = assertThrows(SWTException.class, () -> decodeWithJavaCodec("jpeg_16x16.tif"));
+	assertEquals(SWT.ERROR_UNSUPPORTED_FORMAT, e.code);
+}
+
+@Test
 public void test_encodeJpegRoundTrip() throws IOException {
 	ImageData source = decodeWithJavaCodec("interlaced_16x16.png");
 	ImageLoader saver = new ImageLoader();
