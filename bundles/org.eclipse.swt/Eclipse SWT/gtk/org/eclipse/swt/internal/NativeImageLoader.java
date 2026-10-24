@@ -91,51 +91,38 @@ public class NativeImageLoader {
 			} else {
 				// Image with multiple frames, iterate through each frame and convert
 				// each frame to ImageData
-				long start_time = OS.g_malloc(8);
+				long start_time = OS.g_malloc(16); // GTimeVal, two glongs
 				OS.g_get_current_time(start_time);
 				long animation_iter = GDK.gdk_pixbuf_animation_get_iter(pixbuf_animation, start_time);
+				// GdkPixbufAnimation does not tell the number of frames and starts over after
+				// the last one, so take it from the file. Other formats get at most 32 frames.
+				int gifFrames = countGifFrames(data_buffer);
+				int num_frames = gifFrames > 0 ? gifFrames : 32;
 				int delay_time = 0;
-				int time_offset = 0;
-				// Fix the number of GIF frames as GdkPixbufAnimation does not provide an API to
-				// determine number of frames.
-				int num_frames = 32;
 				for (int i = 0; i < num_frames; i++) {
-					// Calculate time offset from start_time to next frame
-					delay_time = GDK.gdk_pixbuf_animation_iter_get_delay_time(animation_iter);
-					time_offset += delay_time;
-					OS.g_time_val_add(start_time, time_offset * 1000);
-					boolean update = GDK.gdk_pixbuf_animation_iter_advance(animation_iter, start_time);
-					if (update) {
-						long curr_pixbuf = GDK.gdk_pixbuf_animation_iter_get_pixbuf(animation_iter);
-						long pixbuf_copy = GDK.gdk_pixbuf_copy(curr_pixbuf); // copy because curr_pixbuf might get disposed
-																				// on next advance
-						ImageData imgData = pixbufToImageData(pixbuf_copy);
-						if (imageLoader.logicalScreenHeight == 0 && imageLoader.logicalScreenWidth == 0) {
-							imageLoader.logicalScreenHeight = imgData.height;
-							imageLoader.logicalScreenWidth = imgData.width;
-						}
-						OS.g_object_unref(pixbuf_copy);
-						imgData.type = getImageFormat(loader);
-						imgData.delayTime = delay_time;
-						imgDataList.add(imgData);
-					} else {
-						break;
+					if (i > 0) {
+						// A negative delay means that the previous frame is shown forever
+						if (delay_time < 0) break;
+						OS.g_time_val_add(start_time, delay_time * 1000L);
+						if (!GDK.gdk_pixbuf_animation_iter_advance(animation_iter, start_time)) break;
 					}
+					delay_time = GDK.gdk_pixbuf_animation_iter_get_delay_time(animation_iter);
+					long curr_pixbuf = GDK.gdk_pixbuf_animation_iter_get_pixbuf(animation_iter);
+					long pixbuf_copy = GDK.gdk_pixbuf_copy(curr_pixbuf); // copy because curr_pixbuf might get disposed
+																			// on next advance
+					ImageData imgData = pixbufToImageData(pixbuf_copy);
+					if (imageLoader.logicalScreenHeight == 0 && imageLoader.logicalScreenWidth == 0) {
+						imageLoader.logicalScreenHeight = imgData.height;
+						imageLoader.logicalScreenWidth = imgData.width;
+					}
+					OS.g_object_unref(pixbuf_copy);
+					imgData.type = getImageFormat(loader);
+					// GdkPixbuf counts in milliseconds, ImageData in hundredths of a second
+					imgData.delayTime = Math.max(0, delay_time) / 10;
+					imgDataList.add(imgData);
 				}
 				OS.g_object_unref(animation_iter);
 				OS.g_free(start_time);
-				if (imgDataList.isEmpty()) {
-					// Some single-frame images (e.g. GIFs carrying a graphic control extension)
-					// are reported by GdkPixbuf (when using glycin library internally) as
-					// non-static animations, but the first iter_advance() returns false so that the
-					// loop above adds no frame at all.
-					// Fall back to the static image in this case (see
-					// https://github.com/eclipse-platform/eclipse.platform.swt/issues/3404).
-					long pixbuf = GDK.gdk_pixbuf_animation_get_static_image(pixbuf_animation);
-					ImageData imgData = pixbufToImageData(pixbuf);
-					imgData.type = getImageFormat(loader);
-					imgDataList.add(imgData);
-				}
 			}
 		} finally {
 			// The loader keeps no reference to the written buffer, and owns the animation
@@ -156,6 +143,41 @@ public class NativeImageLoader {
 			}
 		}
 		return imgDataList.stream().map(data -> new ElementAtZoom<>(data, streamAtZoom.zoom())).toList();
+	}
+
+	/**
+	 * Answer the number of images in a GIF file, or -1 if the data is not a GIF file
+	 * or cannot be parsed.
+	 */
+	static int countGifFrames(byte[] data) {
+		if (data.length < 13 || data[0] != 'G' || data[1] != 'I' || data[2] != 'F') return -1;
+		int index = 13;
+		if ((data[10] & 0x80) != 0) index += 3 << ((data[10] & 0x7) + 1); // global color table
+		int frames = 0;
+		while (index < data.length) {
+			switch (data[index++]) {
+				case 0x21: // extension: label, then data sub-blocks
+					index++;
+					break;
+				case 0x2C: // image descriptor, optional local color table, LZW code size, then data sub-blocks
+					if (index + 9 > data.length) return -1;
+					int flags = data[index + 8];
+					index += 9;
+					if ((flags & 0x80) != 0) index += 3 << ((flags & 0x7) + 1);
+					index++;
+					frames++;
+					break;
+				case 0x3B: // trailer
+					return frames;
+				default:
+					return frames > 0 ? frames : -1;
+			}
+			while (index < data.length && data[index] != 0) {
+				index += (data[index] & 0xFF) + 1;
+			}
+			index++;
+		}
+		return frames > 0 ? frames : -1;
 	}
 
 	public static ImageData load(InputStream streamAtZoom, ImageLoader imageLoader, int width, int height) {
