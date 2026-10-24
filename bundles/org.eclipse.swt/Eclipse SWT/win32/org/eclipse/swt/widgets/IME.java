@@ -391,7 +391,10 @@ LRESULT WM_IME_COMPOSITION (long wParam, long lParam) {
 					}
 				}
 			}
-			if ((lParam & OS.GCS_COMPSTR) == 0) return LRESULT.ONE;
+			if ((lParam & OS.GCS_COMPSTR) == 0) {
+				OS.ImmReleaseContext (hwnd, hIMC);
+				return LRESULT.ONE;
+			}
 		}
 		buffer = null;
 		if ((lParam & OS.GCS_COMPSTR) != 0) {
@@ -536,6 +539,7 @@ LRESULT WM_KEYDOWN (long wParam, long lParam) {
 				long hIMC = OS.ImmGetContext (hwnd);
 				TCHAR buffer = new TCHAR (event.text, true);
 				long rc = OS.ImmEscape(hKL, hIMC, OS.IME_ESC_HANJA_MODE, buffer);
+				if (hIMC != 0) OS.ImmReleaseContext (hwnd, hIMC);
 				if (rc != 0) {
 					sendEvent (SWT.ImeComposition, event);
 				}
