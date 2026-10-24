@@ -17,6 +17,7 @@ package org.eclipse.swt.internal.image;
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import java.io.*;
+import java.util.zip.*;
 
 final class TIFFDirectory {
 
@@ -37,6 +38,7 @@ final class TIFFDirectory {
 	int[] stripByteCounts;
 	int t4Options;
 	int colorMapOffset;
+	int predictor;
 
 	/* Encoder fields */
 	ImageData image;
@@ -65,6 +67,7 @@ final class TIFFDirectory {
 	static final short TAG_ResolutionUnit = 296;
 	static final short TAG_Software = 305;
 	static final short TAG_DateTime = 306;
+	static final short TAG_Predictor = 317;
 	static final short TAG_ColorMap = 320;
 
 	static final int TYPE_BYTE = 1;
@@ -76,7 +79,13 @@ final class TIFFDirectory {
 	/* Different compression schemes */
 	static final int COMPRESSION_NONE = 1;
 	static final int COMPRESSION_CCITT_3_1 = 2;
+	static final int COMPRESSION_LZW = 5;
+	static final int COMPRESSION_DEFLATE = 8;
 	static final int COMPRESSION_PACKBITS = 32773;
+	static final int COMPRESSION_DEFLATE_OLD = 32946;
+
+	static final int PREDICTOR_NONE = 1;
+	static final int PREDICTOR_HORIZONTAL = 2;
 
 	static final int IFD_ENTRY_SIZE = 12;
 
@@ -145,8 +154,28 @@ void getEntryValue(int type, byte[] buffer, int index, int[] values) throws IOEx
 }
 
 void decodePixels(ImageData image) throws IOException {
+	switch (compression) {
+		case COMPRESSION_NONE:
+		case COMPRESSION_CCITT_3_1:
+		case 3:
+		case COMPRESSION_LZW:
+		case COMPRESSION_DEFLATE:
+		case COMPRESSION_PACKBITS:
+		case COMPRESSION_DEFLATE_OLD:
+			break;
+		default:
+			/* An unknown compression would decode to an empty image */
+			SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);
+	}
+	if (predictor != PREDICTOR_NONE) {
+		/* Horizontal differencing is supported for 8 bit samples only */
+		if (predictor != PREDICTOR_HORIZONTAL || depth % 8 != 0 || depth / 8 != samplesPerPixel) {
+			SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);
+		}
+	}
 	/* Each row is byte aligned */
-	byte[] imageData = new byte[(imageWidth * depth + 7) / 8 * imageLength];
+	int rowByteSize = (imageWidth * depth + 7) / 8;
+	byte[] imageData = new byte[rowByteSize * imageLength];
 	image.data = imageData;
 	int destIndex = 0;
 	int length = stripOffsets.length;
@@ -155,11 +184,16 @@ void decodePixels(ImageData image) throws IOException {
 		byte[] data = new byte[stripByteCounts[i]];
 		file.seek(stripOffsets[i]);
 		file.read(data);
+		int stripStart = destIndex;
 		if (compression == COMPRESSION_NONE) {
 			System.arraycopy(data, 0, imageData, destIndex, data.length);
 			destIndex += data.length;
 		} else if (compression == COMPRESSION_PACKBITS) {
 			destIndex += decodePackBits(data, imageData, destIndex);
+		} else if (compression == COMPRESSION_LZW) {
+			destIndex += decodeLZW(data, imageData, destIndex);
+		} else if (compression == COMPRESSION_DEFLATE || compression == COMPRESSION_DEFLATE_OLD) {
+			destIndex += decodeDeflate(data, imageData, destIndex);
 		} else if (compression == COMPRESSION_CCITT_3_1 || compression == 3) {
 			TIFFModifiedHuffmanCodec codec = new TIFFModifiedHuffmanCodec();
 			int nRows = rowsPerStrip;
@@ -169,8 +203,91 @@ void decodePixels(ImageData image) throws IOException {
 			}
 			destIndex += codec.decode(data, imageData, destIndex, imageWidth, nRows);
 		}
+		if (predictor == PREDICTOR_HORIZONTAL) {
+			undoHorizontalDifferencing(imageData, stripStart, Math.min(destIndex, imageData.length), rowByteSize, depth / 8);
+		}
 		if (loader.hasListeners()) {
 			loader.notifyListeners(new ImageLoaderEvent(loader, image, i, i == length - 1));
+		}
+	}
+}
+
+/* LZW decoder, see section 13 of the TIFF 6.0 specification */
+static int decodeLZW(byte[] src, byte[] dest, int offsetDest) {
+	final int clearCode = 256, endCode = 257, firstCode = 258, maxCodes = 4096;
+	int[] prefix = new int[maxCodes];
+	byte[] suffix = new byte[maxCodes];
+	byte[] first = new byte[maxCodes];
+	int[] length = new int[maxCodes];
+	for (int i = 0; i < 256; i++) {
+		suffix[i] = first[i] = (byte)i;
+		length[i] = 1;
+	}
+	int destIndex = offsetDest;
+	int bitIndex = 0, bitCount = src.length * 8;
+	int codeSize = 9, nextCode = firstCode, oldCode = -1;
+	while (bitIndex + codeSize <= bitCount && destIndex < dest.length) {
+		int code = 0;
+		for (int i = 0; i < codeSize; i++, bitIndex++) {
+			code = (code << 1) | ((src[bitIndex >> 3] >> (7 - (bitIndex & 7))) & 1);
+		}
+		if (code == endCode) break;
+		if (code == clearCode) {
+			codeSize = 9;
+			nextCode = firstCode;
+			oldCode = -1;
+			continue;
+		}
+		if (oldCode == -1) {
+			if (code > 255) SWT.error(SWT.ERROR_INVALID_IMAGE);
+		} else {
+			if (code > nextCode) SWT.error(SWT.ERROR_INVALID_IMAGE);
+			if (nextCode < maxCodes) {
+				/* The new entry is the previous string followed by the first character of this one */
+				prefix[nextCode] = oldCode;
+				first[nextCode] = first[oldCode];
+				suffix[nextCode] = code == nextCode ? first[oldCode] : first[code];
+				length[nextCode] = length[oldCode] + 1;
+				nextCode++;
+				/* Codes grow one entry early, as written by the reference encoder */
+				if (nextCode + 1 >= 1 << codeSize && codeSize < 12) codeSize++;
+			}
+		}
+		/* Write the string of the code, from its last character back */
+		int end = Math.min(destIndex + length[code], dest.length);
+		for (int c = code, i = destIndex + length[code] - 1; i >= destIndex; c = prefix[c], i--) {
+			if (i < end) dest[i] = suffix[c];
+		}
+		destIndex = end;
+		oldCode = code;
+	}
+	return destIndex - offsetDest;
+}
+
+static int decodeDeflate(byte[] src, byte[] dest, int offsetDest) {
+	Inflater inflater = new Inflater();
+	try {
+		inflater.setInput(src);
+		int destIndex = offsetDest;
+		while (destIndex < dest.length && !inflater.finished()) {
+			int n = inflater.inflate(dest, destIndex, dest.length - destIndex);
+			if (n == 0 && (inflater.needsInput() || inflater.needsDictionary())) break;
+			destIndex += n;
+		}
+		return destIndex - offsetDest;
+	} catch (DataFormatException e) {
+		SWT.error(SWT.ERROR_INVALID_IMAGE, e);
+		return 0;
+	} finally {
+		inflater.end();
+	}
+}
+
+/* Each sample was stored as the difference to the same sample of the pixel before it in the row */
+static void undoHorizontalDifferencing(byte[] data, int start, int end, int rowByteSize, int bytesPerPixel) {
+	for (int row = start; row + rowByteSize <= end; row += rowByteSize) {
+		for (int i = row + bytesPerPixel; i < row + rowByteSize; i++) {
+			data[i] += data[i - bytesPerPixel];
 		}
 	}
 }
@@ -403,6 +520,10 @@ void parseEntries(byte[] buffer) throws IOException {
 				/* Ignored */
 				break;
 			}
+			case TAG_Predictor: {
+				predictor = getEntryValue(type, buffer, offset);
+				break;
+			}
 			case TAG_ColorMap: {
 				if (type != TYPE_SHORT) SWT.error(SWT.ERROR_INVALID_IMAGE);
 				/* Get the offset of the colorMap (use TYPE_LONG) */
@@ -425,6 +546,7 @@ public ImageData read(int [] nextIFDOffset) throws IOException {
 	samplesPerPixel = 1;
 	stripByteCounts = null;
 	stripOffsets = null;
+	predictor = PREDICTOR_NONE;
 
 	byte[] buffer = new byte[2];
 	file.read(buffer);
