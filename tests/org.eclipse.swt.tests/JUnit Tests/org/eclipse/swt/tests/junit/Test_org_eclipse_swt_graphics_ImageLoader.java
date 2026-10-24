@@ -249,6 +249,35 @@ public void test_loadSingleFrameGifReportedAsAnimation_bug3404() throws IOExcept
 }
 
 /**
+ * Every frame of an animated GIF is loaded once, in order, with its delay in hundredths of a
+ * second, also beyond 32 frames.
+ */
+@Test
+public void test_loadAnimatedGifFrames() {
+	for (int frameCount : new int[] { 2, 5, 40 }) {
+		ImageData[] frames = new ImageData[frameCount];
+		RGB[] colors = new RGB[frameCount];
+		for (int i = 0; i < frameCount; i++) {
+			colors[i] = new RGB(i * 6, 255 - i * 6, (i * 37) % 256);
+			frames[i] = new ImageData(4, 3, 8, new PaletteData(colors[i], new RGB(0, 0, 0)));
+			frames[i].delayTime = 5 + i % 3 * 5;
+		}
+		ImageLoader saver = new ImageLoader();
+		saver.data = frames;
+		saver.logicalScreenWidth = 4;
+		saver.logicalScreenHeight = 3;
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		saver.save(out, SWT.IMAGE_GIF);
+		ImageData[] loaded = new ImageLoader().load(new ByteArrayInputStream(out.toByteArray()));
+		assertEquals(frameCount, loaded.length, "frames");
+		for (int i = 0; i < frameCount; i++) {
+			assertEquals(colors[i], loaded[i].palette.getRGB(loaded[i].getPixel(1, 1)), "color of frame " + i);
+			assertEquals(frames[i].delayTime, loaded[i].delayTime, "delay of frame " + i);
+		}
+	}
+}
+
+/**
  * Regression test for https://github.com/eclipse-platform/eclipse.platform.swt/issues/3545
  *
  * A one pixel wide RGB image has a row stride of 3 bytes when gdk-pixbuf decodes through glycin.
