@@ -723,6 +723,8 @@ void createHandle () {
 	if (hwndText != 0 && EditProc == 0) {
 		EditProc = OS.GetWindowLongPtr (hwndText, OS.GWLP_WNDPROC);
 	}
+	/* The edit control of a combo box is limited to 30000 characters by default */
+	if (hwndText != 0) OS.SendMessage (handle, OS.CB_LIMITTEXT, 0, 0);
 	long hwndList = OS.GetDlgItem (handle, CBID_LIST);
 	if (hwndList != 0 && ListProc == 0) {
 		ListProc = OS.GetWindowLongPtr (hwndList, OS.GWLP_WNDPROC);
@@ -1377,6 +1379,8 @@ public int getTextLimit () {
 	long hwndText = OS.GetDlgItem (handle, CBID_EDIT);
 	if (hwndText == 0) return LIMIT;
 	int limit = (int)OS.SendMessage (hwndText, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
+	/* CB_LIMITTEXT with 0 sets the limit to 0x7FFFFFFE */
+	if (limit >= LIMIT - 1) return LIMIT;
 	if (segments != null && limit < LIMIT) limit = Math.max (1, limit - segments.length);
 	return limit;
 }
