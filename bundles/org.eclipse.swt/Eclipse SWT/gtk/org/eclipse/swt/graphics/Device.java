@@ -38,11 +38,6 @@ public abstract class Device implements Drawable {
 	 * @since 3.105
 	 */
 	protected static final int CHANGE_SCALEFACTOR = 1;
-	/* Settings callbacks */
-	long gsettingsProc;
-	Callback gsettingsCallback;
-	boolean isConnected = false;
-	long displaySettings; //gsettings Dictionary
 
 	/**
 	 * the handle to the X Display
@@ -77,6 +72,13 @@ public abstract class Device implements Drawable {
 	String [] log_domains = {"", "GLib-GObject", "GLib", "GObject", "Pango", "ATK", "GdkPixbuf", "Gdk", "Gtk", "GnomeVFS", "GIO"};
 	int [] handler_ids = new int [log_domains.length];
 	int warningLevel;
+
+	/*
+	 * GTK's own messages bypass logProc: it is built with G_LOG_USE_STRUCTURED,
+	 * so they only reach a GLib writer function. One is installed for a device
+	 * in debug mode and, since GLib cannot unset it, kept for the process.
+	 */
+	static Callback logWriterCallback;
 
 	/* X Warning and Error Handlers */
 	static Callback XErrorCallback, XIOErrorCallback;
@@ -690,6 +692,12 @@ protected void init () {
 		}
 	}
 
+	/* DEBUG too: Display.create() sets it from SWT_DEBUG after debug was initialized. */
+	if ((DEBUG || debug) && logWriterCallback == null) {
+		logWriterCallback = new Callback (Device.class, "logWriterProc", 4);
+		OS.g_log_set_writer_func (logWriterCallback.getAddress (), 0, 0);
+	}
+
 	emptyTab = OS.pango_tab_array_new(1, false);
 	if (emptyTab == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 	OS.pango_tab_array_set_tab(emptyTab, 0, OS.PANGO_TAB_LEFT, 1);
@@ -920,6 +928,16 @@ long logProc (long log_domain, long log_level, long message, long user_data) {
 	return 0;
 }
 
+/* Leaves the message to GLib and appends the Java stack that provoked it. */
+static long logWriterProc (long log_level, long fields, long n_fields, long user_data) {
+	long result = OS.g_log_writer_default ((int)log_level, fields, n_fields, user_data);
+	/* Skip the informational levels; with G_MESSAGES_DEBUG set those can print without a stack. */
+	if (((int)log_level & (OS.G_LOG_LEVEL_INFO | OS.G_LOG_LEVEL_DEBUG)) == 0) {
+		new Error ().printStackTrace ();
+	}
+	return result;
+}
+
 void new_Object (Object object) {
 	synchronized (trackingLock) {
 		for (int i=0; i<objects.length; i++) {
@@ -1006,13 +1024,6 @@ protected void release () {
 		handler_ids = null;  log_domains = null;
 		logProc = 0;
 	}
-	/* Dispose the settings callback */
-	if (gsettingsCallback != null) {
-		gsettingsCallback.dispose();
-		gsettingsCallback = null;
-	}
-	gsettingsProc = 0;
-
 
 }
 

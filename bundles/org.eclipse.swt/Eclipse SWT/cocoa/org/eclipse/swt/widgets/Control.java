@@ -1004,7 +1004,7 @@ Color defaultBackground () {
 
 Font defaultFont () {
 	if (display.smallFonts) return display.getSystemFont ();
-	return Font.cocoa_new (display, defaultNSFont ());
+	return display.getDefaultFont (defaultNSFont ());
 }
 
 Color defaultForeground () {
@@ -1044,7 +1044,7 @@ void doCommandBySelector (long id, long sel, long selector) {
 			 * is down, because we likely triggered the current key sequence via flagsChanged.
 			 */
 			long modifiers = nsEvent.modifierFlags();
-			if (s.keyInputHappened == false || (modifiers & OS.NSCommandKeyMask) != 0) {
+			if (s.keyInputHappened == false || (modifiers & OS.NSEventModifierFlagCommand) != 0) {
 				s.keyInputHappened = true;
 				boolean [] consume = new boolean [1];
 				if (translateTraversal (nsEvent.keyCode (), nsEvent, consume)) return;
@@ -1270,6 +1270,10 @@ void fillBackground (NSView view, NSGraphicsContext context, NSRect rect, int im
 	if (control == null) control = this;
 	Image image = control.backgroundImage;
 	if (image != null && !image.isDisposed()) {
+		if (imgHeight == -1 && view.isFlipped()) {
+			fillBackgroundTiles(view, context, rect, image, control.view, gcView, tx, ty);
+			return;
+		}
 		context.saveGraphicsState();
 		NSColor.colorWithPatternImage(image.handle).setFill();
 		NSPoint phase = new NSPoint();
@@ -1311,6 +1315,40 @@ void fillBackground (NSView view, NSGraphicsContext context, NSRect rect, int im
 	NSColor.colorWithDeviceRed (background [0], background [1], background [2], alpha).setFill ();
 	NSBezierPath.fillRect (rect);
 	context.restoreGraphicsState ();
+}
+
+// A pattern fill paints the tile upside down in a flipped view, so tile the image from the top left of the control instead.
+private void fillBackgroundTiles (NSView view, NSGraphicsContext context, NSRect rect, Image image, NSView controlView, NSView gcView, int tx, int ty) {
+	NSSize size = image.handle.size();
+	if (size.width <= 0 || size.height <= 0) return;
+	NSPoint origin = controlView.convertPoint_toView_(new NSPoint(), view);
+	if (gcView != null) {
+		NSPoint pt = gcView.convertPoint_toView_(new NSPoint(), view);
+		origin.x += pt.x;
+		origin.y += pt.y;
+	}
+	origin.x -= tx;
+	origin.y -= ty;
+	context.saveGraphicsState();
+	NSBezierPath.bezierPathWithRect(rect).addClip();
+	NSRect dest = new NSRect();
+	dest.width = size.width;
+	dest.height = size.height;
+	NSRect whole = new NSRect();
+	double startX = origin.x + Math.floor((rect.x - origin.x) / size.width) * size.width;
+	double startY = origin.y + Math.floor((rect.y - origin.y) / size.height) * size.height;
+	for (double y = startY; y < rect.y + rect.height; y += size.height) {
+		for (double x = startX; x < rect.x + rect.width; x += size.width) {
+			context.saveGraphicsState();
+			NSAffineTransform transform = NSAffineTransform.transform();
+			transform.translateXBy(x, y + size.height);
+			transform.scaleXBy(1, -1);
+			transform.concat();
+			image.handle.drawInRect(dest, whole, OS.NSCompositingOperationSourceOver, 1);
+			context.restoreGraphicsState();
+		}
+	}
+	context.restoreGraphicsState();
 }
 
 Cursor findCursor () {
@@ -1363,9 +1401,9 @@ void flagsChanged (long id, long sel, long theEvent) {
 			int keyCode = Display.translateKey (nsEvent.keyCode ());
 			switch (keyCode) {
 				case SWT.ALT: mask = OS.NSAlternateKeyMask; break;
-				case SWT.CONTROL: mask = OS.NSControlKeyMask; break;
-				case SWT.COMMAND: mask = OS.NSCommandKeyMask; break;
-				case SWT.SHIFT: mask = OS.NSShiftKeyMask; break;
+				case SWT.CONTROL: mask = OS.NSEventModifierFlagControl; break;
+				case SWT.COMMAND: mask = OS.NSEventModifierFlagCommand; break;
+				case SWT.SHIFT: mask = OS.NSEventModifierFlagShift; break;
 				case SWT.CAPS_LOCK:
 					Event event = new Event();
 					event.keyCode = keyCode;
@@ -2279,10 +2317,6 @@ public boolean isEnabled () {
 	return getEnabled () && parent.isEnabled ();
 }
 
-boolean isEnabledCursor () {
-	return isEnabled ();
-}
-
 boolean isFocusAncestor (Control control) {
 	while (control != null && control != this && !(control instanceof Shell)) {
 		control = control.parent;
@@ -2558,7 +2592,7 @@ boolean mouseEvent (long id, long sel, long theEvent, int type) {
 
 	switch (nsType) {
 		case OS.NSLeftMouseDown:
-			if (nsEvent.clickCount() == 1 && (nsEvent.modifierFlags() & OS.NSControlKeyMask) == 0 && (state & DRAG_DETECT) != 0 && hooks (SWT.DragDetect)) {
+			if (nsEvent.clickCount() == 1 && (nsEvent.modifierFlags() & OS.NSEventModifierFlagControl) == 0 && (state & DRAG_DETECT) != 0 && hooks (SWT.DragDetect)) {
 				consume = new boolean[1];
 				NSPoint location = view.convertPoint_fromView_(nsEvent.locationInWindow(), null);
 				if (!view.isFlipped ()) {
@@ -2838,7 +2872,6 @@ public void redraw () {
 }
 
 void redraw (boolean children) {
-//	checkWidget();
 	view.setNeedsDisplay(true);
 }
 
@@ -4526,18 +4559,11 @@ void setZOrder (Control sibling, boolean above) {
 }
 
 void sort (int [] items) {
-	/* Shell Sort from K&R, pg 108 */
-	int length = items.length;
-	for (int gap=length/2; gap>0; gap/=2) {
-		for (int i=gap; i<length; i++) {
-			for (int j=i-gap; j>=0; j-=gap) {
-				if (items [j] <= items [j + gap]) {
-					int swap = items [j];
-					items [j] = items [j + gap];
-					items [j + gap] = swap;
-				}
-			}
-		}
+	Arrays.sort (items);
+	for (int i = 0, j = items.length - 1; i < j; i++, j--) {
+		int swap = items [i];
+		items [i] = items [j];
+		items [j] = swap;
 	}
 }
 
@@ -4689,7 +4715,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 	// Process removed/cancelled touches first.
 	NSArray endedTouches = nsEvent.touchesMatchingPhase(OS.NSTouchPhaseEnded | OS.NSTouchPhaseCancelled, null).allObjects();
 
-	for (int i = 0; i < endedTouches.count(); i++) {
+	for (int i = 0, endedCount = (int)endedTouches.count(); i < endedCount; i++) {
 		NSTouch touch = new NSTouch(endedTouches.objectAtIndex(i).id);
 		NSObject identity = new NSObject(OS.objc_msgSend(touch.id, OS.sel_identity));
 		NSTouch endedTouch = findTouchWithId(currentTouches, identity);
@@ -4702,7 +4728,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 	// Process touches in progress or starting.
 	NSArray activeTouches = nsEvent.touchesMatchingPhase(OS.NSTouchPhaseBegan | OS.NSTouchPhaseMoved | OS.NSTouchPhaseStationary, null).allObjects();
 
-	for (int i = 0; i < activeTouches.count(); i++) {
+	for (int i = 0, activeCount = (int)activeTouches.count(); i < activeCount; i++) {
 		NSTouch touch = new NSTouch(activeTouches.objectAtIndex(i).id);
 		NSObject identity = new NSObject(OS.objc_msgSend(touch.id, OS.sel_identity));
 		NSTouch activeTouch = findTouchWithId(currentTouches, identity);
@@ -4731,7 +4757,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 				}
 
 				touches[currTouchIndex++] = fakeTouchUp;
-				currentTouches.removeObject(activeTouch);
+				currentTouches.removeObject(touch);
 			}
 		}
 	}
@@ -4783,7 +4809,7 @@ boolean translateTraversal (int key, NSEvent theEvent, boolean [] consume) {
 		}
 		case 48: /* Tab */ {
 			long modifiers = theEvent.modifierFlags ();
-			boolean next = (modifiers & OS.NSShiftKeyMask) == 0;
+			boolean next = (modifiers & OS.NSEventModifierFlagShift) == 0;
 			detail = next ? SWT.TRAVERSE_TAB_NEXT : SWT.TRAVERSE_TAB_PREVIOUS;
 			break;
 		}
@@ -4799,7 +4825,7 @@ boolean translateTraversal (int key, NSEvent theEvent, boolean [] consume) {
 		case 121: /* Page down */ {
 			all = true;
 			long modifiers = theEvent.modifierFlags ();
-			if ((modifiers & OS.NSControlKeyMask) == 0) return false;
+			if ((modifiers & OS.NSEventModifierFlagControl) == 0) return false;
 			detail = key == 121 /* Page down */ ? SWT.TRAVERSE_PAGE_NEXT : SWT.TRAVERSE_PAGE_PREVIOUS;
 			break;
 		}
@@ -5172,7 +5198,6 @@ boolean update (boolean all) {
 			return false;
 		}
  	}
-//	checkWidget();
 	NSArray isPainting = display.isPainting;
 	if (isPainting.containsObject(view)) return false;
 	for (int i = 0, length = (int)isPainting.count(); i < length; i++) {
@@ -5241,7 +5266,7 @@ void updateCursorRects (boolean enabled, NSView widget) {
 	} else {
 		widget.discardCursorRects ();
 		NSArray areas = widget.trackingAreas ();
-		for (int i = 0; i < areas.count(); i++) {
+		for (int i = 0, length = (int)areas.count(); i < length; i++) {
 			widget.removeTrackingArea (new NSTrackingArea (areas.objectAtIndex (i)));
 		}
 	}

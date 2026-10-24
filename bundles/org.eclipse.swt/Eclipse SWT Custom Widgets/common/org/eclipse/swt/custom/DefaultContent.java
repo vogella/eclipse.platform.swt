@@ -28,8 +28,8 @@ class DefaultContent implements StyledTextContent {
 	int gapStart = -1;	// the character position start of the gap
 	int gapEnd = -1;	// the character position after the end of the gap
 	int gapLine = -1;	// the line on which the gap exists, the gap will always be associated with one line
-	int highWatermark = 300;
-	int lowWatermark = 50;
+	final int highWatermark = 300;
+	final int lowWatermark = 50;
 
 	int[][] lines = new int[50][2];	// array of character positions and lengths representing the lines of text
 	int lineCount = 0;	// the number of lines of text
@@ -244,12 +244,10 @@ int[][] indexLines(int offset, int length, int numLines){
 		} else {
 			char ch = textStore[location];
 			if (ch == SWT.CR) {
-				// see if the next character is a LF
-				if (location+1 < textStore.length) {
-					ch = textStore[location+1];
-					if (ch == SWT.LF) {
-						i++;
-					}
+				// a LF behind the gap or outside this range is on a separate line
+				int next = location + 1;
+				if (next < offset + length && (next < gapStart || next >= gapEnd) && textStore[next] == SWT.LF) {
+					i++;
 				}
 				indexedLines = addLineIndex(start, i - start + 1, indexedLines, lineCount);
 				lineCount++;
@@ -345,7 +343,6 @@ void insert(int position, String text) {
  * @param newGapLine the line where the gap should be put
  */
 void moveAndResizeGap(int position, int size, int newGapLine) {
-	char[] content = null;
 	int oldSize = gapEnd - gapStart;
 	int newSize;
 	if (size > 0) {
@@ -363,18 +360,7 @@ void moveAndResizeGap(int position, int size, int newGapLine) {
 		}
 	}
 
-	if (newSize < 0) {
-		if (oldSize > 0) {
-			// removing the gap
-			content = new char[textStore.length - oldSize];
-			System.arraycopy(textStore, 0, content, 0, gapStart);
-			System.arraycopy(textStore, gapEnd, content, gapStart, content.length - gapStart);
-			textStore = content;
-		}
-		gapStart = gapEnd = position;
-		return;
-	}
-	content = new char[textStore.length + (newSize - oldSize)];
+	char[] content = new char[textStore.length + (newSize - oldSize)];
 	int newGapStart = position;
 	int newGapEnd = newGapStart + newSize;
 	if (oldSize == 0) {
@@ -406,48 +392,6 @@ void moveAndResizeGap(int position, int size, int newGapLine) {
 			lines[i][0] = lines[i][0] + gapLength;
 		}
 	}
-}
-/**
- * Returns the number of lines that are in the specified text.
- * <p>
- *
- * @param startOffset the start of the text to lineate
- * @param length the length of the text to lineate
- * @return number of lines
- */
-int lineCount(int startOffset, int length){
-	if (length == 0) {
-		return 0;
-	}
-	int lineCount = 0;
-	int count = 0;
-	int i = startOffset;
-	if (i >= gapStart) {
-		i += gapEnd - gapStart;
-	}
-	while (count < length) {
-		if ((i >= gapStart) && (i < gapEnd)) {
-			// ignore the gap
-		} else {
-			char ch = textStore[i];
-			if (ch == SWT.CR) {
-				// see if the next character is a LF
-				if (i + 1 < textStore.length) {
-					ch = textStore[i+1];
-					if (ch == SWT.LF) {
-						i++;
-						count++;
-					}
-				}
-				lineCount++;
-			} else if (ch == SWT.LF) {
-				lineCount++;
-			}
-			count++;
-		}
-		i++;
-	}
-	return lineCount;
 }
 /**
  * Returns the number of lines that are in the specified text.
@@ -527,28 +471,6 @@ public String getLine(int index) {
 @Override
 public String getLineDelimiter() {
 	return LineDelimiter;
-}
-/**
- * Returns the line at the given index with delimiters.
- * <p>
- * @param index	the index of the line to return
- * @return the logical line text (i.e., without the gap) with delimiters
- */
-String getFullLine(int index) {
-	int start = lines[index][0];
-	int length = lines[index][1];
-	int end = start + length - 1;
-	if (!gapExists() || (end < gapStart) || (start >= gapEnd)) {
-		// line is before or after the gap
-		return new String(textStore, start, length);
-	} else {
-		// gap is in the specified range, strip out the gap
-		StringBuilder buffer = new StringBuilder();
-		int gapLength = gapEnd - gapStart;
-		buffer.append(textStore, start, gapStart - start);
-		buffer.append(textStore, gapEnd, length - gapLength - (gapStart - start));
-		return buffer.toString();
-	}
 }
 /**
  * Returns the physical line at the given index (i.e., with delimiters and the gap).
@@ -796,7 +718,8 @@ public void replaceTextRange(int start, int replaceLength, String newText){
 	StyledTextEvent event = new StyledTextEvent(this);
 	event.type = ST.TextChanging;
 	event.start = start;
-	event.replaceLineCount = lineCount(start, replaceLength);
+	// a rescan would merge an adjacent lone \r and \n into one delimiter
+	event.replaceLineCount = getLineAtOffset(start + replaceLength) - getLineAtOffset(start);
 	event.text = newText;
 	event.newLineCount = lineCount(newText);
 	event.replaceCharCount = replaceLength;
@@ -804,7 +727,7 @@ public void replaceTextRange(int start, int replaceLength, String newText){
 	sendTextEvent(event);
 
 	// first delete the text to be replaced
-	delete(start, replaceLength, event.replaceLineCount + 1);
+	delete(start, replaceLength);
 	// then insert the new text
 	insert(start, newText);
 	// inform listeners
@@ -844,26 +767,18 @@ public void setText (String text){
  * <p>
  * @param position the position at which the text to delete starts
  * @param length the length of the text to delete
- * @param numLines the number of lines that are being deleted
  */
-void delete(int position, int length, int numLines) {
+void delete(int position, int length) {
 	if (length == 0) return;
 
 	int startLine = getLineAtOffset(position);
 	int startLineOffset = getOffsetAtLine(startLine);
 	int endLine = getLineAtOffset(position + length);
 
-	String endText = "";
-	boolean splittingDelimiter = false;
-	if (position + length < getCharCount()) {
-		endText = getTextRange(position + length - 1, 2);
-		if ((endText.charAt(0) == SWT.CR) && (endText.charAt(1) == SWT.LF)) {
-			splittingDelimiter = true;
-		}
-	}
+	// logical end of the last affected line, from the existing line boundaries
+	int endLineEnd = endLine + 1 < lineCount ? getOffsetAtLine(endLine + 1) : getCharCount();
 
 	adjustGap(position + length, -length, startLine);
-	int [][] oldLines = indexLines(position, length + (gapEnd - gapStart), numLines);
 
 	// enlarge the gap - the gap can be enlarged either to the
 	// right or left
@@ -873,29 +788,10 @@ void delete(int position, int length, int numLines) {
 		gapEnd += length;
 	}
 
-	// figure out the length of the new concatenated line, do so by
-	// finding the first line delimiter after position
-	int j = position;
-	boolean eol = false;
-	while (j < textStore.length && !eol) {
-		if (j < gapStart || j >= gapEnd) {
-			char ch = textStore[j];
-			if (isDelimiter(ch)) {
-				if (j + 1 < textStore.length) {
-					if (ch == SWT.CR && (textStore[j+1] == SWT.LF)) {
-						j++;
-					}
-				}
-				eol = true;
-			}
-		}
-		j++;
-	}
-	// update the line where the deletion started
-	lines[startLine][1] = (position - startLineOffset) + (j - position);
-	// figure out the number of lines that have been deleted
-	int numOldLines = oldLines.length - 1;
-	if (splittingDelimiter) numOldLines -= 1;
+	// the start line now ends with the rest of the end line, the gap lies in between
+	lines[startLine][1] = (endLineEnd - length - startLineOffset) + (gapEnd - gapStart);
+	// a rescan would merge an adjacent lone \r and \n into one delimiter
+	int numOldLines = endLine - startLine;
 	// shift up the lines after the last deleted line, no need to update
 	// the offset or length of the lines
 	for (int i = endLine + 1; i < lineCount; i++) {

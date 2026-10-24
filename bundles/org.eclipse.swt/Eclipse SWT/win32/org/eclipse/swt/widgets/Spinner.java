@@ -160,6 +160,8 @@ void createHandle () {
 		null);
 	if (hwndText == 0) error (SWT.ERROR_NO_HANDLES);
 	OS.SetWindowLongPtr (hwndText, OS.GWLP_ID, hwndText);
+	/* An edit control is limited to 30000 characters by default */
+	OS.SendMessage (hwndText, OS.EM_LIMITTEXT, 0, 0);
 	int upDownStyle = OS.WS_CHILD | OS.WS_VISIBLE | OS.UDS_AUTOBUDDY;
 	if ((style & SWT.WRAP) != 0) upDownStyle |= OS.UDS_WRAP;
 	hwndUpDown = OS.CreateWindowEx (
@@ -232,29 +234,6 @@ public void addModifyListener (ModifyListener listener) {
  */
 public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
-}
-
-/**
- * Adds the listener to the collection of listeners who will
- * be notified when the receiver's text is verified, by sending
- * it one of the messages defined in the <code>VerifyListener</code>
- * interface.
- *
- * @param listener the listener which should be notified
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @see VerifyListener
- * @see #removeVerifyListener
- */
-void addVerifyListener (VerifyListener listener) {
-	addTypedListener(listener, SWT.Verify);
 }
 
 @Override
@@ -597,7 +576,9 @@ public String getText () {
  */
 public int getTextLimit () {
 	checkWidget ();
-	return (int)OS.SendMessage (hwndText, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
+	int limit = (int)OS.SendMessage (hwndText, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
+	/* EM_LIMITTEXT with 0 sets the limit of a single-line edit to 0x7FFFFFFE */
+	return limit >= LIMIT - 1 ? LIMIT : limit;
 }
 
 @Override
@@ -683,30 +664,6 @@ public void removeSelectionListener(SelectionListener listener) {
 	if (eventTable == null) return;
 	eventTable.unhook (SWT.Selection, listener);
 	eventTable.unhook (SWT.DefaultSelection,listener);
-}
-
-/**
- * Removes the listener from the collection of listeners who will
- * be notified when the control is verified.
- *
- * @param listener the listener which should no longer be notified
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @see VerifyListener
- * @see #addVerifyListener
- */
-void removeVerifyListener (VerifyListener listener) {
-	checkWidget ();
-	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
-	if (eventTable == null) return;
-	eventTable.unhook (SWT.Verify, listener);
 }
 
 @Override

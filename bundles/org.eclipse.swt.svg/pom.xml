@@ -15,11 +15,11 @@
 	<parent>
 		<groupId>org.eclipse.platform</groupId>
 		<artifactId>eclipse.platform.swt</artifactId>
-		<version>4.41.0-SNAPSHOT</version>
+		<version>4.42.0-SNAPSHOT</version>
 		<relativePath>../../</relativePath>
 	</parent>
 	<artifactId>org.eclipse.swt.svg</artifactId>
-	<version>3.133.100-SNAPSHOT</version>
+	<version>3.133.200-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 	<properties>
 		<tycho.extraClasspathJars>IGNORE</tycho.extraClasspathJars>

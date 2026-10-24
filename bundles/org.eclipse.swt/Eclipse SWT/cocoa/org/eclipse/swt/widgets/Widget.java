@@ -65,8 +65,6 @@ public abstract class Widget {
 	static final int HOT			  = 1 << 5;
 	static final int MOVED            = 1 << 6;
 	static final int RESIZED          = 1 << 7;
-	static final int EXPANDING        = 1 << 8;
-	static final int IGNORE_WHEEL     = 1 << 9;
 	static final int PARENT_BACKGROUND = 1 << 10;
 	static final int THEME_BACKGROUND = 1 << 11;
 
@@ -1271,10 +1269,6 @@ boolean shouldDelayWindowOrderingForEvent (long id, long sel, long theEvent) {
 	return OS.objc_msgSendSuper(super_struct, sel, theEvent) != 0;
 }
 
-boolean menuHasKeyEquivalent_forEvent_target_action(long id, long sel, long menu, long event, long target, long action) {
-	return true;
-}
-
 long menuForEvent (long id, long sel, long theEvent) {
 	objc_super super_struct = new objc_super();
 	super_struct.receiver = id;
@@ -1642,14 +1636,6 @@ NSRange selectedRange (long id, long sel) {
 	return new NSRange ();
 }
 
-long nextValidKeyView (long id, long sel) {
-	return callSuperObject(id, sel);
-}
-
-long previousValidKeyView (long id, long sel) {
-	return callSuperObject(id, sel);
-}
-
 void sendDoubleSelection() {
 }
 
@@ -1879,9 +1865,9 @@ boolean setInputState (Event event, NSEvent nsEvent, int type) {
 	}
 	long modifierFlags = nsEvent.modifierFlags();
 	if ((modifierFlags & OS.NSAlternateKeyMask) != 0) event.stateMask |= SWT.ALT;
-	if ((modifierFlags & OS.NSShiftKeyMask) != 0) event.stateMask |= SWT.SHIFT;
-	if ((modifierFlags & OS.NSControlKeyMask) != 0) event.stateMask |= SWT.CONTROL;
-	if ((modifierFlags & OS.NSCommandKeyMask) != 0) event.stateMask |= SWT.COMMAND;
+	if ((modifierFlags & OS.NSEventModifierFlagShift) != 0) event.stateMask |= SWT.SHIFT;
+	if ((modifierFlags & OS.NSEventModifierFlagControl) != 0) event.stateMask |= SWT.CONTROL;
+	if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0) event.stateMask |= SWT.COMMAND;
 
 	long state = NSEvent.pressedMouseButtons();
 	if ((state & 0x1) != 0) event.stateMask |= SWT.BUTTON1;
@@ -1928,6 +1914,20 @@ private int getKeyboardType(NSEvent nsEvent) {
 	return (int)OS.CGEventGetIntegerValueField(cgEvent, OS.kCGKeyboardEventKeyboardType);
 }
 
+// Note that bit shift >> 8 in modifiers is needed according to docs
+// of UCKeyTranslate().
+private static final int [] MODIFIER_TESTS = {
+	// Many non-latin layouts have a latin plane on Cmd key in order
+	// to handle keyboard shortcuts. Furthermore, layouts such as
+	// 'Dvorak-QWERTY⌘' have different latin planes without Cmd (for
+	// typing) and with Cmd (for invoking shortcuts). In both cases,
+	// that's exactly what we want for 'Event.keyCode'.
+	OS.cmdKey >> 8,
+	// Fallback just in case. It's unknown if it's actually helpful
+	// in any layouts.
+	0,
+};
+
 private int calculateKeycode(Event event, NSEvent nsEvent) {
 	long keyLayout = Display.getCurrentKeyLayout();
 	if (keyLayout == 0) {
@@ -1946,21 +1946,7 @@ private int calculateKeycode(Event event, NSEvent nsEvent) {
 	long [] actualStringLength = new long [1];
 	int [] deadKeyState = new int[1];
 
-	// Note that bit shift >> 8 in modifiers is needed according to docs
-	// of UCKeyTranslate().
-	final int [] modifierTests = new int[] {
-		// Many non-latin layouts have a latin plane on Cmd key in order
-		// to handle keyboard shortcuts. Furthermore, layouts such as
-		// 'Dvorak-QWERTY⌘' have different latin planes without Cmd (for
-		// typing) and with Cmd (for invoking shortcuts). In both cases,
-		// that's exactly what we want for 'Event.keyCode'.
-		OS.cmdKey >> 8,
-		// Fallback just in case. It's unknown if it's actually helpful
-		// in any layouts.
-		0,
-	};
-
-	for (int modifiers : modifierTests) {
+	for (int modifiers : MODIFIER_TESTS) {
 		OS.UCKeyTranslate (keyLayout, nsKeyCode, keyAction, modifiers, keyboardType, 0, deadKeyState, maxStringLength, actualStringLength, unicodeString);
 		if (actualStringLength[0] < 1) {
 			// part of a multi-key key
@@ -2056,7 +2042,6 @@ private int calculateKeycode(Event event, NSEvent nsEvent) {
  * TISInputSourceWrapper::InitKeyEvent() in Firefox.
  */
 boolean setKeyState (Event event, int type, NSEvent nsEvent) {
-	boolean isNull = false;
 	int keyCode = nsEvent.keyCode ();
 	event.keyCode = Display.translateKey (keyCode);
 	switch (event.keyCode) {
@@ -2085,9 +2070,7 @@ boolean setKeyState (Event event, int type, NSEvent nsEvent) {
 				event.keyCode = calculateKeycode(event, nsEvent);
 			}
 	}
-	if (event.keyCode == 0 && event.character == 0) {
-		if (!isNull) return false;
-	}
+	if (event.keyCode == 0 && event.character == 0) return false;
 	setLocationMask (event, nsEvent);
 	setInputState (event, nsEvent, type);
 	return true;
@@ -2238,10 +2221,6 @@ void tableView_didClickTableColumn(long id, long sel, long tableView, long table
 
 long tableView_objectValueForTableColumn_row(long id, long sel, long aTableView, long aTableColumn, long rowIndex) {
 	return 0;
-}
-
-boolean tableView_shouldSelectRow(long id, long sel, long tableView, long index) {
-	return true;
 }
 
 void tableView_setObjectValue_forTableColumn_row(long id, long sel, long aTableView, long anObject, long aTableColumn, long rowIndex) {

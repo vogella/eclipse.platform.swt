@@ -55,56 +55,64 @@ public class NativeImageLoader {
 			}
 			return FileFormat.load(new ElementAtZoom<>(stream2, streamAtZoom.zoom()), imageLoader, targetZoom);
 		}
+		if (isIcoFile(data_buffer)) {
+			// GdkPixbuf returns only one of the icons of an ICO file, and none (or an empty
+			// one) when it holds PNG compressed icons, so use the Java decoder like win32 and
+			// cocoa do: it returns every icon, BMP or PNG.
+			return FileFormat.load(new ElementAtZoom<>(stream2, streamAtZoom.zoom()), imageLoader, targetZoom);
+		}
 		List<ImageData> imgDataList = new ArrayList<>();
 		long loader = GDK.gdk_pixbuf_loader_new();
 		// 2) Copy byte array to C memory, write to GdkPixbufLoader
 		long buffer_ptr = OS.g_malloc(data_buffer.length);
-		C.memmove(buffer_ptr, data_buffer, data_buffer.length);
-		long[] error = new long[1];
-		GDK.gdk_pixbuf_loader_write(loader, buffer_ptr, data_buffer.length, error);
-		if (error[0] != 0) {
-			// Bug 576484
-			// It is safe just to assume if this fails it is most likely an IO error
-			// since unsupported format is checked before, and invalid image right after.
-			// Still, check if it belongs to the G_FILE_ERROR domain and IO error code
-			if (OS.g_error_matches(error[0], OS.g_file_error_quark(), OS.G_FILE_ERROR_IO)) {
-				SWT.error(SWT.ERROR_IO, null, Display.extractFreeGError(error[0]));
-			} else {
-				OS.g_error_free(error[0]);
+		try {
+			C.memmove(buffer_ptr, data_buffer, data_buffer.length);
+			long[] error = new long[1];
+			GDK.gdk_pixbuf_loader_write(loader, buffer_ptr, data_buffer.length, error);
+			GDK.gdk_pixbuf_loader_close(loader, null);
+			if (error[0] != 0) {
+				// Bug 576484
+				// It is safe just to assume if this fails it is most likely an IO error
+				// since unsupported format is checked before, and invalid image right after.
+				// Still, check if it belongs to the G_FILE_ERROR domain and IO error code
+				if (OS.g_error_matches(error[0], OS.g_file_error_quark(), OS.G_FILE_ERROR_IO)) {
+					SWT.error(SWT.ERROR_IO, null, Display.extractFreeGError(error[0]));
+				} else {
+					OS.g_error_free(error[0]);
+				}
 			}
-		}
-		GDK.gdk_pixbuf_loader_close(loader, null);
 
-		// 3) Get GdkPixbufAnimation from loader
-		long pixbuf_animation = GDK.gdk_pixbuf_loader_get_animation(loader);
-		if (pixbuf_animation == 0) {
-			SWT.error(SWT.ERROR_INVALID_IMAGE);
-		}
-		boolean isStatic = GDK.gdk_pixbuf_animation_is_static_image(pixbuf_animation);
-		if (isStatic) {
-			// Static image, get as single pixbuf and convert it to ImageData
-			long pixbuf = GDK.gdk_pixbuf_animation_get_static_image(pixbuf_animation);
-			ImageData imgData = pixbufToImageData(pixbuf);
-			imgData.type = getImageFormat(loader);
-			imgDataList.add(imgData);
-		} else {
-			// Image with multiple frames, iterate through each frame and convert
-			// each frame to ImageData
-			long start_time = OS.g_malloc(8);
-			OS.g_get_current_time(start_time);
-			long animation_iter = GDK.gdk_pixbuf_animation_get_iter(pixbuf_animation, start_time);
-			int delay_time = 0;
-			int time_offset = 0;
-			// Fix the number of GIF frames as GdkPixbufAnimation does not provide an API to
-			// determine number of frames.
-			int num_frames = 32;
-			for (int i = 0; i < num_frames; i++) {
-				// Calculate time offset from start_time to next frame
-				delay_time = GDK.gdk_pixbuf_animation_iter_get_delay_time(animation_iter);
-				time_offset += delay_time;
-				OS.g_time_val_add(start_time, time_offset * 1000);
-				boolean update = GDK.gdk_pixbuf_animation_iter_advance(animation_iter, start_time);
-				if (update) {
+			// 3) Get GdkPixbufAnimation from loader
+			long pixbuf_animation = GDK.gdk_pixbuf_loader_get_animation(loader);
+			if (pixbuf_animation == 0) {
+				SWT.error(SWT.ERROR_INVALID_IMAGE);
+			}
+			boolean isStatic = GDK.gdk_pixbuf_animation_is_static_image(pixbuf_animation);
+			if (isStatic) {
+				// Static image, get as single pixbuf and convert it to ImageData
+				long pixbuf = GDK.gdk_pixbuf_animation_get_static_image(pixbuf_animation);
+				ImageData imgData = pixbufToImageData(pixbuf);
+				imgData.type = getImageFormat(loader);
+				imgDataList.add(imgData);
+			} else {
+				// Image with multiple frames, iterate through each frame and convert
+				// each frame to ImageData
+				long start_time = OS.g_malloc(16); // GTimeVal, two glongs
+				OS.g_get_current_time(start_time);
+				long animation_iter = GDK.gdk_pixbuf_animation_get_iter(pixbuf_animation, start_time);
+				// GdkPixbufAnimation does not tell the number of frames and starts over after
+				// the last one, so take it from the file. Other formats get at most 32 frames.
+				int gifFrames = countGifFrames(data_buffer);
+				int num_frames = gifFrames > 0 ? gifFrames : 32;
+				int delay_time = 0;
+				for (int i = 0; i < num_frames; i++) {
+					if (i > 0) {
+						// A negative delay means that the previous frame is shown forever
+						if (delay_time < 0) break;
+						OS.g_time_val_add(start_time, delay_time * 1000L);
+						if (!GDK.gdk_pixbuf_animation_iter_advance(animation_iter, start_time)) break;
+					}
+					delay_time = GDK.gdk_pixbuf_animation_iter_get_delay_time(animation_iter);
 					long curr_pixbuf = GDK.gdk_pixbuf_animation_iter_get_pixbuf(animation_iter);
 					long pixbuf_copy = GDK.gdk_pixbuf_copy(curr_pixbuf); // copy because curr_pixbuf might get disposed
 																			// on next advance
@@ -115,21 +123,24 @@ public class NativeImageLoader {
 					}
 					OS.g_object_unref(pixbuf_copy);
 					imgData.type = getImageFormat(loader);
-					imgData.delayTime = delay_time;
+					// GdkPixbuf counts in milliseconds, ImageData in hundredths of a second
+					imgData.delayTime = Math.max(0, delay_time) / 10;
 					imgDataList.add(imgData);
-				} else {
-					break;
 				}
+				OS.g_object_unref(animation_iter);
+				OS.g_free(start_time);
 			}
+		} finally {
+			// The loader keeps no reference to the written buffer, and owns the animation
+			OS.g_object_unref(loader);
+			OS.g_free(buffer_ptr);
 		}
-		ImageData[] imgDataArray = new ImageData[imgDataList.size()];
 		for (int i = 0; i < imgDataList.size(); i++) {
-			imgDataArray[i] = imgDataList.get(i);
 			// Loading completed, notify listeners
 			// listener should only be called when loading interlaced/progressive
 			// PNG/JPG/GIF ?
-			ImageData data = (ImageData) imgDataArray[i].clone();
-			if (imageLoader.hasListeners() && imgDataArray != null) {
+			ImageData data = (ImageData) imgDataList.get(i).clone();
+			if (imageLoader.hasListeners()) {
 				if (data.type == SWT.IMAGE_PNG && isInterlacedPNG(data_buffer)) {
 					imageLoader.notifyListeners(new ImageLoaderEvent(imageLoader, data, i, true));
 				} else if (data.type != SWT.IMAGE_PNG) {
@@ -137,9 +148,46 @@ public class NativeImageLoader {
 				}
 			}
 		}
-		OS.g_free(buffer_ptr);
-		OS.g_object_unref(loader);
-		return Arrays.stream(imgDataArray).map(data -> new ElementAtZoom<>(data, streamAtZoom.zoom())).toList();
+		return imgDataList.stream().map(data -> new ElementAtZoom<>(data, streamAtZoom.zoom())).toList();
+	}
+
+	private static boolean isIcoFile(byte[] data) {
+		return data.length >= 4 && data[0] == 0 && data[1] == 0 && data[2] == 1 && data[3] == 0;
+	}
+
+	/**
+	 * Answer the number of images in a GIF file, or -1 if the data is not a GIF file
+	 * or cannot be parsed.
+	 */
+	static int countGifFrames(byte[] data) {
+		if (data.length < 13 || data[0] != 'G' || data[1] != 'I' || data[2] != 'F') return -1;
+		int index = 13;
+		if ((data[10] & 0x80) != 0) index += 3 << ((data[10] & 0x7) + 1); // global color table
+		int frames = 0;
+		while (index < data.length) {
+			switch (data[index++]) {
+				case 0x21: // extension: label, then data sub-blocks
+					index++;
+					break;
+				case 0x2C: // image descriptor, optional local color table, LZW code size, then data sub-blocks
+					if (index + 9 > data.length) return -1;
+					int flags = data[index + 8];
+					index += 9;
+					if ((flags & 0x80) != 0) index += 3 << ((flags & 0x7) + 1);
+					index++;
+					frames++;
+					break;
+				case 0x3B: // trailer
+					return frames;
+				default:
+					return frames > 0 ? frames : -1;
+			}
+			while (index < data.length && data[index] != 0) {
+				index += (data[index] & 0xFF) + 1;
+			}
+			index++;
+		}
+		return frames > 0 ? frames : -1;
 	}
 
 	public static ImageData load(InputStream streamAtZoom, ImageLoader imageLoader, int width, int height) {
@@ -215,8 +263,18 @@ public class NativeImageLoader {
 		 * width in bytes of the last row to copy raw pixbuf data.
 		 */
 		int lastRowWidth = width * ((n_channels * bits_per_sample + 7) / 8);
-		byte[] srcData = new byte[stride * height];
-		C.memmove(srcData, pixels, stride * (height - 1) + lastRowWidth);
+		// The rowstride is not always 4-byte aligned (e.g. with glycin), but ImageData expects that
+		int bytesPerLine = (lastRowWidth + 3) / 4 * 4;
+		byte[] srcData = new byte[bytesPerLine * height];
+		if (stride == bytesPerLine) {
+			C.memmove(srcData, pixels, stride * (height - 1) + lastRowWidth);
+		} else {
+			byte[] row = new byte[lastRowWidth];
+			for (int y = 0; y < height; y++) {
+				C.memmove(row, pixels + (long) y * stride, lastRowWidth);
+				System.arraycopy(row, 0, srcData, y * bytesPerLine, lastRowWidth);
+			}
+		}
 		/*
 		 * Note: GdkPixbuf only supports 3/4 n_channels and 8 bits_per_sample, This
 		 * means all images are of depth 24 / depth 32. This means loading images will
@@ -226,7 +284,7 @@ public class NativeImageLoader {
 		 * See https://www.eclipse.org/articles/Article-SWT-images/graphics-resources.html#PaletteData
 		 */
 		PaletteData palette = new PaletteData(0xFF0000, 0xFF00, 0xFF);
-		ImageData imgData = new ImageData(width, height, bits_per_sample * n_channels, palette, stride, srcData);
+		ImageData imgData = new ImageData(width, height, bits_per_sample * n_channels, palette, 4, srcData);
 		if (hasAlpha) {
 			byte[] alphaData = imgData.alphaData = new byte[width * height];
 			for (int y = 0, offset = 0, alphaOffset = 0; y < height; y++) {
@@ -242,17 +300,6 @@ public class NativeImageLoader {
 						srcData[offset + 2] = g;
 						srcData[offset + 3] = b;
 					}
-				}
-			}
-		} else {
-			for (int y = 0, offset = 0; y < height; y++) {
-				for (int x = 0; x < width; x++, offset += n_channels) {
-					byte r = srcData[offset + 0];
-					byte g = srcData[offset + 1];
-					byte b = srcData[offset + 2];
-					srcData[offset + 0] = r;
-					srcData[offset + 1] = g;
-					srcData[offset + 2] = b;
 				}
 			}
 		}
@@ -274,73 +321,46 @@ public class NativeImageLoader {
 		boolean has_alpha = imgData.alphaData != null && alpha_supported;
 		int width = imgData.width;
 		int height = imgData.height;
-		// original n_channels. Native implementation will only be used in case of 3 or 4
-		int n_channels = imgData.bytesPerLine / width;
+		PaletteData palette = imgData.palette;
 
 		// Native implementation only supports a subset of possible image configurations.
 		// Redirect the not supported variants to the Java implementation.
 		// See also https://bugs.eclipse.org/bugs/show_bug.cgi?id=558043
-		if (!imgData.palette.isDirect || n_channels < 3 || n_channels > 4) {
+		if (!palette.isDirect || (imgData.depth != 24 && imgData.depth != 32)) {
 			FileFormat.save(stream, format, imageLoader);
 			return;
 		}
 
 		/*
-		 * Destination offsets, GdkPixbuf data is stored in RGBA format.
-		 */
-		int da = 3, dr = 0, dg = 1, db = 2;
-
-		/*
-		 * ImageData offsets. These can vary depending on how the ImageData.data field
-		 * was populated. In most cases it will be RGB format, so this case is assumed
-		 * (blue shift is 0).
+		 * Build the pixel buffer for the GdkPixbuf, which stores pixels as RGB or RGBA
+		 * bytes. The channels are taken from the pixel values through the palette masks,
+		 * because the byte order of ImageData.data depends on the palette and its rows
+		 * may be padded to the scanline pad.
 		 *
-		 * If blue is negatively shifted, then we are dealing with BGR byte ordering, so
-		 * adjust the offsets accordingly.
+		 * Formats that support an alpha channel are saved as 32 bit RGBA, all others as
+		 * 24 bit RGB. The pixbuf must not carry an alpha channel for formats that don't
+		 * support it (e.g. JPEG), otherwise the encoder fails and produces an empty
+		 * result. When the format supports alpha but the source has none, the alpha
+		 * channel is filled with 255.
 		 */
-		int or = 0, og = 1, ob = 2;
-		PaletteData palette = imgData.palette;
-		if (palette.isDirect && palette.blueShift < 0) {
-			or = 2;
-			og = 1;
-			ob = 0;
-		}
-
-		// Build the pixel buffer for the GdkPixbuf. Formats that support an alpha
-		// channel are saved as 32 bit RGBA, all others as 24 bit RGB. The pixbuf must
-		// not carry an alpha channel for formats that don't support it (e.g. JPEG),
-		// otherwise the encoder fails and produces an empty result. When the format
-		// supports alpha but the source has none, the alpha channel is filled with 255.
 		int bytes_per_pixel = alpha_supported ? 4 : 3;
 		byte[] srcData = new byte[(width * height * bytes_per_pixel)];
-
-		int alpha_offset = n_channels == 4 ? 1 : 0;
-		if (alpha_supported) {
-			for (int y = 0, offset = 0, new_offset = 0, alphaIndex = 0; y < height; y++) {
-				for (int x = 0; x < width; x++, offset += n_channels, new_offset += bytes_per_pixel) {
-					byte a = has_alpha ? imgData.alphaData[alphaIndex++] : (byte) 255;
-					byte r = imgData.data[offset + alpha_offset + or];
-					byte g = imgData.data[offset + alpha_offset + og];
-					byte b = imgData.data[offset + alpha_offset + ob];
-
-					// GdkPixbuf expects RGBA format
-					srcData[new_offset + db] = b;
-					srcData[new_offset + dg] = g;
-					srcData[new_offset + dr] = r;
-					srcData[new_offset + da] = a;
-				}
-			}
-		} else {
-			for (int y = 0, offset = 0, new_offset = 0; y < height; y++) {
-				for (int x = 0; x < width; x++, offset += n_channels, new_offset += bytes_per_pixel) {
-					byte r = imgData.data[offset + alpha_offset + or];
-					byte g = imgData.data[offset + alpha_offset + og];
-					byte b = imgData.data[offset + alpha_offset + ob];
-
-					// GdkPixbuf expects RGB format
-					srcData[new_offset + db] = b;
-					srcData[new_offset + dg] = g;
-					srcData[new_offset + dr] = r;
+		int redMask = palette.redMask, redShift = palette.redShift;
+		int greenMask = palette.greenMask, greenShift = palette.greenShift;
+		int blueMask = palette.blueMask, blueShift = palette.blueShift;
+		int[] pixels = new int[width];
+		for (int y = 0, new_offset = 0, alphaIndex = 0; y < height; y++) {
+			imgData.getPixels(0, y, width, pixels, 0);
+			for (int x = 0; x < width; x++, new_offset += bytes_per_pixel) {
+				int pixel = pixels[x];
+				int r = pixel & redMask;
+				int g = pixel & greenMask;
+				int b = pixel & blueMask;
+				srcData[new_offset] = (byte) (redShift < 0 ? r >>> -redShift : r << redShift);
+				srcData[new_offset + 1] = (byte) (greenShift < 0 ? g >>> -greenShift : g << greenShift);
+				srcData[new_offset + 2] = (byte) (blueShift < 0 ? b >>> -blueShift : b << blueShift);
+				if (alpha_supported) {
+					srcData[new_offset + 3] = has_alpha ? imgData.alphaData[alphaIndex++] : (byte) 255;
 				}
 			}
 		}
@@ -370,7 +390,7 @@ public class NativeImageLoader {
 		byte[] type = Converter.wcsToMbcs(typeStr, true);
 
 		long[] buffer = new long[1];
-		if (type == null || typeStr == "") {
+		if (typeStr.isEmpty()) {
 			OS.g_object_unref(pixbuf);
 			OS.g_free(buffer_ptr);
 			SWT.error(SWT.ERROR_UNSUPPORTED_FORMAT);

@@ -110,6 +110,27 @@ public final class GC extends Resource {
 	static final float[] LINE_DASHDOT_ZERO = new float[]{9, 6, 3, 6};
 	static final float[] LINE_DASHDOTDOT_ZERO = new float[]{9, 3, 3, 3, 3, 3};
 
+	private static final String USE_GDI_TEXT_RENDERING_FOR_DECORATED_FONTS = "org.eclipse.swt.internal.win32.useGDITextRenderingForDecoratedFonts";
+
+	/**
+	 * Whether text in a font with an underline or strikeout style is laid out by
+	 * GDI and only drawn by GDI+, instead of being laid out by GDI+ itself,
+	 * which restores the behavior that was in place before GDI+ started to lay
+	 * out such text.
+	 *
+	 * This is only a safety net for unexpected text rendering regressions, so
+	 * that consumers can fall back to the previous behavior instead of having
+	 * to downgrade SWT. Note that the previous behavior draws no glyphs at all
+	 * for decorated fonts, see
+	 * https://github.com/eclipse-platform/eclipse.platform.swt/issues/3091 .
+	 * It may be removed at any point in time and must not be relied upon.
+	 *
+	 * Evaluated once per GC rather than per drawing operation, so that reading
+	 * the system property does not add cost to text drawing, while a newly
+	 * created GC still picks up a value changed at runtime.
+	 */
+	private final boolean useGdiTextLayoutForDecoratedFonts = Boolean.getBoolean(USE_GDI_TEXT_RENDERING_FOR_DECORATED_FONTS);
+
 /**
  * Prevents uninitialized instances from being created outside the package.
  */
@@ -1250,11 +1271,15 @@ private class DrawScalingImageToImageOperation extends ImageOperation {
 		 * computed to pixels depending on the factor of the full image bounds to the
 		 * actual OS handle size that will be used.
 		 */
-		float scaleFactor = Math.min(1f * imageHandle.width() / fullImageBounds.width, 1f * imageHandle.height() / fullImageBounds.height);
-		int closestZoomOfHandle = Math.round(scaleFactor * 100);
-		Rectangle srcPixels = Win32DPIUtils.pointToPixel(drawable, src, closestZoomOfHandle);
+		float scaleFactorX = (1f * imageHandle.width()) / fullImageBounds.width;
+		float scaleFactorY = (1f * imageHandle.height()) / fullImageBounds.height;
+		int srcXPixels = Math.round(scaleFactorX * src.x);
+		int srcWidthPixels = Math.round(scaleFactorX * (src.x + src.width)) - srcXPixels;
+		int srcYPixels = Math.round(scaleFactorY * src.y);
+		int srcHeightPixels = Math.round(scaleFactorY * (src.y + src.height)) - srcYPixels;
+		Rectangle srcPixels = new Rectangle(srcXPixels, srcYPixels, srcWidthPixels, srcHeightPixels);
 
-		if (closestZoomOfHandle != 100) {
+		if (Math.abs(scaleFactorX - 1f) >= 0.01f || Math.abs(scaleFactorY - 1f) >= 0.01f) {
 			/*
 			 * This is a HACK! Due to rounding errors at fractional scale factors,
 			 * the coordinates may be slightly off. The workaround is to restrict
@@ -1263,7 +1288,7 @@ private class DrawScalingImageToImageOperation extends ImageOperation {
 			int errX = srcPixels.x + srcPixels.width - imageHandle.width();
 			int errY = srcPixels.y + srcPixels.height - imageHandle.height();
 			if (errX != 0 || errY != 0) {
-				if (errX <= closestZoomOfHandle / 100 && errY <= closestZoomOfHandle / 100) {
+				if (errX <= Math.max(1, scaleFactorX) && errY <= Math.max(1, scaleFactorY)) {
 					srcPixels.intersect(new Rectangle(0, 0, imageHandle.width(), imageHandle.height()));
 				} else {
 					SWT.error (SWT.ERROR_INVALID_ARGUMENT);
@@ -1473,7 +1498,7 @@ private void drawIcon(long imageHandle, int srcX, int srcY, int srcWidth, int sr
 			srcWidth == destWidth && srcHeight == destHeight &&
 			srcWidth == iconWidth && srcHeight == iconHeight;
 		if (!drawIcon) {
-			drawBitmapMask(srcIconInfo.hbmColor, srcIconInfo.hbmMask, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, iconWidth, iconHeight, false);
+			drawBitmapMask(srcIconInfo.hbmColor, srcIconInfo.hbmMask, srcX, srcY, srcWidth, srcHeight, destX, destY, destWidth, destHeight, simple, iconHeight);
 		} else if (simple && technology != OS.DT_RASPRINTER) {
 			/* Simple case: no stretching, entire icon */
 			if (offsetX != 0 || offsetY != 0) OS.SetWindowOrgEx(handle, 0, 0, null);
@@ -1795,7 +1820,7 @@ private void drawBitmapTransparentByClipping(long srcHdc, long maskHdc, int srcX
 	OS.DeleteObject(rgn);
 }
 
-private void drawBitmapMask(long srcColor, long srcMask, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgWidth, int imgHeight, boolean offscreen) {
+private void drawBitmapMask(long srcColor, long srcMask, int srcX, int srcY, int srcWidth, int srcHeight, int destX, int destY, int destWidth, int destHeight, boolean simple, int imgHeight) {
 	int srcColorY = srcY;
 	if (srcColor == 0) {
 		srcColor = srcMask;
@@ -1803,46 +1828,26 @@ private void drawBitmapMask(long srcColor, long srcMask, int srcX, int srcY, int
 	}
 	long srcHdc = OS.CreateCompatibleDC(handle);
 	long oldSrcBitmap = OS.SelectObject(srcHdc, srcColor);
-	long destHdc = handle;
-	int x = destX, y = destY;
-	long tempHdc = 0, tempBitmap = 0, oldTempBitmap = 0;
-	int oldBkColor = 0, oldTextColor = 0;
-	if (offscreen) {
-		tempHdc = OS.CreateCompatibleDC(handle);
-		tempBitmap = OS.CreateCompatibleBitmap(handle, destWidth, destHeight);
-		oldTempBitmap = OS.SelectObject(tempHdc, tempBitmap);
-		OS.BitBlt(tempHdc, 0, 0, destWidth, destHeight, handle, destX, destY, OS.SRCCOPY);
-		destHdc = tempHdc;
-		x = y = 0;
-	} else {
-		oldBkColor = OS.SetBkColor(handle, 0xFFFFFF);
-		oldTextColor = OS.SetTextColor(handle, 0);
-	}
+	int oldBkColor = OS.SetBkColor(handle, 0xFFFFFF);
+	int oldTextColor = OS.SetTextColor(handle, 0);
 	if (!simple && (srcWidth != destWidth || srcHeight != destHeight)) {
 		int mode = OS.SetStretchBltMode(handle, OS.COLORONCOLOR);
-		OS.StretchBlt(destHdc, x, y, destWidth, destHeight, srcHdc, srcX, srcColorY, srcWidth, srcHeight, OS.SRCINVERT);
+		OS.StretchBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcColorY, srcWidth, srcHeight, OS.SRCINVERT);
 		OS.SelectObject(srcHdc, srcMask);
-		OS.StretchBlt(destHdc, x, y, destWidth, destHeight, srcHdc, srcX, srcY, srcWidth, srcHeight, OS.SRCAND);
+		OS.StretchBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcY, srcWidth, srcHeight, OS.SRCAND);
 		OS.SelectObject(srcHdc, srcColor);
-		OS.StretchBlt(destHdc, x, y, destWidth, destHeight, srcHdc, srcX, srcColorY, srcWidth, srcHeight, OS.SRCINVERT);
+		OS.StretchBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcColorY, srcWidth, srcHeight, OS.SRCINVERT);
 		OS.SetStretchBltMode(handle, mode);
 	} else {
-		OS.BitBlt(destHdc, x, y, destWidth, destHeight, srcHdc, srcX, srcColorY, OS.SRCINVERT);
-		OS.SetTextColor(destHdc, 0);
+		OS.BitBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcColorY, OS.SRCINVERT);
+		OS.SetTextColor(handle, 0);
 		OS.SelectObject(srcHdc, srcMask);
-		OS.BitBlt(destHdc, x, y, destWidth, destHeight, srcHdc, srcX, srcY, OS.SRCAND);
+		OS.BitBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcY, OS.SRCAND);
 		OS.SelectObject(srcHdc, srcColor);
-		OS.BitBlt(destHdc, x, y, destWidth, destHeight, srcHdc, srcX, srcColorY, OS.SRCINVERT);
+		OS.BitBlt(handle, destX, destY, destWidth, destHeight, srcHdc, srcX, srcColorY, OS.SRCINVERT);
 	}
-	if (offscreen) {
-		OS.BitBlt(handle, destX, destY, destWidth, destHeight, tempHdc, 0, 0, OS.SRCCOPY);
-		OS.SelectObject(tempHdc, oldTempBitmap);
-		OS.DeleteDC(tempHdc);
-		OS.DeleteObject(tempBitmap);
-	} else {
-		OS.SetBkColor(handle, oldBkColor);
-		OS.SetTextColor(handle, oldTextColor);
-	}
+	OS.SetBkColor(handle, oldBkColor);
+	OS.SetTextColor(handle, oldTextColor);
 	OS.SelectObject(srcHdc, oldSrcBitmap);
 	OS.DeleteDC(srcHdc);
 }
@@ -2384,6 +2389,14 @@ private void drawRectangleInPixels (int x, int y, int width, int height) {
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
 	if ((data.style & SWT.MIRRORED) != 0) {
 		/*
 		* Note that Rectangle() subtracts one pixel in MIRRORED mode when
@@ -2475,10 +2488,18 @@ private void drawRoundRectangleInPixels (int x, int y, int width, int height, in
 		drawRoundRectangleGdip(data.gdipGraphics, data.gdipPen, x, y, width, height, arcWidth, arcHeight);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) x--;
 	}
-	OS.RoundRect(handle, x,y,x+width+1,y+height+1, arcWidth, arcHeight);
+	OS.RoundRect(handle, x,y,x+width+1,y+height+1, Math.abs(arcWidth), Math.abs(arcHeight));
 }
 
 private void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -2504,7 +2525,7 @@ private void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, 
 
 	Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
 	if (naw == 0 || nah == 0) {
-		Gdip.Graphics_DrawRectangle(gdipGraphics, data.gdipPen, x, y, width, height);
+		Gdip.Graphics_DrawRectangle(gdipGraphics, data.gdipPen, nx, ny, nw, nh);
 	} else {
 		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -2850,7 +2871,33 @@ private void drawTextInPixels (String string, int x, int y, int flags) {
 	OS.SetBkMode(handle, oldBkMode);
 }
 
-private boolean useGDIP (long hdc, char[] buffer) {
+/**
+ * Decides whether GDI+ lays out the text itself (Graphics_DrawString) or
+ * whether the glyphs and their positions are computed by GDI and only drawn
+ * by GDI+ (Graphics_DrawDriverString). Note that both cases draw with GDI+,
+ * so this only selects which engine performs the layout.
+ *
+ * GDI is preferred, because it uses the hinted, grid-fitted glyph advances
+ * that the platform itself uses everywhere else (native controls, TextLayout
+ * and the non-advanced GC), whereas GDI+ lays out from unhinted font design
+ * metrics. The latter accumulates a sub-pixel error per glyph that is most
+ * apparent for tabular figures, where every digit shares the same advance and
+ * hence the same error, so that digit groups visibly spread apart.
+ *
+ * GDI+ layout is therefore only used where the glyph run cannot be drawn:
+ * when GDI cannot map all characters to glyphs, in which case GDI would draw
+ * missing-glyph boxes, and for fonts carrying an underline or strikeout style,
+ * which Graphics_DrawDriverString does not support and for which it draws
+ * blank space instead of the glyphs, see
+ * https://github.com/eclipse-platform/eclipse.platform.swt/issues/3091 .
+ */
+private boolean useGdipTextLayout(long hdc, char[] buffer) {
+	if (!useGdiTextLayoutForDecoratedFonts) {
+		int fontStyle = Gdip.Font_GetStyle(data.gdipFont);
+		if ((fontStyle & (Gdip.FontStyleUnderline | Gdip.FontStyleStrikeout)) != 0) {
+			return true;
+		}
+	}
 	short[] glyphs = new short[buffer.length];
 	OS.GetGlyphIndices(hdc, buffer, buffer.length, glyphs, OS.GGI_MARK_NONEXISTING_GLYPHS);
 	for (int i = 0; i < glyphs.length; i++) {
@@ -2878,11 +2925,11 @@ void drawText(long gdipGraphics, String string, int x, int y, int flags, Point s
 	if (hFont != 0) oldFont = OS.SelectObject(hdc, hFont);
 	TEXTMETRIC lptm = new TEXTMETRIC();
 	OS.GetTextMetrics(hdc, lptm);
-	boolean gdip = useGDIP(hdc, chars);
+	boolean gdip = useGdipTextLayout(hdc, chars);
 	if (hFont != 0) OS.SelectObject(hdc, oldFont);
 	Gdip.Graphics_ReleaseHDC(gdipGraphics, hdc);
 	if (gdip) {
-		drawTextGDIP(gdipGraphics, string, x, y, flags, size == null, size);
+		drawTextGDIP(gdipGraphics, string, x, y, flags, size == null, size, lptm);
 		return;
 	}
 	int i = 0, start = 0, end = 0, drawX = x, drawY = y, width = 0, mnemonicIndex = -1;
@@ -3052,7 +3099,7 @@ private RectF drawText(long gdipGraphics, char[] buffer, int start, int length, 
 	return bounds;
 }
 
-private void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boolean draw, Point size) {
+private void drawTextGDIP(long gdipGraphics, String string, int x, int y, int flags, boolean draw, Point size, TEXTMETRIC lptm) {
 	boolean needsBounds = !draw || (flags & SWT.DRAW_TRANSPARENT) == 0;
 	char[] buffer;
 	if ((flags & SWT.DRAW_DELIMITER) == 0) {
@@ -3074,7 +3121,15 @@ private void drawTextGDIP(long gdipGraphics, String string, int x, int y, int fl
 	int formatFlags = Gdip.StringFormat_GetFormatFlags(format) | Gdip.StringFormatFlagsMeasureTrailingSpaces;
 	if ((data.style & SWT.MIRRORED) != 0) formatFlags |= Gdip.StringFormatFlagsDirectionRightToLeft;
 	Gdip.StringFormat_SetFormatFlags(format, formatFlags);
-	float[] tabs = (flags & SWT.DRAW_TAB) != 0 ? new float[]{measureSpace(data.gdipFont, format) * 8} : new float[1];
+	// Use the same tab stop width as the GDI-based text rendering path: 8 * the
+	// font's average character width, which is what Win32's own DrawText() and
+	// TabbedTextOut() use by default. This used to be 8 * the width of a single
+	// space glyph, which is a different metric rather than a differently
+	// computed one: in proportional fonts a space is roughly half the average
+	// character width, so tab stops came out about half as wide whenever this
+	// path was taken. (In monospace fonts the two nearly coincide, which is why
+	// the discrepancy was easy to miss.)
+	float[] tabs = (flags & SWT.DRAW_TAB) != 0 ? new float[]{lptm.tmAveCharWidth * 8} : new float[1];
 	Gdip.StringFormat_SetTabStops(format, 0, tabs.length, tabs);
 	int hotkeyPrefix = (flags & SWT.DRAW_MNEMONIC) != 0 ? Gdip.HotkeyPrefixShow : Gdip.HotkeyPrefixNone;
 	if ((flags & SWT.DRAW_MNEMONIC) != 0 && (data.uiState & OS.UISF_HIDEACCEL) != 0) hotkeyPrefix = Gdip.HotkeyPrefixHide;
@@ -3674,8 +3729,16 @@ private void fillRoundRectangleInPixels (int x, int y, int width, int height, in
 		fillRoundRectangleGdip(data.gdipGraphics, data.gdipBrush, x, y, width, height, arcWidth, arcHeight);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
 	if ((data.style & SWT.MIRRORED) != 0) x--;
-	OS.RoundRect(handle, x,y,x+width+1,y+height+1,arcWidth, arcHeight);
+	OS.RoundRect(handle, x,y,x+width+1,y+height+1,Math.abs(arcWidth), Math.abs(arcHeight));
 }
 
 private void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -3700,7 +3763,7 @@ private void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y
 		nah = 0 - nah;
 
 	if (naw == 0 || nah == 0) {
-		Gdip.Graphics_FillRectangle(data.gdipGraphics, data.gdipBrush, x, y, width, height);
+		Gdip.Graphics_FillRectangle(data.gdipGraphics, data.gdipBrush, nx, ny, nw, nh);
 	} else {
 		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -4652,13 +4715,6 @@ private void checkNonDisposed() {
 @Override
 public boolean isDisposed() {
 	return handle == 0;
-}
-
-private float measureSpace(long font, long format) {
-	PointF pt = new PointF();
-	RectF bounds = new RectF();
-	Gdip.Graphics_MeasureString(data.gdipGraphics, new char[]{' '}, 1, font, pt, format, bounds);
-	return bounds.Width;
 }
 
 /**

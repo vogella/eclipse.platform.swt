@@ -53,7 +53,6 @@ import org.eclipse.swt.internal.gtk4.*;
  */
 public class ToolBar extends Composite {
 	ToolItem currentFocusItem;
-	ToolItem [] tabItemList;
 	ImageList imageList;
 	boolean hasChildFocus;
 	static Callback menuItemSelectedFunc = new Callback(ToolBar.class, "MenuItemSelectedProc", 2);
@@ -161,6 +160,12 @@ void createHandle (int index) {
 	*/
 	if (!GTK.GTK4) GTK3.gtk_toolbar_set_icon_size (handle, GTK.GTK_ICON_SIZE_SMALL_TOOLBAR);
 
+	/*
+	* The GTK 3 overflow arrow enlarges the preferred size while the tool bar
+	* is allocated less than it needs, so a transient narrow layout sticks.
+	*/
+	if (!GTK.GTK4) OS.g_object_set (handle, Converter.javaStringToCString ("show-arrow"), false, 0);
+
 	// In GTK 3 font description is inherited from parent widget which is not how SWT has always worked,
 	// reset to default font to get the usual behavior
 	setFontDescription(defaultFont().handle);
@@ -183,11 +188,9 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 @Override
 Widget computeTabGroup () {
 	ToolItem [] items = _getItems ();
-	if (tabItemList == null) {
-		int i = 0;
-		while (i < items.length && items [i].control == null) i++;
-		if (i == items.length) return super.computeTabGroup ();
-	}
+	int i = 0;
+	while (i < items.length && items [i].control == null) i++;
+	if (i == items.length) return super.computeTabGroup ();
 	int index = indexOf(currentFocusItem);
 	if (index == -1) index = items.length - 1;
 	while (index >= 0) {
@@ -201,16 +204,12 @@ Widget computeTabGroup () {
 @Override
 Widget [] computeTabList () {
 	ToolItem [] items = _getItems ();
-	if (tabItemList == null) {
-		int i = 0;
-		while (i < items.length && items [i].control == null) i++;
-		if (i == items.length) return super.computeTabList ();
-	}
+	int i = 0;
+	while (i < items.length && items [i].control == null) i++;
+	if (i == items.length) return super.computeTabList ();
 	Widget result [] = {};
 	if (!isTabGroup () || !isEnabled () || !isVisible ()) return result;
-	ToolItem [] list = tabList != null ? _getTabItemList () : items;
-	for (int i=0; i<list.length; i++) {
-		ToolItem child = list [i];
+	for (ToolItem child : items) {
 		Widget  [] childList = child.computeTabList ();
 		if (childList.length != 0) {
 			Widget [] newResult = new Widget [result.length + childList.length];
@@ -309,8 +308,10 @@ public int getItemCount () {
 
 	int itemCount = 0;
 	if (GTK.GTK4) {
+		/* Must match _getItems(): a Menu's GtkPopover is also parented here
+		 * as a native child and would otherwise count as a phantom item. */
 		for (long child = GTK4.gtk_widget_get_first_child(handle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
-			itemCount++;
+			if (display.getWidget(child) instanceof ToolItem) itemCount++;
 		}
 	} else {
 		long list = GTK3.gtk_container_get_children (handle);
@@ -348,8 +349,9 @@ ToolItem[] _getItems () {
 		ArrayList<ToolItem> childrenList = new ArrayList<>();
 		for (long child = GTK4.gtk_widget_get_first_child(handle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
 			Widget childWidget = display.getWidget(child);
-			if (childWidget != null) {
-				childrenList.add((ToolItem)childWidget);
+			/* A Menu's GtkPopover is also a native child here; skip non-ToolItems. */
+			if (childWidget instanceof ToolItem toolItem) {
+				childrenList.add(toolItem);
 			}
 		}
 
@@ -394,24 +396,6 @@ public int getRowCount () {
 	checkWidget();
 	/* On GTK, toolbars cannot wrap */
 	return 1;
-}
-
-ToolItem [] _getTabItemList () {
-	if (tabItemList == null) return tabItemList;
-	int count = 0;
-	for (int i=0; i<tabItemList.length; i++) {
-		if (!tabItemList [i].isDisposed ()) count++;
-	}
-	if (count == tabItemList.length) return tabItemList;
-	ToolItem [] newList = new ToolItem [count];
-	int index = 0;
-	for (int i=0; i<tabItemList.length; i++) {
-		if (!tabItemList [i].isDisposed ()) {
-			newList [index++] = tabItemList [i];
-		}
-	}
-	tabItemList = newList;
-	return tabItemList;
 }
 
 @Override
@@ -530,10 +514,12 @@ void relayout () {
 		}
 	}
 
-	if (GTK.GTK4) {
-		/* TODO: GTK4 no more GtkToolbar, we have to use a generic GtkBox
-		 * therefore we will need to implement these style ourselves. */
-	} else {
+	/*
+	 * GTK4 has no GtkToolbar and thus no gtk_toolbar_set_style(). There, each item
+	 * shows or hides its image and its label as they are set, and arranges them
+	 * according to SWT.RIGHT, see ToolItem#createHandle.
+	 */
+	if (!GTK.GTK4) {
 		int type = GTK.GTK_TOOLBAR_ICONS;
 		if (hasText && hasImage) {
 			if ((style & SWT.RIGHT) != 0) {
@@ -601,8 +587,14 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 
 @Override
 void setBackgroundGdkRGBA (long context, long handle, GdkRGBA rgba) {
+	/*
+	 * On GTK4 the tool bar is a GtkBox carrying the "toolbar" style class, so its CSS
+	 * node is named "box" and a plain "toolbar" selector never matches, leaving the
+	 * tool bar with the theme background instead of the requested one.
+	 */
+	String selector = GTK.GTK4 ? "box.toolbar" : "toolbar";
 	// Form background string
-	String css = "toolbar {background-color: " + display.gtk_rgba_to_css_string(rgba) + ";}";
+	String css = selector + " {background-color: " + display.gtk_rgba_to_css_string(rgba) + ";}";
 
 	// Cache background color
 	this.cssBackground = css;
@@ -668,22 +660,6 @@ void setOrientation (boolean create) {
 	for (int i = 0; i < items.length; i++) {
 		items[i].setOrientation (create);
 	}
-}
-
-/*public*/ void setTabItemList (ToolItem [] tabList) {
-	checkWidget ();
-	if (tabList != null) {
-		for (int i=0; i<tabList.length; i++) {
-			ToolItem item = tabList [i];
-			if (item == null) error (SWT.ERROR_INVALID_ARGUMENT);
-			if (item.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-			if (item.parent != this) error (SWT.ERROR_INVALID_PARENT);
-		}
-		ToolItem [] newList = new ToolItem [tabList.length];
-		System.arraycopy (tabList, 0, newList, 0, tabList.length);
-		tabList = newList;
-	}
-	this.tabItemList = tabList;
 }
 
 @Override

@@ -130,16 +130,12 @@ public class Shell extends Decorations {
 	int glContextCount;
 	boolean opened, moved, resized, fullScreen, center, deferFlushing, scrolling, isPopup;
 	Control lastActive;
-	Rectangle normalBounds;
 	boolean keyInputHappened;
 	NSRect currentFrame;
 	NSRect fullScreenFrame;
 	ToolBar toolBar;
 	Map<NSWindow, Integer> windowEmbedCounts;
 	MenuItem escMenuItem;
-
-	static int DEFAULT_CLIENT_WIDTH = -1;
-	static int DEFAULT_CLIENT_HEIGHT = -1;
 
 /**
  * Constructs a new instance of this class. This is equivalent
@@ -495,12 +491,7 @@ void attachObserversToWindow(NSWindow newWindow) {
 	hostWindowClass = newHostWindowClass;
 
 	if (windowEmbedCounts == null) windowEmbedCounts = new HashMap<>();
-	Integer embedCount = windowEmbedCounts.get(hostWindow);
-	if (embedCount == null) {
-		embedCount = Integer.valueOf(0);
-	}
-	embedCount = Integer.valueOf(embedCount.intValue() + 1);
-	windowEmbedCounts.put(hostWindow, embedCount);
+	windowEmbedCounts.merge(hostWindow, 1, Integer::sum);
 
 	// Register for notifications. An embedded shell has no control over the host window,
 	// so it isn't correct to install a delegate.
@@ -1278,11 +1269,6 @@ public boolean isEnabled () {
 }
 
 @Override
-boolean isEnabledCursor () {
-	return true;
-}
-
-@Override
 boolean isResizing () {
 	return (state & RESIZING) != 0;
 }
@@ -1481,14 +1467,9 @@ void removeObserversFromWindow () {
 	NSNotificationCenter.defaultCenter().removeObserver(windowDelegate);
 
 	if (hostWindow != null) {
-		Integer embedCount = (Integer) windowEmbedCounts.get(hostWindow);
-		if (embedCount == null) {
-			embedCount = Integer.valueOf(0);
-		}
-		embedCount = Integer.valueOf(embedCount.intValue() - 1);
-		windowEmbedCounts.put(hostWindow, embedCount);
+		int embedCount = windowEmbedCounts.merge(hostWindow, -1, Integer::sum);
 
-		if (embedCount.intValue() <= 0) {
+		if (embedCount <= 0) {
 			windowEmbedCounts.remove(hostWindow);
 			if (hostWindowClass != 0) OS.object_setClass(hostWindow.id, hostWindowClass);
 			display.removeWidget(hostWindow);
@@ -2515,7 +2496,7 @@ void windowSendEvent (long id, long sel, long event) {
 			 * swallowed to handle native traversal. If we find that, force the key event to
 			 * the first responder.
 			 */
-			if ((nsEvent.modifierFlags() & OS.NSControlKeyMask) != 0) {
+			if ((nsEvent.modifierFlags() & OS.NSEventModifierFlagControl) != 0) {
 				NSString chars = nsEvent.characters();
 
 				if (chars != null && chars.length() == 1) {

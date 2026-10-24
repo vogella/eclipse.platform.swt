@@ -19,8 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -59,12 +60,7 @@ public void setUp() {
 @Override
 @Test
 public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
-	try {
-		tree = new Tree(null, 0);
-		fail("No exception thrown for parent == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> new Tree(null, 0), "No exception thrown for parent == null");
 
 	int[] cases = {0, SWT.BORDER};
 	for (int style : cases)
@@ -126,36 +122,16 @@ public void test_getColumnCount() {
 
 @Test
 public void test_getColumnI() {
-	try {
-		tree.getColumn(0);
-		fail("No exception thrown for index out of range");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getColumn(0), "No exception thrown for index out of range");
 	TreeColumn column0 = new TreeColumn(tree, SWT.LEFT);
-	try {
-		tree.getColumn(1);
-		fail("No exception thrown for index out of range");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getColumn(1), "No exception thrown for index out of range");
 	assertEquals(column0, tree.getColumn(0));
 	TreeColumn column1 = new TreeColumn(tree, SWT.LEFT);
 	assertEquals(column1, tree.getColumn(1));
 	column1.dispose();
-	try {
-		tree.getColumn(1);
-		fail("No exception thrown for index out of range");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getColumn(1), "No exception thrown for index out of range");
 	column0.dispose();
-	try {
-		tree.getColumn(0);
-		fail("No exception thrown for index out of range");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getColumn(0), "No exception thrown for index out of range");
 }
 
 @Test
@@ -218,26 +194,11 @@ public void test_getItemI() {
 
 	for (int i = 0; i < number; i++)
 		assertEquals(items[i], tree.getItem(i));
-	try {
-		tree.getItem(number);
-		fail("No exception thrown for illegal index argument");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getItem(number), "No exception thrown for illegal index argument");
 
-	try {
-		tree.getItem(number+1);
-		fail("No exception thrown for illegal index argument");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getItem(number+1), "No exception thrown for illegal index argument");
 
-	try {
-		tree.getItem(-1);
-		fail("No exception thrown for illegal index argument");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getItem(-1), "No exception thrown for illegal index argument");
 }
 
 @Test
@@ -428,23 +389,132 @@ public void test_setItemCountI() {
 	assertEquals(4, tree.indexOf(tree.getItems()[4]));
 	tree.setItemCount(3);
 	assertEquals(3, tree.getItemCount());
-	try {
-		tree.getItem(4);
-		fail("No exception thrown for illegal index argument");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.getItem(4), "No exception thrown for illegal index argument");
 	tree.setItemCount(40);
 	assertEquals(40, tree.getItemCount());
 	tree.getItem(39);
 	tree.setItemCount(0);
 	assertEquals(0, tree.getItemCount());
+	assertThrows(IllegalArgumentException.class, () -> tree.getItem(39), "No exception thrown for illegal index argument");
+}
+
+@Test
+public void test_treeItem_getItemCount_cacheInvalidation() {
+	tree.removeAll();
+	TreeItem root = new TreeItem(tree, SWT.NULL);
+	assertEquals(0, root.getItemCount());
+
+	for (int i = 0; i < 5; i++) {
+		new TreeItem(root, SWT.NULL);
+		assertEquals(i + 1, root.getItemCount());
+	}
+	assertEquals(5, root.getItemCount());
+
+	new TreeItem(root, SWT.NULL, 0);
+	assertEquals(6, root.getItemCount());
+
+	root.getItem(2).dispose();
+	assertEquals(5, root.getItemCount());
+
+	// setItemCount on the subtree grows and shrinks the child list.
+	root.setItemCount(20);
+	assertEquals(20, root.getItemCount());
+	root.setItemCount(3);
+	assertEquals(3, root.getItemCount());
+	root.setItemCount(0);
+	assertEquals(0, root.getItemCount());
+
+	// Adding to a sibling subtree must not corrupt this subtree's cached count.
+	TreeItem second = new TreeItem(tree, SWT.NULL);
+	new TreeItem(root, SWT.NULL);
+	new TreeItem(second, SWT.NULL);
+	new TreeItem(second, SWT.NULL);
+	assertEquals(1, root.getItemCount());
+	assertEquals(2, second.getItemCount());
+
+	// removeAll() must reset cached counts for all items.
+	tree.removeAll();
+	assertEquals(0, tree.getItemCount());
+}
+
+@Test
+public void test_treeItem_getItemCount_virtualRemoveAll_cacheInvalidation() {
+	Tree virtualTree = new Tree(shell, SWT.VIRTUAL);
 	try {
-		tree.getItem(39);
-		fail("No exception thrown for illegal index argument");
+		TreeItem root = new TreeItem(virtualTree, SWT.NULL);
+		root.setItemCount(5);
+		// Prime the cache without materializing the children.
+		assertEquals(5, root.getItemCount());
+		root.removeAll();
+		assertEquals(0, root.getItemCount());
+	} finally {
+		virtualTree.dispose();
 	}
-	catch (IllegalArgumentException e) {
+}
+
+@Test
+public void test_getItemCount_cacheInvalidation_root() {
+	tree.removeAll();
+	assertEquals(0, tree.getItemCount());
+	TreeItem first = new TreeItem(tree, SWT.NULL);
+	assertEquals(1, tree.getItemCount());
+	new TreeItem(tree, SWT.NULL, 0);
+	assertEquals(2, tree.getItemCount());
+	first.dispose();
+	assertEquals(1, tree.getItemCount());
+	tree.setItemCount(10);
+	assertEquals(10, tree.getItemCount());
+	tree.setItemCount(4);
+	assertEquals(4, tree.getItemCount());
+	tree.getItem(1).dispose();
+	assertEquals(3, tree.getItemCount());
+	tree.removeAll();
+	assertEquals(0, tree.getItemCount());
+}
+
+@Test
+public void test_getItemCount_cacheInvalidation_virtual() {
+	Tree virtualTree = new Tree(shell, SWT.VIRTUAL);
+	try {
+		virtualTree.setItemCount(7);
+		assertEquals(7, virtualTree.getItemCount());
+		virtualTree.setItemCount(3);
+		assertEquals(3, virtualTree.getItemCount());
+		TreeItem item = virtualTree.getItem(0);
+		item.setItemCount(4);
+		assertEquals(4, item.getItemCount());
+		item.setItemCount(2);
+		assertEquals(2, item.getItemCount());
+		item.getItem(0).setItemCount(5);
+		assertEquals(5, item.getItem(0).getItemCount());
+		item.removeAll();
+		assertEquals(0, item.getItemCount());
+		virtualTree.removeAll();
+		assertEquals(0, virtualTree.getItemCount());
+	} finally {
+		virtualTree.dispose();
 	}
+}
+
+@Test
+public void test_getItemCount_cacheInvalidation_disposeSubtreeAndColumns() {
+	tree.removeAll();
+	TreeItem root = new TreeItem(tree, SWT.NULL);
+	TreeItem child = new TreeItem(root, SWT.NULL);
+	new TreeItem(child, SWT.NULL);
+	assertEquals(1, child.getItemCount());
+	child.dispose();
+	assertEquals(0, root.getItemCount());
+	new TreeItem(root, SWT.NULL);
+	assertEquals(1, root.getItemCount());
+	// removing the last column rebuilds the model via copyModel
+	TreeColumn column = new TreeColumn(tree, SWT.NONE);
+	assertEquals(1, root.getItemCount());
+	column.dispose();
+	assertEquals(1, tree.getItemCount());
+	assertEquals(1, root.getItemCount());
+	new TreeItem(root, SWT.NULL);
+	assertEquals(2, root.getItemCount());
 }
 
 @Test
@@ -484,12 +554,7 @@ public void test_setSelection$Lorg_eclipse_swt_widgets_TreeItem() {
 	assertArrayEquals(new TreeItem[] {}, tree.getSelection());
 	assertEquals(0, tree.getSelectionCount());
 
-	try {
-		tree.setSelection((TreeItem[]) null);
-		fail("No exception thrown for items == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.setSelection((TreeItem[]) null), "No exception thrown for items == null");
 
 	tree.setSelection(new TreeItem[]{null});
 	assertEquals(0, tree.getSelectionCount());
@@ -565,12 +630,7 @@ public void test_setSelection$Lorg_eclipse_swt_widgets_TreeItem() {
 	assertArrayEquals(new TreeItem[] {}, tree.getSelection());
 	assertEquals(0, tree.getSelectionCount());
 
-	try {
-		tree.setSelection((TreeItem[]) null);
-		fail("No exception thrown for items == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.setSelection((TreeItem[]) null), "No exception thrown for items == null");
 
 	tree.setSelection(new TreeItem[]{items[10]});
 	assertArrayEquals(new TreeItem[] {items[10]}, tree.getSelection());
@@ -623,6 +683,48 @@ public void test_setSelection$Lorg_eclipse_swt_widgets_TreeItem() {
 }
 
 @Test
+public void test_setSelection$Lorg_eclipse_swt_widgets_TreeItem_nested() {
+	TreeItem[][][] items = new TreeItem[3][5][4];
+	for (int r = 0; r < 3; r++) {
+		TreeItem root = new TreeItem(tree, 0);
+		for (int c = 0; c < 5; c++) {
+			TreeItem child = new TreeItem(root, 0);
+			items[r][c][0] = child;
+			for (int g = 1; g < 4; g++) {
+				items[r][c][g] = new TreeItem(child, 0);
+			}
+		}
+	}
+	TreeItem[] roots = tree.getItems();
+
+	if (SwtTestUtil.isGTK) {
+		tree.setSelection(new TreeItem[] {items[2][1][3], items[0][4][1]});
+		assertTrue(items[2][1][0].getExpanded());
+		assertTrue(items[0][4][0].getExpanded());
+		assertArrayEquals(new TreeItem[] {items[0][4][1], items[2][1][3]}, tree.getSelection());
+	}
+	// Other platforms only reveal the first item, so expand all parents
+	for (TreeItem root : roots) {
+		root.setExpanded(true);
+		for (TreeItem child : root.getItems()) child.setExpanded(true);
+	}
+
+	TreeItem[] selection = {items[2][1][3], roots[0], items[0][4][1], items[0][4][2], items[0][1][0]};
+	tree.setSelection(selection);
+	assertArrayEquals(new TreeItem[] {roots[0], items[0][1][0], items[0][4][1], items[0][4][2], items[2][1][3]}, tree.getSelection());
+
+	tree.setSelection(tree.getSelection());
+	assertArrayEquals(new TreeItem[] {roots[0], items[0][1][0], items[0][4][1], items[0][4][2], items[2][1][3]}, tree.getSelection());
+
+	tree.setSelection(new TreeItem[] {items[0][4][2], items[1][3][0], items[2][1][3], items[2][1][1]});
+	assertArrayEquals(new TreeItem[] {items[0][4][2], items[1][3][0], items[2][1][1], items[2][1][3]}, tree.getSelection());
+
+	assertEquals(items[2][1][0], items[2][1][3].getParentItem());
+	assertEquals(roots[1], items[1][3][0].getParentItem());
+	assertNull(roots[2].getParentItem());
+}
+
+@Test
 public void test_setTopItemLorg_eclipse_swt_widgets_TreeItem() {
 	tree.removeAll();
 	for (int i = 0; i < 10; i++) {
@@ -641,11 +743,9 @@ public void test_setTopItemLorg_eclipse_swt_widgets_TreeItem() {
 	TreeItem top2 = tree.getTopItem();
 	shell.setVisible(false);
 	assertEquals(top, top2);
+	shell.setVisible(true);
 	try {
-		shell.setVisible(true);
-		tree.setTopItem(null);
-		fail("No exception thrown for item == null");
-	} catch (IllegalArgumentException e) {
+		assertThrows(IllegalArgumentException.class, () -> tree.setTopItem(null), "No exception thrown for item == null");
 	} finally {
 		shell.setVisible (false);
 	}
@@ -653,12 +753,7 @@ public void test_setTopItemLorg_eclipse_swt_widgets_TreeItem() {
 
 @Test
 public void test_showItemLorg_eclipse_swt_widgets_TreeItem() {
-	try {
-		tree.showItem(null);
-		fail("No exception thrown for item == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tree.showItem(null), "No exception thrown for item == null");
 
 	int number = 20;
 	TreeItem[] items = new TreeItem[number];
@@ -1235,4 +1330,230 @@ public void test_setItemCount_itemCount2() {
 	});
 }
 
+
+@Test
+public void test_addManyItemsOneByOne_orderAndIndexOf() {
+	int count = 10_000;
+	TreeItem[] created = new TreeItem[count];
+	for (int i = 0; i < count; i++) {
+		created[i] = new TreeItem(tree, SWT.NONE);
+		created[i].setText("Item " + i);
+	}
+	assertEquals(count, tree.getItemCount());
+	TreeItem[] items = tree.getItems();
+	assertEquals(count, items.length);
+	for (int i = 0; i < count; i++) {
+		assertSame(created[i], items[i]);
+		assertSame(created[i], tree.getItem(i));
+	}
+	assertEquals("Item 9999", tree.getItem(count - 1).getText());
+	assertEquals(0, tree.indexOf(created[0]));
+	assertEquals(count / 2, tree.indexOf(created[count / 2]));
+	assertEquals(count - 1, tree.indexOf(created[count - 1]));
+}
+
+@Test
+public void test_setItemCount_orderAndIndexOf() {
+	int count = 10_000;
+	tree.setItemCount(count);
+	assertEquals(count, tree.getItemCount());
+	TreeItem[] items = tree.getItems();
+	assertEquals(count, items.length);
+	for (int i = 0; i < count; i++) {
+		items[i].setText("Item " + i);
+	}
+	for (int i = 0; i < count; i++) {
+		assertEquals("Item " + i, tree.getItem(i).getText());
+	}
+	assertEquals(0, tree.indexOf(items[0]));
+	assertEquals(count / 2, tree.indexOf(items[count / 2]));
+	assertEquals(count - 1, tree.indexOf(items[count - 1]));
+
+	tree.setItemCount(count / 2);
+	assertEquals(count / 2, tree.getItemCount());
+	assertTrue(items[count - 1].isDisposed());
+	assertEquals(count / 2 - 1, tree.indexOf(tree.getItem(count / 2 - 1)));
+}
+
+@Test
+public void test_virtual_setDataReportsCorrectIndex() {
+	tree.dispose();
+	tree = new Tree(shell, SWT.VIRTUAL | SWT.BORDER);
+	setWidget(tree);
+
+	int count = 500;
+	List<String> errors = new ArrayList<>();
+	int[] calls = { 0 };
+	tree.addListener(SWT.SetData, event -> {
+		TreeItem item = (TreeItem) event.item;
+		calls[0]++;
+		TreeItem parentItem = item.getParentItem();
+		int index = parentItem == null ? tree.indexOf(item) : parentItem.indexOf(item);
+		if (index != event.index) {
+			errors.add("event.index=" + event.index + " indexOf=" + index);
+		}
+		item.setText("Item " + event.index);
+	});
+	tree.setItemCount(count);
+	for (int i : new int[] { count - 1, 0, count / 2, 1, count - 2, 123 }) {
+		assertEquals("Item " + i, tree.getItem(i).getText());
+	}
+	TreeItem parent = tree.getItem(7);
+	parent.setItemCount(count);
+	for (int i : new int[] { count - 1, 0, count / 2, 3, 77 }) {
+		assertEquals("Item " + i, parent.getItem(i).getText());
+	}
+	assertTrue(calls[0] >= 11);
+	assertEquals(List.of(), errors);
+}
+
+@Test
+public void test_indexOf_afterInsertAtStart() {
+	TreeItem[] items = new TreeItem[20];
+	for (int i = 0; i < items.length; i++) {
+		items[i] = new TreeItem(tree, SWT.NONE);
+		assertEquals(i, tree.indexOf(items[i]));
+	}
+	TreeItem first = new TreeItem(tree, SWT.NONE, 0);
+	assertEquals(0, tree.indexOf(first));
+	for (int i = 0; i < items.length; i++) {
+		assertEquals(i + 1, tree.indexOf(items[i]));
+	}
+	TreeItem middle = new TreeItem(tree, SWT.NONE, 10);
+	assertEquals(10, tree.indexOf(middle));
+	assertEquals(0, tree.indexOf(first));
+	assertEquals(9, tree.indexOf(items[8]));
+	assertEquals(11, tree.indexOf(items[9]));
+	assertEquals(21, tree.indexOf(items[19]));
+}
+
+@Test
+public void test_indexOf_afterRemoveAndDispose() {
+	TreeItem[] items = new TreeItem[20];
+	for (int i = 0; i < items.length; i++) {
+		items[i] = new TreeItem(tree, SWT.NONE);
+	}
+	// warm any index cache
+	assertEquals(15, tree.indexOf(items[15]));
+	items[10].dispose();
+	for (int i = 0; i < 10; i++) {
+		assertEquals(i, tree.indexOf(items[i]));
+	}
+	for (int i = 11; i < items.length; i++) {
+		assertEquals(i - 1, tree.indexOf(items[i]));
+	}
+	items[3].dispose();
+	assertEquals(2, tree.indexOf(items[2]));
+	assertEquals(3, tree.indexOf(items[4]));
+	assertEquals(8, tree.indexOf(items[9]));
+	assertEquals(17, tree.indexOf(items[19]));
+	assertEquals(18, tree.getItemCount());
+}
+
+@Test
+public void test_disposeManyItemsInARow_getItemsConsistent() {
+	int count = 1000;
+	TreeItem[] items = new TreeItem[count];
+	for (int i = 0; i < count; i++) {
+		items[i] = new TreeItem(tree, SWT.NONE);
+		items[i].setText("Item " + i);
+	}
+	for (int i = 1; i < count; i += 2) {
+		items[i].dispose();
+	}
+	assertEquals(count / 2, tree.getItemCount());
+	TreeItem[] remaining = tree.getItems();
+	for (int i = 0; i < remaining.length; i++) {
+		assertSame(items[2 * i], remaining[i]);
+		assertEquals(i, tree.indexOf(remaining[i]));
+		assertEquals("Item " + (2 * i), remaining[i].getText());
+	}
+	for (int i = 0; i < 100; i++) {
+		remaining[i].dispose();
+	}
+	for (int i = remaining.length - 1; i >= remaining.length - 100; i--) {
+		remaining[i].dispose();
+	}
+	assertEquals(count / 2 - 200, tree.getItemCount());
+	TreeItem[] left = tree.getItems();
+	for (int i = 0; i < left.length; i++) {
+		assertSame(remaining[i + 100], left[i]);
+		assertEquals(i, tree.indexOf(left[i]));
+	}
+}
+
+@Test
+public void test_setColumnOrder_getColumnOrder() {
+	createColumnOrderTree(SWT.NONE);
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, tree.getColumnOrder());
+	int[] order = { 2, 0, 3, 1 };
+	tree.setColumnOrder(order);
+	assertArrayEquals(order, tree.getColumnOrder());
+	order = new int[] { 3, 2, 1, 0 };
+	tree.setColumnOrder(order);
+	assertArrayEquals(order, tree.getColumnOrder());
+	for (int i = 0; i < 4; i++) {
+		assertEquals("Col " + i, tree.getColumn(i).getText());
+		assertEquals(i, tree.indexOf(tree.getColumn(i)));
+	}
+	tree.setColumnOrder(new int[] { 0, 1, 2, 3 });
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, tree.getColumnOrder());
+}
+
+@Test
+public void test_setColumnOrder_checkTree() {
+	createColumnOrderTree(SWT.CHECK);
+	int[] order = { 1, 3, 0, 2 };
+	tree.setColumnOrder(order);
+	assertArrayEquals(order, tree.getColumnOrder());
+	tree.setColumnOrder(new int[] { 3, 2, 1, 0 });
+	assertArrayEquals(new int[] { 3, 2, 1, 0 }, tree.getColumnOrder());
+	for (int i = 0; i < 4; i++) {
+		assertEquals(i, tree.indexOf(tree.getColumn(i)));
+	}
+	TreeItem item = tree.getItem(0);
+	item.setChecked(true);
+	assertTrue(item.getChecked());
+	assertEquals("0-2", item.getText(2));
+}
+
+@Test
+public void test_setColumnOrder_invalidArguments() {
+	createColumnOrderTree(SWT.NONE);
+	assertThrows(IllegalArgumentException.class, () -> tree.setColumnOrder(null));
+	assertThrows(IllegalArgumentException.class, () -> tree.setColumnOrder(new int[] { 0, 1, 2 }));
+	assertThrows(IllegalArgumentException.class, () -> tree.setColumnOrder(new int[] { 0, 1, 1, 3 }));
+	assertThrows(IllegalArgumentException.class, () -> tree.setColumnOrder(new int[] { 0, 1, 2, 4 }));
+	assertThrows(IllegalArgumentException.class, () -> tree.setColumnOrder(new int[] { -1, 1, 2, 3 }));
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, tree.getColumnOrder());
+}
+
+@Test
+public void test_columnMoveable_nonMovableColumnsKeepFlag() {
+	createColumnOrderTree(SWT.NONE);
+	for (int i = 0; i < 4; i++) {
+		assertFalse(tree.getColumn(i).getMoveable());
+	}
+	tree.getColumn(1).setMoveable(true);
+	assertTrue(tree.getColumn(1).getMoveable());
+	assertFalse(tree.getColumn(0).getMoveable());
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, tree.getColumnOrder());
+}
+
+private void createColumnOrderTree(int style) {
+	tree.dispose();
+	tree = new Tree(shell, SWT.MULTI | style);
+	setWidget(tree);
+	for (int i = 0; i < 4; i++) {
+		TreeColumn column = new TreeColumn(tree, SWT.NONE);
+		column.setText("Col " + i);
+		column.setWidth(50);
+	}
+	for (int row = 0; row < 3; row++) {
+		TreeItem item = new TreeItem(tree, SWT.NONE);
+		for (int col = 0; col < 4; col++) {
+			item.setText(col, row + "-" + col);
+		}
+	}
+}
 }

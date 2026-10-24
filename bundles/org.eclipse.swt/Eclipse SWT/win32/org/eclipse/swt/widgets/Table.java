@@ -102,7 +102,6 @@ public class Table extends Composite {
 	static final int H_SCROLL_LIMIT = 32;
 	static final int V_SCROLL_LIMIT = 16;
 	static final int DRAG_IMAGE_SIZE = 301;
-	static boolean COMPRESS_ITEMS = true;
 	static final long TableProc;
 	static final TCHAR TableClass = new TCHAR (OS.WC_LISTVIEW, true);
 	static final TCHAR HeaderClass = new TCHAR (OS.WC_HEADER, true);
@@ -328,11 +327,9 @@ boolean _hasItems () {
 
 void _initItems () {
 	items = new TableItem [4];
-	if (COMPRESS_ITEMS) {
-		if ((style & SWT.VIRTUAL) != 0) {
-			keyCount = 0;
-			keys = new int [4];
-		}
+	if ((style & SWT.VIRTUAL) != 0) {
+		keyCount = 0;
+		keys = new int [4];
 	}
 }
 
@@ -5377,26 +5374,6 @@ public void showSelection () {
 	}
 }
 
-/*public*/ void sort () {
-	checkWidget ();
-//	if ((style & SWT.VIRTUAL) != 0) return;
-//	int itemCount = OS.SendMessage (handle, OS.LVM_GETITEMCOUNT, 0, 0);
-//	if (itemCount == 0 || itemCount == 1) return;
-//	Comparator comparator = new Comparator () {
-//		int index = sortColumn == null ? 0 : indexOf (sortColumn);
-//		public int compare (Object object1, Object object2) {
-//			TableItem item1 = (TableItem) object1, item2 = (TableItem) object2;
-//			if (sortDirection == SWT.UP || sortDirection == SWT.NONE) {
-//				return item1.getText (index).compareTo (item2.getText (index));
-//			} else {
-//				return item2.getText (index).compareTo (item1.getText (index));
-//			}
-//		}
-//	};
-//	Arrays.sort (items, 0, itemCount, comparator);
-//	redraw ();
-}
-
 @Override
 void subclass () {
 	super.subclass ();
@@ -7124,15 +7101,30 @@ LRESULT wmNotifyToolTip (NMHDR hdr, long wParam, long lParam) {
 			LRESULT result = super.wmNotify (hdr, wParam, lParam);
 			if (result != null) return result;
 			if (toolTipText != null) break;
-			result = positionTooltip(hdr, lParam);
-			return result;
+			if (hdr.code == OS.TTN_SHOW) {
+				return positionTooltip(hdr, lParam) ? LRESULT.ONE : null;
+			}
+			/*
+			* Let the list view fill in the text of its label tip first, so
+			* that LVN_GETDISPINFO knows that a tool tip is requested and
+			* removes the line delimiters, then let a custom tool tip clear it.
+			*/
+			tipRequested = true;
+			long code;
+			try {
+				code = callWindowProc (handle, OS.WM_NOTIFY, wParam, lParam);
+			} finally {
+				tipRequested = false;
+			}
+			if (isCustomToolTip ()) positionTooltip(hdr, lParam);
+			return new LRESULT (code);
 		}
 	}
 	return null;
 }
 
-private LRESULT positionTooltip(NMHDR hdr, long lParam) {
-	LRESULT result = null;
+private boolean positionTooltip(NMHDR hdr, long lParam) {
+	boolean positioned = false;
 	LVHITTESTINFO pinfo = new LVHITTESTINFO ();
 	int pos = OS.GetMessagePos ();
 	POINT pt = new POINT();
@@ -7161,9 +7153,11 @@ private LRESULT positionTooltip(NMHDR hdr, long lParam) {
 				long hwndToolTip = OS.SendMessage(handle, OS.LVM_GETTOOLTIPS, 0, 0);
 				int flags = OS.SWP_NOACTIVATE | OS.SWP_NOZORDER;
 				Rectangle adjustedTooltipBounds = getDisplay().fitRectangleBoundsIntoMonitorWithCursor(toolRect);
-				OS.SetWindowPos(hwndToolTip, 0, adjustedTooltipBounds.x, adjustedTooltipBounds.y,
-						adjustedTooltipBounds.width, adjustedTooltipBounds.height, flags);
-				result = LRESULT.ONE;
+				if (adjustedTooltipBounds != null) {
+					OS.SetWindowPos(hwndToolTip, 0, adjustedTooltipBounds.x, adjustedTooltipBounds.y,
+							adjustedTooltipBounds.width, adjustedTooltipBounds.height, flags);
+					positioned = true;
+				}
 			} else if (isCustomToolTip()) {
 				RECT itemRect = getItemBounds(pinfo, item, hDC);
 				NMTTDISPINFO lpnmtdi = new NMTTDISPINFO();
@@ -7183,7 +7177,7 @@ private LRESULT positionTooltip(NMHDR hdr, long lParam) {
 					string.getChars (0, string.length (), chars, 0);
 					shell.setToolTipText (lpnmtdi, chars);
 					OS.MoveMemory (lParam, lpnmtdi, NMTTDISPINFO.sizeof);
-					result = LRESULT.ONE;
+					positioned = true;
 				}
 			}
 		}
@@ -7191,7 +7185,7 @@ private LRESULT positionTooltip(NMHDR hdr, long lParam) {
 		if (newFont != 0) OS.SelectObject (hDC, oldFont);
 		OS.ReleaseDC (handle, hDC);
 	}
-	return result;
+	return positioned;
 }
 
 private RECT getItemBounds(LVHITTESTINFO pinfo, TableItem item, long hDC) {
@@ -7347,14 +7341,10 @@ void handleDPIChange(Event event, float scalingFactor) {
 	setItemHeight(-1);
 
 	for (TableItem item : getItems()) {
-		if (item != null && !item.isDisposed()) {
-			item.notifyListeners(SWT.ZoomChanged, event);
-		}
+		notifyZoomChanged(item, event);
 	}
 	for (TableColumn tableColumn : getColumns()) {
-		if (tableColumn != null && !tableColumn.isDisposed()) {
-			tableColumn.notifyListeners(SWT.ZoomChanged, event);
-		}
+		notifyZoomChanged(tableColumn, event);
 	}
 
 	if (getColumns().length == 0 && scrollWidth != 0) {

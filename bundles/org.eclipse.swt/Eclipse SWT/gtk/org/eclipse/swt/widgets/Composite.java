@@ -165,8 +165,15 @@ Control[] _getChildren () {
 	long parentHandle = parentingHandle();
 
 	if (GTK.GTK4) {
+		/*
+		 * The GTK4 child list is ordered back-to-front (first = bottom, last =
+		 * top), because that is the order GTK4 paints its children in. This
+		 * method has to hand out the topmost child first, so walk the native
+		 * list backwards - that also makes the result match GTK3, whose
+		 * swt_fixed list is kept in front-to-back order instead.
+		 */
 		ArrayList<Control> childrenList = new ArrayList<>();
-		for (long child = GTK4.gtk_widget_get_first_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_next_sibling(child)) {
+		for (long child = GTK4.gtk_widget_get_last_child(parentHandle); child != 0; child = GTK4.gtk_widget_get_prev_sibling(child)) {
 			Widget childWidget = display.getWidget(child);
 			if (childWidget != null && childWidget instanceof Control && childWidget != this) {
 				childrenList.add((Control)childWidget);
@@ -533,9 +540,9 @@ void snapshotBackground (long handle, long snapshot) {
 	/*
 	 * Draw the effective background before children are snapshotted.
 	 *
-	 * SWTFixed widget has no CSS background rule, thus obtain a Cairo
-	 * context from the snapshot and delegate to drawBackground(), which
-	 * paints the background image or color directly via Cairo.
+	 * SWTFixed widget has no CSS background rule, thus append a color node
+	 * for a background color, or obtain a Cairo context from the snapshot
+	 * and delegate to drawBackground() for a background image.
 	 *
 	 * Skip when an explicit background color has been set (state & BACKGROUND):
 	 * GTK4 renders the CSS provider background automatically before calling
@@ -555,10 +562,23 @@ void snapshotBackground (long handle, long snapshot) {
 	int height = (state & ZERO_HEIGHT) != 0 ? 0 : allocation.height;
 	long rect = Graphene.graphene_rect_alloc();
 	Graphene.graphene_rect_init(rect, 0, 0, width, height);
-	long cairo = GTK4.gtk_snapshot_append_cairo(snapshot, rect);
-	if (cairo != 0) {
-		drawBackground(control, 0, cairo, 0, 0, width, height);
-		Cairo.cairo_destroy(cairo);
+	if (control.backgroundImage == null) {
+		/*
+		 * The snapshot of every ancestor runs again when a child is redrawn. A Cairo
+		 * node cannot be diffed, so a new one damages its whole area and makes the
+		 * renderer rasterize and upload it again in every frame. A color node is
+		 * diffed by value, so an unchanged background damages nothing.
+		 */
+		boolean noBackgroundRegion = drawRegion && hooks(SWT.Paint) && cachedNoBackground;
+		if (!noBackgroundRegion) {
+			GTK4.gtk_snapshot_append_color(snapshot, control.getBackgroundGdkRGBA(), rect);
+		}
+	} else {
+		long cairo = GTK4.gtk_snapshot_append_cairo(snapshot, rect);
+		if (cairo != 0) {
+			drawBackground(control, 0, cairo, 0, 0, width, height);
+			Cairo.cairo_destroy(cairo);
+		}
 	}
 	Graphene.graphene_rect_free(rect);
 }
@@ -727,10 +747,16 @@ void fixZOrder () {
 	if ((state & CANVAS) != 0) return;
 	long parentHandle = parentingHandle ();
 	if (GTK.GTK4) {
-		/* TODO: GTK4 parent does not hold the list of children it has created (parent-children relationship can only be done
-		 * with GdkPopup) Will need to consider if we can get children some other way or not have to do fixZOrder at all
-		 * and use GdkPopup autohide feature.
+		/*
+		 * Keep the widget's own content at the very bottom of the child list, so
+		 * that child controls (e.g. Table/Tree editors) are never stacked behind
+		 * it. This mirrors the GTK3 branch below, which lowers the widget's own
+		 * internal GdkWindows underneath those of the children.
 		 */
+		long content = scrolledHandle != 0 ? scrolledHandle : handle;
+		if (content != 0 && GTK.gtk_widget_get_parent (content) == parentHandle) {
+			GTK4.gtk_widget_insert_after (content, parentHandle, 0L);
+		}
 	} else {
 		long parentWindow = gtk_widget_get_window (parentHandle);
 		if (parentWindow == 0) return;
@@ -1056,6 +1082,10 @@ void hookEvents () {
 		if (scrolledHandle != 0) {
 			OS.g_signal_connect_closure (scrolledHandle, OS.scroll_child, display.getClosure (SCROLL_CHILD), false);
 		}
+	}
+	if (GTK.GTK4 && focusController != 0 && !(this instanceof Decorations)) {
+		display.focusNotifyControllers.put (focusController, this);
+		OS.g_signal_connect (focusController, Converter.javaStringToCString ("notify::is-focus"), display.notifyProc, Widget.NOTIFY_FOCUS);
 	}
 }
 
@@ -1395,10 +1425,20 @@ void moveAbove (long child, long sibling) {
 	if (child == sibling) return;
 	long parentHandle = parentingHandle ();
 	if (GTK.GTK4) {
+		/*
+		 * GTK4 has no per-widget GdkWindow: paint and hit-test order is simply
+		 * the parent's child-list order, first = bottom, last = top. So "above"
+		 * means "later in the list" - the mirror image of the GTK3 swt_fixed
+		 * list, where the head of the list is the topmost child.
+		 *
+		 * gtk_widget_insert_before(..., NULL) appends (top of the z-order),
+		 * gtk_widget_insert_after(..., sibling) places the child directly on
+		 * top of that sibling.
+		 */
 		if (sibling == 0) {
-			GTK4.gtk_widget_insert_after(child, parentHandle, 0L);
+			GTK4.gtk_widget_insert_before(child, parentHandle, 0L);
 		} else {
-			GTK4.gtk_widget_insert_before(child, parentHandle, sibling);
+			GTK4.gtk_widget_insert_after(child, parentHandle, sibling);
 		}
 	} else {
 		OS.swt_fixed_restack (parentHandle, child, sibling, true);
@@ -1409,15 +1449,25 @@ void moveAbove (long child, long sibling) {
 void moveBelow (long child, long sibling) {
 	if (child == sibling) return;
 	long parentHandle = parentingHandle ();
-	if (sibling == 0 && parentHandle == fixedHandle) {
+    /*
+     * GTK3-only: when sibling == 0 (move to the bottom of the z-order) the
+     * child would be stacked behind the scrolled content's GdkWindow, hiding
+     * overlay controls such as Table/Tree editors. Re-place it just above the
+     * scrolled content instead.
+     *
+     * Not needed on GTK4: widgets have no per-widget GdkWindow, so paint order
+     * is simply the parent's child-list order (first = bottom, last = top).
+     */
+	if (!GTK.GTK4 && sibling == 0 && parentHandle == fixedHandle) {
 		moveAbove (child, scrolledHandle != 0  ? scrolledHandle : handle);
 		return;
 	}
 	if (GTK.GTK4) {
+		/* Mirror image of moveAbove - see the comment there. */
 		if (sibling == 0) {
-			GTK4.gtk_widget_insert_before(child, parentHandle, 0L);
+			GTK4.gtk_widget_insert_after(child, parentHandle, 0L);
 		} else {
-			GTK4.gtk_widget_insert_after(child, parentHandle, sibling);
+			GTK4.gtk_widget_insert_before(child, parentHandle, sibling);
 		}
 	} else {
 		OS.swt_fixed_restack (parentHandle, child, sibling, false);
@@ -1585,6 +1635,18 @@ void propagateDraw (long container, long cairo) {
 }
 
 @Override
+void redrawVisibleChildren (int x, int y, int width, int height) {
+	Rectangle area = new Rectangle (x, y, width, height);
+	for (Control child : _getChildren ()) {
+		if (!GTK.gtk_widget_get_visible (child.topHandle ())) continue;
+		Rectangle bounds = child.getBoundsInPixels ();
+		if (!bounds.intersects (area)) continue;
+		child.redrawWidget (0, 0, 0, 0, true, false, false);
+		child.redrawVisibleChildren (x - bounds.x, y - bounds.y, width, height);
+	}
+}
+
+@Override
 void redrawChildren () {
 	super.redrawChildren ();
 	for (Control child : _getChildren ()) {
@@ -1627,6 +1689,7 @@ void releaseHandle () {
 @Override
 void releaseWidget () {
 	super.releaseWidget ();
+	if (focusController != 0) display.focusNotifyControllers.remove (focusController);
 	if (imHandle != 0) OS.g_object_unref (imHandle);
 	imHandle = 0;
 	layout = null;
@@ -1922,6 +1985,43 @@ void updateLayout (boolean all) {
 		for (Control child : _getChildren ()) {
 			child.updateLayout (all);
 		}
+	}
+}
+
+private boolean gtk4Focused;
+
+/** GTK3 reports focus only to the widget that has it, GTK4 also reports the focus of a descendant to its ancestors. */
+@Override
+void gtk4_focus_enter_event(long controller, long event) {
+	if (!(this instanceof Decorations)) {
+		int[] isFocus = new int[1];
+		OS.g_object_get(controller, Converter.javaStringToCString("is-focus"), isFocus, 0);
+		if (isFocus[0] == 0 || gtk4Focused) return;
+		gtk4Focused = true;
+	}
+	super.gtk4_focus_enter_event(controller, event);
+}
+
+@Override
+void gtk4_focus_leave_event(long controller, long event) {
+	if (!(this instanceof Decorations)) {
+		if (!gtk4Focused) return;
+		gtk4Focused = false;
+	}
+	super.gtk4_focus_leave_event(controller, event);
+}
+
+/** GTK4 emits no enter or leave when the focus moves between this composite and a descendant, so is-focus is followed as well. */
+void gtk4_focusNotify (long controller) {
+	if (isDisposed ()) return;
+	int[] isFocus = new int[1];
+	OS.g_object_get(controller, Converter.javaStringToCString("is-focus"), isFocus, 0);
+	if ((isFocus[0] != 0) == gtk4Focused) return;
+	gtk4Focused = isFocus[0] != 0;
+	if (gtk4Focused) {
+		super.gtk4_focus_enter_event(controller, 0);
+	} else {
+		super.gtk4_focus_leave_event(controller, 0);
 	}
 }
 

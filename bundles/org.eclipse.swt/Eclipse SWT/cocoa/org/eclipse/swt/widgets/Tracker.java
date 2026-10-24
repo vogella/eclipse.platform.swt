@@ -324,17 +324,21 @@ Rectangle [] computeProportions (Rectangle [] rects) {
 	return result;
 }
 
+NSGraphicsContext createBitmapContext (NSWindow window) {
+	NSRect frame = window.frame();
+	long width = (long) frame.width;
+	long height = (long) frame.height;
+	NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
+	rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
+			OS.NSAlphaFirstBitmapFormat, width * 4, 32);
+	NSGraphicsContext context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
+	rep.release();
+	return context;
+}
+
 void drawRectangles (NSWindow window, Rectangle [] rects, boolean erase) {
 	NSGraphicsContext context = window.graphicsContext();
-	if (context == null) {
-		long width = (long) window.frame().width;
-		long height = (long) window.frame().height;
-		NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
-		rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
-				OS.NSAlphaFirstBitmapFormat, width * 4, 32);
-		context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
-		rep.release();
-	}
+	if (context == null) context = createBitmapContext(window);
 	NSGraphicsContext.static_saveGraphicsState();
 	NSGraphicsContext.setCurrentContext(context);
 	context.saveGraphicsState();
@@ -559,9 +563,9 @@ void key (NSEvent nsEvent) {
 			int mask = 0;
 			switch (keyCode) {
 				case SWT.ALT: mask = OS.NSAlternateKeyMask; break;
-				case SWT.CONTROL: mask = OS.NSControlKeyMask; break;
-				case SWT.COMMAND: mask = OS.NSCommandKeyMask; break;
-				case SWT.SHIFT: mask = OS.NSShiftKeyMask; break;
+				case SWT.CONTROL: mask = OS.NSEventModifierFlagControl; break;
+				case SWT.COMMAND: mask = OS.NSEventModifierFlagCommand; break;
+				case SWT.SHIFT: mask = OS.NSEventModifierFlagShift; break;
 				case SWT.CAPS_LOCK:
 					Event event = new Event();
 					event.keyCode = keyCode;
@@ -583,7 +587,7 @@ void key (NSEvent nsEvent) {
 		}
 	}
 
-	int stepSize = (modifierFlags & OS.NSControlKeyMask) != 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
+	int stepSize = (modifierFlags & OS.NSEventModifierFlagControl) != 0 ? STEPSIZE_SMALL : STEPSIZE_LARGE;
 	int xChange = 0, yChange = 0;
 	switch (nsKeyCode) {
 		case 53: /* Esc */
@@ -771,15 +775,7 @@ public boolean open () {
 		window.setContentView(null);
 		window.setBackgroundColor(NSColor.clearColor());
 		NSGraphicsContext context = window.graphicsContext();
-		if (context == null) {
-			long width = (long) window.frame().width;
-			long height = (long) window.frame().height;
-			NSBitmapImageRep rep = (NSBitmapImageRep) new NSBitmapImageRep().alloc();
-			rep = rep.initWithBitmapDataPlanes(0, width, height, 8, 3, false, false, OS.NSDeviceRGBColorSpace,
-					OS.NSAlphaFirstBitmapFormat, width * 4, 32);
-			context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
-			rep.release();
-		}
+		if (context == null) context = createBitmapContext(window);
 		NSGraphicsContext.static_saveGraphicsState();
 		NSGraphicsContext.setCurrentContext(context);
 		context.setCompositingOperation(OS.NSCompositingOperationClear);

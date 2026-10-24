@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2025 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,9 +16,10 @@ package org.eclipse.swt.tests.junit;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -63,6 +64,22 @@ public void test_ConstructorLorg_eclipse_swt_widgets_TableI() {
 public void test_ConstructorLorg_eclipse_swt_widgets_TableII() {
 	assertThrows (IllegalArgumentException.class, () ->
 		new TableItem(table, SWT.NONE, 5),"No exception thrown for illegal index argument");
+}
+
+@Test
+public void test_getBoundsI_checkStyleRightToLeft() {
+	assumeFalse(SwtTestUtil.isGTK4(), "The GTK4 cell rectangle of a right-to-left tree view is not mirrored like GTK3");
+	Table rtlTable = new Table(shell, SWT.CHECK | SWT.RIGHT_TO_LEFT);
+	rtlTable.setBounds(0, 0, 200, 150);
+	TableItem item = new TableItem(rtlTable, SWT.NONE);
+	item.setText("Item");
+	shell.open();
+	SwtTestUtil.processEvents();
+
+	Rectangle bounds = item.getBounds(0);
+	assertTrue(bounds.width > 0, "Cell bounds must have a positive width but are " + bounds);
+	assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= rtlTable.getSize().x,
+			"Cell bounds " + bounds + " must lie inside the table of width " + rtlTable.getSize().x);
 }
 
 @Test
@@ -440,13 +457,9 @@ public void test_setBackgroundILorg_eclipse_swt_graphics_Color() {
 	tableItem.setBackground(null);
 	assertEquals(table.getBackground(),tableItem.getBackground(0));
 
-	try {
-		Color color = new Color(255, 0, 0);
-		color.dispose();
-		tableItem.setBackground(color);
-		fail("No exception thrown for color disposed");
-	} catch (IllegalArgumentException e) {
-	}
+	Color disposedColor = new Color(255, 0, 0);
+	disposedColor.dispose();
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setBackground(disposedColor), "No exception thrown for color disposed");
 }
 
 @Test
@@ -457,11 +470,7 @@ public void test_setBackgroundLorg_eclipse_swt_graphics_Color() {
 	tableItem.setBackground(null);
 	assertEquals(table.getBackground(),tableItem.getBackground());
 	color.dispose();
-	try {
-		tableItem.setBackground(color);
-		fail("No exception thrown for color disposed");
-	} catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setBackground(color), "No exception thrown for color disposed");
 }
 
 @Test
@@ -483,11 +492,11 @@ public void test_setCheckedZ() {
 @Test
 public void test_setFontLorg_eclipse_swt_graphics_Font() {
 	Display display = tableItem.getDisplay();
-	Font font = tableItem.getFont();
-	tableItem.setFont(font);
-	assertEquals(tableItem.getFont(), font);
+	Font initialFont = tableItem.getFont();
+	tableItem.setFont(initialFont);
+	assertEquals(tableItem.getFont(), initialFont);
 
-	font = new Font(display, SwtTestUtil.testFontName, 10, SWT.NORMAL);
+	Font font = new Font(display, SwtTestUtil.testFontName, 10, SWT.NORMAL);
 	tableItem.setFont(font);
 	assertEquals(tableItem.getFont(), font);
 
@@ -495,12 +504,7 @@ public void test_setFontLorg_eclipse_swt_graphics_Font() {
 	assertEquals(tableItem.getFont(), table.getFont());
 
 	font.dispose();
-	try {
-		tableItem.setFont(font);
-		tableItem.setFont(null);
-		fail("No exception thrown for disposed font");
-	} catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setFont(font), "No exception thrown for disposed font");
 }
 
 @Test
@@ -546,12 +550,7 @@ public void test_setFontILorg_eclipse_swt_graphics_Font() {
 	font.dispose();
 	font2.dispose();
 
-	try {
-		tableItem.setFont(0, font);
-		tableItem.setFont(0, null);
-		fail("No exception thrown for disposed font");
-	} catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setFont(0, font), "No exception thrown for disposed font");
 }
 
 @Test
@@ -593,13 +592,9 @@ public void test_setForegroundILorg_eclipse_swt_graphics_Color() {
 	tableItem.setForeground(null);
 	assertEquals(table.getForeground(),tableItem.getForeground(0));
 
-	try {
-		Color color = new Color(255, 0, 0);
-		color.dispose();
-		tableItem.setForeground(color);
-		fail("No exception thrown for color disposed");
-	} catch (IllegalArgumentException e) {
-	}
+	Color disposedColor = new Color(255, 0, 0);
+	disposedColor.dispose();
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setForeground(disposedColor), "No exception thrown for color disposed");
 }
 
 @Test
@@ -610,11 +605,7 @@ public void test_setForegroundLorg_eclipse_swt_graphics_Color() {
 	tableItem.setForeground(null);
 	assertEquals(table.getForeground(),tableItem.getForeground());
 	color.dispose();
-	try {
-		tableItem.setForeground(color);
-		fail("No exception thrown for color disposed");
-	} catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setForeground(color), "No exception thrown for color disposed");
 }
 
 @Test
@@ -659,12 +650,7 @@ public void test_setImage$Lorg_eclipse_swt_graphics_Image() {
 	for (int i = 0; i < images.length; i++) {
 		assertEquals(images[i], tableItem.getImage(i));
 	}
-	try {
-		tableItem.setImage((Image []) null);
-		fail("No exception thrown for images == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setImage((Image []) null), "No exception thrown for images == null");
 }
 
 @Test
@@ -700,12 +686,7 @@ public void test_setImageILorg_eclipse_swt_graphics_Image() {
 	assertEquals(images[0], tableItem.getImage(0));
 
 	images[0].dispose();
-	try {
-		tableItem.setImage(0, images[0]);
-		tableItem.setImage(0, null);
-		fail("No exception thrown for disposed font");
-	} catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setImage(0, images[0]), "No exception thrown for disposed image");
 }
 
 @SuppressWarnings("deprecation")
@@ -723,16 +704,56 @@ public void test_setImageIndentI() {
 }
 
 @Test
+public void test_setImage_newColumnDoesNotInheritImageOfDisposedColumn() {
+	new TableColumn(table, SWT.LEFT);
+	TableColumn column = new TableColumn(table, SWT.LEFT);
+	new TableColumn(table, SWT.LEFT);
+	tableItem.setImage(1, images[0]);
+	column.dispose();
+	new TableColumn(table, SWT.LEFT);
+	assertNull(tableItem.getImage(2));
+}
+
+@Test
+public void test_setImage_imagesFollowTheirColumns() {
+	new TableColumn(table, SWT.LEFT);
+	TableColumn column = new TableColumn(table, SWT.LEFT);
+	new TableColumn(table, SWT.LEFT);
+	// index 2 first, win32 copies the image of the first non-zero index into slot 0
+	tableItem.setImage(2, images[1]);
+	tableItem.setImage(0, images[0]);
+	column.dispose();
+	assertSame(images[0], tableItem.getImage(0));
+	assertSame(images[1], tableItem.getImage(1));
+	new TableColumn(table, SWT.LEFT, 0);
+	assertNull(tableItem.getImage(0));
+	assertSame(images[0], tableItem.getImage(1));
+	assertSame(images[1], tableItem.getImage(2));
+}
+
+@Test
+public void test_getImage_disposedImageIsNotReplacedByLaterImage() {
+	shell.open();
+	Image disposed = new Image(shell.getDisplay(), 16, 16);
+	tableItem.setImage(disposed);
+	disposed.dispose();
+	new TableItem(table, SWT.NONE).setImage(images[0]);
+	Image later = new Image(shell.getDisplay(), 16, 16);
+	try {
+		new TableItem(table, SWT.NONE).setImage(later);
+		table.update();
+		assertSame(disposed, tableItem.getImage());
+	} finally {
+		later.dispose();
+	}
+}
+
+@Test
 public void test_setText$Ljava_lang_String() {
 	final String TestString = "test";
 	final String TestStrings[] = new String[] {TestString, TestString + "1", TestString + "2"};
 
-	try {
-		tableItem.setText((String []) null);
-		fail("No exception thrown for strings == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setText((String []) null), "No exception thrown for strings == null");
 
 	/*
 	* Test the getText/setText API with a Table that has only
@@ -820,19 +841,9 @@ public void test_setTextILjava_lang_String(){
 	assertEquals(0, tableItem.getText(-1).length());
 
 
-	try {
-		tableItem.setText(-1, null);
-		fail("No exception thrown for string == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setText(-1, null), "No exception thrown for string == null");
 
-	try {
-		tableItem.setText(0, null);
-		fail("No exception thrown for string == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> tableItem.setText(0, null), "No exception thrown for string == null");
 
 
 	/*

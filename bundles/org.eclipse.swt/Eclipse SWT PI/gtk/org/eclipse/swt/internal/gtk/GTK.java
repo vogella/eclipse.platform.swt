@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2018, 20224 Red Hat Inc. and others. All rights reserved.
+ * Copyright (c) 2018, 2026 Red Hat Inc. and others. All rights reserved.
  * The contents of this file are made available under the terms
  * of the GNU Lesser General Public License (LGPL) Version 2.1 that
  * accompanies this distribution (lgpl-v21.txt).  The LGPL is also
@@ -43,6 +43,9 @@ public class GTK extends OS {
 	public static final int GTK_DIALOG_MODAL = 1 << 0;
 	public static final int GTK_DIR_TAB_FORWARD = 0;
 	public static final int GTK_DIR_TAB_BACKWARD = 1;
+	public static final int GTK_DIR_UP = 2;
+	public static final int GTK_DIR_LEFT = 4;
+	public static final int GTK_DIR_RIGHT = 5;
 	public static final int GTK_ENTRY_ICON_PRIMARY = 0;
 	public static final int GTK_ENTRY_ICON_SECONDARY = 1;
 	public static final int GTK_FILE_CHOOSER_ACTION_OPEN = 0;
@@ -179,10 +182,15 @@ public class GTK extends OS {
 	public static final byte[] GTK_PRINT_SETTINGS_OUTPUT_URI = OS.ascii("output-uri");
 
 	/**
-	 * Needed to tell GTK 3 to prefer a dark or light theme in the UI.
-	 * Improves the look of the Eclipse Dark theme in GTK 3 systems.
+	 * Tells GTK 3 and GTK 4 before 4.20 to prefer a dark or light theme.
 	 */
 	public static final byte[] gtk_application_prefer_dark_theme = OS.ascii("gtk-application-prefer-dark-theme");
+	/** Replaces gtk-application-prefer-dark-theme since GTK 4.20 */
+	public static final byte[] gtk_interface_color_scheme = OS.ascii("gtk-interface-color-scheme");
+
+	/** GtkInterfaceColorScheme enum */
+	public static final int GTK_INTERFACE_COLOR_SCHEME_DARK = 2;
+	public static final int GTK_INTERFACE_COLOR_SCHEME_LIGHT = 3;
 
 	/** Named icons.
 	 * See https://docs.google.com/spreadsheet/pub?key=0AsPAM3pPwxagdGF4THNMMUpjUW5xMXZfdUNzMXhEa2c&amp;output=html
@@ -207,7 +215,7 @@ public class GTK extends OS {
 	public static final native int GtkCellRendererTextClass_sizeof();
 	public static final native int GtkTreeIter_sizeof();
 
-	/** GTK3 sizeof() [if-def'd in os.h] */
+	/** On GTK4 these structs are private, os_custom.h asks GLib for their registered sizes */
 	public static final native int GtkCellRendererPixbuf_sizeof();
 	public static final native int GtkCellRendererPixbufClass_sizeof();
 	public static final native int GtkCellRendererToggle_sizeof();
@@ -258,6 +266,7 @@ public class GTK extends OS {
 
 
 	/* GtkButton */
+	public static final native long gtk_button_get_type();
 	public static final native long gtk_button_new();
 	/**
 	 * @method flags=dynamic
@@ -1799,6 +1808,12 @@ public class GTK extends OS {
 	 * @param parent cast=(GtkTreeIter *)
 	 */
 	public static final native boolean gtk_tree_model_iter_nth_child(long tree_model, long iter, long parent, int n);
+	/**
+	 * @param tree_model cast=(GtkTreeModel *)
+	 * @param iter cast=(GtkTreeIter *)
+	 * @param child cast=(GtkTreeIter *)
+	 */
+	public static final native boolean gtk_tree_model_iter_parent(long tree_model, long iter, long child);
 
 	/* GtkTreePath */
 	/** @param path cast=(GtkTreePath *) */
@@ -1963,6 +1978,11 @@ public class GTK extends OS {
 	public static final native void gtk_tree_view_column_cell_set_cell_data(long tree_column, long tree_model, long iter, boolean is_expander, boolean is_expanded);
 	/** @param tree_column cast=(GtkTreeViewColumn *) */
 	public static final native void gtk_tree_view_column_clear(long tree_column);
+	/**
+	 * @param tree_column cast=(GtkTreeViewColumn *)
+	 * @param cell_renderer cast=(GtkCellRenderer *)
+	 */
+	public static final native void gtk_tree_view_column_clear_attributes(long tree_column, long cell_renderer);
 	/** @param column cast=(GtkTreeViewColumn *) */
 	public static final native long gtk_tree_view_column_get_button(long column);
 	/** @param column cast=(GtkTreeViewColumn *) */
@@ -2270,6 +2290,16 @@ public class GTK extends OS {
 	public static final native void gtk_widget_set_margin_bottom(long widget, int margin);
 	/** @param self cast=(GtkWidget *) */
 	public static final native int gtk_widget_get_state_flags(long self);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param flags cast=(GtkStateFlags)
+	 */
+	public static final native void gtk_widget_unset_state_flags(long widget, int flags);
+	/**
+	 * @param widget cast=(GtkWidget *)
+	 * @param flags cast=(GtkStateFlags)
+	 */
+	public static final native void gtk_widget_set_state_flags(long widget, int flags, boolean clear);
 	/** @param widget cast=(GtkWidget *) */
 	public static final native boolean gtk_widget_has_default(long widget);
 

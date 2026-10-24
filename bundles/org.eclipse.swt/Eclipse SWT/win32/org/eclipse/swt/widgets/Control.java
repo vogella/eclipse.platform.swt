@@ -3353,7 +3353,10 @@ public void setBounds (Rectangle rect) {
  * Thus, reduce the control size in case it would not fit anyway
  */
 private void fitInParentBounds(Rectangle boundsInPixels, int zoom) {
-	if (parent == null) {
+	if (parent == null || this instanceof Shell) {
+		// A Shell is a geometric top-level element and must not be fit into any
+		// logical parent's bounds — even if it has another Shell set as parent
+		// (which denotes an owner relationship, not geometric containment).
 		return;
 	}
 	Rectangle parentBoundsInPixels = parent.getBoundsInPixels();
@@ -3397,7 +3400,13 @@ public boolean setAutoscalingMode(AutoscalingMode autoscalingMode) {
 	if (nativeZoom != newZoom) {
 		nativeZoom = newZoom;
 		Event zoomChangedEvent = createZoomChangedEvent(newZoom, false);
-		notifyListeners(SWT.ZoomChanged, zoomChangedEvent);
+		Shell shell = getShell();
+		startZoomChangeTask(zoomChangedEvent);
+		try {
+			notifyZoomChanged(this, zoomChangedEvent);
+		} finally {
+			completeZoomChangeTask(zoomChangedEvent, shell);
+		}
 	}
 	return true;
 }
@@ -4127,18 +4136,11 @@ public void setVisible (boolean visible) {
 }
 
 void sort (int [] items) {
-	/* Shell Sort from K&R, pg 108 */
-	int length = items.length;
-	for (int gap=length/2; gap>0; gap/=2) {
-		for (int i=gap; i<length; i++) {
-			for (int j=i-gap; j>=0; j-=gap) {
-				if (items [j] <= items [j + gap]) {
-					int swap = items [j];
-					items [j] = items [j + gap];
-					items [j + gap] = swap;
-				}
-			}
-		}
+	Arrays.sort (items);
+	for (int i = 0, j = items.length - 1; i < j; i++, j--) {
+		int swap = items [i];
+		items [i] = items [j];
+		items [j] = swap;
 	}
 }
 
@@ -5141,9 +5143,7 @@ Event createZoomChangedEvent(int zoom, boolean asyncExec) {
 	event.widget = this;
 	event.detail = zoom;
 	event.doit = true;
-	DPIChangeExecution dpiChangeExecution = new DPIChangeExecution();
-	dpiChangeExecution.asyncExec = asyncExec;
-	event.data = dpiChangeExecution;
+	event.data = new DPIChangeExecution(event, asyncExec);
 	return event;
 }
 
@@ -6023,9 +6023,79 @@ LRESULT wmScrollChild (long wParam, long lParam) {
 	return null;
 }
 
+/**
+ * The processing of a single zoom change, which is performed in tasks that may be
+ * executed asynchronously. The zoom change is complete, and the shell is laid out,
+ * once all its tasks have been completed.
+ */
 static class DPIChangeExecution {
-	AtomicInteger taskCount = new AtomicInteger();
-	private boolean asyncExec = true;
+	private final Event event;
+	private final AtomicInteger taskCount = new AtomicInteger();
+	private boolean asyncExec;
+	/**
+	 * Collects the failures of the zoom change processing of individual widgets for
+	 * the complete zoom change. A failure is reported to the exception handlers of
+	 * the {@link Display} immediately, but is only propagated once the zoom change
+	 * has been processed by all widgets, so that a single failing widget does not
+	 * leave the remaining ones rendered with a stale zoom.
+	 */
+	private final ExceptionStash exceptions = new ExceptionStash();
+
+	private DPIChangeExecution(Event event, boolean asyncExec) {
+		this.event = event;
+		this.asyncExec = asyncExec;
+	}
+
+	/**
+	 * Registers a task of this zoom change, which must be completed with
+	 * {@link #completeTask(Shell)}.
+	 * <p>
+	 * Everything propagating the zoom changed event to widgets that are adapted in
+	 * a task of their own must hold a task itself, as the zoom change would
+	 * otherwise be considered complete as soon as the first of those widgets has
+	 * been adapted.
+	 * </p>
+	 */
+	private void startTask() {
+		taskCount.incrementAndGet();
+	}
+
+	/**
+	 * Completes a task registered with {@link #startTask()}. If it was the last
+	 * outstanding task, the given shell is laid out and the collected failures are
+	 * propagated, as the zoom change has then been processed by all widgets.
+	 */
+	private void completeTask(Shell shell) {
+		// Deliberately not requiring the count to be exactly zero: if the accounting
+		// of tasks was ever off, completing the zoom change once too often is
+		// preferable to not completing it at all
+		if (taskCount.decrementAndGet() > 0) {
+			return;
+		}
+		try {
+			if (event.doit && !shell.isDisposed()) {
+				shell.layout(true, true);
+			}
+		} catch (Error | RuntimeException ex) {
+			exceptions.stash(ex);
+		}
+		exceptions.close();
+	}
+
+	/**
+	 * Collects a failure of the zoom change processing of a single widget, see
+	 * {@link Widget#stashZoomChangeFailure(Event, Throwable)}.
+	 */
+	void stash(Throwable throwable) {
+		exceptions.stash(throwable);
+	}
+
+	/**
+	 * Returns whether all tasks of this zoom change have been completed.
+	 */
+	boolean isComplete() {
+		return taskCount.get() <= 0;
+	}
 
 	private void process(Control control, Runnable operation) {
 		boolean currentAsyncExec = asyncExec;
@@ -6044,14 +6114,6 @@ static class DPIChangeExecution {
 		// DPI change handling is finished
 		asyncExec = currentAsyncExec;
 	}
-
-	private void increment() {
-		taskCount.incrementAndGet();
-	}
-
-	private boolean decrement() {
-		return taskCount.decrementAndGet() <= 0;
-	}
 }
 
 private static class DPIChangeProcessingCallback  {
@@ -6062,10 +6124,15 @@ private static class DPIChangeProcessingCallback  {
 		// Has to have TIMERPROC signature, see https://learn.microsoft.com/en-us/windows/win32/api/winuser/nc-winuser-timerproc
 		Callback callback = new Callback(this, "run", void.class, new Type[] { int.class, int.class, int.class, int.class} );
 		this.operation = () -> {
-			if (!control.isDisposed()) {
-				dpiChangeProcessing.run();
+			try {
+				if (!control.isDisposed()) {
+					dpiChangeProcessing.run();
+				}
+			} finally {
+				// The callback must be released in any case, as callback slots are a
+				// limited resource and leaking them makes further scheduling fail
+				callback.dispose();
 			}
-			callback.dispose();
 		};
 		this.address = callback.getAddress();
 	}
@@ -6099,23 +6166,37 @@ private static class DPIChangeProcessingCallback  {
 
 void sendZoomChangedEvent(Event event, Shell shell) {
 	if (event.data instanceof DPIChangeExecution dpiExecData) {
-		dpiExecData.increment();
+		startZoomChangeTask(event);
 		dpiExecData.process(this, () -> {
 			try {
-				if (!this.isDisposed() && event.doit) {
-					notifyListeners(SWT.ZoomChanged, event);
+				if (event.doit) {
+					// The disposal of this control is handled by the send itself
+					notifyZoomChanged(this, event);
 				}
 			} finally {
-				if (shell.isDisposed()) {
-					return;
-				}
-				if (dpiExecData.decrement()) {
-					if (event.doit) {
-						shell.layout(true, true);
-					}
-				}
+				completeZoomChangeTask(event, shell);
 			}
 		});
+	}
+}
+
+/**
+ * Registers a task of the zoom change the given event belongs to, see
+ * {@link DPIChangeExecution#startTask()}.
+ */
+static void startZoomChangeTask(Event event) {
+	if (event.data instanceof DPIChangeExecution execution) {
+		execution.startTask();
+	}
+}
+
+/**
+ * Completes a task of the zoom change the given event belongs to, see
+ * {@link DPIChangeExecution#completeTask(Shell)}.
+ */
+static void completeZoomChangeTask(Event event, Shell shell) {
+	if (event.data instanceof DPIChangeExecution execution) {
+		execution.completeTask(shell);
 	}
 }
 

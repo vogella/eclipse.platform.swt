@@ -278,13 +278,18 @@ Point computeMaxTextSize (int wHint, int hHint, boolean changed) {
 			setText(longDateText);
 			break;
 		case DEFAULT_LONG_DATE_FORMAT:
-			// Make the MONTH field the longest length possible, the DATE field a double digit.
-			Set<String> months = calendar.getDisplayNames(Calendar.MONTH, Calendar.LONG, locale).keySet();
-			String longestMonth = Collections.max(months, (s1, s2) -> s1.length() - s2.length()); // Probably September
-			String doubleDigitDate = currentText.replaceFirst("\\d{1,2}", "00");
-			String longText = doubleDigitDate.replaceFirst("[^\\s]+", longestMonth);
-			setText(longText);
-			break;
+			// Measure the widest formatted date over all months, so the month's position in the locale pattern and glyph widths do not matter.
+			Point widest = null;
+			Calendar probe = (Calendar) calendar.clone();
+			probe.set(Calendar.DAY_OF_MONTH, 28);
+			for (int month = Calendar.JANUARY; month <= Calendar.DECEMBER; month++) {
+				probe.set(Calendar.MONTH, month);
+				setText(dateFormat.format(probe.getTime()));
+				Point size = computeNativeSize (GTK.GTK4 ? handle : textEntryHandle, wHint, hHint, changed);
+				if (widest == null || size.x > widest.x) widest = size;
+			}
+			updateControl();
+			return widest;
 		case DEFAULT_SHORT_TIME_FORMAT:
 		case DEFAULT_MEDIUM_TIME_FORMAT:
 		case DEFAULT_LONG_TIME_FORMAT:
@@ -1986,6 +1991,7 @@ void setText(String dateTimeText) {
 @Override
 boolean gtk4_key_press_event(long controller, int keyval, int keycode, int state, long event) {
 	if (!isReadOnly() && (isTime() || isDate())) {
+		if (!sendKeyEvent(SWT.KeyDown, event)) return true;
 		switch (keyval) {
 		case GDK.GDK_Up:
 		case GDK.GDK_KP_Up:
@@ -2023,14 +2029,16 @@ boolean gtk4_key_press_event(long controller, int keyval, int keycode, int state
 		default:
 			onNumberKeyInput(keyval);
 		}
+		return true;
 	}
 
-	return true;
+	return super.gtk4_key_press_event(controller, keyval, keycode, state, event);
 }
 
 @Override
 long gtk3_key_press_event (long widget, long event) {
 	if (!isReadOnly () && (isTime () || isDate ())) {
+		if (!sendKeyEvent (SWT.KeyDown, event)) return 1;
 		int [] key = new int[1];
 		GDK.gdk_event_get_keyval(event, key);
 
@@ -2073,8 +2081,9 @@ long gtk3_key_press_event (long widget, long event) {
 		default:
 			onNumberKeyInput(key[0]);
 		}
+		return 1;
 	}
-	return 1;
+	return super.gtk3_key_press_event (widget, event);
 }
 
 void commitData() {

@@ -14,18 +14,36 @@
 package org.eclipse.swt.tests.junit;
 
 
+import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_ENV_VAR;
+import static org.eclipse.swt.tests.junit.SwtTestUtil.JENKINS_DETECT_REGEX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Caret;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Widget;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 /**
  * Automated Test Suite for class org.eclipse.swt.widgets.Canvas
@@ -55,12 +73,7 @@ protected void setWidget(Widget w) {
 @Override
 @Test
 public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
-	try {
-		new Canvas(null, SWT.NONE);
-		fail("No exception thrown for parent == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> new Canvas(null, SWT.NONE), "No exception thrown for parent == null");
 }
 
 @Test
@@ -119,10 +132,142 @@ public void test_CaretWithDisposedFontDoesNotThrowException_issue2323() {
 	canvas.setCaret(caret);
 }
 
+private Image createRedOverBlueImage() {
+	Image image = new Image(canvas.getDisplay(), 40, 40);
+	GC gc = new GC(image);
+	gc.setBackground(canvas.getDisplay().getSystemColor(SWT.COLOR_RED));
+	gc.fillRectangle(0, 0, 40, 25);
+	gc.setBackground(canvas.getDisplay().getSystemColor(SWT.COLOR_BLUE));
+	gc.fillRectangle(0, 25, 40, 15);
+	gc.dispose();
+	return image;
+}
+
+private void assertRedOverBlueTiles(Control control) {
+	Image shot = new Image(control.getDisplay(), 100, 100);
+	GC gc = new GC(control);
+	gc.copyArea(shot, 0, 0);
+	gc.dispose();
+	ImageData data = shot.getImageData();
+	shot.dispose();
+	RGB red = new RGB(255, 0, 0);
+	RGB blue = new RGB(0, 0, 255);
+	assertEquals(red, data.palette.getRGB(data.getPixel(20, 10)), "first tile, red band");
+	assertEquals(blue, data.palette.getRGB(data.getPixel(20, 32)), "first tile, blue band");
+	assertEquals(red, data.palette.getRGB(data.getPixel(20, 50)), "second tile, red band");
+	assertEquals(blue, data.palette.getRGB(data.getPixel(20, 72)), "second tile, blue band");
+}
+
+private void openAndPaint(Shell s) {
+	s.setSize(300, 300);
+	s.open();
+	for (int i = 0; i < 20; i++) {
+		while (s.getDisplay().readAndDispatch()) {
+		}
+		try {
+			Thread.sleep(20);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+	}
+}
+
+@Test
+public void test_backgroundImageIsNotMirrored() {
+	Image image = createRedOverBlueImage();
+	try {
+		canvas.setBounds(0, 0, 100, 100);
+		canvas.setBackgroundImage(image);
+		openAndPaint(shell);
+		assertRedOverBlueTiles(canvas);
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_inheritedBackgroundImageIsNotMirrored() {
+	Image image = createRedOverBlueImage();
+	try {
+		canvas.setBounds(0, 0, 100, 100);
+		canvas.setBackgroundImage(image);
+		canvas.setBackgroundMode(SWT.INHERIT_FORCE);
+		Canvas child = new Canvas(canvas, SWT.NONE);
+		child.setBounds(0, 0, 100, 100);
+		openAndPaint(shell);
+		assertRedOverBlueTiles(child);
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
+public void test_drawBackgroundIntoImageIsNotMirrored() {
+	Image image = createRedOverBlueImage();
+	Image target = new Image(canvas.getDisplay(), 100, 100);
+	try {
+		canvas.setBounds(0, 0, 100, 100);
+		canvas.setBackgroundImage(image);
+		GC gc = new GC(target);
+		canvas.drawBackground(gc, 0, 0, 100, 100, 0, 0);
+		gc.dispose();
+		ImageData data = target.getImageData();
+		assertEquals(new RGB(255, 0, 0), data.palette.getRGB(data.getPixel(20, 10)), "first tile, red band");
+		assertEquals(new RGB(0, 0, 255), data.palette.getRGB(data.getPixel(20, 32)), "first tile, blue band");
+		assertEquals(new RGB(255, 0, 0), data.palette.getRGB(data.getPixel(20, 50)), "second tile, red band");
+		assertEquals(new RGB(0, 0, 255), data.palette.getRGB(data.getPixel(20, 72)), "second tile, blue band");
+	} finally {
+		target.dispose();
+		image.dispose();
+	}
+}
+
 /* custom*/
 @Test
 public void test_consistency_MenuDetect() {
 	consistencyEvent(10, 10, 3, 0, ConsistencyUtility.MOUSE_CLICK);
+}
+
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postMouseWheel() throws InterruptedException {
+	// posted input does not reach a background app on Cocoa and Win32, and the fix under test is GTK only
+	assumeTrue(SwtTestUtil.isGTK);
+	shell.setBounds(100, 100, 300, 300);
+	canvas.setBounds(0, 0, 300, 300);
+	shell.open();
+	// findFocusedWindow() needs a drawn and focused shell
+	SwtTestUtil.processEvents();
+
+	Display display = Display.getDefault();
+	List<Integer> counts = new ArrayList<>();
+	canvas.addListener(SWT.MouseWheel, e -> counts.add(e.count));
+
+	Point center = canvas.toDisplay(150, 150);
+	Event move = new Event();
+	move.type = SWT.MouseMove;
+	move.x = center.x;
+	move.y = center.y;
+	assumeTrue(display.post(move), "Display.post is not supported on GTK4");
+	SwtTestUtil.processEvents(500, () -> false);
+
+	Event up = new Event();
+	up.type = SWT.MouseWheel;
+	up.detail = SWT.SCROLL_LINE;
+	up.count = 3;
+	assertTrue(display.post(up));
+	SwtTestUtil.processEvents(10000, () -> !counts.isEmpty());
+	assertTrue(counts.size() > 0 && counts.stream().allMatch(c -> c > 0), "positive count scrolls up: " + counts);
+
+	counts.clear();
+	Event down = new Event();
+	down.type = SWT.MouseWheel;
+	down.detail = SWT.SCROLL_LINE;
+	down.count = -3;
+	assertTrue(display.post(down));
+	SwtTestUtil.processEvents(10000, () -> !counts.isEmpty());
+	assertTrue(counts.size() > 0 && counts.stream().allMatch(c -> c < 0), "negative count scrolls down: " + counts);
 }
 
 @Test

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2019 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -67,6 +67,8 @@ public final class Printer extends Device {
 
 	static final String GTK_LPR_BACKEND = "GtkPrintBackendLpr"; //$NON-NLS-1$
 	static final String GTK_FILE_BACKEND = "GtkPrintBackendFile"; //$NON-NLS-1$
+	/* GTK4 builds the file backend into libgtk and registers its type with a "Builtin" suffix */
+	static final String GTK4_FILE_BACKEND = "GtkPrintBackendFileBuiltin"; //$NON-NLS-1$
 
 	static boolean disablePrinting = System.getProperty("org.eclipse.swt.internal.gtk.disablePrinting") != null; //$NON-NLS-1$
 
@@ -147,6 +149,36 @@ static long GtkPrinterFunc_Default (long printer, long user_data) {
 	return 0;
 }
 
+/*
+ * Returns the default printer or, if there is none, the file printer.
+ * GTK3 always has a default printer because its LPR backend marks its printer
+ * as default. GTK4 has no LPR backend, so without a default CUPS printer the
+ * print dialog would start with no printer selected.
+ */
+static long gtkDefaultOrFilePrinter() {
+	if (disablePrinting) return 0;
+	gtk_init();
+	Callback printerCallback = new Callback(Printer.class, "GtkPrinterFunc_DefaultOrFile", 2); //$NON-NLS-1$
+	findPrinter = 0;
+	GTK.gtk_enumerate_printers(printerCallback.getAddress(), 0, 0, true);
+	printerCallback.dispose ();
+	return findPrinter;
+}
+
+static long GtkPrinterFunc_DefaultOrFile (long printer, long user_data) {
+	if (GTK.gtk_printer_is_default(printer)) {
+		if (findPrinter != 0) OS.g_object_unref(findPrinter);
+		findPrinter = printer;
+		OS.g_object_ref(printer);
+		return 1;
+	}
+	if (findPrinter == 0 && isFileBackend(printerDataFromGtkPrinter(printer).driver)) {
+		findPrinter = printer;
+		OS.g_object_ref(printer);
+	}
+	return 0;
+}
+
 static long gtkPrinterFromPrinterData(PrinterData data) {
 	gtk_init();
 	Callback printerCallback = new Callback(Printer.class, "GtkPrinterFunc_FindNamedPrinter", 2); //$NON-NLS-1$
@@ -160,13 +192,16 @@ static long gtkPrinterFromPrinterData(PrinterData data) {
 static long GtkPrinterFunc_FindNamedPrinter (long printer, long user_data) {
 	PrinterData pd = printerDataFromGtkPrinter(printer);
 	if ((pd.driver.equals(findData.driver) && pd.name.equals(findData.name))
-			|| (pd.driver.equals(GTK_FILE_BACKEND)) && findData.printToFile && findData.driver == null && findData.name == null) {
-			// TODO: GTK_FILE_BACKEND is not GTK API (see gtk bug 345590)
+			|| isFileBackend(pd.driver) && findData.printToFile && findData.driver == null && findData.name == null) {
 		findPrinter = printer;
 		OS.g_object_ref(printer);
 		return 1;
 	}
 	return 0;
+}
+
+static boolean isFileBackend(String driver) {
+	return GTK_FILE_BACKEND.equals(driver) || GTK4_FILE_BACKEND.equals(driver);
 }
 
 static PrinterData printerDataFromGtkPrinter(long printer) {
@@ -224,8 +259,16 @@ static void restore(byte [] data, long settings, long page_setup) {
 	boolean custom = restoreBoolean("paper_size_is_custom"); //$NON-NLS-1$
 	long paper_size = 0;
 	if (custom) {
-		if (ppd_name.length > 0) {
-			paper_size = GTK.gtk_paper_size_new_from_ppd(ppd_name, display_name, width, height);
+		/*
+		 * restoreBytes(..., true) appends the terminator, so an empty PPD name
+		 * is a one-byte array. A payload is present only when length > 1.
+		 * Custom sizes from the print dialog have a NULL PPD name; treating the
+		 * terminator as a name always selected gtk_paper_size_new_from_ppd.
+		 * See https://github.com/eclipse-platform/eclipse.platform.swt/issues/847
+		 */
+		if (ppd_name.length > 1) {
+			/* The size is stored in mm, gtk_paper_size_new_from_ppd expects points */
+			paper_size = GTK.gtk_paper_size_new_from_ppd(ppd_name, display_name, width * 72 / 25.4, height * 72 / 25.4);
 		} else {
 			paper_size = GTK.gtk_paper_size_new_custom(name, display_name, width, height, GTK.GTK_UNIT_MM);
 		}

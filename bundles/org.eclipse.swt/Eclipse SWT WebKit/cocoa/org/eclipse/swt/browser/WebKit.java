@@ -37,15 +37,13 @@ class WebKit extends WebBrowser {
 	Point size;
 	boolean statusBar = true, toolBar = true, ignoreDispose;
 	int lastMouseMoveX, lastMouseMoveY;
-	//TEMPORARY CODE
-//	boolean doit;
 
 	static long delegateClass;
 	static boolean Initialized;
+	static NSString webElementLinkURLKey;
 	// the following Callbacks are never freed
 	static Callback Callback3, Callback4, Callback5, Callback6, Callback7;
 
-	static final int MIN_SIZE = 16;
 	static final int MAX_PROGRESS = 100;
 	static final String WebElementLinkURLKey = "WebElementLinkURL"; //$NON-NLS-1$
 	static final String AGENT_STRING = "Safari/522.0"; /* Safari version on OSX 10.5 initial release */ //$NON-NLS-1$
@@ -898,10 +896,6 @@ void webView_didStartProvisionalLoadForFrame(long sender, long frameID) {
 	* WebFrameLoadDelegate:didCommitLoadForFrame.  The resource count is reset when didCommitLoadForFrame
 	* is received for the top frame.
 	*/
-//	if (frameID == webView.mainFrame().id) {
-//		/* reset resource status variables */
-//		resourceCount= 0;
-//	}
 }
 
 void webView_didCommitLoadForFrame(long sender, long frameID) {
@@ -1005,8 +999,6 @@ void webView_resource_didFinishLoadingFromDataSource(long sender, long identifie
 	* when the top frame has either finished loading (didFinishLoadForFrame
 	* event) or failed (didFailProvisionalLoadWithError).
 	*/
-	// this code is intentionally commented
-	//if (this.identifier == identifier) this.identifier = 0;
 }
 
 void webView_resource_didFailLoadingWithError_fromDataSource(long sender, long identifier, long error, long dataSource) {
@@ -1023,8 +1015,6 @@ void webView_resource_didFailLoadingWithError_fromDataSource(long sender, long i
 	* when the top frame has either finished loading (didFinishLoadForFrame
 	* event) or failed (didFailProvisionalLoadWithError).
 	*/
-	// this code is intentionally commented
-	//if (this.identifier == identifier) this.identifier = 0;
 }
 
 void webView_resource_didReceiveAuthenticationChallenge_fromDataSource (long sender, long identifier, long challenge, long dataSource) {
@@ -1401,7 +1391,12 @@ void webView_setToolbarsVisible(long sender, boolean visible) {
 void webView_mouseDidMoveOverElement_modifierFlags (long sender, long elementInformationID, long modifierFlags) {
 	if (elementInformationID == 0) return;
 
-	NSString key = NSString.stringWith(WebElementLinkURLKey);
+	if (webElementLinkURLKey == null) {
+		/* retained once, this is called for every mouse move */
+		webElementLinkURLKey = NSString.stringWith(WebElementLinkURLKey);
+		webElementLinkURLKey.retain();
+	}
+	NSString key = webElementLinkURLKey;
 	NSDictionary elementInformation = new NSDictionary(elementInformationID);
 	id value = elementInformation.valueForKey(key);
 	if (value == null) {
@@ -1598,6 +1593,10 @@ void handleEvent(long evtId) {
 				} else if (translatedKey == 'x') {
 					webView.cut (webView);
 					event.preventDefault();
+				} else if (translatedKey == '=' || translatedKey == '+') {
+					webView.makeTextLarger();
+				} else if (translatedKey == '-') {
+					webView.makeTextSmaller();
 				}
 			}
 		}
@@ -1648,6 +1647,13 @@ void handleEvent(long evtId) {
 	Point position = new Point(screenX, screenY);
 	position = browser.getDisplay().map(null, browser, position);
 
+	/*
+	* Bug in WebKit.  Spurious and redundant mousemove events are received in
+	* various contexts, including following every MouseUp.  The workaround is
+	* to not fire MouseMove events whose x and y values match the last MouseMove
+	*/
+	if (DOMEVENT_MOUSEMOVE.equals (type) && position.x == lastMouseMoveX && position.y == lastMouseMoveY) return;
+
 	int detail = event.detail();
 	int button = event.button();
 	boolean ctrl = event.ctrlKey();
@@ -1675,12 +1681,6 @@ void handleEvent(long evtId) {
 			case 5: mouseEvent.stateMask |= SWT.BUTTON5; break;
 		}
 	} else if (DOMEVENT_MOUSEMOVE.equals (type)) {
-		/*
-		* Bug in WebKit.  Spurious and redundant mousemove events are received in
-		* various contexts, including following every MouseUp.  The workaround is
-		* to not fire MouseMove events whose x and y values match the last MouseMove
-		*/
-		if (mouseEvent.x == lastMouseMoveX && mouseEvent.y == lastMouseMoveY) return;
 		mouseEvent.type = SWT.MouseMove;
 		lastMouseMoveX = mouseEvent.x; lastMouseMoveY = mouseEvent.y;
 	}
@@ -1723,7 +1723,7 @@ Object convertToJava (long value) {
 	clazz = OS.objc_lookUpClass ("WebScriptObject"); //$NON-NLS-1$
 	if (object.isKindOfClass (clazz)) {
 		WebScriptObject script = new WebScriptObject (value);
-		id id = script.valueForKey (NSString.stringWith ("length")); //$NON-NLS-1$
+		id id = getLength (script);
 		if (id == null) { /* not a JS array */
 			SWT.error (SWT.ERROR_INVALID_ARGUMENT);
 		}
@@ -1744,6 +1744,21 @@ Object convertToJava (long value) {
 
 	SWT.error (SWT.ERROR_INVALID_ARGUMENT);
 	return null;
+}
+
+/**
+ * Returns the length of a JavaScript object as a number, or null if it has none.
+ */
+id getLength (WebScriptObject script) {
+	// unlike valueForKey:, Reflect.get returns undefined instead of raising an NSException
+	id reflect = script.evaluateWebScript (NSString.stringWith ("Reflect")); //$NON-NLS-1$
+	if (reflect == null) return null;
+	NSMutableArray arguments = NSMutableArray.arrayWithCapacity (2);
+	arguments.addObject (script);
+	arguments.addObject (NSString.stringWith ("length")); //$NON-NLS-1$
+	id length = new WebScriptObject (reflect).callWebScriptMethod (NSString.stringWith ("get"), arguments); //$NON-NLS-1$
+	if (length == null || !new NSObject (length.id).isKindOfClass (OS.objc_lookUpClass ("NSNumber"))) return null; //$NON-NLS-1$
+	return length;
 }
 
 NSObject convertToJS (Object value) {

@@ -158,7 +158,7 @@ public boolean isSupportedType(TransferData transferData){
  */
 @Override
 protected void javaToNative (Object object, TransferData transferData) {
-	if (!checkByteArray(object) && !isSupportedType(transferData)) {
+	if (!checkByteArray(object) || !isSupportedType(transferData)) {
 		DND.error(DND.ERROR_INVALID_DATA);
 	}
 	byte[] orig = (byte[])object;
@@ -179,7 +179,6 @@ protected void javaToNative (Object object, TransferData transferData) {
 @Override
 protected Object nativeToJava(TransferData transferData) {
 	if (!isSupportedType(transferData) || transferData.data == null) return null;
-	if (transferData.data == null) return null;
 	NSData data = (NSData) transferData.data;
 	if (data.length() == 0) return null;
 	byte[] bytes = new byte[(int)data.length()];

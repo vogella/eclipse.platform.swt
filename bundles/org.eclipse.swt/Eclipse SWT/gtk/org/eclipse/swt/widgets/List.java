@@ -549,7 +549,7 @@ public int getItemHeight () {
 	OS.g_object_unref(layout);
 
 	long column = GTK.gtk_tree_view_get_column(handle, 0);
-	long textRenderer = getTextRenderer(column);
+	long textRenderer = CellRenderers.getTextRenderer (column);
 	int [] ypad = new int[1];
 	if (textRenderer != 0) {
 		GTK.gtk_cell_renderer_get_padding(textRenderer, null, ypad);
@@ -720,23 +720,6 @@ public int [] getSelectionIndices () {
 		return result;
 	}
 	return new int [0];
-}
-
-long getTextRenderer (long column) {
-	long list = GTK.gtk_cell_layout_get_cells(column);
-	if (list == 0) return 0;
-	long originalList = list;
-	long textRenderer = 0;
-	while (list != 0) {
-		long renderer = OS.g_list_data (list);
-		if (GTK.GTK_IS_CELL_RENDERER_TEXT (renderer)) {
-			textRenderer = renderer;
-			break;
-		}
-		list = OS.g_list_next (list);
-	}
-	OS.g_list_free (originalList);
-	return textRenderer;
 }
 
 /**
@@ -1050,7 +1033,11 @@ public int indexOf (String string) {
 public int indexOf (String string, int start) {
 	checkWidget();
 	if (string == null) error (SWT.ERROR_NULL_ARGUMENT);
-	String [] items = getItems ();
+	return indexOf (getItems (), string, start);
+}
+
+private static int indexOf (String [] items, String string, int start) {
+	if (start < 0 || start >= items.length) return -1;
 	for (int i=start; i<items.length; i++) {
 		if (items [i].equals (string)) return i;
 	}
@@ -1244,8 +1231,17 @@ public void removeAll () {
 	checkWidget();
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
-	GTK.gtk_list_store_clear (modelHandle);
+	clearModel ();
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
+}
+
+void clearModel () {
+	// Bug 499850: gtk_list_store_clear is very slow with GTK_SELECTION_MULTIPLE
+	long selectionHandle = GTK.gtk_tree_view_get_selection (handle);
+	boolean changeMode = (style & SWT.MULTI) != 0;
+	if (changeMode) GTK.gtk_tree_selection_set_mode (selectionHandle, GTK.GTK_SELECTION_BROWSE);
+	GTK.gtk_list_store_clear (modelHandle);
+	if (changeMode) GTK.gtk_tree_selection_set_mode (selectionHandle, GTK.GTK_SELECTION_MULTIPLE);
 }
 
 /**
@@ -1511,7 +1507,7 @@ public void setItems (String... items) {
 	}
 	long selection = GTK.gtk_tree_view_get_selection (handle);
 	OS.g_signal_handlers_block_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
-	GTK.gtk_list_store_clear (modelHandle);
+	clearModel ();
 	OS.g_signal_handlers_unblock_matched (selection, OS.G_SIGNAL_MATCH_DATA, 0, 0, 0, 0, CHANGED);
 	long iter = OS.g_malloc (GTK.GtkTreeIter_sizeof ());
 	if (iter == 0) error (SWT.ERROR_ITEM_NOT_ADDED);
@@ -1655,11 +1651,12 @@ public void setSelection (String [] items) {
 	int length = items.length;
 	if (length == 0 || ((style & SWT.SINGLE) != 0 && length > 1)) return;
 	boolean first = true;
+	String [] listItems = getItems ();
 	for (int i = 0; i < length; i++) {
 		int index = 0;
 		String string = items [i];
 		if (string != null) {
-			while ((index = indexOf (string, index)) != -1) {
+			while ((index = indexOf (listItems, string, index)) != -1) {
 				if ((style & SWT.MULTI) != 0) {
 					if (first) {
 						first = false;

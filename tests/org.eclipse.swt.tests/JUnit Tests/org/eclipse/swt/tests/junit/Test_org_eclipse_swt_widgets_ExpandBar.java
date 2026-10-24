@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.eclipse.swt.events.ExpandListener;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.ExpandBar;
 import org.eclipse.swt.widgets.ExpandItem;
+import org.eclipse.swt.widgets.Text;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -132,12 +134,7 @@ public void test_addExpandListenerItemExpandedAdapterLorg_eclipse_swt_events_Exp
 @Override
 @Test
 public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
-	try {
-		new ExpandBar(null, 0);
-		fail("No exception thrown for parent == null");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> new ExpandBar(null, 0), "No exception thrown for parent == null");
 }
 
 @Test
@@ -161,17 +158,11 @@ public void test_getItemI() {
 	}
 
 	expandBar = new ExpandBar(shell, 0);
-	number = 5;
 	items = new ExpandItem[number];
 	for (int i = 0; i<number ; i++){
 		items[i] = new ExpandItem(expandBar, 0);
 	}
-	try {
-		expandBar.getItem(number);
-		fail("No exception thrown for illegal index argument");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> expandBar.getItem(number), "No exception thrown for illegal index argument");
 }
 
 @Test
@@ -209,12 +200,7 @@ public void test_indexOfLorg_eclipse_swt_widgets_ExpandItem() {
 		items[i] = new ExpandItem(expandBar, 0);
 	}
 	for (int i = 0; i < number; i++) {
-		try {
-			expandBar.indexOf(null);
-			fail("No exception thrown for expandItem == null");
-		}
-		catch (IllegalArgumentException e) {
-		}
+		assertThrows(IllegalArgumentException.class, () -> expandBar.indexOf(null), "No exception thrown for expandItem == null");
 	}
 }
 
@@ -273,6 +259,26 @@ public void test_consistency_DragDetect () {
 	List<String> events = new ArrayList<>();
 	createExpandBar(events);
 	consistencyEvent(30, 20, 50, 20, ConsistencyUtility.MOUSE_DRAG, events);
+}
+
+@Test
+public void test_focusEventsOnForceFocus() {
+	assumeFalse(SwtTestUtil.isGTK4(), "ExpandBar focus events are only forwarded on GTK3");
+	Text text = new Text(shell, SWT.SINGLE);
+	new ExpandItem(expandBar, SWT.NONE).setHeight(20);
+	List<Integer> events = new ArrayList<>();
+	expandBar.addListener(SWT.FocusIn, e -> events.add(e.type));
+	expandBar.addListener(SWT.FocusOut, e -> events.add(e.type));
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+
+	expandBar.forceFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(expandBar.isFocusControl(), "focus not granted in this environment");
+	assertEquals(List.of(SWT.FocusIn), events);
+
+	text.forceFocus();
+	SwtTestUtil.processEvents();
+	assertEquals(List.of(SWT.FocusIn, SWT.FocusOut), events);
 }
 
 /* custom */

@@ -27,8 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -48,6 +50,8 @@ import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.custom.StyledTextContent;
 import org.eclipse.swt.custom.TextChangeListener;
+import org.eclipse.swt.custom.TextChangedEvent;
+import org.eclipse.swt.custom.TextChangingEvent;
 import org.eclipse.swt.custom.VerifyKeyListener;
 import org.eclipse.swt.dnd.Clipboard;
 import org.eclipse.swt.dnd.HTMLTransfer;
@@ -4624,6 +4628,25 @@ public void test_setTextLjava_lang_String(){
 }
 
 @Test
+public void test_setTextRestoresLineHeight() {
+	text.setText("line 1\nline 2");
+	int defaultLineHeight = text.getLineHeight();
+
+	// fallback fonts for these scripts are usually taller than the default font
+	String fallbackText = "नमस्ते こんにちは ༀགྲ་ မြန်မာ สวัสดี";
+	text.setText(fallbackText);
+	text.getTextBounds(0, fallbackText.length() - 1);
+	assumeTrue(text.getLineHeight() > defaultLineHeight, "fallback fonts do not increase the line height on this platform");
+
+	text.setText("line 1\nline 2");
+	assertEquals(defaultLineHeight, text.getLineHeight());
+
+	text.setText(fallbackText);
+	text.getTextBounds(0, fallbackText.length() - 1);
+	assertTrue(text.getLineHeight() > defaultLineHeight);
+}
+
+@Test
 public void test_setTextLimitI(){
 	text.setTextLimit(10);
 	assertEquals(10, text.getTextLimit());
@@ -5924,6 +5947,7 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	// the window so that org.eclipse.swt.widgets.Display.findFocusedWindow()
 	// returns non-zero
 	SwtTestUtil.processEvents();
+	SwtTestUtil.forceActiveForPost(shell);
 
 	Display display = Display.getDefault();
 
@@ -5945,6 +5969,37 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	assertEquals(0, text.getText().length());
 }
 
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeyDownIsSentOnce() throws InterruptedException {
+	shell.open();
+	text.setSize(100, 50);
+	// findFocusedWindow() needs a drawn and focused shell
+	SwtTestUtil.processEvents();
+
+	Display display = Display.getDefault();
+	List<Character> keyDowns = new ArrayList<>();
+	text.addListener(SWT.KeyDown, e -> keyDowns.add(e.character));
+
+	Event a = new Event();
+	a.type = SWT.KeyDown;
+	a.keyCode = 'a';
+	a.character = 'a';
+	Event aUp = new Event();
+	aUp.type = SWT.KeyUp;
+	aUp.keyCode = 'a';
+	aUp.character = 'a';
+	assumeTrue(display.post(a), "Display.post is not supported on GTK4");
+	assumeTrue(display.post(aUp), "Display.post is not supported on GTK4");
+
+	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 1);
+	// give a duplicate KeyDown the chance to arrive
+	SwtTestUtil.processEvents(500, () -> false);
+	assertEquals("a", text.getText());
+	assertEquals(List.of('a'), keyDowns);
+}
+
 /**
  * Bug 568033 - Splitting CRLF shall not be forbidden if already on different lines
  */
@@ -5961,6 +6016,137 @@ public void test_replaceTextRange_isInsideCRLF() {
 	text.setText("0\r2\n4");
 	text.replaceTextRange(2, 1, "");
 	text.replaceTextRange(2, 0, "2");
+}
+
+@Test
+public void test_replaceTextRange_adjacentLoneCRAndLF() {
+	String fullText = "abc\n\n\r\rdef\n";
+	text.replaceTextRange(0, text.getCharCount(), fullText);
+	assertEquals(fullText, text.getText());
+	assertEquals(6, text.getLineCount());
+
+	// deleting "def" makes a lone \r and a lone \n adjacent
+	int defOffset = fullText.indexOf("def");
+	text.replaceTextRange(defOffset, 3, "");
+	assertEquals("abc\n\n\r\r\n", text.getText());
+	assertEquals(6, text.getLineCount());
+
+	text.replaceTextRange(0, text.getCharCount(), fullText);
+	assertEquals(fullText, text.getText());
+	assertEquals(6, text.getLineCount());
+}
+
+@Test
+public void test_replaceTextRange_deleteLoneCRBeforeLoneLF() {
+	text.setText("x\rY\n");
+	// deleting "Y" makes the lone \r and the lone \n adjacent
+	text.replaceTextRange(2, 1, "");
+	assertEquals(3, text.getLineCount());
+
+	text.replaceTextRange(1, 1, "");
+	assertEquals("x\n", text.getText());
+	assertEquals(2, text.getLineCount());
+	assertEquals("x", text.getLine(0));
+	assertEquals("", text.getLine(1));
+}
+
+@Test
+public void test_replaceTextRange_deleteBeforeLoneCRAndLF() {
+	text.setText("q\rY\n");
+	// deleting "Y" makes the lone \r and the lone \n adjacent
+	text.replaceTextRange(2, 1, "");
+
+	text.replaceTextRange(0, 1, "");
+	assertEquals("\r\n", text.getText());
+	assertEquals(3, text.getLineCount());
+	assertEquals(0, text.getOffsetAtLine(0));
+	assertEquals(1, text.getOffsetAtLine(1));
+	assertEquals(2, text.getOffsetAtLine(2));
+	assertEquals(1, text.getLineAtOffset(1));
+}
+
+@Test
+public void test_replaceTextRange_deleteAdjacentLoneCRAndLF() {
+	text.setText("q\rY\n");
+	// deleting "Y" makes the lone \r and the lone \n adjacent
+	text.replaceTextRange(2, 1, "");
+	// move the edit gap away from the \r and \n
+	text.replaceTextRange(3, 0, "z");
+	int[] replaceLineCount = new int[1];
+	text.getContent().addTextChangeListener(new TextChangeListener() {
+		@Override
+		public void textChanging(TextChangingEvent event) {
+			replaceLineCount[0] = event.replaceLineCount;
+		}
+		@Override
+		public void textChanged(TextChangedEvent event) {
+		}
+		@Override
+		public void textSet(TextChangedEvent event) {
+		}
+	});
+
+	text.replaceTextRange(1, 2, "");
+	assertEquals(2, replaceLineCount[0]);
+	assertEquals("qz", text.getText());
+	assertEquals(1, text.getLineCount());
+}
+
+private void assertLoneCRAndLFLines(String expectedText, int... lineOffsets) {
+	assertEquals(expectedText, text.getText());
+	assertEquals(lineOffsets.length, text.getLineCount());
+	for (int i = 0; i < lineOffsets.length; i++) {
+		assertEquals(lineOffsets[i], text.getOffsetAtLine(i));
+		assertEquals(i, text.getLineAtOffset(lineOffsets[i]));
+	}
+}
+
+@Test
+public void test_replaceTextRange_insertBeforeLoneCRAndLF() {
+	text.setText("q\rY\n");
+	// deleting "Y" makes the lone \r and the lone \n adjacent
+	text.replaceTextRange(2, 1, "");
+	text.replaceTextRange(0, 0, "z");
+	assertLoneCRAndLFLines("zq\r\n", 0, 3, 4);
+}
+
+@Test
+public void test_replaceTextRange_insertBeforeLoneCRAndLFWithGapElsewhere() {
+	text.setText("q\rY\n");
+	text.replaceTextRange(2, 1, "");
+	// move the edit gap to the end, away from the \r and \n
+	text.replaceTextRange(3, 0, "w");
+	text.replaceTextRange(0, 0, "z");
+	assertLoneCRAndLFLines("zq\r\nw", 0, 3, 4);
+}
+
+@Test
+public void test_replaceTextRange_insertMultipleLinesBeforeLoneCRAndLF() {
+	text.setText("q\rY\n");
+	text.replaceTextRange(2, 1, "");
+	text.replaceTextRange(3, 0, "w");
+	text.replaceTextRange(1, 0, "a\nb");
+	assertLoneCRAndLFLines("qa\nb\r\nw", 0, 3, 5, 6);
+}
+
+@Test
+public void test_replaceTextRange_insertBetweenLoneCRAndLF() {
+	text.setText("q\rY\n");
+	text.replaceTextRange(2, 1, "");
+	text.replaceTextRange(3, 0, "w");
+	// the \r and \n stay on separate lines, so the inserted text does not join them
+	text.replaceTextRange(2, 0, "z");
+	assertLoneCRAndLFLines("q\rz\nw", 0, 2, 4);
+}
+
+@Test
+public void test_replaceTextRange_insertLFAfterLoneCR() {
+	text.setText("q\rY\n");
+	text.replaceTextRange(2, 1, "");
+	text.replaceTextRange(3, 0, "w");
+	// an inserted \n is not merged with the preceding lone \r on another line
+	text.replaceTextRange(2, 0, "\n");
+	assertLoneCRAndLFLines("q\r\n\nw", 0, 2, 3, 4);
 }
 
 private Event keyEvent(int key, int type, Widget w) {
@@ -6013,5 +6199,156 @@ public void test_bug1610_fixedLineHeightWithChangingToSmallerFont_noException() 
 	text.setFont(font);
 	font.dispose();
 	gc.dispose();
+}
+
+@Test
+public void test_setText_caretMovedListenerSeesNewContent_lineSpacing() {
+	shell.setSize(400, 600);
+	shell.setLayout(new FillLayout());
+	shell.layout(true, true);
+	shell.setVisible(true);
+	text.setLineSpacing(10);
+	text.setText("a\nb");
+	text.setCaretOffset(2);
+	int[] count = new int[1];
+	text.addListener(ST.CaretMoved, e -> {
+		count[0]++;
+		text.getOffsetAtPoint(new Point(0, 0));
+	});
+	text.setText("line\n".repeat(200));
+	assertEquals(1, count[0]);
+}
+
+@Test
+public void test_setText_caretMovedListenerSeesResetSelection() {
+	text.setText("hello world, this is a long line");
+	text.selectAll();
+	String[] selectionText = new String[1];
+	text.addListener(ST.CaretMoved, e -> selectionText[0] = text.getSelectionText());
+	text.setText("hi");
+	assertEquals("", selectionText[0]);
+	assertEquals(new Point(0, 0), text.getSelection());
+}
+
+@Test
+public void test_setText_caretMovedListenerSeesNewAlignment() {
+	shell.setSize(400, 100);
+	shell.setLayout(new FillLayout());
+	StyledText single = new StyledText(shell, SWT.SINGLE | SWT.CENTER);
+	shell.layout(true, true);
+	single.setText("a");
+	single.setCaretOffset(1);
+	Point[] location = new Point[2];
+	single.addListener(ST.CaretMoved, e -> {
+		location[0] = single.getLocationAtOffset(0);
+		location[1] = single.getCaret().getLocation();
+	});
+	single.setText("a much longer line of text");
+	assertEquals(single.getLocationAtOffset(0), location[0]);
+	assertEquals(single.getCaret().getLocation(), location[1]);
+}
+
+@Test
+public void test_setText_shorterTextInCenteredSingleLine() {
+	shell.setSize(400, 100);
+	shell.setLayout(new FillLayout());
+	StyledText single = new StyledText(shell, SWT.SINGLE | SWT.CENTER);
+	shell.layout(true, true);
+	single.setText("a much longer line of text");
+	single.setCaretOffset(single.getCharCount());
+	single.setText("a");
+	assertEquals(0, single.getCaretOffset());
+}
+
+private void keyDown(int keyCode, char character, int stateMask) {
+	Event event = new Event();
+	event.type = SWT.KeyDown;
+	event.keyCode = keyCode;
+	event.character = character;
+	event.stateMask = stateMask;
+	text.notifyListeners(SWT.KeyDown, event);
+}
+
+@Test
+public void test_keyBindingOnNonLatinLayout() {
+	text.setText("abc");
+	text.setKeyBinding('A' | SWT.MOD1, ST.SELECT_ALL);
+	keyDown(0x3061, 'a', SWT.MOD1); // Kana key reporting its Unicode value
+	assertEquals(new Point(0, 3), text.getSelection());
+}
+
+@Test
+public void test_keyCodeBindingWinsOverCharacterOnNonLatinLayout() {
+	text.setText("abc");
+	text.setKeyBinding(0x3061 | SWT.MOD1, ST.LINE_END);
+	text.setKeyBinding('A' | SWT.MOD1, ST.SELECT_ALL);
+	keyDown(0x3061, 'a', SWT.MOD1);
+	assertEquals(new Point(3, 3), text.getSelection());
+}
+
+@Test
+public void test_keyBindingOnKeyReportingU8000() {
+	text.setText("abc");
+	text.setKeyBinding('A' | SWT.MOD1, ST.SELECT_ALL);
+	keyDown(0x8000, 'a', SWT.MOD1); // same value as SWT.ALT_GR
+	assertEquals(new Point(0, 3), text.getSelection());
+}
+
+@Test
+public void test_controlCharacterBindingOnNonLatinLayout() {
+	text.setText("abc");
+	text.setKeyBinding('A' | SWT.CTRL, ST.SELECT_ALL);
+	keyDown(0x3141, (char) 1, SWT.CTRL); // Hangul key reporting its Unicode value
+	assertEquals(new Point(0, 3), text.getSelection());
+}
+
+@Test
+public void test_nonLatinKeyWithoutBindingInsertsCharacter() {
+	text.setText("abc");
+	keyDown(0x3061, '\u3061', 0);
+	assertEquals("\u3061abc", text.getText());
+}
+
+@Test
+public void test_asciiOrSpecialKeyMissDoesNotFallBackToCharacter() {
+	text.setText("abc");
+	text.setKeyBinding('A' | SWT.MOD1, ST.SELECT_ALL);
+	for (int keyCode : new int[] {'x', SWT.F12}) {
+		keyDown(keyCode, 'a', SWT.MOD1);
+		assertEquals(new Point(0, 0), text.getSelection(), "keyCode " + keyCode);
+	}
+}
+
+@Test
+public void test_keyWithoutCharacterDoesNotFallBackToCharacter() {
+	text.setText("abc");
+	text.setKeyBinding(SWT.SHIFT, ST.SELECT_ALL);
+	// modifier keys and a dead acute key
+	for (int keyCode : new int[] {SWT.CTRL, SWT.ALT, SWT.COMMAND, SWT.ALT_GR, 0xB4}) {
+		keyDown(keyCode, (char) 0, SWT.SHIFT);
+		assertEquals(new Point(0, 0), text.getSelection(), "keyCode " + keyCode);
+	}
+}
+
+@Tag("clipboard")
+@Test
+public void test_copyPasteKeepsControlCharacters() {
+	assumeFalse(SwtTestUtil.isCocoa, "Disabled on Mac because similar clipboard tests are also disabled.");
+
+	String content = "abcdef";
+	text.setText(content);
+	text.selectAll();
+	text.copy();
+
+	Clipboard clipboard = new Clipboard(text.getDisplay());
+	try {
+		assertEquals(content, clipboard.getContents(TextTransfer.getInstance()));
+	} finally {
+		clipboard.dispose();
+	}
+
+	text.setText("");
+	text.paste();
+	assertEquals(content, text.getText());
 }
 }

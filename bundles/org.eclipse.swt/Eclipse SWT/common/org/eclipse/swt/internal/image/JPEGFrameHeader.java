@@ -14,6 +14,8 @@
 package org.eclipse.swt.internal.image;
 
 
+import java.util.Arrays;
+
 import org.eclipse.swt.*;
 
 final class JPEGFrameHeader extends JPEGVariableSizeSegment {
@@ -29,10 +31,6 @@ final class JPEGFrameHeader extends JPEGVariableSizeSegment {
 	public JPEGFrameHeader(LEDataInputStream byteStream) {
 		super(byteStream);
 		initializeComponentParameters();
-	}
-
-	public int getSamplePrecision() {
-		return reference[4] & 0xFF;
 	}
 
 	public int getNumberOfLines() {
@@ -106,9 +104,7 @@ final class JPEGFrameHeader extends JPEGVariableSizeSegment {
 			compParam[1] = hi;
 			compParam[2] = vi;
 			if (compSpecParams.length <= ci) {
-				int[][] newParams = new int[ci + 1][];
-				System.arraycopy(compSpecParams, 0, newParams, 0, compSpecParams.length);
-				compSpecParams = newParams;
+				compSpecParams = Arrays.copyOf(compSpecParams, ci + 1);
 			}
 			compSpecParams[ci] = compParam;
 		}
@@ -175,44 +171,5 @@ final class JPEGFrameHeader extends JPEGVariableSizeSegment {
 	int roundUpToMultiple(int anInteger, int mInteger) {
 		int a = anInteger + mInteger - 1;
 		return a - (a % mInteger);
-	}
-
-	/*
-	 * Verify the information contained in the receiver is correct.
-	 * Answer true if the header contains a valid marker. Otherwise,
-	 * answer false. Valid Start Of Frame markers are:
-	 *	SOF_0  - Baseline DCT, Huffman coding
-	 *	SOF_1  - Extended sequential DCT, Huffman coding
-	 *	SOF_2  - Progressive DCT, Huffman coding
-	 *	SOF_3  - Lossless (sequential), Huffman coding
-	 *	SOF_5  - Differential sequential, Huffman coding
-	 *	SOF_6  - Differential progressive, Huffman coding
-	 *	SOF_7  - Differential lossless, Huffman coding
-	 *	SOF_9  - Extended sequential DCT, arithmetic coding
-	 *	SOF_10 - Progressive DCT, arithmetic coding
-	 *	SOF_11 - Lossless (sequential), arithmetic coding
-	 *	SOF_13 - Differential sequential, arithmetic coding
-	 *	SOF_14 - Differential progressive, arithmetic coding
-	 *	SOF_15 - Differential lossless, arithmetic coding
-	 */
-	@Override
-	public boolean verify() {
-		int marker = getSegmentMarker();
-		return (marker >= JPEGFileFormat.SOF0 && marker <= JPEGFileFormat.SOF3) ||
-			(marker >= JPEGFileFormat.SOF5 && marker <= JPEGFileFormat.SOF7) ||
-			(marker >= JPEGFileFormat.SOF9 && marker <= JPEGFileFormat.SOF11) ||
-			(marker >= JPEGFileFormat.SOF13 && marker <= JPEGFileFormat.SOF15);
-	}
-
-	public boolean isProgressive() {
-		int marker = getSegmentMarker();
-		return marker == JPEGFileFormat.SOF2
-			|| marker == JPEGFileFormat.SOF6
-			|| marker == JPEGFileFormat.SOF10
-			|| marker == JPEGFileFormat.SOF14;
-	}
-
-	public boolean isArithmeticCoding() {
-		return getSegmentMarker() >= JPEGFileFormat.SOF9;
 	}
 }

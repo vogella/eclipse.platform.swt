@@ -1295,8 +1295,12 @@ public void removeAll () {
 	if ((style & SWT.READ_ONLY) != 0) {
 		((NSPopUpButton)view).removeAllItems();
 	} else {
+		NSComboBox widget = (NSComboBox)view;
+		// removeAllItems() does not reliably reset the selected index
+		long selected = widget.indexOfSelectedItem();
+		if (selected >= 0) widget.deselectItemAtIndex(selected);
 		setText ("", true);
-		((NSComboBox)view).removeAllItems();
+		widget.removeAllItems();
 	}
 	ignoreSelection = false;
 }
@@ -1445,9 +1449,9 @@ boolean sendKeyEvent (NSEvent nsEvent, int type) {
 	int stateMask = 0;
 	long modifierFlags = nsEvent.modifierFlags();
 	if ((modifierFlags & OS.NSAlternateKeyMask) != 0) stateMask |= SWT.ALT;
-	if ((modifierFlags & OS.NSShiftKeyMask) != 0) stateMask |= SWT.SHIFT;
-	if ((modifierFlags & OS.NSControlKeyMask) != 0) stateMask |= SWT.CONTROL;
-	if ((modifierFlags & OS.NSCommandKeyMask) != 0) stateMask |= SWT.COMMAND;
+	if ((modifierFlags & OS.NSEventModifierFlagShift) != 0) stateMask |= SWT.SHIFT;
+	if ((modifierFlags & OS.NSEventModifierFlagControl) != 0) stateMask |= SWT.CONTROL;
+	if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0) stateMask |= SWT.COMMAND;
 	if (type != SWT.KeyDown)  return result;
 	short keyCode = nsEvent.keyCode ();
 	if (stateMask == SWT.COMMAND) {
@@ -1484,7 +1488,7 @@ boolean sendTrackingKeyEvent (NSEvent nsEvent, int type) {
 	* queue.
 	*/
 	long modifiers = nsEvent.modifierFlags();
-	if ((modifiers & OS.NSShiftKeyMask) == 0) {
+	if ((modifiers & OS.NSEventModifierFlagShift) == 0) {
 		short keyCode = nsEvent.keyCode ();
 		switch (keyCode) {
 			case 125: /* Arrow Down */

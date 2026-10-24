@@ -55,7 +55,6 @@ public class Canvas extends Composite {
 		supportedPboardTypes = NSMutableArray.arrayWithCapacity(1);
 		supportedPboardTypes.retain();
 		supportedPboardTypes.addObject(OS.NSPasteboardTypeString);
-		//supportedPboardTypes.addObject(OS.NSRTFPboardType);
 	};
 
 Canvas () {
@@ -184,7 +183,10 @@ void drawWidget (long id, NSGraphicsContext context, NSRect rect) {
 			NSImage imageHandle = image.handle;
 			NSSize size = imageHandle.size();
 			NSImageRep imageRep = ImageUtil.createImageRep(image, size);
-			if (!imageRep.isKindOfClass(OS.class_NSBitmapImageRep)) return;
+			if (!imageRep.isKindOfClass(OS.class_NSBitmapImageRep)) {
+				OS.CGContextRestoreGState (ctx);
+				return;
+			}
 			NSBitmapImageRep rep = new NSBitmapImageRep(imageRep);
 			CGRect destRect = new CGRect ();
 			destRect.origin.x = caret.x;

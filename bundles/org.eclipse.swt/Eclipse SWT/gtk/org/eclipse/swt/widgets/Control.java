@@ -57,11 +57,16 @@ public abstract class Control extends Widget implements Drawable {
 	static final boolean DISABLE_EMOJI = Boolean.getBoolean("SWT_GTK_INPUT_HINT_NO_EMOJI");
 
 	long fixedHandle;
-	long firstFixedHandle = 0;
-	long keyController;
+	long keyController, focusController;
+	/* GTK4: where the pointer last moved over this control, relative to it */
+	double pointerX, pointerY;
 	long redrawWindow, enableWindow, provider;
+	/* Parsed content of provider, reset whenever provider is reloaded */
+	GdkRGBA providerBackground, providerForeground;
+	/* Cached when the provider sets no color, so the current theme default is used */
+	static final GdkRGBA NO_PROVIDER_COLOR = new GdkRGBA ();
 	int drawCount, backgroundAlpha = 255;
-	long dragGesture, zoomGesture, rotateGesture, panGesture;
+	long dragGesture, zoomGesture, rotateGesture;
 	Composite parent;
 	Cursor cursor;
 	Menu menu;
@@ -95,6 +100,10 @@ public abstract class Control extends Widget implements Drawable {
 
 	LinkedList <Event> dragDetectionQueue;
 
+	/** GTK4 only: position and state of the pending button 1 press, null once DragDetect was sent or the button was released. */
+	Point gtk4DragStart;
+	int gtk4DragStateMask;
+
 	static Callback gestureZoom, gestureRotation, gestureSwipe, gestureBegin, gestureEnd;
 	static {
 		gestureZoom = new Callback (Control.class, "magnifyProc", void.class, new Type[] {
@@ -113,6 +122,8 @@ public abstract class Control extends Widget implements Drawable {
 	 * is currently pressed or released for DND.
 	 */
 	static boolean mouseDown;
+
+	static final byte [] GTK4_DND_DRAG_THRESHOLD = Converter.javaStringToCString ("gtk-dnd-drag-threshold");
 
 	/**
 	 * Flag to check the scale factor upon the first drawing of this Control.
@@ -329,10 +340,6 @@ long fontHandle () {
 	return handle;
 }
 
-long gestureHandle () {
-	return handle;
-}
-
 /**
  * Returns the orientation of the receiver, which will be one of the
  * constants <code>SWT.LEFT_TO_RIGHT</code> or <code>SWT.RIGHT_TO_LEFT</code>.
@@ -410,7 +417,7 @@ private void hookKeyboardAndFocusSignals(long focusHandle) {
 		OS.g_signal_connect(keyController, OS.key_pressed, display.keyPressReleaseProc, KEY_PRESSED);
 		OS.g_signal_connect(keyController, OS.key_released, display.keyPressReleaseProc, KEY_RELEASED);
 
-		long focusController = GTK4.gtk_event_controller_focus_new();
+		focusController = GTK4.gtk_event_controller_focus_new();
 		GTK4.gtk_widget_add_controller(focusHandle, focusController);
 		OS.g_signal_connect(focusController, OS.enter, display.focusProc, FOCUS_IN);
 		OS.g_signal_connect(focusController, OS.leave, display.focusProc, FOCUS_OUT);
@@ -547,11 +554,9 @@ void snapshotToDrawAfterChildren (long handle, long snapshot) {
 long hoverProc (long widget) {
 	int[] x = new int[1], y = new int[1], mask = new int[1];
 	if (GTK.GTK4) {
-		double[] xDouble = new double[1], yDouble = new double[1];
-		display.getPointerPosition(xDouble, yDouble);
-
-		x[0] = (int)xDouble[0];
-		y[0] = (int)yDouble[0];
+		/* The pointer position GDK reports is relative to the surface, not to this control. */
+		x[0] = (int) pointerX;
+		y[0] = (int) pointerY;
 	} else {
 		display.getWindowPointerPosition(0, x, y, mask);
 	}
@@ -880,14 +885,14 @@ Point computeNativeSize (long h, int wHint, int hHint, boolean changed) {
 		int [] natural_size = new int [1];
 		if (wHint == SWT.DEFAULT) {
 			if (GTK.GTK4) {
-				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_HORIZONTAL, height>0?height:-1, null, natural_size, null, null);
+				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_HORIZONTAL, measureForSize (h, GTK.GTK_ORIENTATION_VERTICAL, height), null, natural_size, null, null);
 			} else {
 				GTK3.gtk_widget_get_preferred_width_for_height (h, height, null, natural_size);
 			}
 			width = natural_size [0];
 		} else {
 			if (GTK.GTK4) {
-				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_VERTICAL, width>0?width:-1, null, natural_size, null, null);
+				GTK4.gtk_widget_measure(h, GTK.GTK_ORIENTATION_VERTICAL, measureForSize (h, GTK.GTK_ORIENTATION_HORIZONTAL, width), null, natural_size, null, null);
 			} else {
 				GTK3.gtk_widget_get_preferred_height_for_width (h, width, null, natural_size);
 			}
@@ -895,6 +900,14 @@ Point computeNativeSize (long h, int wHint, int hHint, boolean changed) {
 		}
 	}
 	return new Point(width, height);
+}
+
+/* gtk_widget_measure() warns when forSize is below the widget's minimum in that orientation, and measures for the minimum instead. */
+private static int measureForSize (long h, int orientation, int forSize) {
+	if (forSize <= 0) return -1;
+	int [] minimum_size = new int [1];
+	GTK4.gtk_widget_measure (h, orientation, -1, minimum_size, null, null, null);
+	return Math.max (forSize, minimum_size [0]);
 }
 
 void forceResize () {
@@ -1075,7 +1088,12 @@ Point resizeCalculationsGTK3 (long widget, int width, int height) {
 	 * Feature in GTK3.20+: size calculations take into account GtkCSSNode
 	 * elements which we cannot access. If the to-be-allocated size minus
 	 * these elements is < 0, allocate the preferred size instead. See bug 486068.
+	 *
+	 * On GTK4 the widget is sized via its own
+	 * gtk_widget_size_allocate(), which clamps to the minimum size internally,
+	 * so this adjustment is unnecessary. Return the requested size unchanged on GTK4.
 	 */
+	if (GTK.GTK4) return sizes;
 	GtkRequisition minimumSize = new GtkRequisition();
 	GtkRequisition naturalSize = new GtkRequisition();
 	GTK.gtk_widget_get_preferred_size(widget, minimumSize, naturalSize);
@@ -1117,7 +1135,8 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 		int oldX = allocation.x;
 		int oldY = allocation.y;
 		sameOrigin = x == oldX && y == oldY;
-		if (!sameOrigin) {
+		// moveChildren leaves a stale allocation behind, so a mirrored move always reaches the fixed
+		if (!sameOrigin || (parent.style & SWT.MIRRORED) != 0) {
 			if (!GTK.GTK4) {
 				if (enableWindow != 0) {
 					GDK.gdk_window_move (enableWindow, x, y);
@@ -1801,17 +1820,14 @@ Point getControlOrigin() {
 	/*
 	 * A popover-backed Shell renders in its own surface positioned (via oldX/oldY) within
 	 * the nearest real top-level window's content. translate_coordinates only yields the
-	 * offset within the popover, so add the placement of each popover-backed ancestor to
-	 * keep display coordinates consistent with that window (e.g. so a sibling popup can be
-	 * laid out next to it via toDisplay, including the javadoc popup parented to the
-	 * content-assist proposal popup).
+	 * offset within the popover, so add its placement to keep display coordinates
+	 * consistent with that window (e.g. so a sibling popup can be laid out next to it via
+	 * toDisplay). oldX/oldY are relative to that window also for a popover nested in
+	 * another one, as all popovers are parented to it, see Shell.positionPopover().
 	 */
-	while (shell.popover) {
+	if (shell.popover) {
 		origin.x += shell.oldX;
 		origin.y += shell.oldY;
-		Shell parentShell = shell.parent != null ? shell.parent.getShell() : null;
-		if (parentShell == null || parentShell == shell) break;
-		shell = parentShell;
 	}
 	return origin;
 }
@@ -2496,7 +2512,9 @@ public void removePaintListener(PaintListener listener) {
 void removeRelation () {
 	if (!isDescribedByLabel ()) return;		/* there will not be any */
 	if (labelRelation != null) {
-		_getAccessible().removeRelation (ACC.RELATION_LABELLED_BY, labelRelation._getAccessible());
+		if (accessible != null && labelRelation.accessible != null) {
+			accessible.removeRelation (ACC.RELATION_LABELLED_BY, labelRelation.accessible);
+		}
 		labelRelation = null;
 	}
 }
@@ -2926,9 +2944,30 @@ boolean forceFocus (long focusHandle) {
 	if (GTK.gtk_widget_has_focus (focusHandle)) return true;
 	/* When the control is zero sized it must be realized */
 	GTK.gtk_widget_realize (focusHandle);
-	GTK.gtk_widget_grab_focus (focusHandle);
+	boolean replayed = false;
+	if (GTK.GTK4) {
+		if (display.gtk4Focusing) {
+			display.gtk4PendingFocus = focusHandle;
+			return true;
+		}
+		display.gtk4Focusing = true;
+		try {
+			GTK.gtk_widget_grab_focus (focusHandle);
+		} finally {
+			display.gtk4Focusing = false;
+		}
+		long pending = display.gtk4PendingFocus;
+		display.gtk4PendingFocus = 0;
+		if (pending != 0 && !isDisposed ()) {
+			GTK.gtk_widget_grab_focus (pending);
+			replayed = true;
+		}
+	} else {
+		GTK.gtk_widget_grab_focus (focusHandle);
+	}
 	// widget could be disposed at this point
 	if (isDisposed ()) return false;
+	if (replayed) return true;
 	Shell shell = getShell ();
 	long handle = GTK.gtk_window_get_focus (shell.focusWindowHandle ());
 	while (handle != 0) {
@@ -2997,25 +3036,35 @@ public Image getBackgroundImage () {
 }
 
 GdkRGBA getContextBackgroundGdkRGBA () {
-	if ((state & BACKGROUND) == 0) {
+	if ((state & BACKGROUND) == 0 || provider == 0) {
 		return defaultBackground();
 	}
-	if (provider != 0) {
-		return display.gtk_css_parse_background (display.gtk_css_provider_to_string(provider), null);
-	} else {
-		return defaultBackground();
+	if (providerBackground == null) {
+		GdkRGBA rgba = display.gtk_css_parse_background (display.gtk_css_provider_to_string (provider), null);
+		providerBackground = rgba == display.COLOR_WIDGET_BACKGROUND_RGBA ? NO_PROVIDER_COLOR : rgba;
 	}
+	return copy (providerBackground == NO_PROVIDER_COLOR ? display.COLOR_WIDGET_BACKGROUND_RGBA : providerBackground);
 }
 
 GdkRGBA getContextColorGdkRGBA () {
-	return display.gtk_css_parse_foreground(display.gtk_css_provider_to_string(provider), null);
+	if (providerForeground == null) {
+		GdkRGBA rgba = display.gtk_css_parse_foreground (display.gtk_css_provider_to_string (provider), null);
+		providerForeground = rgba == display.COLOR_WIDGET_FOREGROUND_RGBA ? NO_PROVIDER_COLOR : rgba;
+	}
+	return copy (providerForeground == NO_PROVIDER_COLOR ? display.COLOR_WIDGET_FOREGROUND_RGBA : providerForeground);
+}
+
+/* Callers modify the returned color (e.g. alpha), so the cached instances are never handed out */
+static GdkRGBA copy (GdkRGBA rgba) {
+	GdkRGBA result = new GdkRGBA ();
+	result.red = rgba.red;
+	result.green = rgba.green;
+	result.blue = rgba.blue;
+	result.alpha = rgba.alpha;
+	return result;
 }
 
 GdkRGBA getBgGdkRGBA () {
-	return getContextBackgroundGdkRGBA ();
-}
-
-GdkRGBA getBaseGdkRGBA () {
 	return getContextBackgroundGdkRGBA ();
 }
 
@@ -3455,16 +3504,11 @@ int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long
 			}
 		}
 	} else if (n_press >= 2) {
-		boolean cancelled = sendMouseEvent(SWT.MouseDoubleClick, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
-
-		//Issue 344, DoubleClick event currently unsupported below sendMouseEvent(). Until DoubleClickSupport is
-		//added this will catch failed events and try MouseDown instead.
-		if (cancelled) {
-			cancelled = sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
-		}
-
-		if (!cancelled) {
-			result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
+		// Like GTK3, send the MouseDown of the second press before the MouseDoubleClick
+		// and no MouseDoubleClick for the third press
+		sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
+		if (n_press == 2) {
+			sendMouseEvent(SWT.MouseDoubleClick, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
 		}
 	}
 	return result;
@@ -3473,6 +3517,7 @@ int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long
 @Override
 int gtk_gesture_release_event (long gesture, int n_press, double x, double y, long event) {
 	mouseDown = false;
+	gtk4DragStart = null;
 
 	double [] eventX = new double [1];
 	double [] eventY = new double [1];
@@ -3658,12 +3703,14 @@ void gtk4_enter_event(long controller, double x, double y, long event) {
 	long toolHandle = handle;
 	GTK.gtk_widget_set_tooltip_text (toolHandle, buffer);
 
+	pointerX = x;
+	pointerY = y;
 	if (display.currentControl == this) return;
 
 	// Disconnect previous current Control and send MouseExit event to it
 	if (display.currentControl != null && !display.currentControl.isDisposed()) {
 		display.removeMouseHoverTimeout(display.currentControl.handle);
-		display.currentControl.sendMouseEvent(SWT.MouseExit, 0, 0, x, y, false, 0);
+		display.currentControl.sendMouseEvent(SWT.MouseExit, 0, 0, display.currentControl.pointerX, display.currentControl.pointerY, false, 0);
 	}
 
 	// Set display's current control and send MouseEnter event
@@ -3892,8 +3939,12 @@ long gtk_draw (long widget, long cairo) {
 		}
 	}
 	if ((state & OBSCURED) != 0) return 0;
-	GdkRectangle rect = new GdkRectangle ();
-	GDK.gdk_cairo_get_clip_rectangle (cairo, rect);
+	boolean hooksPaint = hooksPaint ();
+	GdkRectangle rect = null;
+	if (hooksPaint) {
+		rect = new GdkRectangle ();
+		GDK.gdk_cairo_get_clip_rectangle (cairo, rect);
+	}
 	/*
 	 * Modify the drawing of the widget with cairo_clip.
 	 * Doesn't modify input handling at this time.
@@ -3902,7 +3953,7 @@ long gtk_draw (long widget, long cairo) {
 	if (drawRegion) {
 		cairoClipRegion(cairo);
 	}
-	if (!hooksPaint ()) return 0;
+	if (!hooksPaint) return 0;
 	Event event = new Event ();
 	event.count = 1;
 	Rectangle eventBounds = new Rectangle (rect.x, rect.y, rect.width, rect.height);
@@ -3962,17 +4013,15 @@ void gtk4_focus_enter_event(long controller, long event) {
 void gtk4_focus_window_event(long handle, long event) {
 	super.gtk4_focus_window_event(handle, event);
 
-	if(firstFixedHandle == 0) {
-		long child = handle;
-		//3rd child of shell will be SWTFixed
-		for(int i = 0; i<3; i++) {
-			child = GTK4.gtk_widget_get_first_child(child);
-		}
-		firstFixedHandle = child != 0 ? child:0;
-	}
-
-	if(firstFixedHandle !=0 && GTK.gtk_widget_has_focus(firstFixedHandle)) {
-		if(event == SWT.FocusIn)sendFocusEvent(SWT.FocusIn);
+	// Send the focus event when the receiver's focusable client-area SwtFixed
+	// (this.handle) holds the keyboard focus. Reference it directly rather than walking
+	// a fixed number of first-children from the window: that depth assumption is
+	// fragile, follows only first-children (so with a menu bar it reached the first menu
+	// bar item, not the content fixed), and a cached child handle would dangle once that
+	// widget was destroyed - the next window-active event then called
+	// gtk_widget_has_focus on freed memory (SIGSEGV).
+	if (this.handle != 0 && GTK.gtk_widget_has_focus(this.handle)) {
+		if (event == SWT.FocusIn) sendFocusEvent(SWT.FocusIn);
 		else sendFocusEvent(SWT.FocusOut);
 	}
 }
@@ -4074,7 +4123,8 @@ void gtk4_leave_event(long controller, long event) {
 	display.removeMouseHoverTimeout(handle);
 
 	if (sendLeaveNotify() || display.getCursorControl() == null) {
-		sendMouseEvent(SWT.MouseExit, 0, 0, 0, 0, false, 0);
+		/* GtkEventControllerMotion::leave has no coordinates */
+		sendMouseEvent(SWT.MouseExit, 0, 0, pointerX, pointerY, false, 0);
 		display.currentControl = null;
 	}
 }
@@ -4138,6 +4188,8 @@ long gtk_mnemonic_activate (long widget, long arg1) {
 
 @Override
 void gtk4_motion_event(long controller, double x, double y, long event) {
+	pointerX = x;
+	pointerY = y;
 	if (this == display.currentControl && (hooks(SWT.MouseHover) || filters(SWT.MouseHover))) {
 		display.addMouseHoverTimeout(handle);
 	}
@@ -4149,12 +4201,7 @@ void gtk4_motion_event(long controller, double x, double y, long event) {
 	if (this != display.currentControl) {
 		if (display.currentControl != null && !display.currentControl.isDisposed()) {
 			display.removeMouseHoverTimeout(display.currentControl.handle);
-			/*
-			 *  Note: for GTK4, the call to display.map function was removed due to the
-			 *  inability to get the origin of surfaces. Testing needs to be done to see if
-			 *  the x, y, coordinates suffice.
-			 */
-			display.currentControl.sendMouseEvent(SWT.MouseExit, 0, time, x, y, isHint, state);
+			display.currentControl.sendMouseEvent(SWT.MouseExit, 0, time, display.currentControl.pointerX, display.currentControl.pointerY, isHint, state);
 		}
 		if (!isDisposed()) {
 			display.currentControl = this;
@@ -4162,7 +4209,22 @@ void gtk4_motion_event(long controller, double x, double y, long event) {
 		}
 	}
 
+	gtk4DragDetectMotion ((int) x, (int) y);
+	if (isDisposed ()) return;
+
 	sendMouseEvent(SWT.MouseMove, 0, time, x, y, isHint, state);
+}
+
+/** GTK4 has no polling drag detection, so DragDetect is sent once the pressed pointer leaves the drag threshold. */
+boolean gtk4DragDetectMotion (int x, int y) {
+	Point start = gtk4DragStart;
+	if (start == null) return false;
+	int [] threshold = new int [1];
+	OS.g_object_get (GTK.gtk_settings_get_default (), GTK4_DND_DRAG_THRESHOLD, threshold, 0);
+	if (Math.abs (x - start.x) <= threshold [0] && Math.abs (y - start.y) <= threshold [0]) return false;
+	gtk4DragStart = null;
+	sendDragEvent (1, gtk4DragStateMask, start.x, start.y, true);
+	return true;
 }
 
 @Override
@@ -4432,6 +4494,7 @@ public long internal_new_GC (GCData data) {
 			}
 		}
 		data.drawable = gdkResource;
+		if (GTK.GTK4) data.widget = paintHandle ();
 		data.device = display;
 
 		Control control = findBackgroundControl ();
@@ -4706,6 +4769,11 @@ public void redraw (int x, int y, int width, int height, boolean all) {
 	if (!GTK.gtk_widget_get_visible (topHandle ())) return;
 	if ((style & SWT.MIRRORED) != 0) x = getClientWidth () - width - x;
 	redrawWidget (x, y, width, height, false, all, false);
+	// GTK4 reuses the render nodes of children that were not queued, so they would get no Paint
+	if (GTK.GTK4 && all) redrawVisibleChildren (x, y, width, height);
+}
+
+void redrawVisibleChildren (int x, int y, int width, int height) {
 }
 
 void redrawChildren () {
@@ -4826,10 +4894,10 @@ void destroyWidget() {
 			// GTK windows don't have a parent, so destroy it now
 			GTK4.gtk_window_destroy(currHandle);
 		} else if (parent != null) {
-			if (fixedHandle != 0) {
-				// Remove widget from hierarchy by removing it from parent container
-				OS.swt_fixed_remove(parent.parentingHandle(), fixedHandle);
-			}
+			/* Use currHandle, not fixedHandle alone - widgets without a
+			 * separate fixedHandle wrapper were otherwise never actually
+			 * unparented here, leaving them alive and rendered natively. */
+			OS.swt_fixed_remove(parent.parentingHandle(), currHandle);
 		} else {
 			assert false : "widgets must have a parent or be a GtkWindow";
 		}
@@ -4863,7 +4931,7 @@ void flushQueueOnDnd() {
 }
 
 boolean sendDragEvent (int button, int stateMask, int x, int y, boolean isStateMask) {
-	if (OS.isWayland() && dragDetectionQueue != null) {
+	if (dragDetectionQueue != null && OS.isWayland()) {
 		// Flush events used to detect drag&drop just before sending `DragDetect` event.
 		// This is to maintain the same order of events as on other platforms.
 		flushQueueOnDnd();
@@ -5011,7 +5079,7 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 		 * event, similar to the way the caching logic does it when receiving a
 		 * MouseMove event. See bug 529126.
 		 */
-		if (OS.isWayland() && dragDetectionQueue != null) {
+		if (dragDetectionQueue != null && OS.isWayland()) {
 			/*
 			 * The first event in the queue will always be a MouseDown, as
 			 * the queue is only ever created if a MouseDown event is being cached.
@@ -5031,9 +5099,9 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 		 * hook these events. Without them queued a control with only a DragSource never detects
 		 * the drag (issue #1145).
 		 */
-		boolean waylandDragDetect = OS.isWayland()
-				&& ((type == SWT.MouseDown && button == 1 && (this.state & DRAG_DETECT) != 0 && wantDragDropDetection ())
-						|| dragDetectionQueue != null);
+		boolean waylandDragDetect = ((type == SWT.MouseDown && button == 1 && (this.state & DRAG_DETECT) != 0 && wantDragDropDetection ())
+				|| dragDetectionQueue != null)
+				&& OS.isWayland();
 		if (!waylandDragDetect) return true;
 	}
 	Event event = new Event ();
@@ -5262,6 +5330,7 @@ void gtk_css_provider_load_from_css (long context, String css) {
 	} else {
 		GTK3.gtk_css_provider_load_from_data (provider, Converter.wcsToMbcs (css, true), -1, null);
 	}
+	providerBackground = providerForeground = null;
 }
 
 void setBackgroundGdkRGBA(GdkRGBA rgba) {
@@ -5667,10 +5736,6 @@ private void setDragGesture() {
 	OS.g_signal_connect(dragGesture, OS.end, gestureEnd.getAddress(), this.handle);
 	return;
 }
-
-//private void setPanGesture () {
-///* TODO: Panning gesture requires a GtkOrientation object. Need to discuss what orientation should be default. */
-//}
 
 private void setRotateGesture() {
 	if (GTK.GTK4) {
@@ -6148,6 +6213,20 @@ public void setVisible (boolean visible) {
 				if (enableWindow != 0) GDK.gdk_window_show_unraised(enableWindow);
 			}
 			gtk_widget_show (topHandle);
+			/*
+			 * On GTK4, a Composite laid out while it (or an ancestor) is hidden can end
+			 * up with its children sized against a stale 0x0 client area, because
+			 * gtk_widget_hide() resets allocations to 0x0 (issue #3330) and setBounds on a
+			 * hidden widget shows/allocates/re-hides it. The size given while hidden is
+			 * still stored in the parent's swt_fixed child list, so re-running the parent's
+			 * size allocation re-applies this control's real size (restoring its client
+			 * area), after which a re-layout of its own subtree lets the children pick up
+			 * the now-correct client area. See issue #3450.
+			 */
+			if (GTK.GTK4 && this instanceof Composite composite && composite.layout != null) {
+				parent.forceResize ();
+				composite.layout (true, true);
+			}
 		}
 	} else {
 		/*
@@ -6221,9 +6300,12 @@ void setZOrder (Control sibling, boolean above, boolean fixRelations, boolean fi
 
 	long topHandle = topHandle ();
 	long siblingHandle = sibling != null ? sibling.topHandle () : 0;
-	if (GTK.GTK4) {
-		//TODO: Test GTK3 behavior then implement, probably using gdk_toplevel_lower
-	} else {
+	/*
+	 * Nothing to restack on GTK4: its widgets have no GdkWindow of their own, so
+	 * the z-order is entirely determined by the position in the parent's child
+	 * list, which parent.moveAbove()/moveBelow() below takes care of.
+	 */
+	if (!GTK.GTK4) {
 		long window = gtk_widget_get_window (topHandle);
 		if (window != 0) {
 			long siblingWindow = 0;
@@ -6321,16 +6403,26 @@ boolean showMenu (int x, int y, int detail) {
 		if (menu != null && !menu.isDisposed ()) {
 			if (GTK.GTK4) {
 
+				/*
+				 * Parent the popover to the top handle: GtkTreeView keeps its header buttons'
+				 * CSS nodes under a node of its own, so gtk_widget_set_parent on it fails the
+				 * gtk_css_node_insert_after assertion. The location is relative to the
+				 * event handle, which the click gesture is attached to.
+				 */
+				long menuParent = topHandle ();
+				long eventHandle = eventHandle ();
+				double [] menuX = new double [] {x}, menuY = new double [] {y};
+				if (menuParent != eventHandle) GTK4.gtk_widget_translate_coordinates (eventHandle, menuParent, x, y, menuX, menuY);
 				long temp = 0;
 				if (GTK.gtk_widget_get_parent(menu.handle) != 0) {
 					temp = OS.g_object_ref(menu.handle);
 					GTK.gtk_widget_unparent(menu.handle);
 				}
-				GTK.gtk_widget_set_parent(menu.handle, this.handle);
+				GTK.gtk_widget_set_parent(menu.handle, menuParent);
 				if (temp != 0) OS.g_object_unref(temp);
 
 
-				menu.setLocation(x, y);
+				menu.setLocation((int) menuX [0], (int) menuY [0]);
 				menu.setVisible(true);
 
 				return true;
@@ -6367,18 +6459,11 @@ void showWidget () {
 }
 
 void sort (int [] items) {
-	/* Shell Sort from K&R, pg 108 */
-	int length = items.length;
-	for (int gap=length/2; gap>0; gap/=2) {
-		for (int i=gap; i<length; i++) {
-			for (int j=i-gap; j>=0; j-=gap) {
-				if (items [j] <= items [j + gap]) {
-					int swap = items [j];
-					items [j] = items [j + gap];
-					items [j + gap] = swap;
-				}
-			}
-		}
+	Arrays.sort (items);
+	for (int i = 0, j = items.length - 1; i < j; i++, j--) {
+		int swap = items [i];
+		items [i] = items [j];
+		items [j] = swap;
 	}
 }
 
@@ -6910,13 +6995,10 @@ Point getSurfaceOrigin () {
 	Shell shell = getShell();
 	boolean success = GTK4.gtk_widget_translate_coordinates(widgetHandle, shell.shellHandle, 0, 0, originX, originY);
 	Point origin = success ? new Point((int)originX[0], (int)originY[0]) : new Point(0, 0);
-	/* See getControlOrigin(): account for the placement of each popover-backed ancestor. */
-	while (shell.popover) {
+	/* See getControlOrigin(): account for the placement of a popover-backed shell. */
+	if (shell.popover) {
 		origin.x += shell.oldX;
 		origin.y += shell.oldY;
-		Shell parentShell = shell.parent != null ? shell.parent.getShell() : null;
-		if (parentShell == null || parentShell == shell) break;
-		shell = parentShell;
 	}
 	return origin;
 }

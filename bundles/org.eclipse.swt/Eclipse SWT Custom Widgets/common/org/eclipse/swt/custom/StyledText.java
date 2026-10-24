@@ -3997,9 +3997,7 @@ public int[] getLineTabStops(int index) {
 	int[] tabs = renderer.getLineTabStops(index, null);
 	if (tabs == null) tabs = this.tabs;
 	if (tabs == null) return new int [] {renderer.tabWidth};
-	int[] result = new int[tabs.length];
-	System.arraycopy(tabs, 0, result, 0, tabs.length);
-	return result;
+	return tabs.clone();
 }
 /**
  * Returns the wrap indentation of the line at the given <code>index</code>.
@@ -4882,9 +4880,7 @@ public int getTabs() {
 public int[] getTabStops() {
 	checkWidget();
 	if (tabs == null) return new int [] {renderer.tabWidth};
-	int[] result = new int[tabs.length];
-	System.arraycopy(tabs, 0, result, 0, tabs.length);
-	return result;
+	return tabs.clone();
 }
 
 /**
@@ -5728,12 +5724,16 @@ void handleHorizontalScroll(Event event) {
  * @param event keyboard event
  */
 void handleKey(Event event) {
-	int action;
+	int action = SWT.NULL;
 	caretAlignment = PREVIOUS_OFFSET_TRAILING;
 	if (event.keyCode != 0) {
 		// special key pressed (e.g., F1)
 		action = getKeyBinding(event.keyCode | event.stateMask);
-	} else {
+	}
+	// Non-Latin layouts (e.g. Japanese Kana) report the native character as keyCode
+	// and the Latin letter as character; modifier and dead keys carry no character.
+	boolean unicodeKeyCode = event.keyCode > SWT.DEL && event.keyCode <= 0xFFFF && event.character != 0;
+	if (action == SWT.NULL && (event.keyCode == 0 || unicodeKeyCode)) {
 		// character key pressed
 		action = getKeyBinding(event.character | event.stateMask);
 		if (action == SWT.NULL) {
@@ -6213,7 +6213,6 @@ void handleTextSet(TextChangedEvent event) {
 	int newCharCount = getCharCount();
 	sendAccessibleTextChanged(0, newCharCount, lastCharCount);
 	lastCharCount = newCharCount;
-	setAlignment();
 }
 /**
  * Called when a traversal key is pressed.
@@ -7843,12 +7842,10 @@ public void replaceTextRange(int start, int length, String text) {
 void reset() {
 	ScrollBar verticalBar = getVerticalBar();
 	ScrollBar horizontalBar = getHorizontalBar();
-	setCaretOffsets(new int[] {0}, SWT.DEFAULT);
 	topIndex = 0;
 	topIndexY = 0;
 	verticalScrollOffset = 0;
 	horizontalScrollOffset = 0;
-	resetSelection();
 	renderer.setContent(content);
 	if (verticalBar != null) {
 		verticalBar.setSelection(0);
@@ -7857,7 +7854,15 @@ void reset() {
 		horizontalBar.setSelection(0);
 	}
 	resetCache(0, 0);
+	int[] oldCaretOffsets = caretOffsets;
+	caretOffsets = new int[] {0};
+	resetSelection();
+	setAlignment();
 	setCaretLocations();
+	// last, so CaretMoved listeners see the state of the new content
+	if (!Arrays.equals(oldCaretOffsets, caretOffsets)) {
+		sendCaretMoved();
+	}
 	super.redraw();
 }
 void resetBidiData() {
@@ -8654,14 +8659,17 @@ void setCaretOffsets(int[] newOffsets, int alignment) {
 	}
 	if (!Arrays.equals(caretOffsets, newOffsets)) {
 		caretOffsets = newOffsets;
-		if (isListening(ST.CaretMoved)) {
-			StyledTextEvent event = new StyledTextEvent(content);
-			event.end = caretOffsets[caretOffsets.length - 1];
-			notifyListeners(ST.CaretMoved, event);
-		}
+		sendCaretMoved();
 	}
 	if (alignment != SWT.DEFAULT) {
 		caretAlignment = alignment;
+	}
+}
+void sendCaretMoved() {
+	if (isListening(ST.CaretMoved)) {
+		StyledTextEvent event = new StyledTextEvent(content);
+		event.end = caretOffsets[caretOffsets.length - 1];
+		notifyListeners(ST.CaretMoved, event);
 	}
 }
 /**

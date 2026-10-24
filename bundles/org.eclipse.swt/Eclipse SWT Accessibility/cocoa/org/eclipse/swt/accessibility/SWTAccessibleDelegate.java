@@ -20,13 +20,6 @@ import org.eclipse.swt.internal.cocoa.*;
 
 class SWTAccessibleDelegate extends NSObject {
 
-	/**
-	 * Accessible Key: The string constant for looking up the accessible
-	 * for a control using <code>getData(String)</code>. When an accessible
-	 * is created for a control, it is stored as a property in the control
-	 * using <code>setData(String, Object)</code>.
-	 */
-	static final String ACCESSIBLE_KEY = "Accessible"; //$NON-NLS-1$
 	static final byte[] SWT_OBJECT = {'S', 'W', 'T', '_', 'O', 'B', 'J', 'E', 'C', 'T', '\0'};
 
 	static Callback accessible2Args, accessible3Args, accessible4Args;
@@ -50,7 +43,7 @@ class SWTAccessibleDelegate extends NSObject {
 		proc3Args = accessible3Args.getAddress();
 
 		accessible4Args = new Callback(clazz, "accessibleProc", 4);
-		proc4Args = accessible3Args.getAddress();
+		proc4Args = accessible4Args.getAddress();
 
 		// Accessible custom controls need to implement the NSAccessibility protocol. To do that,
 		// we dynamically add the methods to the control's class that are required
@@ -102,6 +95,7 @@ class SWTAccessibleDelegate extends NSObject {
 			return retainedAutoreleased(actionNames);
 
 		actionNames = accessible.internal_accessibilityActionNames(childID);
+		if (actionNames == null) return null;
 		actionNames.retain();
 		return retainedAutoreleased(actionNames);
 	}
@@ -128,6 +122,7 @@ class SWTAccessibleDelegate extends NSObject {
 			return retainedAutoreleased(parameterizedAttributeNames);
 
 		parameterizedAttributeNames = accessible.internal_accessibilityParameterizedAttributeNames(childID);
+		if (parameterizedAttributeNames == null) return null;
 		parameterizedAttributeNames.retain();
 		return retainedAutoreleased(parameterizedAttributeNames);
 	}

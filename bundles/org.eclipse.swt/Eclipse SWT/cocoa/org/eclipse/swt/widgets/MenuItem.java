@@ -404,8 +404,6 @@ int keyChar (int key) {
 		case SWT.ESC: return SWT.ESC;
 		case SWT.LF: return OS.NSNewlineCharacter;
 		case SWT.TAB: return OS.NSTabCharacter;
-//		case ' ': return OS.kMenuBlankGlyph;
-//		case ' ': return OS.kMenuSpaceGlyph;
 		case SWT.ALT: return 0x2325;
 		case SWT.SHIFT: return 0x21E7;
 		case SWT.CONTROL: return 0xF2303;
@@ -420,7 +418,6 @@ int keyChar (int key) {
 		case SWT.HELP: return OS.NSHelpFunctionKey;
 		case SWT.HOME: return 0xF729;
 		case SWT.END: return 0xF72B;
-//		case SWT.CAPS_LOCK: return ??;
 		case SWT.F1: return 0xF704;
 		case SWT.F2: return 0xF705;
 		case SWT.F3: return 0xF706;
@@ -436,10 +433,6 @@ int keyChar (int key) {
 		case SWT.F13: return 0xF710;
 		case SWT.F14: return 0xF711;
 		case SWT.F15: return 0xF712;
-		/*
-		* The following lines are intentionally commented.
-		*/
-//		case SWT.INSERT: return ??;
 	}
 	return 0;
 }
@@ -623,9 +616,9 @@ public void setAccelerator (int accelerator) {
 	nsItem.setKeyEquivalent (nsstring.lowercaseString());
 	nsstring.release();
 	int mask = 0;
-	if ((accelerator & SWT.SHIFT) != 0) mask |= OS.NSShiftKeyMask;
-	if ((accelerator & SWT.CONTROL) != 0) mask |= OS.NSControlKeyMask;
-	if ((accelerator & SWT.COMMAND) != 0) mask |= OS.NSCommandKeyMask;
+	if ((accelerator & SWT.SHIFT) != 0) mask |= OS.NSEventModifierFlagShift;
+	if ((accelerator & SWT.CONTROL) != 0) mask |= OS.NSEventModifierFlagControl;
+	if ((accelerator & SWT.COMMAND) != 0) mask |= OS.NSEventModifierFlagCommand;
 	if ((accelerator & SWT.ALT) != 0) mask |= OS.NSAlternateKeyMask;
 	nsItem.setKeyEquivalentModifierMask (mask);
 }
@@ -951,10 +944,10 @@ boolean updateAccelerator (boolean show) {
 		if (i < buffer.length && buffer [i] == '\t') {
 			for (j = i + 1; j < buffer.length; j++) {
 				switch (buffer [j]) {
-					case '\u2303': mask |= OS.NSControlKeyMask; i++; break;
+					case '\u2303': mask |= OS.NSEventModifierFlagControl; i++; break;
 					case '\u2325': mask |= OS.NSAlternateKeyMask; i++; break;
-					case '\u21E7': mask |= OS.NSShiftKeyMask; i++; break;
-					case '\u2318': mask |= OS.NSCommandKeyMask; i++; break;
+					case '\u21E7': mask |= OS.NSEventModifierFlagShift; i++; break;
+					case '\u2318': mask |= OS.NSEventModifierFlagCommand; i++; break;
 					default:
 						j = buffer.length;
 						break;

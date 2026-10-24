@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2025 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -231,6 +231,8 @@ void createHandle (int index) {
 
 		if (GTK.GTK4) {
 			OS.swt_fixed_add(fixedHandle, handle);
+			/* Clip the entry when it is allocated more than requested, see resizeHandle() */
+			GTK4.gtk_widget_set_overflow(fixedHandle, GTK4.GTK_OVERFLOW_HIDDEN);
 			textHandle = GTK4.gtk_editable_get_delegate(handle);
 			if ((style & SWT.SEARCH) == 0) {
 				bufferHandle = GTK4.gtk_entry_get_buffer(handle);
@@ -879,7 +881,8 @@ long eventWindow () {
 @Override
 boolean filterKey (long event) {
 	int time = GDK.gdk_event_get_time (event);
-	if (time != lastEventTime) {
+	// Posted events carry GDK_CURRENT_TIME, so they never differ from lastEventTime and would reach the IM twice
+	if (time != lastEventTime || time == GDK.GDK_CURRENT_TIME) {
 		lastEventTime = time;
 		if (imContext != 0) {
 			if (GTK.GTK4)
@@ -1001,7 +1004,7 @@ public int getCaretPosition () {
 	checkWidget ();
 	int result;
 	if ((style & SWT.SINGLE) != 0)  {
-		long ptr = GTK3.gtk_entry_get_text (handle);
+		long ptr = GTK.GTK4 ? GTK.gtk_entry_buffer_get_text (bufferHandle) : GTK3.gtk_entry_get_text (handle);
 		result = (int)OS.g_utf8_offset_to_utf16_offset (ptr, GTK.gtk_editable_get_position (handle));
 	} else {
 		byte [] position = new byte [ITER_SIZEOF];
@@ -1468,7 +1471,8 @@ public int getTextLimit () {
 	checkWidget ();
 	if ((style & SWT.MULTI) != 0) return LIMIT;
 	int limit = GTK.gtk_entry_get_max_length (handle);
-	return limit == 0 ? 0xFFFF : untranslateOffset (limit);
+	// GTK clamps the entry limit to 0xFFFF, which is also what it reports when no limit is set
+	return limit == 0 || limit >= 0xFFFF ? LIMIT : untranslateOffset (limit);
 }
 
 /**
@@ -1697,7 +1701,7 @@ long gtk_delete_range (long widget, long iter1, long iter2) {
 @Override
 long gtk_delete_text (long widget, long start_pos, long end_pos) {
 	if (!hooks (SWT.Verify) && !filters (SWT.Verify)) return 0;
-	long ptr = GTK3.gtk_entry_get_text (handle);
+	long ptr = GTK.GTK4 ? GTK.gtk_entry_buffer_get_text (bufferHandle) : GTK3.gtk_entry_get_text (handle);
 	if (end_pos == -1) end_pos = OS.g_utf8_strlen (ptr, -1);
 	int start = (int)OS.g_utf8_offset_to_utf16_offset (ptr, start_pos);
 	int end = (int)OS.g_utf8_offset_to_utf16_offset (ptr, end_pos);
@@ -1812,7 +1816,7 @@ long gtk_insert_text (long widget, long new_text, long new_text_length, long pos
 	String oldText = new String (Converter.mbcsToWcs (buffer));
 	int [] pos = new int [1];
 	C.memmove (pos, position, 4);
-	long ptr = GTK3.gtk_entry_get_text (handle);
+	long ptr = GTK.GTK4 ? GTK.gtk_entry_buffer_get_text (bufferHandle) : GTK3.gtk_entry_get_text (handle);
 	if (pos [0] == -1) pos [0] = (int)OS.g_utf8_strlen (ptr, -1);
 	/* Use the selection when the text was deleted */
 	int start = pos [0], end = pos [0];
@@ -2137,6 +2141,22 @@ void register () {
 	super.register ();
 	if (bufferHandle != 0) display.addWidget (bufferHandle, this);
 	if (imContext != 0) display.addWidget (imContext, this);
+}
+
+@Override
+void resizeHandle (int width, int height) {
+	super.resizeHandle (width, height);
+	if (GTK.GTK4 && (style & SWT.SINGLE) != 0) {
+		/*
+		 * GtkEntry hands its allocation minus its border and padding to its GtkText, so a
+		 * width below the entry's minimum gives the GtkText a negative width, which GTK
+		 * warns about. Allocate at least the minimum width; fixedHandle clips the entry to
+		 * the requested width, as its own window does on GTK3.
+		 */
+		int [] minimum = new int [1];
+		GTK4.gtk_widget_measure (handle, GTK.GTK_ORIENTATION_HORIZONTAL, -1, minimum, null, null, null);
+		if (width < minimum [0]) OS.swt_fixed_resize (fixedHandle, handle, minimum [0], height);
+	}
 }
 
 @Override

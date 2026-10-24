@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2018 IBM Corporation and others. All rights reserved.
+ * Copyright (c) 2000, 2026 IBM Corporation and others. All rights reserved.
  * The contents of this file are made available under the terms
  * of the GNU Lesser General Public License (LGPL) Version 2.1 that
  * accompanies this distribution (lgpl-v21.txt).  The LGPL is also
@@ -257,12 +257,6 @@
 #define NO_GTK_1TYPE_1TEXT_1VIEW_1ACCESSIBLE
 #define NO_swt_1fixed_1accessible_1register_1accessible
 
-// GtkCellRenderer changes
-#define NO_GtkCellRendererPixbufClass_1sizeof
-#define NO_GtkCellRendererPixbuf_1sizeof
-#define NO_GtkCellRendererToggleClass_1sizeof
-#define NO_GtkCellRendererToggle_1sizeof
-
 // GTK3 only macros
 #define NO_GTK_1IS_1ACCEL_1LABEL
 #define NO_GTK_1IS_1CONTAINER
@@ -328,12 +322,17 @@
 
 // No GdkPopup on GTK3
 #define NO_gdk_1popup_1get_1parent
+#define NO_gdk_1popup_1get_1position_1x
+#define NO_gdk_1popup_1get_1position_1y
 #define NO_gdk_1popup_1layout_1new
 #define NO_gdk_1popup_1present
 
 // SWTFixed changes
 #define NO_swt_1fixed_1add
 #define NO_swt_1fixed_1remove
+
+// No GdkPaintable on GTK3
+#define NO_swt_1scaled_1paintable_1new
 
 #endif
 

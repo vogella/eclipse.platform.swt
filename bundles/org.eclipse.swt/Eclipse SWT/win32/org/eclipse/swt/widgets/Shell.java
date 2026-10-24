@@ -766,11 +766,7 @@ void enableWidget (boolean enabled) {
 	} else {
 		state |= DISABLED;
 	}
-	if (Display.TrimEnabled) {
-		if (isActive ()) setItemEnabled (OS.SC_CLOSE, enabled);
-	} else {
-		OS.EnableWindow (handle, enabled);
-	}
+	OS.EnableWindow (handle, enabled);
 }
 
 @Override
@@ -2116,7 +2112,7 @@ void setToolTipTitle (long hwndToolTip, String text, int icon) {
 	} else {
 		if (hwndToolTip == balloonTipHandle) {
 			if (text == balloonTitle || (balloonTitle != null && balloonTitle.equals (text))) {
-				if (icon == toolIcon) return;
+				if (icon == balloonIcon) return;
 			}
 			balloonTitle = text;
 			balloonIcon = icon;
@@ -2271,11 +2267,7 @@ void unsubclass () {
 }
 
 void updateModal () {
-	if (Display.TrimEnabled) {
-		setItemEnabled (OS.SC_CLOSE, isActive ());
-	} else {
-		OS.EnableWindow (handle, isActive ());
-	}
+	OS.EnableWindow (handle, isActive ());
 }
 
 @Override
@@ -2535,7 +2527,7 @@ LRESULT WM_DPICHANGED (long wParam, long lParam) {
 	return LRESULT.ONE;
 }
 
-private void handleMonitorSpecificDpiChange(int newNativeZoom, Rectangle newBoundsInPixels) {
+void handleMonitorSpecificDpiChange(int newNativeZoom, Rectangle newBoundsInPixels) {
 	DPIUtil.setDeviceZoom (newNativeZoom);
 	// Do not process DPI change for child shells asynchronous to avoid relayouting when
 	// repositioning the child shell to a different monitor upon opening
@@ -2545,8 +2537,23 @@ private void handleMonitorSpecificDpiChange(int newNativeZoom, Rectangle newBoun
 		lastDpiChangeEvent.doit = false;
 	}
 	lastDpiChangeEvent = zoomChangedEvent;
-	notifyListeners(SWT.ZoomChanged, zoomChangedEvent);
-	this.setBoundsInPixels(newBoundsInPixels.x, newBoundsInPixels.y, newBoundsInPixels.width, newBoundsInPixels.height);
+	startZoomChangeTask(zoomChangedEvent);
+	try {
+		notifyZoomChanged(this, zoomChangedEvent);
+		// The shell must be moved to the new monitor even if the zoom change
+		// processing of some widget failed
+		if (!isDisposed()) {
+			try {
+				setBoundsInPixels(newBoundsInPixels.x, newBoundsInPixels.y, newBoundsInPixels.width, newBoundsInPixels.height);
+			} catch (Error | RuntimeException ex) {
+				// Collect this failure like those of the widgets, as it would otherwise
+				// supersede them when they are propagated on completing the zoom change
+				stashZoomChangeFailure(zoomChangedEvent, ex);
+			}
+		}
+	} finally {
+		completeZoomChangeTask(zoomChangedEvent, this);
+	}
 }
 
 @Override
@@ -2666,12 +2673,7 @@ LRESULT WM_MOVE (long wParam, long lParam) {
 @Override
 LRESULT WM_NCHITTEST (long wParam, long lParam) {
 	if (!OS.IsWindowEnabled (handle)) return null;
-	if (!isEnabled () || !isActive ()) {
-		if (!Display.TrimEnabled) return new LRESULT (OS.HTNOWHERE);
-		long hittest = callWindowProc (handle, OS.WM_NCHITTEST, wParam, lParam);
-		if (hittest == OS.HTCLIENT || hittest == OS.HTMENU) hittest = OS.HTBORDER;
-		return new LRESULT (hittest);
-	}
+	if (!isEnabled () || !isActive ()) return new LRESULT (OS.HTNOWHERE);
 	if (menuBar != null && !menuBar.getEnabled ()) {
 		long hittest = callWindowProc (handle, OS.WM_NCHITTEST, wParam, lParam);
 		if (hittest == OS.HTMENU) hittest = OS.HTBORDER;
@@ -2727,13 +2729,11 @@ LRESULT WM_SETCURSOR (long wParam, long lParam) {
 	*/
 	int msg = OS.HIWORD (lParam);
 	if (msg == OS.WM_LBUTTONDOWN) {
-		if (!Display.TrimEnabled) {
-			Shell modalShell = display.getModalShell ();
-			if (modalShell != null && !isActive ()) {
-				long hwndModal = modalShell.handle;
-				if (OS.IsWindowEnabled (hwndModal)) {
-					OS.SetActiveWindow (hwndModal);
-				}
+		Shell modalShell = display.getModalShell ();
+		if (modalShell != null && !isActive ()) {
+			long hwndModal = modalShell.handle;
+			if (OS.IsWindowEnabled (hwndModal)) {
+				OS.SetActiveWindow (hwndModal);
 			}
 		}
 		if (!OS.IsWindowEnabled (handle)) {

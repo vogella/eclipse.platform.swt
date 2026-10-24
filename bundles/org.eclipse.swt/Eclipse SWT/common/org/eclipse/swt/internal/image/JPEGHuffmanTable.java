@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.swt.internal.image;
 
+import java.util.Arrays;
 
 /**
  * JPEGHuffmanTable class actually represents two types of object:
@@ -28,10 +29,6 @@ final class JPEGHuffmanTable extends JPEGVariableSizeSegment {
 	JPEGHuffmanTable[] allTables;
 	int tableClass;
 	int tableIdentifier;
-	int[] dhMaxCodes;
-	int[] dhMinCodes;
-	int[] dhValPtrs;
-	int[] dhValues;
 	int[] ehCodes;
 	byte[] ehCodeLengths;
 	static byte[] DCLuminanceTable = {
@@ -114,22 +111,6 @@ public static JPEGHuffmanTable getDefaultDCLuminanceTable() {
 	return result;
 }
 
-public int[] getDhMaxCodes() {
-	return dhMaxCodes;
-}
-
-public int[] getDhMinCodes() {
-	return dhMinCodes;
-}
-
-public int[] getDhValPtrs() {
-	return dhValPtrs;
-}
-
-public int[] getDhValues() {
-	return dhValues;
-}
-
 public int getTableClass() {
 	return tableClass;
 }
@@ -173,9 +154,7 @@ void initialize() {
 		for (int i = 0; i < 16; i++) {
 			for (int j = 0; j < bits[i]; j++) {
 				if (huffCodeLengthsIndex >= huffCodeLengths.length) {
-					int[] newHuffCodeLengths = new int[huffCodeLengths.length + 50];
-					System.arraycopy(huffCodeLengths, 0, newHuffCodeLengths, 0, huffCodeLengths.length);
-					huffCodeLengths = newHuffCodeLengths;
+					huffCodeLengths = Arrays.copyOf(huffCodeLengths, huffCodeLengths.length + 50);
 				}
 				huffCodeLengths[huffCodeLengthsIndex] = i + 1;
 				huffCodeLengthsIndex++;
@@ -199,9 +178,7 @@ void initialize() {
 		while (p < huffCodeLengthsIndex) {
 			while ((p < huffCodeLengthsIndex) && (huffCodeLengths[p] == si)) {
 				if (huffCodesIndex >= huffCodes.length) {
-					int[] newHuffCodes = new int[huffCodes.length + 50];
-					System.arraycopy(huffCodes, 0, newHuffCodes, 0, huffCodes.length);
-					huffCodes = newHuffCodes;
+					huffCodes = Arrays.copyOf(huffCodes, huffCodes.length + 50);
 				}
 				huffCodes[huffCodesIndex] = code;
 				huffCodesIndex++;
@@ -219,23 +196,6 @@ void initialize() {
 			huffCodes = newHuffCodes;
 		}
 
-		/* Calculate the maximum and minimum codes */
-		k = 0;
-		int[] maxCodes = new int[16];
-		int[] minCodes = new int[16];
-		int[] valPtrs = new int[16];
-		for (int i = 0; i < 16; i++) {
-			int bSize = bits[i];
-			if (bSize == 0) {
-				maxCodes[i] = -1;
-			} else {
-				valPtrs[i] = k;
-				minCodes[i] = huffCodes[k];
-				k += bSize;
-				maxCodes[i] = huffCodes[k - 1];
-			}
-		}
-
 		/* Calculate the eHuffman codes and lengths. */
 		int[] eHuffCodes = new int[256];
 		byte[] eHuffSize = new byte[256];
@@ -248,10 +208,6 @@ void initialize() {
 		JPEGHuffmanTable dhtTable = new JPEGHuffmanTable(reference);
 		dhtTable.tableClass = tc;
 		dhtTable.tableIdentifier = tid;
-		dhtTable.dhValues = huffVals;
-		dhtTable.dhMinCodes = minCodes;
-		dhtTable.dhMaxCodes = maxCodes;
-		dhtTable.dhValPtrs = valPtrs;
 		dhtTable.ehCodes = eHuffCodes;
 		dhtTable.ehCodeLengths = eHuffSize;
 		huffTables[huffTableCount] = dhtTable;

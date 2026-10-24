@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2025 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -17,8 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -519,6 +521,22 @@ void getBoundsID() {
 }
 
 @Test
+public void test_getBoundsI_checkStyleRightToLeft() {
+	assumeFalse(SwtTestUtil.isGTK4(), "The GTK4 cell rectangle of a right-to-left tree view is not mirrored like GTK3");
+	Tree rtlTree = new Tree(shell, SWT.CHECK | SWT.RIGHT_TO_LEFT);
+	rtlTree.setBounds(0, 0, 200, 150);
+	TreeItem item = new TreeItem(rtlTree, SWT.NONE);
+	item.setText("Item");
+	shell.open();
+	SwtTestUtil.processEvents();
+
+	Rectangle bounds = item.getBounds(0);
+	assertTrue(bounds.width > 0, "Cell bounds must have a positive width but are " + bounds);
+	assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= rtlTree.getSize().x,
+			"Cell bounds " + bounds + " must lie inside the tree of width " + rtlTree.getSize().x);
+}
+
+@Test
 public void test_getBoundsI() {
 	if (SwtTestUtil.isGTK || SwtTestUtil.isCocoa) {
 		//TODO Fix Gtk and Cocoa failure.
@@ -531,6 +549,50 @@ public void test_getBoundsI() {
 	getBoundsIB();
 	getBoundsIC();
 	getBoundsID();
+}
+
+/*
+ * @see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2749
+ */
+@Test
+public void test_getBounds_checkStyleWithCustomFont() {
+	Tree tree2 = new Tree(shell, SWT.CHECK);
+	TreeItem treeItem2 = new TreeItem(tree2, SWT.NONE);
+
+	Font font = new Font(treeItem2.getDisplay(), SwtTestUtil.testFontName, 10, SWT.NORMAL);
+	try {
+		treeItem2.setText("hello");
+		treeItem2.setFont(0, font);
+
+		Rectangle bounds = treeItem2.getBounds();
+		assertTrue(bounds.height > 0 && bounds.width > 0);
+	} finally {
+		tree2.dispose();
+		font.dispose();
+	}
+}
+
+/*
+ * @see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2749
+ */
+@Test
+public void test_getBounds_checkStyleWithColumnsAndCustomFont() {
+	Tree tree2 = new Tree(shell, SWT.CHECK);
+	TreeColumn column0 = new TreeColumn(tree2, SWT.LEFT);
+	column0.setWidth(100);
+	TreeItem treeItem2 = new TreeItem(tree2, SWT.NONE);
+
+	Font font = new Font(treeItem2.getDisplay(), SwtTestUtil.testFontName, 10, SWT.NORMAL);
+	try {
+		treeItem2.setText("hello");
+		treeItem2.setFont(0, font);
+
+		Rectangle bounds = treeItem2.getBounds();
+		assertTrue(bounds.height > 0 && bounds.width > 0);
+	} finally {
+		tree2.dispose();
+		font.dispose();
+	}
 }
 
 @Test
@@ -1018,6 +1080,51 @@ public void test_setImageILorg_eclipse_swt_graphics_Image() {
 }
 
 @Test
+public void test_setImage_newColumnDoesNotInheritImageOfDisposedColumn() {
+	new TreeColumn(tree, SWT.LEFT);
+	TreeColumn column = new TreeColumn(tree, SWT.LEFT);
+	new TreeColumn(tree, SWT.LEFT);
+	treeItem.setImage(1, images[0]);
+	column.dispose();
+	new TreeColumn(tree, SWT.LEFT);
+	assertNull(treeItem.getImage(2));
+}
+
+@Test
+public void test_setImage_imagesFollowTheirColumns() {
+	new TreeColumn(tree, SWT.LEFT);
+	TreeColumn column = new TreeColumn(tree, SWT.LEFT);
+	new TreeColumn(tree, SWT.LEFT);
+	// index 2 first, win32 copies the image of the first non-zero index into slot 0
+	treeItem.setImage(2, images[1]);
+	treeItem.setImage(0, images[0]);
+	column.dispose();
+	assertSame(images[0], treeItem.getImage(0));
+	assertSame(images[1], treeItem.getImage(1));
+	new TreeColumn(tree, SWT.LEFT, 0);
+	assertNull(treeItem.getImage(0));
+	assertSame(images[0], treeItem.getImage(1));
+	assertSame(images[1], treeItem.getImage(2));
+}
+
+@Test
+public void test_getImage_disposedImageIsNotReplacedByLaterImage() {
+	shell.open();
+	Image disposed = new Image(shell.getDisplay(), 16, 16);
+	treeItem.setImage(disposed);
+	disposed.dispose();
+	new TreeItem(tree, SWT.NONE).setImage(images[0]);
+	Image later = new Image(shell.getDisplay(), 16, 16);
+	try {
+		new TreeItem(tree, SWT.NONE).setImage(later);
+		tree.update();
+		assertSame(disposed, treeItem.getImage());
+	} finally {
+		later.dispose();
+	}
+}
+
+@Test
 public void test_setText$Ljava_lang_String() {
 	final String TestString = "test";
 	final String TestStrings[] = new String[] {TestString, TestString + "1", TestString + "2"};
@@ -1163,5 +1270,91 @@ private void makeCleanEnvironment() {
 	tree = new Tree(shell, 0);
 	treeItem = new TreeItem(tree, 0);
 	setWidget(treeItem);
+}
+
+@Test
+public void test_indexOf_afterAddingAndRemovingChildren() {
+	TreeItem[] children = new TreeItem[20];
+	for (int i = 0; i < children.length; i++) {
+		children[i] = new TreeItem(treeItem, SWT.NONE);
+		assertEquals(i, treeItem.indexOf(children[i]));
+	}
+	assertEquals(20, treeItem.getItemCount());
+
+	TreeItem first = new TreeItem(treeItem, SWT.NONE, 0);
+	assertEquals(0, treeItem.indexOf(first));
+	for (int i = 0; i < children.length; i++) {
+		assertEquals(i + 1, treeItem.indexOf(children[i]));
+	}
+	TreeItem middle = new TreeItem(treeItem, SWT.NONE, 10);
+	assertEquals(10, treeItem.indexOf(middle));
+	assertEquals(9, treeItem.indexOf(children[8]));
+	assertEquals(11, treeItem.indexOf(children[9]));
+	assertEquals(21, treeItem.indexOf(children[19]));
+
+	// warm any index cache, then remove
+	assertEquals(17, treeItem.indexOf(children[15]));
+	middle.dispose();
+	for (int i = 0; i < 9; i++) {
+		assertEquals(i + 1, treeItem.indexOf(children[i]));
+	}
+	for (int i = 9; i < children.length; i++) {
+		assertEquals(i + 1, treeItem.indexOf(children[i]));
+	}
+	first.dispose();
+	for (int i = 0; i < children.length; i++) {
+		assertEquals(i, treeItem.indexOf(children[i]));
+	}
+	children[5].dispose();
+	assertEquals(4, treeItem.indexOf(children[4]));
+	assertEquals(5, treeItem.indexOf(children[6]));
+	assertEquals(18, treeItem.indexOf(children[19]));
+	assertEquals(19, treeItem.getItemCount());
+}
+
+@Test
+public void test_indexOf_manyChildren() {
+	int count = 10_000;
+	treeItem.setItemCount(count);
+	TreeItem[] children = treeItem.getItems();
+	assertEquals(count, children.length);
+	assertEquals(0, treeItem.indexOf(children[0]));
+	assertEquals(count / 2, treeItem.indexOf(children[count / 2]));
+	assertEquals(count - 1, treeItem.indexOf(children[count - 1]));
+	for (int i = 0; i < count; i += 2) {
+		children[i].dispose();
+	}
+	assertEquals(count / 2, treeItem.getItemCount());
+	TreeItem[] left = treeItem.getItems();
+	for (int i = 0; i < left.length; i++) {
+		assertEquals(children[2 * i + 1], left[i]);
+		assertEquals(i, treeItem.indexOf(left[i]));
+	}
+}
+
+@Test
+public void test_indexOf_nestedItemsAreIndependent() {
+	TreeItem a = new TreeItem(treeItem, SWT.NONE);
+	TreeItem b = new TreeItem(treeItem, SWT.NONE);
+	TreeItem a0 = new TreeItem(a, SWT.NONE);
+	TreeItem a1 = new TreeItem(a, SWT.NONE);
+	TreeItem b0 = new TreeItem(b, SWT.NONE);
+	assertEquals(0, treeItem.indexOf(a));
+	assertEquals(1, treeItem.indexOf(b));
+	assertEquals(0, a.indexOf(a0));
+	assertEquals(1, a.indexOf(a1));
+	assertEquals(0, b.indexOf(b0));
+	// an item that is not a direct child is not found
+	assertEquals(-1, treeItem.indexOf(a0));
+	assertEquals(-1, a.indexOf(b0));
+	new TreeItem(a, SWT.NONE, 0);
+	assertEquals(1, a.indexOf(a0));
+	assertEquals(2, a.indexOf(a1));
+	assertEquals(0, b.indexOf(b0));
+	assertEquals(1, treeItem.indexOf(b));
+	a.removeAll();
+	assertEquals(0, a.getItemCount());
+	assertEquals(-1, a.indexOf(b0));
+	assertEquals(1, treeItem.indexOf(b));
 }
 }

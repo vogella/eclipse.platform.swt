@@ -138,6 +138,13 @@ Point computeNativeSize (long h, int wHint, int hHint, boolean changed) {
 		return super.computeNativeSize(h, wHint, hHint, changed);
 	}
 }
+
+Point computeFrameTrim () {
+	Point thickness = getThickness (frameHandle);
+	int border = gtk_container_get_border_width_or_margin (frameHandle);
+	return new Point (2 * (thickness.x + border), 2 * (thickness.y + border));
+}
+
 @Override
 Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 	checkWidget ();
@@ -169,17 +176,7 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 		int [] w = new int [1], h = new int [1];
 		OS.pango_layout_get_pixel_size (labelLayout, w, h);
 		OS.pango_layout_set_width (labelLayout, pangoWidth);
-		if (frameHandle != 0) {
-			int [] labelWidth = new int [1], labelHeight = new int [1];
-			GTK.gtk_widget_get_size_request (labelHandle, labelWidth, labelHeight);
-			GTK.gtk_widget_set_size_request (labelHandle, 1, 1);
-			size = computeNativeSize (frameHandle, -1, -1, changed);
-			GTK.gtk_widget_set_size_request (labelHandle, labelWidth [0], labelHeight [0]);
-			size.x = size.x - 1;
-			size.y = size.y - 1;
-		} else {
-			size = new Point (0,0);
-		}
+		size = frameHandle != 0 ? computeFrameTrim () : new Point (0,0);
 		size.x += wHint == SWT.DEFAULT ? w [0] : wHint;
 		size.y += hHint == SWT.DEFAULT ? h [0] : hHint;
 	} else {
@@ -189,6 +186,10 @@ Point computeSizeInPixels (int wHint, int hHint, boolean changed) {
 			GTK.gtk_widget_set_size_request (handle, wHint, hHint);
 			size = computeNativeSize (frameHandle, -1, -1, changed);
 			GTK.gtk_widget_set_size_request (handle, reqWidth [0], reqHeight [0]);
+			/* A size request does not cap the natural size, so a hint smaller than the content is lost. */
+			Point trim = computeFrameTrim ();
+			if (wHint != SWT.DEFAULT) size.x = wHint + trim.x;
+			if (hHint != SWT.DEFAULT) size.y = hHint + trim.y;
 		} else {
 			size = computeNativeSize (handle, wHint, hHint, changed);
 		}
@@ -261,6 +262,9 @@ void createHandle (int index) {
 
 			GTK4.gtk_box_append(handle, labelHandle);
 			GTK4.gtk_box_append(handle, imageHandle);
+			/* Let presses target the box, see eventHandle. */
+			OS.g_object_set(labelHandle, Converter.javaStringToCString("can-target"), false, 0);
+			OS.g_object_set(imageHandle, Converter.javaStringToCString("can-target"), false, 0);
 			gtk_box_set_child_packing(handle, labelHandle, true, true, 0, GTK.GTK_PACK_START);
 			gtk_box_set_child_packing(handle, imageHandle, true, true, 0, GTK.GTK_PACK_START);
 		} else {
@@ -334,6 +338,8 @@ void deregister () {
 
 @Override
 long eventHandle () {
+	/* GTK4 mouse controllers only see presses that target their widget, and the box covers the fixed. */
+	if (GTK.GTK4 && labelHandle != 0) return handle;
 	return fixedHandle;
 }
 
@@ -570,7 +576,7 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 	* This part of the fix forces the label to be
 	* resized so that it will draw wrapped.
 	*/
-	if (fixWrap) {
+	if (fixWrap && (state & (ZERO_WIDTH | ZERO_HEIGHT)) == 0) {
 		GtkAllocation allocation = new GtkAllocation();
 		GTK.gtk_widget_get_allocation (handle, allocation);
 		int labelWidth = allocation.width;
@@ -650,8 +656,11 @@ public void setImage (Image image) {
 			long pixbuf = ImageList.createPixbuf(image);
 			long texture = GDK.gdk_texture_new_for_pixbuf(pixbuf);
 			OS.g_object_unref(pixbuf);
-			GTK4.gtk_picture_set_paintable(imageHandle, texture);
+			Rectangle bounds = image.getBounds();
+			long paintable = OS.swt_scaled_paintable_new(texture, bounds.width, bounds.height);
 			OS.g_object_unref(texture);
+			GTK4.gtk_picture_set_paintable(imageHandle, paintable);
+			OS.g_object_unref(paintable);
 		} else {
 			GTK3.gtk_image_set_from_surface(imageHandle, image.surface);
 		}

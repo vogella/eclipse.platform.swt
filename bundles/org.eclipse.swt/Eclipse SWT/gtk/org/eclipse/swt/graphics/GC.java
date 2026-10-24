@@ -19,6 +19,7 @@ import org.eclipse.swt.*;
 import org.eclipse.swt.internal.*;
 import org.eclipse.swt.internal.cairo.*;
 import org.eclipse.swt.internal.gtk.*;
+import org.eclipse.swt.internal.gtk4.*;
 
 /**
  * Class <code>GC</code> is where all of the drawing capabilities that are
@@ -459,6 +460,27 @@ long convertRgn(long rgn, double[] matrix) {
 	return newRgn;
 }
 
+/** Renders the widget into the cairo context through a snapshot, since a GdkSurface cannot be read back on GTK4. */
+private static void copyWidgetSnapshot(long cairo, long widget) {
+	long paintable = GTK4.gtk_widget_paintable_new(widget);
+	if (paintable == 0) return;
+	long snapshot = GTK4.gtk_snapshot_new();
+	if (snapshot == 0) {
+		OS.g_object_unref(paintable);
+		return;
+	}
+	GTK4.gdk_paintable_snapshot(paintable, snapshot, GTK4.gtk_widget_get_width(widget), GTK4.gtk_widget_get_height(widget));
+	long renderNode = GTK4.gtk_snapshot_free_to_node(snapshot);
+	OS.g_object_unref(paintable);
+	if (renderNode == 0) return;
+	Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_SOURCE);
+	Cairo.cairo_set_source_rgba(cairo, 0, 0, 0, 0);
+	Cairo.cairo_paint(cairo);
+	Cairo.cairo_set_operator(cairo, Cairo.CAIRO_OPERATOR_OVER);
+	GTK4.gsk_render_node_draw(renderNode, cairo);
+	GTK4.gsk_render_node_unref(renderNode);
+}
+
 /**
  * Copies a rectangular area of the receiver at the specified
  * position into the image, which must be of type <code>SWT.BITMAP</code>.
@@ -482,6 +504,11 @@ public void copyArea(Image image, int x, int y) {
 	long cairo = Cairo.cairo_create(image.surface);
 	if (cairo == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 	Cairo.cairo_translate(cairo, -x, -y);
+	if (GTK.GTK4 && data.image == null && data.widget != 0) {
+		copyWidgetSnapshot(cairo, data.widget);
+		Cairo.cairo_destroy(cairo);
+		return;
+	}
 	Cairo.cairo_push_group(cairo);
 	if (data.image != null) {
 		Cairo.cairo_set_source_surface(cairo, data.image.surface, 0, 0);
@@ -574,8 +601,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 			srcRect.height = height;
 			long invalidateRegion = Cairo.cairo_region_create_rectangle (srcRect);
 			if (GTK.GTK4) {
-				/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-				 * invalid regions ourselves and do gdk_surface_queue_expose */
+				// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+				if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 			} else {
 				long visibleRegion = GDK.gdk_window_get_visible_region (drawable);
 				long copyRegion = Cairo.cairo_region_create_rectangle (srcRect);
@@ -598,8 +625,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 			rect.width = Math.max (0, width);
 			rect.height = Math.max (0, height);
 			if (GTK.GTK4) {
-				/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-				 * invalid regions ourselves and do gdk_surface_queue_expose */
+				// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+				if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 			} else {
 				GDK.gdk_window_invalidate_rect (drawable, rect, false);
 			}
@@ -612,8 +639,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 				rect.width = Math.abs(deltaX);
 				rect.height = Math.max (0, height);
 				if (GTK.GTK4) {
-					/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-					 * invalid regions ourselves and do gdk_surface_queue_expose */
+					// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+					if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 				} else {
 					GDK.gdk_window_invalidate_rect (drawable, rect, false);
 				}
@@ -626,8 +653,8 @@ public void copyArea(int srcX, int srcY, int width, int height, int destX, int d
 				rect.width = Math.max (0, width);
 				rect.height = Math.abs(deltaY);
 				if (GTK.GTK4) {
-					/* TODO: GTK4 no ability to invalidate surfaces, may need to keep track of
-					 * invalid regions ourselves and do gdk_surface_queue_expose */
+					// GTK4 cannot invalidate a region, so the whole widget is queued for redraw
+					if (data.widget != 0) GTK.gtk_widget_queue_draw(data.widget);
 				} else {
 					GDK.gdk_window_invalidate_rect (drawable, rect, false);
 				}
@@ -776,7 +803,30 @@ public void drawFocus(int x, int y, int width, int height) {
 	if (handle == 0) SWT.error(SWT.ERROR_GRAPHIC_DISPOSED);
 	long cairo = data.cairo;
 	checkGC(FOREGROUND);
-	long  context = GTK.gtk_widget_get_style_context(data.device.shellHandle);
+	long context = GTK.gtk_widget_get_style_context(data.device.shellHandle);
+	if (GTK.GTK4) {
+		/*
+		 * GTK4 themes draw an outline only on widgets in the :focus-visible state,
+		 * so gtk_render_focus() paints nothing. Draw the focus rectangle like the
+		 * GTK3 theme does instead: a 1 pixel dotted line inside the rectangle, in
+		 * the text color of the theme at 30% opacity.
+		 */
+		if (width <= 0 || height <= 0) return;
+		GdkRGBA color = new GdkRGBA();
+		GTK4.gtk_style_context_get_color(context, color);
+		Cairo.cairo_save(cairo);
+		Cairo.cairo_rectangle(cairo, x, y, width, height);
+		Cairo.cairo_clip(cairo);
+		Cairo.cairo_set_source_rgba(cairo, color.red, color.green, color.blue, color.alpha * 0.3);
+		Cairo.cairo_set_line_width(cairo, 1);
+		Cairo.cairo_set_line_cap(cairo, Cairo.CAIRO_LINE_CAP_BUTT);
+		// The path runs through pixel centers, start the dashes at pixel edges
+		Cairo.cairo_set_dash(cairo, new double[] {1, 1}, 2, 1.5);
+		Cairo.cairo_rectangle(cairo, x + 1.5, y + 1.5, width - 3, height - 3);
+		Cairo.cairo_stroke(cairo);
+		Cairo.cairo_restore(cairo);
+		return;
+	}
 	GTK.gtk_render_focus(context, cairo, x, y, width, height);
 }
 
@@ -913,9 +963,14 @@ void drawImage(Image srcImage, int srcX, int srcY, int srcWidth, int srcHeight, 
 	/* Refresh Image as per zoom level, if required. */
 	srcImage.refreshImageForZoom ();
 
-	ImageData srcImageData = srcImage.getImageData();
-	int imgWidth = srcImageData.width;
-	int imgHeight = srcImageData.height;
+	int imgWidth = srcImage.width;
+	int imgHeight = srcImage.height;
+	if (imgWidth == -1 || imgHeight == -1) {
+		/* Images wrapped around a native handle carry no dimensions, see Image.gtk_new. */
+		ImageData srcImageData = srcImage.getImageData();
+		imgWidth = srcImageData.width;
+		imgHeight = srcImageData.height;
+	}
 	if (srcWidth == 0 && srcHeight == 0) {
 		srcWidth = imgWidth;
 		srcHeight = imgHeight;
@@ -1604,7 +1659,6 @@ public void fillGradientRectangle(int x, int y, int width, int height, boolean v
 		toRGB   = foregroundRGB;
 	}
 	long cairo = data.cairo;
-	long pattern;
 
 	/*
 	 * Here the co-ordinates passed are in points for GTK3.
@@ -1613,15 +1667,27 @@ public void fillGradientRectangle(int x, int y, int width, int height, boolean v
 	 * to set the device scale to current scale factor
 	 */
 	long surface = Cairo.cairo_get_target(cairo);
+	double[] oldScaleX = new double[1], oldScaleY = new double[1];
 	if (surface != 0) {
-		float scaleFactor = DPIUtil.getDeviceZoom() / 100f;
+		Cairo.cairo_surface_get_device_scale(surface, oldScaleX, oldScaleY);
+		// images carry their own device scale
+		float scaleFactor = data.image != null ? (float) oldScaleX[0] : DPIUtil.getDeviceZoom() / 100f;
 		Cairo.cairo_surface_set_device_scale(surface, scaleFactor, scaleFactor);
 	}
+	try {
+		fillGradientRectangleInCairo(cairo, x, y, width, height, vertical, fromRGB, toRGB);
+	} finally {
+		// the surface outlives this call, later drawing must not inherit the scale
+		if (surface != 0) Cairo.cairo_surface_set_device_scale(surface, oldScaleX[0], oldScaleY[0]);
+	}
+}
 
+private void fillGradientRectangleInCairo(long cairo, int x, int y, int width, int height, boolean vertical, RGB fromRGB, RGB toRGB) {
 	if (fromRGB.equals(toRGB)) {
 		fillRectangle(x, y, width, height);
 		return;
 	}
+	long pattern;
 
 	if (vertical) {
 		pattern = Cairo.cairo_pattern_create_linear (0.0, 0.0, 0.0, 1.0);
@@ -2042,7 +2108,7 @@ public Rectangle getClipping() {
 	/* Calculate visible bounds in device space */
 	int x = 0, y = 0, width = 0, height = 0;
 	int[] w = new int[1], h = new int[1];
-	getSize(w, h);
+	getUserSpaceSize(w, h);
 	width = w[0];
 	height = h[0];
 	/* Intersect visible bounds with clipping in device space and then convert then to user space */
@@ -2145,7 +2211,7 @@ public void getClipping(Region region) {
 	if (clipRgn == 0) {
 		cairo_rectangle_int_t rect = new cairo_rectangle_int_t();
 		int[] width = new int[1], height = new int[1];
-		getSize(width, height);
+		getUserSpaceSize(width, height);
 		rect.width = width[0];
 		rect.height = height[0];
 		Cairo.cairo_region_union_rectangle(clipping, rect);
@@ -2436,6 +2502,29 @@ public int getStyle () {
 	return data.style;
 }
 
+/** Returns the image size in user space, which is in points for images with a device scale. */
+private void getUserSpaceSize(int[] width, int[] height) {
+	getSize(width, height);
+	if (data.image != null && data.image.surface != 0) {
+		double[] scaleX = new double[1], scaleY = new double[1];
+		Cairo.cairo_surface_get_device_scale(data.image.surface, scaleX, scaleY);
+		width[0] = (int) Math.round(width[0] / scaleX[0]);
+		height[0] = (int) Math.round(height[0] / scaleY[0]);
+	}
+}
+
+/** Returns the width in user space to mirror around. */
+double getMirroringWidth() {
+	int[] w = new int[1], h = new int[1];
+	getSize(w, h);
+	if (data.image != null && data.image.surface != 0) {
+		double[] scaleX = new double[1], scaleY = new double[1];
+		Cairo.cairo_surface_get_device_scale(data.image.surface, scaleX, scaleY);
+		return w[0] / scaleX[0];
+	}
+	return w[0];
+}
+
 void getSize(int[] width, int[] height) {
 	if (data.width != -1 && data.height != -1) {
 		width[0] = data.width;
@@ -2578,9 +2667,7 @@ public int hashCode() {
 double[] identity() {
 	double[] identity = new double[6];
 	if ((data.style & SWT.MIRRORED) != 0) {
-		int[] w = new int[1], h = new int[1];
-		getSize(w, h);
-		Cairo.cairo_matrix_init(identity, -1, 0, 0, 1, w[0], 0);
+		Cairo.cairo_matrix_init(identity, -1, 0, 0, 1, getMirroringWidth(), 0);
 	} else {
 		Cairo.cairo_matrix_init_identity(identity);
 	}
@@ -2614,9 +2701,7 @@ void init(Drawable drawable, GCData data, long gdkGC) {
 	initCairo();
 	if ((data.style & SWT.MIRRORED) != 0) {
 		// Don't overwrite the Cairo transformation matrix in GTK 3.14 and above; it contains a translation relative to the parent widget.
-		int[] w = new int[1], h = new int[1];
-		getSize(w, h);
-		Cairo.cairo_translate(cairo, w[0], 0);
+		Cairo.cairo_translate(cairo, getMirroringWidth(), 0);
 		Cairo.cairo_scale(cairo, -1.0, 1.0);
 	}
 	if (cairoTransformationMatrix == null) cairoTransformationMatrix = new double[6];

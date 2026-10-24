@@ -135,10 +135,6 @@ public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
 
-static int checkStyle (int style) {
-	return checkBits (style, SWT.HORIZONTAL, SWT.VERTICAL, 0, 0, 0, 0);
-}
-
 @Override
 void deregister () {
 	super.deregister ();
@@ -263,7 +259,7 @@ public int getSelection () {
 	checkWidget();
 	NSScroller widget = (NSScroller)view;
 	double value = widget.doubleValue();
-	return (int)(0.5f + ((maximum - thumb - minimum) * value + minimum));
+	return (int)Math.round((double)(maximum - thumb - minimum) * value + minimum);
 }
 
 /**
@@ -481,17 +477,9 @@ void sendSelection () {
 	int hitPart = (int)((NSScroller)view).testPart(point);
 	Event event = new Event();
 	switch (hitPart) {
-	case OS.NSScrollerDecrementLine:
-		value -= increment;
-		event.detail = SWT.ARROW_UP;
-		break;
 	case OS.NSScrollerDecrementPage:
 		value -= pageIncrement;
 		event.detail = SWT.PAGE_UP;
-		break;
-	case OS.NSScrollerIncrementLine:
-		value += increment;
-		event.detail = SWT.ARROW_DOWN;
 		break;
 	case OS.NSScrollerIncrementPage:
 		value += pageIncrement;
@@ -736,8 +724,8 @@ void updateBar (int selection, int minimum, int maximum, int thumb) {
 	NSScroller widget = (NSScroller) view;
 	selection = Math.max (minimum, Math.min (maximum - thumb, selection));
 	int range = maximum - thumb - minimum;
-	float fraction = range <= 0 ? 1 : (float) (selection - minimum) / range;
-	float knob = range <= 0 ? 1 : (float) thumb / (maximum - minimum);
+	double fraction = range <= 0 ? 1 : (double) (selection - minimum) / range;
+	double knob = range <= 0 ? 1 : (double) thumb / (maximum - minimum);
 	double oldFraction = widget.doubleValue();
 	double oldKnob = widget.knobProportion();
 	widget.setDoubleValue(fraction);

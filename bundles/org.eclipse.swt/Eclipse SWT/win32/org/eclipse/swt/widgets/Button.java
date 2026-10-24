@@ -50,7 +50,7 @@ import org.eclipse.swt.internal.win32.version.*;
  * @noextend This class is not intended to be subclassed by clients.
  */
 public class Button extends Control {
-	String text = "", message = "";
+	String text = "";
 	Image image, disabledImage;
 	ImageList imageList;
 	boolean ignoreMouse, grayed, useDarkModeExplorerTheme;
@@ -561,25 +561,6 @@ public Image getImage () {
 	return image;
 }
 
-/**
- * Returns the widget message. When the widget is created
- * with the style <code>SWT.COMMAND</code>, the message text
- * is displayed to provide further information for the user.
- *
- * @return the widget message
- *
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @since 3.3
- */
-/*public*/ String getMessage () {
-	checkWidget ();
-	return message;
-}
-
 @Override
 String getNameText () {
 	return getText ();
@@ -861,35 +842,6 @@ public void setGrayed (boolean grayed) {
 		if (flags == OS.BST_CHECKED) updateSelection (OS.BST_INDETERMINATE);
 	} else {
 		if (flags == OS.BST_INDETERMINATE) updateSelection (OS.BST_CHECKED);
-	}
-}
-
-/**
- * Sets the widget message. When the widget is created
- * with the style <code>SWT.COMMAND</code>, the message text
- * is displayed to provide further information for the user.
- *
- * @param message the new message
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the string is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @since 3.3
- */
-/*public*/ void setMessage (String message) {
-	checkWidget ();
-	if (message == null) error (SWT.ERROR_NULL_ARGUMENT);
-	this.message = message;
-	if ((style & SWT.COMMAND) != 0) {
-		int length = message.length ();
-		char [] chars = new char [length + 1];
-		message.getChars(0, length, chars, 0);
-		OS.SendMessage (handle, OS.BCM_SETNOTE, 0, chars);
 	}
 }
 
@@ -1412,7 +1364,15 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 							} else {
 								OS.SetRect (focusRect, nmcd.left+4, nmcd.top+4, nmcd.right-4, nmcd.bottom-4);
 							}
-							OS.DrawFocusRect(nmcd.hdc, focusRect);
+							// DrawFocusRect() inverts the pixels, which is an arbitrary color on a custom background.
+							long pen = OS.CreatePen(OS.PS_DOT, 1, foreground);
+							OS.SaveDC(nmcd.hdc);
+							OS.SelectObject(nmcd.hdc, pen);
+							OS.SelectObject(nmcd.hdc, OS.GetStockObject(OS.NULL_BRUSH));
+							OS.SetBkMode(nmcd.hdc, OS.TRANSPARENT);
+							OS.Rectangle(nmcd.hdc, focusRect.left, focusRect.top, focusRect.right, focusRect.bottom);
+							OS.RestoreDC(nmcd.hdc, -1);
+							OS.DeleteObject(pen);
 						}
 						return new LRESULT (OS.CDRF_SKIPDEFAULT);
 					}

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -118,6 +118,19 @@ public void test_getDPI() {
 }
 
 @Test
+public void test_getDPI_isPlausible() {
+	PrinterData data = Printer.getDefaultPrinterData();
+	assumeTrue (data != null, "if there aren't any printers, don't do this test");
+	Printer printer = new Printer(data);
+	try {
+		Point dpi = printer.getDPI();
+		assertTrue(dpi.x >= 72 && dpi.y >= 72, "printer dpi must be at least 72, was " + dpi);
+	} finally {
+		printer.dispose();
+	}
+}
+
+@Test
 public void test_getPrinterData() {
 	PrinterData data = Printer.getDefaultPrinterData();
 	assumeTrue (data != null, "if there aren't any printers, don't do this test");
@@ -141,7 +154,8 @@ public void test_getPrinterList() {
 			 * to file backend
 			 */
 			printerStream = printerStream.filter(pd->{
-				if ("GtkPrintBackendFile".equals(pd.driver)) {
+				// GTK4 registers the built-in backend as GtkPrintBackendFileBuiltin
+				if ("GtkPrintBackendFile".equals(pd.driver) || "GtkPrintBackendFileBuiltin".equals(pd.driver)) {
 					return false;
 				}
 				return true;

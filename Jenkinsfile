@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, 2024 Red Hat Inc. and others.
+ * Copyright (c) 2021, 2026 Red Hat Inc. and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -21,10 +21,10 @@ def runOnNativeBuildAgent(String platform, Closure body) {
 	def dockerImage = null
 	switch (platform) {
 		case 'gtk.linux.x86_64':
-			dockerImage = 'eclipse/platformreleng-debian-swtgtk3nativebuild:10'
+			dockerImage = 'ghcr.io/eclipse-platform/platformreleng-debian-swtnativebuild:12'
 			break
 		case 'gtk4.linux.x86_64':
-			dockerImage = 'eclipse/platformreleng-debian-swtnativebuild:12'
+			dockerImage = 'ghcr.io/eclipse-platform/platformreleng-debian-swtnativebuild:12'
 			break
 	}
 	if (dockerImage != null) {
@@ -74,7 +74,7 @@ pipeline {
 		label 'ubuntu-latest'
 	}
 	tools {
-		jdk 'temurin-jdk21-latest'
+		jdk 'temurin-jdk25-latest'
 		maven 'apache-maven-latest'
 	}
 	environment {
@@ -222,8 +222,11 @@ pipeline {
 										if (isUnix()) {
 											sh '''#!/bin/bash -x
 												mkdir libs
-												if [[ ${PLATFORM} == gtk.linux.* ]]; then
+												if [[ ${PLATFORM} == gtk.linux.x86_64 ]]; then
 													sh build.sh -gtk3 checklibs install
+												elif [[ ${PLATFORM} == gtk.linux.* ]]; then
+													# Without -gtk3/-gtk4 both GTK 4 and GTK 3 are built
+													sh build.sh checklibs install
 												elif [[ ${PLATFORM} == gtk4.linux.* ]]; then
 													# We build both 3 + 4, but we only keep libswt-pi4-gtk
 													# We build both to help catch build errors as this
@@ -329,7 +332,7 @@ pipeline {
 			post {
 				always {
 					junit allowEmptyResults: true, testResults: 'eclipse.platform.swt/tests/*.test*/target/surefire-reports/*.xml'
-					archiveArtifacts allowEmptyArchive: true, artifacts: '**/*.log,*/binaries/*/target/*.jar,*/bundles/*/target/*.jar', excludes: '**/*-sources.jar'
+					archiveArtifacts allowEmptyArchive: true, artifacts: '**/*.log,**/target/compilelogs/*.xml,*/binaries/*/target/*.jar,*/bundles/*/target/*.jar', excludes: '**/*-sources.jar'
 					discoverGitReferenceBuild referenceJob: 'eclipse.platform.swt/master'
 					// To accept unstable builds (test errors or new warnings introduced by third party changes) as reference using "ignoreQualityGate:true"
 					recordIssues enabledForFailure: true, publishAllIssues: true, ignoreQualityGate: true, tools: [

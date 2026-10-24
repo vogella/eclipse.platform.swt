@@ -26,12 +26,19 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
@@ -53,12 +60,17 @@ import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.graphics.Transform;
 import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.tests.graphics.ImageDataTestHelper;
+import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Canvas;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Group;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -71,6 +83,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class Test_org_eclipse_swt_graphics_GC {
 
 private static final int IMAGE_SIZE = 200;
+
+@TempDir
+static Path tempFolder;
 
 @BeforeEach
 public void setUp() {
@@ -240,8 +255,56 @@ public void test_copyAreaLorg_eclipse_swt_graphics_ImageII() {
 	image.dispose();
 }
 
+@Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_controlIncludesParentBackground() throws InterruptedException {
+	// only Cocoa draws a Label without background mode transparently, Win32 paints its own background
+	assumeTrue(SwtTestUtil.isCocoa);
+	Shell shell = new Shell(display);
+	shell.setLayout(new org.eclipse.swt.layout.FillLayout());
+	shell.setBackground(display.getSystemColor(SWT.COLOR_RED));
+	Label label = new Label(shell, SWT.NONE);
+	shell.setSize(200, 100);
+	shell.open();
+	SwtTestUtil.processEvents(500, () -> false);
+	Image target = new Image(display, 10, 10);
+	GC gcCopy = new GC(label);
+	gcCopy.copyArea(target, 0, 0);
+	gcCopy.dispose();
+	ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
+	RGB pixel = data.palette.getRGB(data.getPixel(0, 0));
+	target.dispose();
+	shell.dispose();
+	assertEquals(new RGB(255, 0, 0), pixel, "the parent background must show behind a transparent control");
+}
+
+@Test
+public void test_copyAreaIIIIIIZ_doesNotRepaintSiblings() throws InterruptedException {
+	Shell shell = new Shell(display);
+	Composite first = new Composite(shell, SWT.NONE);
+	Composite second = new Composite(shell, SWT.NONE);
+	first.setBounds(0, 0, 80, 60);
+	second.setBounds(100, 0, 80, 60);
+	List<Rectangle> firstPaints = new ArrayList<>();
+	List<Rectangle> secondPaints = new ArrayList<>();
+	first.addPaintListener(e -> firstPaints.add(new Rectangle(e.x, e.y, e.width, e.height)));
+	second.addPaintListener(e -> secondPaints.add(new Rectangle(e.x, e.y, e.width, e.height)));
+	shell.setSize(300, 200);
+	shell.open();
+	SwtTestUtil.processEvents(500, () -> false);
+	firstPaints.clear();
+	secondPaints.clear();
+	GC gcFirst = new GC(first);
+	gcFirst.copyArea(0, 10, 80, 50, 0, 0);
+	gcFirst.dispose();
+	SwtTestUtil.processEvents(500, () -> false);
+	shell.dispose();
+	assertEquals(List.of(), secondPaints, "a sibling must not be repainted");
+	assertFalse(firstPaints.isEmpty(), "the receiver must be repainted");
+}
+
 private int scaleWithDeviceZoom(int value) {
-	return value * DPIUtil.getDeviceZoom() / 100;
+	// round like SWT does, truncating misses the pixel at fractional zoom
+	return pointToPixel(value, DPIUtil.getDeviceZoom());
 }
 
 @Test
@@ -290,7 +353,8 @@ public void test_drawImage_nonAutoScalableGC_bug_2504() throws InterruptedExcept
     gcCopy.copyArea(target, 0, 0);
     gcCopy.dispose();
 
-    ImageData data = target.getImageData();
+    // the canvas is not auto-scaled, so its pixels map 1:1 to the copy at device zoom
+    ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
 
     int bottomRightX = canvasWidth - 1;
     int bottomRightY = canvasHeight - 1;
@@ -303,6 +367,74 @@ public void test_drawImage_nonAutoScalableGC_bug_2504() throws InterruptedExcept
 }
 
 @Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_fromControl() throws InterruptedException {
+	Shell shell = new Shell(display);
+	Canvas canvas = new Canvas(shell, SWT.NONE);
+	canvas.setSize(100, 80);
+	AtomicBoolean painted = new AtomicBoolean();
+	canvas.addPaintListener(e -> {
+		e.gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+		e.gc.fillRectangle(0, 0, 100, 80);
+		painted.set(true);
+	});
+	shell.open();
+	SwtTestUtil.processEvents(2000, () -> painted.get());
+	assertTrue(painted.get(), "paint listener was never called");
+
+	Image target = new Image(display, 40, 30);
+	GC controlGC = new GC(canvas);
+	controlGC.copyArea(target, 20, 10);
+	controlGC.dispose();
+
+	ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
+	RGB center = data.palette.getRGB(data.getPixel(data.width / 2, data.height / 2));
+	assertEquals(getRealRGB(display.getSystemColor(SWT.COLOR_RED)), center);
+	target.dispose();
+	shell.dispose();
+}
+
+@Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_fromScrolledBorderedComposite() throws InterruptedException {
+	assertCopyAreaFromControlStartsAtClientOrigin(shell -> new Composite(shell, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL));
+}
+
+@Test
+public void test_copyAreaLorg_eclipse_swt_graphics_ImageII_fromGroup() throws InterruptedException {
+	assertCopyAreaFromControlStartsAtClientOrigin(shell -> new Group(shell, SWT.NONE));
+}
+
+private void assertCopyAreaFromControlStartsAtClientOrigin(Function<Shell, Composite> factory) throws InterruptedException {
+	Shell shell = new Shell(display);
+	shell.setLayout(new FillLayout());
+	Composite control = factory.apply(shell);
+	AtomicBoolean painted = new AtomicBoolean();
+	control.addPaintListener(e -> {
+		e.gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		e.gc.fillRectangle(0, 0, 100, 100);
+		e.gc.setBackground(display.getSystemColor(SWT.COLOR_RED));
+		e.gc.fillRectangle(0, 0, 4, 4);
+		painted.set(true);
+	});
+	shell.setSize(300, 300);
+	shell.open();
+	SwtTestUtil.processEvents(2000, () -> painted.get());
+	assertTrue(painted.get(), "paint listener was never called");
+
+	Image target = new Image(display, 20, 20);
+	GC controlGC = new GC(control);
+	controlGC.copyArea(target, 0, 0);
+	controlGC.dispose();
+
+	ImageData data = target.getImageData(DPIUtil.getDeviceZoom());
+	RGB red = getRealRGB(display.getSystemColor(SWT.COLOR_RED));
+	RGB white = getRealRGB(display.getSystemColor(SWT.COLOR_WHITE));
+	assertEquals(red, data.palette.getRGB(data.getPixel(scaleWithDeviceZoom(1), scaleWithDeviceZoom(1))));
+	assertEquals(white, data.palette.getRGB(data.getPixel(scaleWithDeviceZoom(8), scaleWithDeviceZoom(8))));
+	target.dispose();
+	shell.dispose();
+}
+
+@Test
 public void test_drawArcIIIIII() {
 	gc.drawArc(10, 20, 50, 25, 90, 90);
 }
@@ -310,6 +442,29 @@ public void test_drawArcIIIIII() {
 @Test
 public void test_drawFocusIIII() {
 	gc.drawFocus(1, 1, 50, 25);
+}
+
+@Test
+public void test_drawFocusPaintsPixels() {
+	Image target = new Image(display, 60, 30);
+	GC targetGc = new GC(target);
+	try {
+		targetGc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		targetGc.fillRectangle(0, 0, 60, 30);
+		targetGc.drawFocus(10, 10, 40, 12);
+	} finally {
+		targetGc.dispose();
+	}
+	ImageData data = target.getImageData();
+	target.dispose();
+	int nonWhite = 0;
+	for (int y = 0; y < data.height; y++) {
+		for (int x = 0; x < data.width; x++) {
+			RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+			if (!rgb.equals(new RGB(255, 255, 255))) nonWhite++;
+		}
+	}
+	assertTrue(nonWhite > 0, "drawFocus painted nothing");
 }
 
 private static class TestImages {
@@ -380,6 +535,20 @@ public void test_drawImageLorg_eclipse_swt_graphics_ImageIIIIIIII() {
 	gc.drawImage(images.alpha, 10, 5, 20, 15, 100, 120, 20, 15);
 	assertThrows(IllegalArgumentException.class, () -> gc.drawImage(null, 10, 5, 20, 15, 100, 120, 50, 60));
 	images.dispose();
+}
+
+/**
+ * See https://github.com/eclipse-platform/eclipse.platform.swt/issues/3442
+ */
+@Test
+public void test_drawImage_emptyImage() {
+	Image emptyImage = new Image(display, IMAGE_SIZE, IMAGE_SIZE);
+	try {
+		gc.drawImage(emptyImage, 0, 0, IMAGE_SIZE, IMAGE_SIZE, 0, 0, IMAGE_SIZE / 3, IMAGE_SIZE / 3);
+		ImageDataTestHelper.assertImageDataEqual(image.getImageData(), emptyImage.getImageData(), image.getImageData());
+	} finally {
+		emptyImage.dispose();
+	}
 }
 
 
@@ -681,6 +850,66 @@ public void test_fillGradientRectangleIIIIZ() {
 }
 
 @Test
+public void test_fillGradientRectangle_doesNotChangeLaterDrawing() {
+	int deviceZoom = DPIUtil.getDeviceZoom();
+	// the gradient scales the surface to the device zoom, which a 1:1 image does not have
+	DPIUtil.setDeviceZoom(200);
+	try {
+		ImageData gradientFirst = drawGradientAndRectangle(true);
+		ImageData rectangleFirst = drawGradientAndRectangle(false);
+		assertArrayEquals(rectangleFirst.data, gradientFirst.data,
+				"drawing after fillGradientRectangle must land where it lands before it");
+	} finally {
+		DPIUtil.setDeviceZoom(deviceZoom);
+	}
+}
+
+@Test
+public void test_fillGradientRectangle_spansRectangleOnImage() {
+	Image image = new Image(display, 1, 30);
+	try {
+		GC gradientGC = new GC(image);
+		gradientGC.setForeground(new Color(200, 200, 200));
+		gradientGC.setBackground(new Color(230, 230, 230));
+		gradientGC.fillGradientRectangle(0, 0, 1, 30, true);
+		gradientGC.dispose();
+		ImageData data = image.getImageData(100);
+		int previous = 0;
+		for (int y = 0; y < 30; y++) {
+			int red = data.palette.getRGB(data.getPixel(0, y)).red;
+			assertTrue(red >= previous, "gradient must be monotonic at y=" + y);
+			previous = red;
+		}
+		assertTrue(previous >= 224, "gradient must reach the background color at the bottom, was " + previous);
+	} finally {
+		image.dispose();
+	}
+}
+
+private ImageData drawGradientAndRectangle(boolean gradientFirst) {
+	Image image = new Image(display, 40, 40);
+	try {
+		if (gradientFirst) drawGradient(image);
+		GC rectangleGC = new GC(image);
+		rectangleGC.setBackground(display.getSystemColor(SWT.COLOR_RED));
+		rectangleGC.fillRectangle(10, 10, 5, 5);
+		rectangleGC.dispose();
+		if (!gradientFirst) drawGradient(image);
+		return image.getImageData(100);
+	} finally {
+		image.dispose();
+	}
+}
+
+private void drawGradient(Image image) {
+	GC gradientGC = new GC(image);
+	gradientGC.setForeground(display.getSystemColor(SWT.COLOR_BLUE));
+	gradientGC.setBackground(display.getSystemColor(SWT.COLOR_GREEN));
+	gradientGC.fillGradientRectangle(0, 0, 2, 2, false);
+	gradientGC.dispose();
+}
+
+@Test
 public void test_fillOvalIIII() {
 	gc.fillOval(10, 0, 20, 30);
 	gc.fillOval(-1, -1, -1, -1);
@@ -704,6 +933,37 @@ public void test_fillRectangleIIII() {
 public void test_fillRectangleLorg_eclipse_swt_graphics_Rectangle() {
 	gc.fillRectangle(10, 0, 20, 30);
 	gc.fillRectangle(0, 0, 0, 0);
+}
+
+@Test
+public void test_roundRectangleNegativeSizeAndArcs() {
+	assertArrayEquals(roundRectangleImageData(true, 10, 10, 40, 30, 12, 8),
+			roundRectangleImageData(true, 50, 40, -40, -30, -12, -8), "fillRoundRectangle");
+	assertArrayEquals(roundRectangleImageData(false, 10, 10, 40, 30, 12, 8),
+			roundRectangleImageData(false, 50, 40, -40, -30, -12, -8), "drawRoundRectangle");
+}
+
+private byte[] roundRectangleImageData(boolean fill, int x, int y, int width, int height, int arcWidth, int arcHeight) {
+	Image image = new Image(display, 60, 60);
+	GC imageGC = new GC(image);
+	try {
+		imageGC.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		imageGC.fillRectangle(0, 0, 60, 60);
+		imageGC.setBackground(display.getSystemColor(SWT.COLOR_BLUE));
+		imageGC.setForeground(display.getSystemColor(SWT.COLOR_RED));
+		if (fill) {
+			imageGC.fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+		} else {
+			imageGC.drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+		}
+	} finally {
+		imageGC.dispose();
+	}
+	try {
+		return image.getImageData().data;
+	} finally {
+		image.dispose();
+	}
 }
 
 @Test
@@ -986,6 +1246,14 @@ public void test_textExtentLjava_lang_String() {
 }
 
 @Test
+public void test_textExtent_unpairedSurrogate() {
+	Point plain = gc.textExtent("ab");
+	Point lone = gc.textExtent("a\uD83Db");
+	// the lone surrogate must be drawn as a glyph instead of dropping the whole string
+	assertTrue(lone.x > plain.x, "lone surrogate extent " + lone + " not wider than " + plain);
+}
+
+@Test
 public void test_textExtentLjava_lang_StringI() {
 	Point pt = gc.textExtent("abc", 0);
 	assertTrue(pt.x > 0);
@@ -1194,6 +1462,65 @@ RGB getRealRGB(Color color) {
 	return palette.getRGB(pixel);
 }
 
+/**
+ * Drawing reads the image dimensions from the image itself. Obtaining them through
+ * ImageData used to decode the file again on every draw at a device zoom other than 100.
+ */
+@Test
+public void test_drawImage_doesNotReReadImageFileAtNonDefaultZoom() throws IOException {
+	Path file = tempFolder.resolve("volatile-collapseall.png");
+	Files.copy(SwtTestUtil.getPath("collapseall.png", tempFolder), file);
+	int previousDeviceZoom = DPIUtil.getDeviceZoom();
+	Image fileImage = null;
+	try {
+		DPIUtil.setDeviceZoom(200);
+		gc.dispose();
+		gc = new GC(image);
+		fileImage = new Image(display, file.toString());
+		ImageData beforeDelete = drawToFreshTarget(fileImage);
+		assertFalse(Arrays.equals(blankTargetData(), beforeDelete.data), "the reference draw produced no pixels");
+
+		Files.delete(file);
+
+		ImageData afterDelete = drawToFreshTarget(fileImage);
+		ImageDataTestHelper.assertImageDataEqual(beforeDelete, afterDelete, beforeDelete);
+		gc.drawImage(fileImage, 0, 0);
+	} finally {
+		try {
+			// Windows GCs retain image operations and copy live sources when they are disposed.
+			gc.dispose();
+			if (fileImage != null) {
+				fileImage.dispose();
+			}
+		} finally {
+			DPIUtil.setDeviceZoom(previousDeviceZoom);
+			Files.deleteIfExists(file);
+		}
+	}
+}
+
+private byte[] blankTargetData() {
+	Image target = new Image(display, IMAGE_SIZE, IMAGE_SIZE);
+	try {
+		return target.getImageData().data;
+	} finally {
+		target.dispose();
+	}
+}
+
+private ImageData drawToFreshTarget(Image source) {
+	Rectangle bounds = source.getBounds();
+	Image target = new Image(display, IMAGE_SIZE, IMAGE_SIZE);
+	GC targetGc = new GC(target);
+	try {
+		targetGc.drawImage(source, 0, 0, bounds.width, bounds.height, 0, 0, bounds.width * 2, bounds.height * 2);
+		return target.getImageData();
+	} finally {
+		targetGc.dispose();
+		target.dispose();
+	}
+}
+
 private void executeWithNonDefaultDeviceZoom(Runnable executable) {
 	int previousDeviceZoom = DPIUtil.getDeviceZoom();
 	DPIUtil.setDeviceZoom(200);
@@ -1203,6 +1530,322 @@ private void executeWithNonDefaultDeviceZoom(Runnable executable) {
 		executable.run();
 	} finally {
 		DPIUtil.setDeviceZoom(previousDeviceZoom);
+	}
+}
+
+/* Characterization tests for text extents, text colour caching and blend mode/clipping/transform state */
+
+private Point[] extentsTwice(String text, int flags) {
+	Point first = gc.textExtent(text, flags);
+	Point second = gc.textExtent(text, flags);
+	assertEquals(first, second, "cached textExtent differs for '" + text + "' flags " + flags);
+	return new Point[] {first, second};
+}
+
+private Point extent(String text, int flags) {
+	return extentsTwice(text, flags)[0];
+}
+
+@Test
+public void test_textExtentMnemonic() {
+	Point plain = extent("Hello", 0);
+	assertTrue(plain.x > 0 && plain.y > 0);
+	assertEquals(plain.x, extent("Hello", SWT.DRAW_MNEMONIC).x);
+	// a mnemonic & adds no width
+	assertEquals(plain, extent("&Hello", SWT.DRAW_MNEMONIC));
+	assertEquals(plain, extent("Hel&lo", SWT.DRAW_MNEMONIC));
+	// a trailing & is handled consistently, whatever the platform does with it
+	extent("Hello&", SWT.DRAW_MNEMONIC);
+	// without the flag the & is an ordinary character
+	assertTrue(extent("&Hello", 0).x > plain.x);
+	assertEquals(extent("&Hello", 0), extent("&Hello", SWT.DRAW_DELIMITER));
+	// && is an escaped &
+	assertEquals(extent("A&B", 0), extent("A&&B", SWT.DRAW_MNEMONIC));
+	assertTrue(extent("A&&B", SWT.DRAW_MNEMONIC).x > extent("AB", 0).x);
+	// asking for another string in between must not confuse the cache
+	extent("Something else entirely", SWT.DRAW_MNEMONIC);
+	assertEquals(plain, extent("&Hello", SWT.DRAW_MNEMONIC));
+	assertEquals(extent("&Hello", 0), gc.textExtent("&Hello", 0));
+}
+
+@Test
+public void test_textExtentDelimiter() {
+	Point one = extent("a", SWT.DRAW_DELIMITER);
+	Point two = extent("a\nb", SWT.DRAW_DELIMITER);
+	assertTrue(two.y > one.y, "a new line adds height");
+	assertEquals(extent("a\na", SWT.DRAW_DELIMITER), extent("a\r\na", SWT.DRAW_DELIMITER));
+	assertEquals(extent("a\nb", SWT.DRAW_DELIMITER), extent("a\rb", SWT.DRAW_DELIMITER));
+	assertEquals(two.y, extent("a\r\nb", SWT.DRAW_DELIMITER).y);
+	Point three = extent("a\nb\nc", SWT.DRAW_DELIMITER);
+	assertTrue(three.y > two.y);
+	// the widest line wins
+	assertEquals(extent("bbbb", SWT.DRAW_DELIMITER).x, extent("a\nbbbb\nc", SWT.DRAW_DELIMITER).x);
+	// the default textExtent(String) handles delimiters and tabs
+	assertEquals(gc.textExtent("a\nb"), extent("a\nb", SWT.DRAW_DELIMITER | SWT.DRAW_TAB));
+	// the delimiter combined with a mnemonic
+	assertEquals(extent("ab\ncd", SWT.DRAW_DELIMITER), extent("a&b\nc&d", SWT.DRAW_DELIMITER | SWT.DRAW_MNEMONIC));
+}
+
+@Test
+public void test_textExtentTab() {
+	Point noTab = extent("ab", SWT.DRAW_TAB);
+	Point tab = extent("a\tb", SWT.DRAW_TAB);
+	assertTrue(tab.x > noTab.x, "a tab adds width");
+	assertEquals(tab, extent("a\tb", SWT.DRAW_TAB | SWT.DRAW_MNEMONIC));
+	assertEquals(extent("a\tb", SWT.DRAW_TAB | SWT.DRAW_DELIMITER), extent("a\tb", SWT.DRAW_DELIMITER | SWT.DRAW_TAB));
+	assertTrue(extent("a\t\tb", SWT.DRAW_TAB).x > tab.x);
+	assertEquals(extent("a\tb", SWT.DRAW_TAB).y, noTab.y);
+}
+
+@Test
+public void test_stringExtent() {
+	assertEquals(0, gc.stringExtent("").x);
+	Point hello = gc.stringExtent("Hello");
+	assertEquals(hello, gc.stringExtent("Hello"));
+	assertTrue(hello.x > 0 && hello.y > 0);
+	// stringExtent does not handle mnemonics
+	Point mnemonic = gc.stringExtent("&Hello");
+	assertEquals(mnemonic, gc.stringExtent("&Hello"));
+	assertTrue(mnemonic.x > hello.x);
+	assertEquals(mnemonic, gc.textExtent("&Hello", 0));
+	assertEquals(hello, gc.textExtent("Hello", 0));
+	assertEquals(hello.y, mnemonic.y);
+	// alternating strings give independent results
+	assertEquals(hello, gc.stringExtent("Hello"));
+	assertEquals(mnemonic, gc.stringExtent("&Hello"));
+}
+
+@Test
+public void test_textExtentWithFontChange() {
+	Font big = new Font(display, SwtTestUtil.testFontName, 24, SWT.NORMAL);
+	try {
+		Point before = extent("Hello &World", SWT.DRAW_MNEMONIC);
+		gc.setFont(big);
+		Point bigger = extent("Hello &World", SWT.DRAW_MNEMONIC);
+		assertTrue(bigger.x > before.x && bigger.y > before.y);
+		gc.setFont(null);
+		assertEquals(before, extent("Hello &World", SWT.DRAW_MNEMONIC));
+	} finally {
+		gc.setFont(null);
+		big.dispose();
+	}
+}
+
+private static int rgbAt(ImageData data, int x, int y) {
+	RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+	return (rgb.red << 16) | (rgb.green << 8) | rgb.blue;
+}
+
+private static byte[] pixelBytes(ImageData data) {
+	return data.data.clone();
+}
+
+private void clear(GC target, Image targetImage) {
+	target.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+	target.fillRectangle(targetImage.getBounds());
+}
+
+@Test
+public void test_drawTextWithEqualColorsIsIdentical() {
+	Color first = new Color(200, 30, 90);
+	Color second = new Color(200, 30, 90);
+	Color other = new Color(10, 120, 250);
+	try {
+		assertNotEquals(System.identityHashCode(first), System.identityHashCode(second));
+		int[] flagsToTest = { 0, SWT.DRAW_TRANSPARENT, SWT.DRAW_MNEMONIC | SWT.DRAW_TRANSPARENT,
+				SWT.DRAW_DELIMITER | SWT.DRAW_TAB | SWT.DRAW_TRANSPARENT };
+		for (int flags : flagsToTest) {
+			String message = "flags " + flags;
+			clear(gc, image);
+			gc.setForeground(first);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withFirst = image.getImageData();
+
+			// intermediate use of another colour
+			clear(gc, image);
+			gc.setForeground(other);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withOther = image.getImageData();
+
+			clear(gc, image);
+			gc.setForeground(second);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withSecond = image.getImageData();
+
+			clear(gc, image);
+			gc.setForeground(first);
+			gc.drawText("Hello &World\nsecond\tline", 5, 5, flags);
+			ImageData withFirstAgain = image.getImageData();
+
+			assertArrayEquals(pixelBytes(withFirst), pixelBytes(withSecond), message);
+			assertArrayEquals(pixelBytes(withFirst), pixelBytes(withFirstAgain), message);
+			assertFalse(Arrays.equals(pixelBytes(withFirst), pixelBytes(withOther)), message);
+		}
+	} finally {
+		first.dispose();
+		second.dispose();
+		other.dispose();
+	}
+}
+
+@Test
+public void test_drawTextWithEqualBackgroundColorsIsIdentical() {
+	Color first = new Color(250, 250, 100);
+	Color second = new Color(250, 250, 100);
+	try {
+		clear(gc, image);
+		gc.setBackground(first);
+		gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+		gc.drawText("Background", 5, 5);
+		ImageData withFirst = image.getImageData();
+		clear(gc, image);
+		gc.setBackground(second);
+		gc.drawText("Background", 5, 5);
+		ImageData withSecond = image.getImageData();
+		assertArrayEquals(pixelBytes(withFirst), pixelBytes(withSecond));
+		assertEquals(0xFAFA64, rgbAt(withFirst, 5, 5));
+	} finally {
+		first.dispose();
+		second.dispose();
+	}
+}
+
+@Test
+public void test_xorModeFillsAndNormalModeIsRestored() {
+	Color red = new Color(255, 0, 0);
+	Color blue = new Color(0, 0, 255);
+	try {
+		clear(gc, image);
+		assertFalse(gc.getXORMode());
+		gc.setBackground(red);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setXORMode(true);
+		assertTrue(gc.getXORMode());
+		gc.fillRectangle(0, 40, 20, 20);
+		gc.setXORMode(false);
+		assertFalse(gc.getXORMode());
+		gc.fillRectangle(0, 80, 20, 20);
+		gc.setBackground(blue);
+		gc.fillRectangle(40, 0, 20, 20);
+		gc.setXORMode(true);
+		gc.setXORMode(false);
+		gc.fillRectangle(40, 40, 20, 20);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 10, 10), "plain fill before xor");
+		assertEquals(0xFF0000, rgbAt(data, 10, 90), "plain fill after xor");
+		assertEquals(0x0000FF, rgbAt(data, 50, 10), "colour change after xor");
+		assertEquals(0x0000FF, rgbAt(data, 50, 50), "xor toggled without drawing");
+		assertEquals(0xFFFFFF, rgbAt(data, 30, 10), "untouched");
+		assertNotEquals(0xFF0000, rgbAt(data, 10, 50), "xor fill differs from plain fill");
+		// lines and text are also not xored any more
+		gc.setForeground(red);
+		gc.drawLine(100, 10, 150, 10);
+		gc.drawRectangle(100, 30, 20, 20);
+		data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 120, 10));
+		assertEquals(0xFF0000, rgbAt(data, 100, 40));
+	} finally {
+		gc.setXORMode(false);
+		red.dispose();
+		blue.dispose();
+	}
+}
+
+@Test
+public void test_drawingAfterClippingChanges() {
+	Color red = new Color(255, 0, 0);
+	try {
+		clear(gc, image);
+		gc.setBackground(red);
+		gc.setClipping(10, 10, 30, 30);
+		gc.fillRectangle(0, 0, 100, 100);
+		gc.setClipping(new Rectangle(100, 100, 20, 20));
+		gc.fillRectangle(0, 0, 200, 200);
+		gc.setClipping((Rectangle) null);
+		gc.fillRectangle(150, 0, 20, 20);
+		gc.setForeground(red);
+		gc.setClipping(0, 150, 50, 10);
+		gc.drawLine(0, 155, 199, 155);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 20, 20), "inside first clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 5, 5), "outside first clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 50, 50), "outside first clip");
+		assertEquals(0xFF0000, rgbAt(data, 110, 110), "inside second clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 90, 90), "outside second clip");
+		assertEquals(0xFF0000, rgbAt(data, 160, 10), "clip removed");
+		assertEquals(0xFF0000, rgbAt(data, 20, 155), "line inside clip");
+		assertEquals(0xFFFFFF, rgbAt(data, 120, 155), "line outside clip");
+	} finally {
+		gc.setClipping((Rectangle) null);
+		red.dispose();
+	}
+}
+
+@Test
+public void test_drawingAfterTransformChanges() {
+	Color red = new Color(255, 0, 0);
+	Color green = new Color(0, 255, 0);
+	Transform translate = new Transform(display);
+	Transform other = new Transform(display);
+	try {
+		translate.translate(100, 100);
+		other.translate(0, 120);
+		clear(gc, image);
+		gc.setBackground(red);
+		gc.setTransform(translate);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setBackground(green);
+		gc.setTransform(null);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setTransform(other);
+		gc.fillRectangle(0, 0, 20, 20);
+		gc.setBackground(red);
+		gc.fillRectangle(40, 0, 20, 20);
+		gc.setTransform(null);
+		gc.fillRectangle(40, 0, 20, 10);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 110, 110), "translated fill");
+		assertEquals(0x00FF00, rgbAt(data, 10, 10), "fill after transform reset");
+		assertEquals(0x00FF00, rgbAt(data, 10, 130), "second transform");
+		assertEquals(0xFF0000, rgbAt(data, 50, 130), "transform and colour together");
+		assertEquals(0xFFFFFF, rgbAt(data, 50, 195), "outside the fill");
+		assertEquals(0xFF0000, rgbAt(data, 50, 5), "untransformed again");
+		assertEquals(0xFFFFFF, rgbAt(data, 150, 150), "untouched");
+	} finally {
+		gc.setTransform(null);
+		gc.setClipping((Rectangle) null);
+		translate.dispose();
+		other.dispose();
+		red.dispose();
+		green.dispose();
+	}
+}
+
+@Test
+public void test_xorModeWithClippingAndTransform() {
+	Color red = new Color(255, 0, 0);
+	Transform translate = new Transform(display);
+	try {
+		translate.translate(100, 0);
+		clear(gc, image);
+		gc.setBackground(red);
+		gc.setXORMode(true);
+		gc.setClipping(0, 0, 50, 50);
+		gc.setTransform(translate);
+		gc.setXORMode(false);
+		gc.setTransform(null);
+		gc.setClipping((Rectangle) null);
+		gc.fillRectangle(0, 0, 10, 10);
+		gc.setTransform(translate);
+		gc.fillRectangle(0, 0, 10, 10);
+		ImageData data = image.getImageData();
+		assertEquals(0xFF0000, rgbAt(data, 5, 5));
+		assertEquals(0xFF0000, rgbAt(data, 105, 5));
+	} finally {
+		gc.setTransform(null);
+		gc.setClipping((Rectangle) null);
+		translate.dispose();
+		red.dispose();
 	}
 }
 }

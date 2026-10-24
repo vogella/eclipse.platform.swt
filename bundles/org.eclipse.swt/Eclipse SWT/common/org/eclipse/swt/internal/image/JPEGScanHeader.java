@@ -14,6 +14,8 @@
 package org.eclipse.swt.internal.image;
 
 
+import java.util.Arrays;
+
 import org.eclipse.swt.*;
 
 final class JPEGScanHeader extends JPEGVariableSizeSegment {
@@ -28,24 +30,8 @@ public JPEGScanHeader(LEDataInputStream byteStream) {
 	initializeComponentParameters();
 }
 
-public int getApproxBitPositionHigh() {
-	return reference[(2 * getNumberOfImageComponents()) + 7] >> 4;
-}
-
-public int getApproxBitPositionLow() {
-	return reference[(2 * getNumberOfImageComponents()) + 7] & 0xF;
-}
-
-public int getEndOfSpectralSelection() {
-	return reference[(2 * getNumberOfImageComponents()) + 6];
-}
-
 public int getNumberOfImageComponents() {
 	return reference[4];
-}
-
-public int getStartOfSpectralSelection() {
-	return reference[(2 * getNumberOfImageComponents()) + 5];
 }
 
 /* Used when decoding. */
@@ -58,9 +44,7 @@ void initializeComponentParameters() {
 		int dc = (reference[ofs + 1] & 0xFF) >> 4;
 		int ac = reference[ofs + 1] & 0xF;
 		if (componentParameters.length <= cid) {
-			int[][] newParams = new int[cid + 1][];
-			System.arraycopy(componentParameters, 0, newParams, 0, componentParameters.length);
-			componentParameters = newParams;
+			componentParameters = Arrays.copyOf(componentParameters, cid + 1);
 		}
 		componentParameters[cid] = new int[] { dc, ac };
 	}
@@ -97,31 +81,4 @@ public void setStartOfSpectralSelection(int anInteger) {
 public int signature() {
 	return JPEGFileFormat.SOS;
 }
-
-public boolean verifyProgressiveScan() {
-	int start = getStartOfSpectralSelection();
-	int end = getEndOfSpectralSelection();
-	int low = getApproxBitPositionLow();
-	int high = getApproxBitPositionHigh();
-	int count = getNumberOfImageComponents();
-	if ((start == 0 && end == 00) || (start <= end && end <= 63)) {
-		if (low <= 13 && high <= 13 && (high == 0 || high == low + 1)) {
-			return start == 0 || (start > 0 && count == 1);
-		}
-	}
-	return false;
-}
-
-public boolean isACProgressiveScan() {
-	return getStartOfSpectralSelection() != 0 && getEndOfSpectralSelection() != 0;
-}
-
-public boolean isDCProgressiveScan() {
-	return getStartOfSpectralSelection() == 0 && getEndOfSpectralSelection() == 0;
-}
-
-public boolean isFirstScan() {
-	return getApproxBitPositionHigh() == 0;
-}
-
 }

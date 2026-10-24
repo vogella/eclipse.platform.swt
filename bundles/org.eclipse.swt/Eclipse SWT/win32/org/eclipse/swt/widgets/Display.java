@@ -516,7 +516,6 @@ public class Display extends Device implements Executor {
 	/* Modality */
 	Shell [] modalShells;
 	Dialog modalDialog;
-	static boolean TrimEnabled = false;
 
 	/* Private SWT Window Messages */
 	static final int SWT_GETACCELCOUNT	= OS.WM_APP;
@@ -1592,7 +1591,7 @@ public Menu getMenuBar () {
 @Override
 public Rectangle getBounds() {
 	checkDevice ();
-	return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), DPIUtil.getDeviceZoom());
+	return Win32DPIUtils.pixelToPoint(getBoundsInPixels(), getDeviceZoom());
 }
 
 Rectangle getBoundsInPixels () {
@@ -1665,7 +1664,7 @@ int getClickCount (int type, int button, long hwnd, long lParam) {
 @Override
 public Rectangle getClientArea () {
 	checkDevice ();
-	return Win32DPIUtils.pixelToPoint(getClientAreaInPixels(), DPIUtil.getDeviceZoom());
+	return Win32DPIUtils.pixelToPoint(getClientAreaInPixels(), getDeviceZoom());
 }
 
 Rectangle getClientAreaInPixels () {

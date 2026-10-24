@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -425,6 +424,14 @@ public void test_getTextHeight() {
 public void test_getTextLimit() {
 	combo.setTextLimit(3);
 	assertEquals(3, combo.getTextLimit());
+}
+
+@Test
+public void test_getTextLimitDefault() {
+	assertEquals(0x7FFFFFFF, combo.getTextLimit());
+	combo.setTextLimit(3);
+	combo.setTextLimit(Combo.LIMIT);
+	assertEquals(0x7FFFFFFF, combo.getTextLimit());
 }
 
 @Test
@@ -1061,12 +1068,7 @@ public void test_consistency_Segments () {
 		}
 		listenerCalled = true;
 	};
-	try {
-		combo.addSegmentListener(null);
-		fail("No exception thrown for addSegmentListener(null)");
-	}
-	catch (IllegalArgumentException e) {
-	}
+	assertThrows(IllegalArgumentException.class, () -> combo.addSegmentListener(null), "No exception thrown for addSegmentListener(null)");
 	combo.addSegmentListener(sl1);
 	doSegmentsTest(true);
 

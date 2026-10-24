@@ -128,19 +128,35 @@ public class Display extends Device implements Executor {
 	long fds;
 	int allocated_nfds;
 	boolean wake;
-	boolean windowSizeSet;
 	int [] max_priority = new int [1], timeout = new int [1];
 	Callback eventCallback;
 	long eventProc, windowProc2, windowProc3, windowProc4, windowProc5, windowProc6;
 	long changeValueProc;
 	long snapshotDrawProc, keyPressReleaseProc, focusProc, windowActiveProc, enterMotionProc, leaveProc,
 		 scrollProc, resizeProc, layoutProc, activateProc, gesturePressReleaseProc;
+	long menuItemsChangedProc;
+	/** GTK4 only: System.nanoTime() of the last key event, see Menu#syncRowSelection. */
+	long lastKeyEventTime;
+	/**
+	 * GTK4 only: set while SWT is mutating a GMenu. The removal's synchronous
+	 * "items-changed" re-enters menu wiring, so position-based custom widget
+	 * injection must wait until the model is whole again (see MenuItem#refreshMenuModelGTK4).
+	 */
+	boolean menuModelMutating;
+	/** GTK4 only: menu row kept out of picking after its submenu was closed from the keyboard, see Shell#gtk_move_focus. */
+	long untargetableMenuRow;
+	/** GTK4 only: where the pointer was when that row was hidden from it; it is picked again once the pointer moves. */
+	double untargetableMenuRowX, untargetableMenuRowY;
+	boolean untargetableMenuRowSeen;
 	long notifyProc;
+	/** GTK4 only: composites that follow is-focus of their focus controller. */
+	final java.util.Map<Long, Composite> focusNotifyControllers = new java.util.HashMap<>();
 	long computeSizeProc;
 	Callback windowCallback2, windowCallback3, windowCallback4, windowCallback5, windowCallback6;
 	Callback changeValue;
 	Callback snapshotDraw, keyPressReleaseCallback, focusCallback, windowActiveCallback, enterMotionCallback, computeSizeCallback,
 			 scrollCallback, leaveCallback, resizeCallback, layoutCallback, activateCallback, gesturePressReleaseCallback;
+	Callback menuItemsChangedCallback;
 	Callback notifyCallback;
 	EventTable eventTable, filterTable;
 	static String APP_NAME = "SWT"; //$NON-NLS-1$
@@ -184,7 +200,10 @@ public class Display extends Device implements Executor {
 	Control focusControl;
 	Shell activeShell;
 	boolean activePending;
-	boolean ignoreActivate, ignoreFocus;
+	boolean ignoreFocus;
+	/* GTK4 drops a focus change made while another one is being delivered, so it is replayed afterwards */
+	boolean gtk4Focusing;
+	long gtk4PendingFocus;
 
 	Tracker tracker;
 
@@ -333,10 +352,6 @@ public class Display extends Device implements Executor {
 	/* Initialize color list */
 	ArrayList<String> colorList;
 
-	/* Placeholder color ints since SWT system colors is missing them */
-	final int SWT_COLOR_LIST_SELECTION_TEXT_INACTIVE = 38;
-	final int SWT_COLOR_LIST_SELECTION_INACTIVE = 39;
-
 	/* Theme related */
 	/** The name of the current theme, including the theme named by GTK_THEME. */
 	static String themeName;
@@ -350,9 +365,6 @@ public class Display extends Device implements Executor {
 
 	/* Click count*/
 	int clickCount = 1;
-
-	/* Entry inner border */
-	static final int INNER_BORDER = 2;
 
 	/* Timestamp of the Last Received Events */
 	int lastEventTime, lastUserEventTime;
@@ -378,6 +390,7 @@ public class Display extends Device implements Executor {
 
 	/* Renderer Subclass */
 	static long text_renderer_type, pixbuf_renderer_type, toggle_renderer_type;
+	static long cairo_surface_type;
 	static long text_renderer_info_ptr, pixbuf_renderer_info_ptr, toggle_renderer_info_ptr;
 	static Callback rendererClassInitCallback, rendererRenderCallback, rendererSnapshotCallback;
 	static Callback rendererGetPreferredWidthCallback;
@@ -480,6 +493,9 @@ public class Display extends Device implements Executor {
 		{GDK.GDK_Print,					SWT.PRINT_SCREEN},
 		{GDK.GDK_Help,					SWT.HELP},
 
+		{GDK.GDK_Copy,	SWT.COPY},
+		{GDK.GDK_Cut,	SWT.CUT},
+		{GDK.GDK_Paste,	SWT.PASTE},
 	};
 
 	/* Cache pressed modifier state. See Bug 537025. */
@@ -509,14 +525,6 @@ public class Display extends Device implements Executor {
 
 	/* Package name */
 	static final String PACKAGE_PREFIX = "org.eclipse.swt.widgets."; //$NON-NLS-1$
-	/* This code is intentionally commented.
-	 * ".class" can not be used on CLDC.
-	 */
-//	static {
-//		String name = Display.class.getName ();
-//		int index = name.lastIndexOf ('.');
-//		PACKAGE_NAME = name.substring (0, index + 1);
-//	}
 
 	/* Minimum GTK version requirement */
 	static final int GTK3_MAJOR = 3;
@@ -578,8 +586,27 @@ public class Display extends Device implements Executor {
 
 	boolean ignoreTrim;
 
-	/* Window Manager */
-	String windowManager;
+	/* The stored trims are only a start hint, so each measured value is written back at once */
+	void saveTrims () {
+		String userHome = System.getProperty ("user.home"); //$NON-NLS-1$
+		if (userHome == null) return;
+		File dir = new File (userHome, ".swt");
+		if ((dir.exists () && dir.isDirectory ()) || dir.mkdirs ()) {
+			File file = new File (dir, "trims.prefs");
+			Properties props = new Properties ();
+			StringBuilder buf = new StringBuilder ();
+			for (int w : trimWidths) buf.append (w).append (' ');
+			props.put ("trimWidths", buf.toString ());
+			buf = new StringBuilder();
+			for (int h : trimHeights) buf.append (h).append (' ');
+			props.put ("trimHeights", buf.toString ());
+			try (FileOutputStream fos = new FileOutputStream (file)){
+				props.store (fos, null);
+			} catch (IOException e) {
+				// skip saving trim caches
+			}
+		}
+	}
 
 	/*
 	* TEMPORARY CODE.  Install the runnable that
@@ -1196,7 +1223,6 @@ void createDisplay (DeviceData data) {
 		GDK.gdk_threads_enter ();
 	}
 	boolean init;
-	windowSizeSet = false;
 	if (GTK.GTK4) {
 		init = GTK4.gtk_init_check();
 	} else {
@@ -1261,31 +1287,25 @@ void createDisplay (DeviceData data) {
 		text_renderer_type = OS.g_type_register_static (GTK.GTK_TYPE_CELL_RENDERER_TEXT (), type_name, text_renderer_info_ptr, 0);
 	}
 
-	/*
-	 * In GTK4, GtkCellRendererPixbuf & GtkCellRendererToggle are final structs, and
-	 * we no longer have access to them in order to register our own type.
-	 */
-	if (!GTK.GTK4) {
-		if (pixbuf_renderer_type == 0) {
-			GTypeInfo renderer_info = new GTypeInfo();
-			renderer_info.class_size = (short) GTK.GtkCellRendererPixbufClass_sizeof();
-			renderer_info.class_init = rendererClassInitProc;
-			renderer_info.instance_size = (short) GTK.GtkCellRendererPixbuf_sizeof();
-			pixbuf_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
-			OS.memmove(pixbuf_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
-			byte[] type_name = Converter.wcsToMbcs("SwtPixbufRenderer", true); //$NON-NLS-1$
-			pixbuf_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_PIXBUF(), type_name, pixbuf_renderer_info_ptr, 0);
-		}
-		if (toggle_renderer_type == 0) {
-			GTypeInfo renderer_info = new GTypeInfo();
-			renderer_info.class_size = (short) GTK.GtkCellRendererToggleClass_sizeof();
-			renderer_info.class_init = rendererClassInitProc;
-			renderer_info.instance_size = (short) GTK.GtkCellRendererToggle_sizeof();
-			toggle_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
-			OS.memmove(toggle_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
-			byte[] type_name = Converter.wcsToMbcs("SwtToggleRenderer", true); //$NON-NLS-1$
-			toggle_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_TOGGLE (), type_name, toggle_renderer_info_ptr, 0);
-		}
+	if (pixbuf_renderer_type == 0) {
+		GTypeInfo renderer_info = new GTypeInfo();
+		renderer_info.class_size = (short) GTK.GtkCellRendererPixbufClass_sizeof();
+		renderer_info.class_init = rendererClassInitProc;
+		renderer_info.instance_size = (short) GTK.GtkCellRendererPixbuf_sizeof();
+		pixbuf_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
+		OS.memmove(pixbuf_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
+		byte[] type_name = Converter.wcsToMbcs("SwtPixbufRenderer", true); //$NON-NLS-1$
+		pixbuf_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_PIXBUF(), type_name, pixbuf_renderer_info_ptr, 0);
+	}
+	if (toggle_renderer_type == 0) {
+		GTypeInfo renderer_info = new GTypeInfo();
+		renderer_info.class_size = (short) GTK.GtkCellRendererToggleClass_sizeof();
+		renderer_info.class_init = rendererClassInitProc;
+		renderer_info.instance_size = (short) GTK.GtkCellRendererToggle_sizeof();
+		toggle_renderer_info_ptr = OS.g_malloc(GTypeInfo.sizeof);
+		OS.memmove(toggle_renderer_info_ptr, renderer_info, GTypeInfo.sizeof);
+		byte[] type_name = Converter.wcsToMbcs("SwtToggleRenderer", true); //$NON-NLS-1$
+		toggle_renderer_type = OS.g_type_register_static(GTK.GTK_TYPE_CELL_RENDERER_TOGGLE (), type_name, toggle_renderer_info_ptr, 0);
 	}
 
 	GTK.gtk_widget_set_default_direction (GTK.GTK_TEXT_DIR_LTR);
@@ -1717,6 +1737,7 @@ static long rendererClassInitProc (long g_class, long class_data) {
 void snapshotDrawProc(long handle, long snapshot) {
 	Display display = getCurrent ();
 	Widget widget = display.getWidget (handle);
+	boolean masked = widget != null && widget.snapshotPushMask(handle, snapshot);
 	// Draw background before children so it appears behind them
 	if (widget != null) widget.snapshotBackground(handle, snapshot);
 
@@ -1732,6 +1753,7 @@ void snapshotDrawProc(long handle, long snapshot) {
 
 	// Paint after children (used by leaf controls for overlay/on-top drawing)
 	if (widget != null) widget.snapshotToDrawAfterChildren(handle, snapshot);
+	if (masked) GTK4.gtk_snapshot_pop(snapshot);
 }
 
 static long rendererGetPreferredWidthProc (long cell, long handle, long minimun_size, long natural_size) {
@@ -1896,11 +1918,13 @@ int getCaretBlinkTime () {
 }
 
 long getClosure (int id) {
-	if (closures [id] != 0) OS.g_closure_unref (closures [id]);
-	closures [id] = OS.g_cclosure_new (closuresProc [id], id, 0);
-	OS.g_closure_ref (closures [id]);
-	OS.g_closure_sink (closures [id]);
-	closuresCount [id] = 0;
+	if (++closuresCount [id] >= 255) {
+		if (closures [id] != 0) OS.g_closure_unref (closures [id]);
+		closures [id] = OS.g_cclosure_new (closuresProc [id], id, 0);
+		OS.g_closure_ref (closures [id]);
+		OS.g_closure_sink (closures [id]);
+		closuresCount [id] = 0;
+	}
 	return closures [id];
 }
 
@@ -2018,7 +2042,41 @@ public Point getCursorLocation() {
 	if (GTK.GTK4) {
 		double[] xDouble = new double[1], yDouble = new double[1];
 
-		getPointerPosition(xDouble, yDouble);
+		long surface = gdk_device_get_surface_at_position(xDouble, yDouble);
+		/*
+		 * The position is relative to the surface under the pointer, while display
+		 * coordinates are relative to the nearest real top-level shell. Translate it
+		 * from the surface to the shell, and add the placement of a popover-backed
+		 * shell, as Control.getSurfaceOrigin() does. Other popovers, like a POP_UP
+		 * Menu, have no SWT placement: add the positions of their popup surfaces up
+		 * to the surface of their window instead.
+		 */
+		long nativeHandle = surface != 0 ? GTK4.gtk_native_get_for_surface(surface) : 0;
+		if (getWidget(nativeHandle) instanceof Shell shell) {
+			double[] dx = new double[1], dy = new double[1];
+			GTK4.gtk_native_get_surface_transform(nativeHandle, dx, dy);
+			xDouble[0] -= dx[0];
+			yDouble[0] -= dy[0];
+			if (shell.popover) {
+				xDouble[0] += shell.oldX;
+				yDouble[0] += shell.oldY;
+			}
+		} else if (nativeHandle != 0) {
+			double px = xDouble[0], py = yDouble[0];
+			while (nativeHandle != 0 && GTK4.gtk_widget_get_root(nativeHandle) != nativeHandle) {
+				long popup = GTK4.gtk_native_get_surface(nativeHandle);
+				px += GDK.gdk_popup_get_position_x(popup);
+				py += GDK.gdk_popup_get_position_y(popup);
+				long parent = GDK.gdk_popup_get_parent(popup);
+				nativeHandle = parent != 0 ? GTK4.gtk_native_get_for_surface(parent) : 0;
+			}
+			if (getWidget(nativeHandle) instanceof Shell) {
+				double[] dx = new double[1], dy = new double[1];
+				GTK4.gtk_native_get_surface_transform(nativeHandle, dx, dy);
+				xDouble[0] = px - dx[0];
+				yDouble[0] = py - dy[0];
+			}
+		}
 		x[0] = (int)xDouble[0];
 		y[0] = (int)yDouble[0];
 	} else {
@@ -2157,6 +2215,20 @@ long gtk_cell_renderer_toggle_get_type () {
 	return toggle_renderer_type;
 }
 
+long cairoSurfaceType () {
+	if (cairo_surface_type == 0) {
+		// The boxed type of the pixbuf renderer's "surface" property is the one a model column must use
+		long rendererClass = OS.g_type_class_ref (GTK.GTK_TYPE_CELL_RENDERER_PIXBUF ());
+		if (rendererClass != 0) {
+			long pspec = OS.g_object_class_find_property (rendererClass, OS.surface);
+			if (pspec != 0) cairo_surface_type = OS.G_PARAM_SPEC_VALUE_TYPE (pspec);
+			OS.g_type_class_unref (rendererClass);
+		}
+		if (cairo_surface_type == 0) SWT.error (SWT.ERROR_NO_HANDLES);
+	}
+	return cairo_surface_type;
+}
+
 String gtk_css_create_css_color_string (String background, String foreground, int property) {
 	switch (property) {
 		case SWT.FOREGROUND:
@@ -2199,7 +2271,7 @@ String gtk_css_create_css_color_string (String background, String foreground, in
 GdkRGBA gtk_css_parse_background (String css, String precise) {
 	String shortOutput;
 	int startIndex;
-	GdkRGBA rgba = new GdkRGBA ();
+	GdkRGBA rgba = null;
 	if (css.isEmpty()) return COLOR_WIDGET_BACKGROUND_RGBA;
 	String searched = "";
 	/*
@@ -2235,7 +2307,7 @@ GdkRGBA gtk_css_parse_background (String css, String precise) {
 		shortOutput = searched.substring (startIndex + 13);
 		rgba = gtk_css_property_to_rgba (shortOutput);
 	}
-	return rgba;
+	return rgba != null ? rgba : new GdkRGBA ();
 }
 
 String gtk_css_provider_to_string (long provider) {
@@ -2269,7 +2341,7 @@ String gtk_css_provider_to_string (long provider) {
  */
 GdkRGBA gtk_css_parse_foreground (String css, String precise) {
 	if (css.isEmpty()) return COLOR_WIDGET_FOREGROUND_RGBA;
-	GdkRGBA rgba = new GdkRGBA ();
+	GdkRGBA rgba;
 	String searched = "";
 	/*
 	 * This section allows for finer searching: for example
@@ -2324,10 +2396,9 @@ GdkRGBA gtk_css_parse_foreground (String css, String precise) {
  */
 GdkRGBA gtk_css_property_to_rgba(String property) {
 	GdkRGBA rgba = new GdkRGBA ();
-	String [] propertyParsed = new String [1];
-	//Note that we still need to remove the ";" character from the input string
-	propertyParsed = property.split (";");
-	GDK.gdk_rgba_parse (rgba, Converter.wcsToMbcs (propertyParsed[0], true));
+	// Strip the ";" and anything after it
+	int end = property.indexOf (';');
+	GDK.gdk_rgba_parse (rgba, Converter.wcsToMbcs (end >= 0 ? property.substring (0, end) : property, true));
 	return rgba;
 }
 
@@ -3368,7 +3439,10 @@ void initializeSystemColorsTooltip() {
 	// Just use temporary label; this is easier then finding the original label
 	long styleContextLabel = GTK.gtk_widget_get_style_context(customLabel);
 	COLOR_INFO_FOREGROUND_RGBA = styleContextGetColor(styleContextLabel, GTK.GTK_STATE_FLAG_NORMAL);
-	COLOR_INFO_BACKGROUND_RGBA = styleContextEstimateBackgroundColor(styleContextLabel, GTK.GTK_STATE_FLAG_NORMAL);
+	// GTK4 style contexts have no parents, the background is on the tooltip window holding the label
+	long backgroundWidget = customLabel;
+	while (GTK.GTK4 && GTK.gtk_widget_get_parent(backgroundWidget) != 0) backgroundWidget = GTK.gtk_widget_get_parent(backgroundWidget);
+	COLOR_INFO_BACKGROUND_RGBA = styleContextEstimateBackgroundColor(GTK.gtk_widget_get_style_context(backgroundWidget), GTK.GTK_STATE_FLAG_NORMAL);
 
 	// Cleanup
 	// customLabel is owned by tooltip and will be destroyed automatically
@@ -3463,6 +3537,8 @@ public TaskBar getSystemTaskBar () {
  */
 public Tray getSystemTray () {
 	checkDevice ();
+	/* GTK4 removed GtkStatusIcon, which TrayItem is built on */
+	if (GTK.GTK4) return null;
 	if (tray != null) return tray;
 	return tray = new Tray (this, SWT.NONE);
 }
@@ -3632,6 +3708,10 @@ void initializeCallbacks () {
 
 		activateCallback = new Callback(this, "activateProc", void.class, new Type[] {long.class, long.class, long.class}); //$NON-NLS-1$
 		activateProc = activateCallback.getAddress();
+
+		menuItemsChangedCallback = new Callback(this, "menuItemsChangedProc", void.class, new Type[] {
+				long.class, int.class, int.class, int.class, long.class}); //$NON-NLS-1$
+		menuItemsChangedProc = menuItemsChangedCallback.getAddress();
 
 		computeSizeCallback = new Callback(this, "computeSizeProc", void.class, new Type[] {long.class, long.class, long.class}); //$NON-NLS-1$
 		computeSizeProc = computeSizeCallback.getAddress();
@@ -4431,6 +4511,39 @@ public boolean post (Event event) {
 				}
 				return true;
 			}
+			case SWT.MouseWheel: {
+				// GdkEventScroll has no Java struct; the offsets below are the 64-bit layout
+				final int GDK_SCROLL_EVENT = 31; // GdkEventType GDK_SCROLL, not exposed by GDK.java
+				if (C.PTR_SIZEOF != 8 || event.count == 0) return false;
+				int[] x = new int[1], y = new int[1];
+				final long gdkPointerDevice = GDK.gdk_seat_get_pointer(gdkSeat);
+				final long gdkWindow = GDK.gdk_device_get_window_at_position(gdkPointerDevice, x, y);
+				if (gdkWindow == 0) return false;
+				int[] originX = new int[1], originY = new int[1];
+				GDK.gdk_window_get_origin(gdkWindow, originX, originY);
+
+				/* Construct one GdkEventScroll per click */
+				for (int i = 0; i < Math.abs(event.count); i++) {
+					final long eventPtr = GDK.gdk_event_new(GDK_SCROLL_EVENT);
+					OS.g_object_ref(gdkWindow);
+					java.nio.ByteBuffer scroll = java.nio.ByteBuffer.allocate(72).order(java.nio.ByteOrder.nativeOrder());
+					scroll.putInt(0, GDK_SCROLL_EVENT);
+					scroll.putLong(8, gdkWindow);
+					scroll.put(16, (byte) 1);
+					scroll.putInt(20, GDK.GDK_CURRENT_TIME);
+					scroll.putDouble(24, x[0]);
+					scroll.putDouble(32, y[0]);
+					scroll.putInt(44, event.count > 0 ? GDK.GDK_SCROLL_UP : GDK.GDK_SCROLL_DOWN);
+					scroll.putDouble(56, originX[0] + x[0]);
+					scroll.putDouble(64, originY[0] + y[0]);
+					C.memmove(eventPtr, scroll.array(), scroll.capacity());
+					GDK.gdk_event_set_device(eventPtr, gdkPointerDevice);
+
+					GDK.gdk_event_put(eventPtr);
+					GDK.gdk_event_free(eventPtr);
+				}
+				return true;
+			}
 		}
 		return false;
 	}
@@ -4636,6 +4749,7 @@ void releaseDisplay () {
 	changeValueProc = 0;
 
 	if (GTK.GTK4) {
+		restoreMenuRowTarget ();
 		keyPressReleaseCallback.dispose();
 		keyPressReleaseCallback = null;
 		keyPressReleaseProc = 0;
@@ -4670,6 +4784,10 @@ void releaseDisplay () {
 		activateCallback.dispose();
 		activateCallback = null;
 		activateProc = 0;
+
+		menuItemsChangedCallback.dispose();
+		menuItemsChangedCallback = null;
+		menuItemsChangedProc = 0;
 
 		computeSizeCallback.dispose();
 		computeSizeCallback = null;
@@ -4878,27 +4996,6 @@ void releaseDisplay () {
 	flushRect = null;
 	exposeEvent = null;
 	idleLock = null;
-
-	/* Save window trim caches */
-	String userHome = System.getProperty ("user.home"); //$NON-NLS-1$
-	if (userHome != null) {
-		File dir = new File (userHome, ".swt");
-		if ((dir.exists () && dir.isDirectory ()) || dir.mkdirs ()) {
-			File file = new File (dir, "trims.prefs");
-			Properties props = new Properties ();
-			StringBuilder buf = new StringBuilder ();
-			for (int w : trimWidths) buf.append (w).append (' ');
-			props.put ("trimWidths", buf.toString ());
-			buf = new StringBuilder();
-			for (int h : trimHeights) buf.append (h).append (' ');
-			props.put ("trimHeights", buf.toString ());
-			try (FileOutputStream fos = new FileOutputStream (file)){
-				props.store (fos, null);
-			} catch (IOException e) {
-				// skip saving trim caches
-			}
-		}
-	}
 }
 
 /**
@@ -4930,21 +5027,6 @@ public void removeFilter (int eventType, Listener listener) {
 	if (filterTable == null) return;
 	filterTable.unhook (eventType, listener);
 	if (filterTable.size () == 0) filterTable = null;
-}
-
-long removeGdkEvent () {
-	if (gdkEventCount == 0) return 0;
-	long event = gdkEvents [0];
-	--gdkEventCount;
-	System.arraycopy (gdkEvents, 1, gdkEvents, 0, gdkEventCount);
-	System.arraycopy (gdkEventWidgets, 1, gdkEventWidgets, 0, gdkEventCount);
-	gdkEvents [gdkEventCount] = 0;
-	gdkEventWidgets [gdkEventCount] = null;
-	if (gdkEventCount == 0) {
-		gdkEvents = null;
-		gdkEventWidgets = null;
-	}
-	return event;
 }
 
 void removeIdleProc () {
@@ -5036,12 +5118,16 @@ String debugInfoForIndex(long index) {
 	return s;
 }
 
-void dpiChanged(int newScaleFactor) {
-	DPIUtil.setDeviceZoom (DPIUtil.mapDPIToZoom(getDPI().x * newScaleFactor));
+boolean dpiChanged(int newScaleFactor) {
+	// same formula as Device.getDeviceZoom, so an unchanged scale factor is not a zoom change
+	int nativeZoom = newScaleFactor * 100;
+	if (nativeZoom == DPIUtil.getNativeDeviceZoom()) return false;
+	DPIUtil.setDeviceZoom (nativeZoom);
 	Shell[] shells = getShells();
 	for (int i = 0; i < shells.length; i++) {
 		shells[i].layout(true, true);
 	}
+	return true;
 }
 
 String dumpWidgetTableInfo() {
@@ -6112,7 +6198,29 @@ void windowActiveProc(long handle, long user_data) {;
 	if (widget != null) widget.windowActiveProc(handle, user_data);
 }
 
+/** GTK4 only: lets the pointer pick the menu row again, see Shell#gtk_move_focus. */
+void restoreMenuRowTarget () {
+	if (untargetableMenuRow == 0) return;
+	OS.g_object_set (untargetableMenuRow, Converter.javaStringToCString ("can-target"), true, 0);
+	OS.g_object_unref (untargetableMenuRow);
+	untargetableMenuRow = 0;
+	untargetableMenuRowSeen = false;
+}
+
+/** GTK4 only: restores the row once the pointer has moved; the first event after hiding the submenu is GTK's synthesized crossing. */
+void restoreMenuRowTargetOnMotion (double x, double y) {
+	if (untargetableMenuRow == 0) return;
+	if (!untargetableMenuRowSeen) {
+		untargetableMenuRowSeen = true;
+		untargetableMenuRowX = x;
+		untargetableMenuRowY = y;
+	} else if (x != untargetableMenuRowX || y != untargetableMenuRowY) {
+		restoreMenuRowTarget ();
+	}
+}
+
 boolean keyPressReleaseProc(long controller, int keyval, int keycode, int state, long user_data) {
+	lastKeyEventTime = System.nanoTime();
 	long handle = GTK.gtk_event_controller_get_widget(controller);
 	Widget widget = getWidget(handle);
 	if (widget == null) return false;
@@ -6145,6 +6253,11 @@ void activateProc(long action, long parameter, long user_data) {
 	widget.gtk_activate(user_data);
 }
 
+void menuItemsChangedProc(long model, int position, int removed, int added, long user_data) {
+	Widget widget = getWidget(user_data);
+	if (widget instanceof Menu menu) menu.modelItemsChanged();
+}
+
 void resizeProc(long handle, int width, int height) {
 	Widget widget = getWidget(handle);
 	if (widget != null) widget.gtk_size_allocate(handle, 0);
@@ -6156,6 +6269,11 @@ void layoutProc(long surface, int width, int height, long user_data) {
 }
 
 long notifyProc (long object, long param_spec, long user_data) {
+	if (user_data == Widget.NOTIFY_FOCUS) {
+		Composite composite = focusNotifyControllers.get (object);
+		if (composite != null) composite.gtk4_focusNotify (object);
+		return 0;
+	}
 	Widget widget = getWidget (object);
 	if (widget == null) {
 		widget = getWidget (user_data);

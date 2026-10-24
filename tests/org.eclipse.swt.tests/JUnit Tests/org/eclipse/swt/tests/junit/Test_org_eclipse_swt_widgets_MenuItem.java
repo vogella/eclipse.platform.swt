@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2025 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -29,7 +29,6 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -195,7 +194,30 @@ public void test_setEnabledZ() {
 	assertFalse(menuItem.getEnabled());
 }
 
-@Tag("gtk4-todo")
+@Test
+public void test_setEnabledZ_cascade() {
+	MenuItem cascadeItem = new MenuItem(menu, SWT.CASCADE);
+	Menu subMenu = new Menu(shell, SWT.DROP_DOWN);
+	cascadeItem.setMenu(subMenu);
+	assertTrue(cascadeItem.getEnabled());
+	cascadeItem.setEnabled(false);
+	assertFalse(cascadeItem.getEnabled());
+	cascadeItem.setEnabled(true);
+	assertTrue(cascadeItem.getEnabled());
+	cascadeItem.dispose();
+}
+
+@Test
+public void test_setEnabledZ_separator() {
+	MenuItem separator = new MenuItem(menu, SWT.SEPARATOR);
+	assertTrue(separator.getEnabled());
+	separator.setEnabled(false);
+	assertFalse(separator.getEnabled());
+	separator.setEnabled(true);
+	assertTrue(separator.getEnabled());
+	separator.dispose();
+}
+
 @Override
 @Test
 public void test_setImageLorg_eclipse_swt_graphics_Image() {

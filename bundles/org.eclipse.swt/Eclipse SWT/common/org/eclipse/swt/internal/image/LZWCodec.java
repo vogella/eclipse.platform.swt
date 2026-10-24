@@ -196,7 +196,6 @@ int encodeLoop() {
 		node.left = null;
 		node.right = null;
 		node.code = currentSlot;
-		node.prefix = currentPrefix;
 		node.suffix = pixel;
 		nextPutCode(currentPrefix);
 		currentSlot++;
@@ -248,7 +247,7 @@ void initializeForDecoding() {
  */
 void initializeForEncoding() {
 	interlaced = false;
-	bitsPerPixel = image.depth;
+	bitsPerPixel = minimumCodeSize(image.depth);
 	codeSize = bitsPerPixel + 1;
 	topSlot = 1 << codeSize;
 	clearCode = 1 << bitsPerPixel;
@@ -264,7 +263,6 @@ void initializeForEncoding() {
 	for (int i = 0; i < nodeStack.length; i++) {
 		LZWNode node = new LZWNode();
 		node.code = i + 1;
-		node.prefix = -1;
 		node.suffix = i + 1;
 		nodeStack[i] = node;
 	}
@@ -273,6 +271,13 @@ void initializeForEncoding() {
 	imageY = -1;
 	lineArray = new byte[imageWidth];
 	imageX = imageWidth + 1; // Force a read
+}
+/**
+ * Answer the minimum LZW code size for pixels of the given depth.
+ * The GIF specification requires at least 2, also for bilevel images.
+ */
+static int minimumCodeSize(int depth) {
+	return Math.max(2, depth);
 }
 /**
  * Answer the next code from the input byte array.

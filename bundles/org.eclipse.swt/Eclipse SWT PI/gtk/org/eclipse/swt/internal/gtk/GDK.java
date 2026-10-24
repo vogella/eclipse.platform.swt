@@ -51,6 +51,8 @@ public class GDK extends OS {
 	public static final int GDK_Caps_Lock = 0xffE5;
 	public static final int GDK_Control_L = 0xffe3;
 	public static final int GDK_Control_R = 0xffe4;
+	public static final int GDK_Copy = 0x1008ff57;
+	public static final int GDK_Cut = 0x1008ff58;
 	public static final int GDK_CURRENT_TIME = 0x0;
 	public static final int GDK_DECOR_BORDER = 0x2;
 	public static final int GDK_DECOR_MAXIMIZE = 0x40;
@@ -124,6 +126,7 @@ public class GDK extends OS {
 	public static final int GDK_KP_8 = 0xffb8;
 	public static final int GDK_KP_9 = 0xffb9;
 	public static final int GDK_KP_Add = 0xffab;
+	public static final int GDK_KP_Space = 0xff80;
 	public static final int GDK_KP_Decimal = 0xffae;
 	public static final int GDK_KP_Delete = 0xFF9F;
 	public static final int GDK_KP_Divide = 0xffaf;
@@ -175,6 +178,7 @@ public class GDK extends OS {
 	public static final int GDK_PROPERTY_NOTIFY = 16;
 	public static final int GDK_Page_Down = 0xff56;
 	public static final int GDK_Page_Up = 0xff55;
+	public static final int GDK_Paste = 0x1008ff6d;
 	public static final int GDK_Pause = 0xff13;
 	public static final int GDK_Print = 0xff61;
 	public static final int GDK_Return = 0xff0d;
@@ -1201,6 +1205,10 @@ public class GDK extends OS {
 	/* GdkPopup [GTK4 only] */
 	/** @param popup cast=(GdkPopup *) */
 	public static final native long gdk_popup_get_parent(long popup);
+	/** @param popup cast=(GdkPopup *) */
+	public static final native int gdk_popup_get_position_x(long popup);
+	/** @param popup cast=(GdkPopup *) */
+	public static final native int gdk_popup_get_position_y(long popup);
 	/**
 	 * @param popup cast=(GdkPopup *)
 	 * @param layout cast=(GdkPopupLayout *)

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2016 IBM Corporation and others.
+ * Copyright (c) 2008, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -18,15 +18,19 @@ import java.util.*;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.*;
-import org.eclipse.jface.action.*;
+import org.eclipse.e4.core.di.annotations.*;
+import org.eclipse.e4.ui.di.*;
+import org.eclipse.e4.ui.model.application.ui.basic.*;
+import org.eclipse.e4.ui.model.application.ui.menu.*;
+import org.eclipse.swt.*;
 import org.eclipse.swt.tools.internal.*;
 import org.eclipse.swt.widgets.*;
-import org.eclipse.ui.*;
-import org.eclipse.ui.part.*;
+
+import jakarta.annotation.*;
 
 
-public class MacGeneratorView extends ViewPart {
-	private Action generateAction;
+public class MacGeneratorView {
+	private static final String GENERATE_ICON = "platform:/plugin/org.eclipse.swt.tools/icons/save_edit.svg";
 	private MacGeneratorUI ui;
 	private IResource root;
 	IResourceChangeListener listener;
@@ -72,14 +76,8 @@ public class MacGeneratorView extends ViewPart {
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 		IProject swtProject = workspaceRoot.getProject("org.eclipse.swt");
-		if (swtProject == null) {
-			throw new IllegalStateException("Project org.eclipse.swt not found in the workspace.");
-		}
 		Path rootPath = new Path("Eclipse SWT PI/cocoa");
 		root = swtProject.findMember(rootPath);
-		if (root == null) {
-			throw new IllegalStateException("Path "+rootPath+" not found in the workspace.");
-		}
 		listener = event -> {
 			if (job != null) return;
 			if (event.getType() != IResourceChangeEvent.POST_CHANGE) return;
@@ -103,15 +101,20 @@ public class MacGeneratorView extends ViewPart {
 				ui.refresh();
 			}
 		};
-		workspace.addResourceChangeListener(listener);
+		if (root != null) workspace.addResourceChangeListener(listener);
 	}
 
 	/**
 	 * This is a callback that will allow us
 	 * to create the viewer and initialize it.
 	 */
-	@Override
-	public void createPartControl(Composite parent) {
+	@PostConstruct
+	public void createPartControl(Composite parent, MPart part) {
+		if (root == null) {
+			Label label = new Label(parent, SWT.WRAP);
+			label.setText("Project org.eclipse.swt with folder \"Eclipse SWT PI/cocoa\" was not found in the workspace.");
+			return;
+		}
 		MacGenerator gen = new MacGenerator();
 		gen.setOutputDir(root.getLocation().toPortableString());
 		gen.setMainClass(mainClassName);
@@ -120,29 +123,43 @@ public class MacGeneratorView extends ViewPart {
 		ui.setActionsVisible(false);
 		ui.open(parent);
 
-		makeActions();
-		contributeToActionBars();
+		contributeToPart(part);
 	}
 
-	private void contributeToActionBars() {
-		IActionBars bars = getViewSite().getActionBars();
-		fillLocalPullDown(bars.getMenuManager());
-		fillLocalToolBar(bars.getToolBarManager());
+	private void contributeToPart(MPart part) {
+		MToolBar toolBar = part.getToolbar();
+		if (toolBar == null) {
+			toolBar = MMenuFactory.INSTANCE.createToolBar();
+			MDirectToolItem item = MMenuFactory.INSTANCE.createDirectToolItem();
+			item.setLabel("Generate");
+			item.setTooltip("Generate");
+			item.setIconURI(GENERATE_ICON);
+			toolBar.getChildren().add(item);
+			part.setToolbar(toolBar);
+		}
+		MMenu menu = part.getMenus().stream().filter(m -> m.getTags().contains("ViewMenu")).findFirst().orElse(null);
+		if (menu == null) {
+			menu = MMenuFactory.INSTANCE.createMenu();
+			menu.getTags().add("ViewMenu");
+			MDirectMenuItem item = MMenuFactory.INSTANCE.createDirectMenuItem();
+			item.setLabel("Generate");
+			item.setIconURI(GENERATE_ICON);
+			menu.getChildren().add(item);
+			part.getMenus().add(menu);
+		}
+		// The items are persisted with the workbench model, the object is not
+		for (MToolBarElement element : toolBar.getChildren()) {
+			if (element instanceof MDirectToolItem item) item.setObject(this);
+		}
+		for (MMenuElement element : menu.getChildren()) {
+			if (element instanceof MDirectMenuItem item) item.setObject(this);
+		}
 	}
 	
-	@Override
+	@PreDestroy
 	public void dispose() {
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		workspace.removeResourceChangeListener(listener);
-		super.dispose();
-	}
-
-	private void fillLocalPullDown(IMenuManager manager) {
-		manager.add(generateAction);
-	}
-
-	private void fillLocalToolBar(IToolBarManager manager) {
-		manager.add(generateAction);
 	}
 	
 	void refresh() {
@@ -153,30 +170,18 @@ public class MacGeneratorView extends ViewPart {
 		}
 	}
 	
+	@Execute
 	void generate() {
 		if (job != null) return;
 		job = new GenJob();
 		job.schedule();
 	}
 
-	private void makeActions() {
-		generateAction = new Action() {
-			@Override
-			public void run() {
-				generate();
-			}
-		};
-		generateAction.setText("Generate");
-		generateAction.setToolTipText("Generate");
-		generateAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
-			getImageDescriptor(ISharedImages.IMG_ETOOL_SAVE_EDIT));
-	}
-
 	/**
 	 * Passing the focus request to the viewer's control.
 	 */
-	@Override
+	@Focus
 	public void setFocus() {
-		ui.setFocus();
+		if (ui != null) ui.setFocus();
 	}
 }

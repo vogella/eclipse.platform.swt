@@ -31,6 +31,7 @@ import static java.awt.RenderingHints.VALUE_RENDER_QUALITY;
 import static java.awt.RenderingHints.VALUE_STROKE_PURE;
 import static java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints.Key;
 import java.awt.image.BufferedImage;
@@ -41,6 +42,7 @@ import java.util.Map;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.PaletteData;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.internal.image.SVGRasterizer;
 
 import com.github.weisj.jsvg.SVGDocument;
@@ -80,20 +82,32 @@ public class JSVGRasterizer implements SVGRasterizer {
 			KEY_TEXT_ANTIALIASING, VALUE_TEXT_ANTIALIAS_ON //
 	);
 
+	private static final RGB BLACK = new RGB(0, 0, 0);
+
 	@Override
 	public ImageData rasterizeSVG(InputStream inputStream, int zoom) {
-		if (zoom < 0) {
-			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
-		}
-		SVGDocument svgDocument = loadAndValidateSVG(inputStream);
-		BufferedImage rasterizedImage = renderSVG(svgDocument, zoom);
-		return convertToSWTImageData(rasterizedImage);
+		return rasterizeSVG(inputStream, zoom, BLACK);
 	}
 
 	@Override
 	public ImageData rasterizeSVG(InputStream inputStream, int width, int height) {
+		return rasterizeSVG(inputStream, width, height, BLACK);
+	}
+
+	@Override
+	public ImageData rasterizeSVG(InputStream inputStream, int zoom, RGB currentColor) {
+		if (zoom < 0) {
+			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
+		}
 		SVGDocument svgDocument = loadAndValidateSVG(inputStream);
-		BufferedImage rasterizedImage = renderSVG(svgDocument, width, height);
+		BufferedImage rasterizedImage = renderSVG(svgDocument, zoom, currentColor);
+		return convertToSWTImageData(rasterizedImage);
+	}
+
+	@Override
+	public ImageData rasterizeSVG(InputStream inputStream, int width, int height, RGB currentColor) {
+		SVGDocument svgDocument = loadAndValidateSVG(inputStream);
+		BufferedImage rasterizedImage = renderSVG(svgDocument, width, height, currentColor);
 		return convertToSWTImageData(rasterizedImage);
 	}
 	
@@ -105,22 +119,22 @@ public class JSVGRasterizer implements SVGRasterizer {
 		return svgDocument;
 	}
 
-	private BufferedImage renderSVG(SVGDocument svgDocument, int zoom) {
+	private BufferedImage renderSVG(SVGDocument svgDocument, int zoom, RGB currentColor) {
 		FloatSize sourceImageSize = svgDocument.size();
 		float scalingFactor = zoom / 100.0f;
 		int targetImageWidth = calculateTargetWidth(scalingFactor, sourceImageSize);
 		int targetImageHeight = calculateTargetHeight(scalingFactor, sourceImageSize);
-		return renderSVG(svgDocument, targetImageWidth, targetImageHeight);
+		return renderSVG(svgDocument, targetImageWidth, targetImageHeight, currentColor);
 	}
 	
-	private BufferedImage renderSVG(SVGDocument svgDocument, int width, int height) {
+	private BufferedImage renderSVG(SVGDocument svgDocument, int width, int height, RGB currentColor) {
 		if (width <= 0 || height <= 0) {
 			SWT.error(SWT.ERROR_INVALID_ARGUMENT);
 		}
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		float widthScalingFactor = width / svgDocument.size().width;
 		float heightScalingFactor = height / svgDocument.size().height;
-		Graphics2D g = configureRenderingOptions(widthScalingFactor, heightScalingFactor, image);
+		Graphics2D g = configureRenderingOptions(widthScalingFactor, heightScalingFactor, image, currentColor);
 		svgDocument.render(null, g);
 		g.dispose();
 		return image;
@@ -137,8 +151,9 @@ public class JSVGRasterizer implements SVGRasterizer {
 	}
 
 	private Graphics2D configureRenderingOptions(float widthScalingFactor, float heightScalingFactor,
-			BufferedImage image) {
+			BufferedImage image, RGB currentColor) {
 		Graphics2D g = image.createGraphics();
+		g.setColor(new Color(currentColor.red, currentColor.green, currentColor.blue));
 		g.setRenderingHints(RENDERING_HINTS);
 		g.scale(widthScalingFactor, heightScalingFactor);
 		return g;

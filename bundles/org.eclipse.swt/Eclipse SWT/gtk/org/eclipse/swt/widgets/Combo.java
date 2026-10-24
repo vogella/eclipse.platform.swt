@@ -86,7 +86,7 @@ public class Combo extends Composite {
 	* to stop the compiler from inlining.
 	*/
 	static {
-		LIMIT = 0xFFFF;
+		LIMIT = 0x7FFFFFFF;
 	}
 
 	private boolean delayedEnableWrap = false; // Bug 489640. Gtk3.
@@ -1406,7 +1406,8 @@ public int getTextHeight () {
 public int getTextLimit () {
 	checkWidget();
 	int limit = entryHandle != 0 ? GTK.gtk_entry_get_max_length (entryHandle) : 0;
-	return limit == 0 ? LIMIT : limit;
+	// GTK clamps the entry limit to 0xFFFF, which is also what it reports when no limit is set
+	return limit <= 0 || limit >= 0xFFFF ? LIMIT : limit;
 }
 
 /**
@@ -2004,6 +2005,13 @@ void releaseHandle () {
 }
 
 @Override
+void releaseParent () {
+	parent.fixClipMap.remove (this);
+	firstDraw = true;
+	super.releaseParent ();
+}
+
+@Override
 void releaseWidget () {
 	super.releaseWidget ();
 	textRenderer = 0;
@@ -2555,7 +2563,7 @@ public void setText (String string) {
 	* fix is to block the firing of these events and fire them ourselves in a consistent manner.
 	*/
 	if (hooks (SWT.Verify) || filters (SWT.Verify)) {
-		long ptr = GTK3.gtk_entry_get_text (entryHandle);
+		long ptr = GTK.GTK4 ? GTK4.gtk_entry_buffer_get_text (GTK4.gtk_entry_get_buffer (entryHandle)) : GTK3.gtk_entry_get_text (entryHandle);
 		string = verifyText (string, 0, (int)OS.g_utf16_strlen (ptr, -1));
 		if (string == null) return;
 	}

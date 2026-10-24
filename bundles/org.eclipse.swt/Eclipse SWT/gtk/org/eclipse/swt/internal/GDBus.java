@@ -199,13 +199,6 @@ public class GDBus {
 		}
 	}
 
-	static void teardown_gdbus() {
-		// Currently GDBus is persistent.
-		// If ever needed, gdbus can be disposed via:
-		// g_bus_unown_name (owner_id);					// owner_id would need to be made global
-		// g_dbus_node_info_unref (gdBusNodeInfo); // introspection_data Would need to be made global
-	}
-
 	/**
 	 * @return void. (No return value actually returned to OS. Just SWT mechanism dicates 'long' is returned.
 	 */

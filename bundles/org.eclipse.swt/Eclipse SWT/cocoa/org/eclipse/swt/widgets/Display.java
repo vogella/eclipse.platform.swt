@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import java.lang.Runtime.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -161,6 +160,7 @@ public class Display extends Device implements Executor {
 
 	/* Fonts */
 	boolean smallFonts;
+	Map<Long, Font> defaultFonts = new HashMap<>();
 	NSFont buttonFont, popUpButtonFont, textFieldFont, secureTextFieldFont;
 	NSFont searchFieldFont, comboBoxFont, sliderFont, scrollerFont;
 	NSFont textViewFont, tableViewFont, outlineViewFont, datePickerFont;
@@ -328,7 +328,6 @@ public class Display extends Device implements Executor {
 	static String APP_VERSION = ""; //$NON-NLS-1$
 	static final String ADD_WIDGET_KEY = "org.eclipse.swt.internal.addWidget"; //$NON-NLS-1$
 	static final byte[] SWT_OBJECT = {'S', 'W', 'T', '_', 'O', 'B', 'J', 'E', 'C', 'T', '\0'};
-	static final byte[] SWT_EMBED_FRAMES = {'S', 'W', 'T', '_', 'E', 'M', 'B', 'E', 'D', '_', 'F', 'R', 'A', 'M', 'E', 'S', '\0'};
 	static final byte[] SWT_IMAGE = {'S', 'W', 'T', '_', 'I', 'M', 'A', 'G', 'E', '\0'};
 	static final byte[] SWT_ROW = {'S', 'W', 'T', '_', 'R', 'O', 'W', '\0'};
 	static final byte[] SWT_COLUMN = {'S', 'W', 'T', '_', 'C', 'O', 'L', 'U', 'M', 'N', '\0'};
@@ -811,34 +810,6 @@ static void checkDisplay (Thread thread, boolean multiple) {
 	}
 }
 
-static String convertToLf(String text) {
-	char Cr = '\r';
-	char Lf = '\n';
-	int length = text.length ();
-	if (length == 0) return text;
-
-	/* Check for an LF or CR/LF.  Assume the rest of the string
-	 * is formated that way.  This will not work if the string
-	 * contains mixed delimiters. */
-	int i = text.indexOf (Lf, 0);
-	if (i == -1 || i == 0) return text;
-	if (text.charAt (i - 1) != Cr) return text;
-
-	/* The string is formatted with CR/LF.
-	 * Create a new string with the LF line delimiter. */
-	i = 0;
-	StringBuilder result = new StringBuilder ();
-	while (i < length) {
-		int j = text.indexOf (Cr, i);
-		if (j == -1) j = length;
-		String s = text.substring (i, j);
-		result.append (s);
-		i = j + 2;
-		result.append (Lf);
-	}
-	return result.toString ();
-}
-
 void clearModal (Shell shell) {
 	if (modalShells == null) return;
 	int index = 0, length = modalShells.length;
@@ -1103,7 +1074,7 @@ void createMainMenu () {
 
 	title = NSString.stringWith(SWT.getMessage("SWT_HideOthers"));
 	menuItem = appleMenu.addItemWithTitle(title, OS.sel_hideOtherApplications_, NSString.stringWith("h"));
-	menuItem.setKeyEquivalentModifierMask(OS.NSCommandKeyMask | OS.NSAlternateKeyMask);
+	menuItem.setKeyEquivalentModifierMask(OS.NSEventModifierFlagCommand | OS.NSAlternateKeyMask);
 	menuItem.setTarget(applicationDelegate);
 
 	title = NSString.stringWith(SWT.getMessage("SWT_ShowAll"));
@@ -1443,7 +1414,6 @@ public static Display getCurrent () {
 }
 
 int getCaretBlinkTime () {
-//	checkDevice ();
 	return blinkTime;
 }
 
@@ -2037,7 +2007,8 @@ double [] getWidgetColorRGB (int id) {
 
 double [] getNSColorRGB (NSColor color) {
 	if (color == null) return null;
-	NSColorSpace colorSpace = color.colorSpace();
+	// colorSpace throws for catalog and pattern colors
+	NSColorSpace colorSpace = color.type() == OS.NSColorTypeComponentBased ? color.colorSpace() : null;
 	if (colorSpace == null || colorSpace.colorSpaceModel() != OS.NSColorSpaceModelRGB) {
 		color = color.colorUsingColorSpaceName(OS.NSDeviceRGBColorSpace);
 	}
@@ -2503,50 +2474,33 @@ private boolean initUseNativeItemHeight() {
 	return Boolean.parseBoolean(System.getProperty("org.eclipse.swt.internal.cocoa.useNativeItemHeight", "true"));
 }
 
-private static NSString getAwtRunLoopMode() {
+private static NSString awtRunLoopMode;
+
+private static synchronized NSString getAwtRunLoopMode() {
+	if (awtRunLoopMode != null) return awtRunLoopMode;
 	// Special run loop mode mode used by AWT enters when it only wants related messages processed.
 	// The name of this mode is a defacto contract established by the JavaNativeFoundation (JNF) library.
 	// It could be accessed via OS.objc_lookUpClass("JNFRunLoop").
 	//
-	// However, in JDK 11.0.12 / 13.0.8 / 15.0.4 / 17 this broke:
-	// 1) JNF was dropped from JDK:
-	//    https://bugs.openjdk.java.net/browse/JDK-8260616
-	//    https://bugs.openjdk.java.net/browse/JDK-8261693
-	// 2) The contract was broken, since the name was changed from "AWTRunLoopMode" to "jnfRunLoopMode":
-	//    https://www.mail-archive.com/awt-dev@openjdk.java.net/msg17946.html
+	// JNF was dropped from JDK (https://bugs.openjdk.java.net/browse/JDK-8260616) and is not available
+	// in arm64, in newer JDKs the name is "AWTRunLoopMode" (https://bugs.openjdk.java.net/browse/JDK-8270216).
 	//
-	// JNF is also not available in arm64.
-	//
-	// In JDK 11.0.14 / 13.0.9 / 15.0.5 / 17.0.0.1 the name was changed back to "AWTRunLoopMode":
-	// https://bugs.openjdk.java.net/browse/JDK-8270216
-	// There is no concept yet to update this:
-	// https://bugs.openjdk.java.net/browse/JDK-8270211
-	//
-	// Therefore, for now, we follow this approach:
-
-	// 1) If JNFRunLoop is available, we keep using it
+	// Therefore, if JNFRunLoop is available, we keep using it, otherwise we use the fixed name.
+	NSString mode = null;
 	long cls = OS.objc_lookUpClass("JNFRunLoop");
 	if (cls != 0) {
-		long mode = OS.objc_msgSend(cls, OS.sel_javaRunLoopMode);
-		if (mode != 0) {
-			return new NSString(mode);
+		long modeId = OS.objc_msgSend(cls, OS.sel_javaRunLoopMode);
+		if (modeId != 0) {
+			mode = new NSString(modeId);
 		}
 	}
-
-	// 2) If the version is new enough to contain the fix https://bugs.openjdk.java.net/browse/JDK-8270216
-	//    we are optimistic
-	Version version = Runtime.version();
-	if (version.feature() > 17 //
-			|| version.feature() == 17 && Version.parse("17.0.1").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 11 && Version.parse("11.0.14").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 15 && Version.parse("15.0.5").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 13 && Version.parse("13.0.9").compareToIgnoreOptional(version) <= 0) {
-		return NSString.stringWith("AWTRunLoopMode");
+	if (mode == null) {
+		mode = NSString.stringWith("AWTRunLoopMode");
 	}
-
-	// 3) Otherwise, for the few broken Java versions inbetween, we are pessimistic to avoid any immediate
-	//    deadlocks in calling code (although deadlocks will probably still occurr later down the road).
-	return null;
+	// The cached string must outlive the autorelease pool of the calling thread
+	mode.retain();
+	awtRunLoopMode = mode;
+	return awtRunLoopMode;
 }
 
 void addEventMethods (long cls, long proc2, long proc3, long drawRectProc, long hitTestProc, long needsDisplayInRectProc) {
@@ -3245,6 +3199,17 @@ void initClasses () {
 	OS.objc_registerClassPair(cls);
 }
 
+Font getDefaultFont (NSFont nsFont) {
+	Font font = defaultFonts.get (nsFont.id);
+	// recreate if application code disposed the shared instance it got from getFont()
+	if (font == null || font.isDisposed ()) {
+		nsFont.retain ();
+		font = Font.cocoa_new (this, nsFont);
+		defaultFonts.put (nsFont.id, font);
+	}
+	return font;
+}
+
 NSFont getFont (long cls, long sel) {
 	long widget = OS.objc_msgSend (OS.objc_msgSend (cls, OS.sel_alloc), OS.sel_initWithFrame_, new NSRect());
 	long font = 0;
@@ -3376,11 +3341,6 @@ public long internal_new_GC (GCData data) {
 		context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
 		rep.release();
 	}
-//	NSAffineTransform transform = NSAffineTransform.transform();
-//	NSSize size = handle.size();
-//	transform.translateXBy(0, size.height);
-//	transform.scaleXBy(1, -1);
-//	transform.set();
 	if (data != null) {
 		int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 		if ((data.style & mask) == 0) {
@@ -3924,9 +3884,9 @@ boolean performKeyEquivalent(NSWindow window, NSEvent nsEvent) {
 	long selector = 0;
 	long modifierFlags = nsEvent.modifierFlags();
 	if ((modifierFlags & OS.NSAlternateKeyMask) != 0) stateMask |= SWT.ALT;
-	if ((modifierFlags & OS.NSShiftKeyMask) != 0) stateMask |= SWT.SHIFT;
-	if ((modifierFlags & OS.NSControlKeyMask) != 0) stateMask |= SWT.CONTROL;
-	if ((modifierFlags & OS.NSCommandKeyMask) != 0) stateMask |= SWT.COMMAND;
+	if ((modifierFlags & OS.NSEventModifierFlagShift) != 0) stateMask |= SWT.SHIFT;
+	if ((modifierFlags & OS.NSEventModifierFlagControl) != 0) stateMask |= SWT.CONTROL;
+	if ((modifierFlags & OS.NSEventModifierFlagCommand) != 0) stateMask |= SWT.COMMAND;
 	if (stateMask == SWT.COMMAND) {
 		short keyCode = nsEvent.keyCode ();
 		switch (keyCode) {
@@ -3987,7 +3947,7 @@ public boolean readAndDispatch () {
 	try {
 		events |= runSettings ();
 		events |= runTimers ();
-		events |= runContexts ();
+		runContexts ();
 		events |= runPopups ();
 		NSEvent event = application.nextEventMatchingMask(OS.NSAnyEventMask, null, OS.NSDefaultRunLoopMode, true);
 		if ((event != null) && (application != null)) {
@@ -4155,6 +4115,8 @@ void releaseDisplay () {
 	cursors = null;
 
 	/* Release default fonts */
+	for (Font font : defaultFonts.values ()) font.dispose ();
+	defaultFonts.clear ();
 	if (buttonFont != null) buttonFont.release ();
 	if (popUpButtonFont != null) popUpButtonFont.release ();
 	if (textFieldFont != null) textFieldFont.release ();
@@ -4386,7 +4348,7 @@ boolean runAWTInvokeLater() {
 	return true;
 }
 
-boolean runContexts () {
+void runContexts () {
 	if (contexts != null) {
 		for (int i = 0; i < contexts.length; i++) {
 			if (contexts[i] != null && contexts[i].flippedContext != null) {
@@ -4394,7 +4356,6 @@ boolean runContexts () {
 			}
 		}
 	}
-	return false;
 }
 
 boolean runDeferredEvents () {
@@ -4503,10 +4464,7 @@ boolean runPopups () {
 	return result;
 }
 
-boolean runSettings () {
-	if (!runSettings) return false;
-	runSettings = false;
-
+boolean ignoreColorChange () {
 	boolean ignoreColorChange = false;
 	/*
 	 * Feature in Cocoa: When dark mode is enabled on OSX version >= 10.10 and a SWT TrayItem (NSStatusItem) is present in the menubar,
@@ -4523,7 +4481,29 @@ boolean runSettings () {
 			ignoreColorChange = true;
 		}
 	}
-	initColors (ignoreColorChange);
+	return ignoreColorChange;
+}
+
+/** Re-reads the cached system colors as the app appearance shows them, since NSColor resolves against the current appearance. */
+void appAppearanceColorsChanged () {
+	APPEARANCE mode = appAppearance != null ? appAppearance : OS.isSystemDarkAppearance () ? APPEARANCE.Dark : APPEARANCE.Light;
+	NSAppearance appearance = getAppearance (mode);
+	if (appearance == null) return;
+	long setCurrent = OS.sel_registerName ("setCurrentAppearance:");
+	long previous = OS.objc_msgSend (OS.class_NSAppearance, OS.sel_currentAppearance);
+	try {
+		OS.objc_msgSend (OS.class_NSAppearance, setCurrent, appearance.id);
+		initColors (ignoreColorChange ());
+	} finally {
+		OS.objc_msgSend (OS.class_NSAppearance, setCurrent, previous);
+	}
+}
+
+boolean runSettings () {
+	if (!runSettings) return false;
+	runSettings = false;
+
+	appAppearanceColorsChanged ();
 
 	sendEvent (SWT.Settings, null);
 	Shell [] shells = getShells ();
@@ -4549,26 +4529,6 @@ void setAppAppearance (APPEARANCE newMode) {
 		appAppearance = newMode;
 		resetSelectedControlColors();
 	 }
-}
-
-void setWindowAppearance (NSWindow window, NSAppearance appearance) {
-	if (window != null && appearance != null) {
-		OS.objc_msgSend(window.id, OS.sel_setAppearance_, appearance.id);
-	}
-}
-
-void setWindowsAppearance (APPEARANCE newMode) {
-	NSAppearance appearance = getAppearance(newMode);
-	if (appearance != null) {
-		Shell [] shells = getShells ();
-		for (int i=0; i<shells.length; i++) {
-			Shell shell = shells [i];
-			if (!shell.isDisposed ()) {
-				setWindowAppearance (shell.window, appearance);
-			}
-		}
-		appAppearance = newMode;
-	}
 }
 
 boolean runSkin () {
@@ -5008,7 +4968,6 @@ void setMenuBar (Menu menu) {
 	* the menu right away when the menu bar is set in a stacked
 	* event loop. The fix is to use CancelMenuTracking() instead.
 	*/
-//	menubar.cancelTracking();
 	cancelRootMenuTracking ();
 	long count = menubar.numberOfItems();
 	while (count > 1) {
@@ -5218,10 +5177,6 @@ public boolean sleep () {
 	}
 	sendPostExternalEventDispatchEvent ();
 	return true;
-}
-
-int sourceProc (int info) {
-	return 0;
 }
 
 /**
@@ -5679,7 +5634,7 @@ void applicationSendEvent (long id, long sel, long event) {
 	 * Feature in Cocoa. The help key triggers context-sensitive help but doesn't get forwarded to the window as a key event.
 	 * If the event is destined for the key window, is the help key, and is an NSKeyDown, send it directly to the window first.
 	 */
-	if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyDown && (nsEvent.modifierFlags() & OS.NSHelpKeyMask) != 0)	{
+	if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyDown && (nsEvent.modifierFlags() & OS.NSEventModifierFlagHelp) != 0)	{
 		window.sendEvent(nsEvent);
 	}
 
@@ -5687,7 +5642,7 @@ void applicationSendEvent (long id, long sel, long event) {
 	 * Feature in Cocoa. NSKeyUp events are not delivered to the window if the command key is down.
 	 * If the event is destined for the key window, and it's a key up and the command key is down, send it directly to the window.
 	 */
-	if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyUp && (nsEvent.modifierFlags() & OS.NSCommandKeyMask) != 0)	{
+	if (window != null && window.isKeyWindow() && nsEvent.type() == OS.NSKeyUp && (nsEvent.modifierFlags() & OS.NSEventModifierFlagCommand) != 0)	{
 		window.sendEvent(nsEvent);
 	} else {
 		objc_super super_struct = new objc_super ();
@@ -5717,7 +5672,7 @@ void applicationWillFinishLaunching (long id, long sel, long notification) {
 	NSLocale englishLocale = (NSLocale) new NSLocale().alloc();
 	englishLocale = new NSLocale(englishLocale.initWithLocaleIdentifier(NSString.stringWith("en_US")));
 	NSString languageDisplayName = englishLocale.displayNameForKey(OS.NSLocaleLanguageCode, NSString.stringWith(languageISOValue));
-	if (englishLocale != null) englishLocale.release();
+	englishLocale.release();
 
 	/* To find the nib look for each of these paths, in order, until one is found:
 	 * 		/System/Library/..../Resources/<display name>.lproj/DefaultApp.nib
@@ -5754,7 +5709,7 @@ void applicationWillFinishLaunching (long id, long sel, long notification) {
 		NSMenu sm = appitem.submenu();
 		sm.setTitle(name);
 		NSArray ia = sm.itemArray();
-		for(int i = 0; i < ia.count(); i++) {
+		for (int i = 0, length = (int)ia.count(); i < length; i++) {
 			NSMenuItem ni = new NSMenuItem(ia.objectAtIndex(i));
 			NSString title = ni.title().stringByReplacingOccurrencesOfString(match, name);
 			ni.setTitle(title);
@@ -5828,6 +5783,7 @@ static long applicationProc(long id, long sel, long arg0) {
 
 	if (sel == OS.sel_appAppearanceChanged) {
 		display.setAppAppearance(arg0 == 1 ? APPEARANCE.Dark : APPEARANCE.Light);
+		display.appAppearanceColorsChanged();
 		return 0;
 	}
 
@@ -5857,7 +5813,6 @@ static long applicationProc(long id, long sel, long arg0) {
 			return returnVal;
 		}
 		case sel_orderFrontStandardAboutPanel_: {
-	//		application.orderFrontStandardAboutPanel(application);
 			return 0;
 		}
 		case sel_hideOtherApplications_: {
@@ -6060,11 +6015,17 @@ static Widget LookupWidget (long id, long sel) {
 	return widget;
 }
 
+private static final Map<Long, Long> accessibleCellClasses = new ConcurrentHashMap<>();
+
 static long windowProc(long id, long sel) {
 	if (sel == OS.sel_cellClass) {
 		long superCls = OS.objc_msgSend(OS.class_getSuperclass(id), sel);
+		Long cached = accessibleCellClasses.get(superCls);
+		if (cached != null) return cached;
 		long cls = OS.objc_lookUpClass("SWTAccessible" + OS.class_getName(superCls));
-		return cls != 0 ? cls : superCls;
+		if (cls == 0) return superCls;
+		accessibleCellClasses.put(superCls, cls);
+		return cls;
 	}
 	/*
 	* Feature in Cocoa.  In Cocoa, the default button animation is done

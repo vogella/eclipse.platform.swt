@@ -128,11 +128,6 @@ public final class Image extends Resource implements Drawable {
 	int height = -1;
 
 	/**
-	 * Specifies the default scanline padding.
-	 */
-	static final int DEFAULT_SCANLINE_PAD = 4;
-
-	/**
 	 * ImageFileNameProvider to provide file names at various Zoom levels
 	 */
 	private ImageFileNameProvider imageFileNameProvider;
@@ -428,8 +423,7 @@ private void copyAlphaInfo(AlphaInfo src_alphaInfo, AlphaInfo dest_alphaInfo) {
 	dest_alphaInfo.transparentPixel = src_alphaInfo.transparentPixel;
 	dest_alphaInfo.alpha = src_alphaInfo.alpha;
 	if (src_alphaInfo.alphaData != null) {
-		dest_alphaInfo.alphaData = new byte[src_alphaInfo.alphaData.length];
-		System.arraycopy(src_alphaInfo.alphaData, 0, dest_alphaInfo.alphaData, 0, dest_alphaInfo.alphaData.length);
+		dest_alphaInfo.alphaData = src_alphaInfo.alphaData.clone();
 	}
 }
 
@@ -467,6 +461,10 @@ private void createRepFromSourceAndApplyFlag(NSBitmapImageRep srcRep, int srcWid
 		switch (flag) {
 		case SWT.IMAGE_DISABLE: {
 			byte[] line = new byte[(int)srcBpr];
+			// the transformation is a pure function of the pixel, so runs of identical pixels share the result
+			int lastPixel = 0;
+			byte lastRed = 0, lastGreen = 0, lastBlue = 0, lastAlpha = 0;
+			boolean hasLast = false;
 			for (int y=0; y<srcHeight; y++) {
 				C.memmove(line, data + (y * srcBpr), srcBpr);
 				int offset = 0;
@@ -475,11 +473,20 @@ private void createRepFromSourceAndApplyFlag(NSBitmapImageRep srcRep, int srcWid
 					int green = line[offset+greenOffset] & 0xFF;
 					int blue = line[offset+blueOffset] & 0xFF;
 					int alpha = line[offset+alphaOffset] & 0xFF;
-					RGBA result = DEFAULT_DISABLED_IMAGE_TRANSFORMER.adaptPixelValue(red, green, blue, alpha);
-					line[offset+redOffset] = (byte) result.rgb.red;
-					line[offset+greenOffset] = (byte) result.rgb.green;
-					line[offset+blueOffset] = (byte) result.rgb.blue;
-					line[offset+alphaOffset] = (byte) result.alpha;
+					int pixel = (alpha << 24) | (red << 16) | (green << 8) | blue;
+					if (!hasLast || pixel != lastPixel) {
+						RGBA result = DEFAULT_DISABLED_IMAGE_TRANSFORMER.adaptPixelValue(red, green, blue, alpha);
+						lastPixel = pixel;
+						lastRed = (byte) result.rgb.red;
+						lastGreen = (byte) result.rgb.green;
+						lastBlue = (byte) result.rgb.blue;
+						lastAlpha = (byte) result.alpha;
+						hasLast = true;
+					}
+					line[offset+redOffset] = lastRed;
+					line[offset+greenOffset] = lastGreen;
+					line[offset+blueOffset] = lastBlue;
+					line[offset+alphaOffset] = lastAlpha;
 					offset += 4;
 				}
 				C.memmove(data + (y * srcBpr), line, srcBpr);
@@ -961,8 +968,18 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 	long bitmapData = imageRep.bitmapData();
 	long bitmapFormat = imageRep.bitmapFormat();
 	long dataSize = height * bpr;
-	byte[] srcData = new byte[(int)dataSize];
-	C.memmove(srcData, bitmapData, dataSize);
+	byte[] paddedData = new byte[(int)dataSize];
+	C.memmove(paddedData, bitmapData, dataSize);
+	/* bytesPerRow is padded by Cocoa; repack to the unpadded stride that scanlinePad 1 declares */
+	int rowBytes = (int)((width * bpp + 7) / 8);
+	byte[] srcData = paddedData;
+	if (rowBytes != bpr) {
+		srcData = new byte[(int)(height * rowBytes)];
+		for (int y = 0; y < height; y++) {
+			System.arraycopy(paddedData, (int)(y * bpr), srcData, y * rowBytes, rowBytes);
+		}
+	}
+	bpr = rowBytes;
 
 	PaletteData palette;
 	if (bpp == 32 && (bitmapFormat & OS.NSAlphaFirstBitmapFormat) == 0) {
@@ -971,12 +988,13 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 		palette = new PaletteData(0xFF0000, 0xFF00, 0xFF);
 	}
 	ImageData data = new ImageData((int)width, (int)height, (int)bpp, palette, 1, srcData);
-	data.bytesPerLine = (int)bpr;
 	if (imageRep.hasAlpha() && info.transparentPixel == -1 && info.alpha == -1 && info.alphaData == null) {
-		byte[] alphaD = new byte[(int) (dataSize/4)];
-		int offset = (bitmapFormat & OS.NSAlphaFirstBitmapFormat) != 0 ? 0 : 3, a = 0;
-		for (int i = offset; i < srcData.length && a < alphaD.length; i+= 4, a++) {
-			alphaD[a] = srcData[i];
+		byte[] alphaD = new byte[(int) (width * height)];
+		int offset = (bitmapFormat & OS.NSAlphaFirstBitmapFormat) != 0 ? 0 : 3;
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < width; x++) {
+				alphaD[(int) (y * width + x)] = srcData[(int) (y * bpr + x * 4 + offset)];
+			}
 		}
 		data.alphaData = alphaD;
 	} else {
@@ -986,8 +1004,9 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 			int maskPad = 2;
 			long maskBpl = (((width + 7) / 8) + (maskPad - 1)) / maskPad * maskPad;
 			byte[] maskData = new byte[(int)(height * maskBpl)];
-			int offset = 0, maskOffset = 0;
+			int maskOffset = 0;
 			for (int y = 0; y<height; y++) {
+				int offset = (int) (y * bpr);
 				for (int x = 0; x<width; x++) {
 					if (srcData[offset] != 0) {
 						maskData[maskOffset + (x >> 3)] |= (1 << (7 - (x & 0x7)));
@@ -1003,8 +1022,7 @@ ImageData _getImageData (NSBitmapImageRep imageRep, AlphaInfo info) {
 		}
 		data.alpha = info.alpha;
 		if (info.alpha == -1 && info.alphaData != null) {
-			data.alphaData = new byte[info.alphaData.length];
-			System.arraycopy(info.alphaData, 0, data.alphaData, 0, info.alphaData.length);
+			data.alphaData = info.alphaData.clone();
 		}
 	}
 	if (bpp == 32) {
@@ -1175,8 +1193,7 @@ private NSBitmapImageRep createRepresentation(ImageData imageData, AlphaInfo alp
 			}
 		} else if (imageData.alphaData != null) {
 			hasAlpha = true;
-			alphaInfo.alphaData = new byte[imageData.alphaData.length];
-			System.arraycopy(imageData.alphaData, 0, alphaInfo.alphaData, 0, alphaInfo.alphaData.length);
+			alphaInfo.alphaData = imageData.alphaData.clone();
 			int offset = 0, alphaOffset = 0;
 			for (int y = 0; y<imageData.height; y++) {
 				for (int x = 0; x<imageData.width; x++) {
@@ -1586,27 +1603,6 @@ void initAlpha_200(NSBitmapImageRep nativeRep) {
 
 }
 
-void initAlpha_100(NSBitmapImageRep nativeRep) {
-	NSAutoreleasePool pool = null;
-	if (!NSThread.isMainThread()) pool = (NSAutoreleasePool) new NSAutoreleasePool().alloc().init();
-	try {
-		int width = (int)nativeRep.pixelsWide();
-		int height = (int)nativeRep.pixelsHigh();
-
-		boolean hasAlpha = nativeRep.hasAlpha();
-		int bpr = width * 4;
-		NSBitmapImageRep rep = (NSBitmapImageRep)new NSBitmapImageRep().alloc();
-		rep = rep.initWithBitmapDataPlanes(0, width, height, 8, hasAlpha ? 4 : 3, hasAlpha, false, OS.NSDeviceRGBColorSpace, OS.NSAlphaFirstBitmapFormat | OS.NSAlphaNonpremultipliedBitmapFormat, bpr, 32);
-
-		if (alphaInfo_100 == null) alphaInfo_100 = new AlphaInfo();
-		alphaInfo_100.init(nativeRep, rep);
-		rep.release();
-	} finally {
-		if (pool != null) pool.release();
-	}
-
-}
-
 void initNative(String filename) {
 	NSAutoreleasePool pool = null;
 	NSImage nativeImage = null;
@@ -1756,7 +1752,6 @@ public void internal_dispose_GC (long hDC, GCData data) {
 			NSGraphicsContext contextObj = new NSGraphicsContext(context);
 			contextObj.release();
 		}
-//		handle.setCacheMode(OS.NSImageCacheDefault);
 	} finally {
 		if (pool != null) pool.release();
 	}
@@ -1909,6 +1904,8 @@ private CachedImageAtSize cachedImageAtSize = new CachedImageAtSize();
 
 private class CachedImageAtSize {
 	private Image image;
+	/** File already found not to be dynamically sizable, so re-reading it cannot help. */
+	private String nonSizableFileName;
 
 	public void destroy() {
 		if (image != null) {
@@ -1959,9 +1956,17 @@ private class CachedImageAtSize {
 		}
 		if (imageFileNameProvider != null) {
 			String fileName = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, 100).element();
-			if (ImageDataLoader.isDynamicallySizable(fileName)) {
-				ImageData imageDataAtSize = ImageDataLoader.loadBySize(fileName, targetWidth, targetHeight);
-				return Optional.of(imageDataAtSize);
+			if (fileName.equals(nonSizableFileName)) {
+				return Optional.empty();
+			}
+			try (InputStream stream = new BufferedInputStream(new FileInputStream(fileName))) {
+				if (ImageDataLoader.isDynamicallySizable(stream)) {
+					nonSizableFileName = null;
+					return Optional.of(ImageDataLoader.loadBySize(stream, targetWidth, targetHeight));
+				}
+				nonSizableFileName = fileName;
+			} catch (IOException e) {
+				SWT.error(SWT.ERROR_IO, e);
 			}
 		}
 		return Optional.empty();

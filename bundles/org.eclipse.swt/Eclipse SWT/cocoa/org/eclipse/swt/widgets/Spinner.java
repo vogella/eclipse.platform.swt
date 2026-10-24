@@ -165,29 +165,6 @@ public void addSelectionListener(SelectionListener listener) {
 	addTypedListener(listener, SWT.Selection, SWT.DefaultSelection);
 }
 
-/**
- * Adds the listener to the collection of listeners who will
- * be notified when the receiver's text is verified, by sending
- * it one of the messages defined in the <code>VerifyListener</code>
- * interface.
- *
- * @param listener the listener which should be notified
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @see VerifyListener
- * @see #removeVerifyListener
- */
-void addVerifyListener (VerifyListener listener) {
-	addTypedListener(listener, SWT.Verify);
-}
-
 static int checkStyle (int style) {
 	/*
 	* Even though it is legal to create this widget
@@ -263,7 +240,6 @@ public void copy () {
 void createHandle () {
 	NSView widget = (NSView)new SWTView().alloc();
 	widget.init();
-//	widget.setDrawsBackground(false);
 	NSStepper buttonWidget = (NSStepper)new SWTStepper().alloc();
 	buttonWidget.init();
 	buttonWidget.setValueWraps((style & SWT.WRAP) != 0);
@@ -272,7 +248,6 @@ void createHandle () {
 	buttonWidget.setMaxValue(100);
 	NSTextField textWidget = (NSTextField)new SWTTextField().alloc();
 	textWidget.init();
-//	textWidget.setTarget(widget);
 	textWidget.setEditable((style & SWT.READ_ONLY) == 0);
 	if ((style & SWT.BORDER) == 0) {
 		textWidget.setFocusRingType (OS.NSFocusRingTypeNone);
@@ -395,6 +370,10 @@ public int getIncrement () {
 	return (int)buttonView.increment();
 }
 
+String getDecimalSeparator () {
+	return textFormatter.decimalSeparator ().getString ();
+}
+
 /**
  * Returns the maximum value which the receiver will allow.
  *
@@ -461,7 +440,7 @@ int getSelectionText (boolean[] parseFail) {
 	try {
 		int value;
 		if (digits > 0) {
-			String decimalSeparator = textFormatter.decimalSeparator().getString();
+			String decimalSeparator = getDecimalSeparator ();
 			int index = string.indexOf (decimalSeparator);
 			if (index != -1)  {
 				int startIndex = string.startsWith ("+") || string.startsWith ("-") ? 1 : 0;
@@ -651,30 +630,6 @@ public void removeSelectionListener(SelectionListener listener) {
 	if (eventTable == null) return;
 	eventTable.unhook (SWT.Selection, listener);
 	eventTable.unhook (SWT.DefaultSelection,listener);
-}
-
-/**
- * Removes the listener from the collection of listeners who will
- * be notified when the control is verified.
- *
- * @param listener the listener which should be notified
- *
- * @exception IllegalArgumentException <ul>
- *    <li>ERROR_NULL_ARGUMENT - if the listener is null</li>
- * </ul>
- * @exception SWTException <ul>
- *    <li>ERROR_WIDGET_DISPOSED - if the receiver has been disposed</li>
- *    <li>ERROR_THREAD_INVALID_ACCESS - if not called from the thread that created the receiver</li>
- * </ul>
- *
- * @see VerifyListener
- * @see #addVerifyListener
- */
-void removeVerifyListener (VerifyListener listener) {
-	checkWidget ();
-	if (listener == null) error (SWT.ERROR_NULL_ARGUMENT);
-	if (eventTable == null) return;
-	eventTable.unhook (SWT.Verify, listener);
 }
 
 @Override
@@ -918,11 +873,15 @@ void setSelection (int value, boolean setPos, boolean setText, boolean notify) {
 		((NSStepper)buttonView).setDoubleValue(value);
 	}
 	if (setText) {
-		String string = String.valueOf (value);
-		if (digits > 0) {
-			String decimalSeparator = textFormatter.decimalSeparator().getString();
+		String string;
+		if (digits == 0) {
+			string = String.valueOf (value);
+		} else {
+			string = String.valueOf (Math.abs (value));
+			String decimalSeparator = getDecimalSeparator ();
 			int index = string.length () - digits;
 			StringBuilder buffer = new StringBuilder ();
+			if (value < 0) buffer.append ("-");
 			if (index > 0) {
 				buffer.append (string.substring (0, index));
 				buffer.append (decimalSeparator);
@@ -1107,13 +1066,14 @@ String verifyText (String string, int start, int end, NSEvent keyEvent) {
 	event.end = end;
 	int index = 0;
 	if (digits > 0) {
-		String decimalSeparator = ".";//getDecimalSeparator ();
+		String decimalSeparator = getDecimalSeparator ();
 		index = string.indexOf (decimalSeparator);
 		if (index != -1) {
 			string = string.substring (0, index) + string.substring (index + 1);
 		}
 		index = 0;
 	}
+	if (string.length () > 0 && getMinimum () < 0 && string.charAt (0) == '-') index++;
 	while (index < string.length ()) {
 		if (!Character.isDigit (string.charAt (index))) break;
 		index++;

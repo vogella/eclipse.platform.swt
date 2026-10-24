@@ -142,11 +142,6 @@ public final class Image extends Resource implements Drawable {
 	int height = -1;
 
 	/**
-	 * Specifies the default scanline padding.
-	 */
-	static final int DEFAULT_SCANLINE_PAD = 4;
-
-	/**
 	 * ImageFileNameProvider to provide file names at various Zoom levels
 	 */
 	private ImageFileNameProvider imageFileNameProvider;
@@ -970,29 +965,45 @@ private CachedImageAtSize cachedImageAtSize = new CachedImageAtSize();
 
 private class CachedImageAtSize {
 	private Image image;
+	/** File already found not to be dynamically sizable, so re-reading it cannot help. */
+	private String nonSizableFileName;
+	/** Size in pixels the cached image was requested at; the image itself carries points. */
+	private int requestedWidth = -1;
+	private int requestedHeight = -1;
+	/** Zoom the cached image was built for; the same pixel size can be requested at two zooms. */
+	private int requestedZoom = -1;
 
 	public void destroy() {
 		if (image != null) {
 			image.dispose();
 			image = null;
 		}
+		requestedWidth = -1;
+		requestedHeight = -1;
+		requestedZoom = -1;
 	}
 
 	private Optional<Image> refresh(int destWidth, int destHeight) {
-		int scaledWidth = DPIUtil.pointToPixel(destWidth, DPIUtil.getDeviceZoom());
-		int scaledHeight = DPIUtil.pointToPixel(destHeight, DPIUtil.getDeviceZoom());
-		if (isReusable(scaledWidth, scaledHeight)) {
+		int zoom = DPIUtil.getDeviceZoom();
+		int scaledWidth = DPIUtil.pointToPixel(destWidth, zoom);
+		int scaledHeight = DPIUtil.pointToPixel(destHeight, zoom);
+		if (isReusable(scaledWidth, scaledHeight, zoom)) {
 			return Optional.of(image);
 		} else {
 			destroy();
 			Optional<Image> imageAtSize = loadImageAtSize(scaledWidth, scaledHeight);
 			image = imageAtSize.orElse(null);
+			if (image != null) {
+				requestedWidth = scaledWidth;
+				requestedHeight = scaledHeight;
+				requestedZoom = zoom;
+			}
 			return imageAtSize;
 		}
 	}
 
-	private boolean isReusable(int width, int height) {
-		return image != null && image.height == height && image.width == width;
+	private boolean isReusable(int width, int height, int zoom) {
+		return image != null && requestedHeight == height && requestedWidth == width && requestedZoom == zoom;
 	}
 
 	private Optional<Image> loadImageAtSize(int destWidth, int destHeight) {
@@ -1020,9 +1031,17 @@ private class CachedImageAtSize {
 		}
 		if (imageFileNameProvider != null) {
 			String fileName = DPIUtil.validateAndGetImagePathAtZoom(imageFileNameProvider, 100).element();
-			if (ImageDataLoader.isDynamicallySizable(fileName)) {
-				ImageData imageDataAtSize = ImageDataLoader.loadBySize(fileName, targetWidth, targetHeight);
-				return Optional.of(imageDataAtSize);
+			if (fileName.equals(nonSizableFileName)) {
+				return Optional.empty();
+			}
+			try (InputStream stream = new BufferedInputStream(new FileInputStream(fileName))) {
+				if (ImageDataLoader.isDynamicallySizable(stream)) {
+					nonSizableFileName = null;
+					return Optional.of(ImageDataLoader.loadBySize(stream, targetWidth, targetHeight));
+				}
+				nonSizableFileName = fileName;
+			} catch (IOException e) {
+				SWT.error(SWT.ERROR_IO, e);
 			}
 		}
 		return Optional.empty();
@@ -1272,15 +1291,16 @@ public ImageData getImageData (int zoom) {
 
 private ImageData drawWithImageGcDrawer(int width, int height, int zoom) {
 	int gcStyle = imageGcDrawer.getGcStyle();
-	Image image;
+	// Draw on a surface at the requested zoom, so the result needs no pixel scaling
+	int scaledWidth = DPIUtil.pointToPixel(width, zoom);
+	int scaledHeight = DPIUtil.pointToPixel(height, zoom);
+	final ImageData resultData = new ImageData(scaledWidth, scaledHeight, 24, new PaletteData (0xFF, 0xFF00, 0xFF0000));
 	if ((gcStyle & SWT.TRANSPARENT) != 0) {
-		/* Create a 24 bit image data with alpha channel */
-		final ImageData resultData = new ImageData(width, height, 24, new PaletteData (0xFF, 0xFF00, 0xFF0000));
-		resultData.alphaData = new byte [width * height];
-		image = new Image(device, resultData, zoom);
+		resultData.alphaData = new byte [scaledWidth * scaledHeight];
 	} else {
-		image = new Image(device, width, height);
+		Arrays.fill(resultData.data, (byte) 0xFF);
 	}
+	Image image = new Image(device, resultData, zoom);
 	GC gc = new GC(image, gcStyle);
 	try {
 		imageGcDrawer.drawOn(gc, width, height);

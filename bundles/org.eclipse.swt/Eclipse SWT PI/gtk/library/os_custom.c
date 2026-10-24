@@ -1040,6 +1040,23 @@ G_DEFINE_TYPE_WITH_CODE (SwtFixedAccessible, swt_fixed_accessible, GTK_TYPE_CONT
 // Fully qualified Java class name for the Java implementation of ATK functions
 const char *ACCESSIBILITY_CLASS_NAME = "org/eclipse/swt/accessibility/AccessibleObject";
 
+static jclass accessibility_class = NULL;
+
+// FindClass resolves against the class loader of the calling Java method, which only is SWT's
+// when called from a JNI native method, so the class is looked up once and kept.
+static jclass get_accessibility_class (JNIEnv *env) {
+	if (accessibility_class == NULL) {
+		jclass cls = (*env)->FindClass(env, ACCESSIBILITY_CLASS_NAME);
+		if (cls == NULL) {
+			(*env)->ExceptionClear(env);
+			return NULL;
+		}
+		accessibility_class = (*env)->NewGlobalRef(env, cls);
+		(*env)->DeleteLocalRef(env, cls);
+	}
+	return accessibility_class;
+}
+
 static void swt_fixed_accessible_init (SwtFixedAccessible *accessible) {
 	// Initialize the SwtFixedAccessiblePrivate struct
 	accessible->priv = swt_fixed_accessible_get_instance_private (accessible);
@@ -1104,6 +1121,11 @@ void swt_fixed_accessible_register_accessible (AtkObject *obj, gboolean is_nativ
 	SwtFixedAccessible *fixed = SWT_FIXED_ACCESSIBLE (obj);
 	SwtFixedAccessiblePrivate *private = fixed->priv;
 	private->has_accessible = TRUE;
+
+	JNIEnv *env;
+	if ((*JVM)->GetEnv(JVM, (void **)&env, JNI_VERSION_10) == JNI_OK) {
+		get_accessibility_class(env);
+	}
 
 	if (!is_native) {
 		gtk_accessible_set_widget (GTK_ACCESSIBLE (obj), to_map);
@@ -2122,7 +2144,7 @@ jlong call_accessible_object_function (const char *method_name, const char *meth
 	}
 
 	// Find the class pointer
-	cls = (*env)->FindClass(env, ACCESSIBILITY_CLASS_NAME);
+	cls = get_accessibility_class(env);
 	if (cls == NULL) {
 		g_critical("JNI class pointer is NULL for class %s\n", ACCESSIBILITY_CLASS_NAME);
 		return 0;
@@ -2263,3 +2285,96 @@ JNIEXPORT jlong JNICALL OS_NATIVE(content_1providers_1create_1gvalue)
 	OS_NATIVE_EXIT(env, that, content_1providers_1create_1gvalue_FUNC)
 	return (jlong)v;
 }
+
+#if defined(GTK4)
+/*
+ * SwtScaledPaintable: a GdkPaintable wrapping a GdkTexture that advertises a
+ * fixed logical (point) intrinsic size. GtkPicture measures a plain GdkTexture
+ * using its device-pixel size, which inflates widgets at HiDPI. By reporting the
+ * logical size here while drawing the full-resolution texture, images keep their
+ * correct logical footprint and render crisply (no down/up-scaling).
+ */
+#define SWT_TYPE_SCALED_PAINTABLE (swt_scaled_paintable_get_type ())
+G_DECLARE_FINAL_TYPE (SwtScaledPaintable, swt_scaled_paintable, SWT, SCALED_PAINTABLE, GObject)
+
+struct _SwtScaledPaintable
+{
+	GObject parent_instance;
+	GdkTexture* texture;
+	int width;
+	int height;
+};
+
+static void swt_scaled_paintable_paintable_init (GdkPaintableInterface* iface);
+
+G_DEFINE_TYPE_WITH_CODE (SwtScaledPaintable, swt_scaled_paintable, G_TYPE_OBJECT,
+	G_IMPLEMENT_INTERFACE (GDK_TYPE_PAINTABLE, swt_scaled_paintable_paintable_init))
+
+static void swt_scaled_paintable_snapshot (GdkPaintable* paintable, GdkSnapshot* snapshot, double width, double height)
+{
+	SwtScaledPaintable* self = SWT_SCALED_PAINTABLE (paintable);
+	if (self->texture != NULL) {
+		/* Draw the full device-resolution texture into the (logical) box. */
+		gdk_paintable_snapshot (GDK_PAINTABLE (self->texture), snapshot, width, height);
+	}
+}
+
+static int swt_scaled_paintable_get_intrinsic_width (GdkPaintable* paintable)
+{
+	return SWT_SCALED_PAINTABLE (paintable)->width;
+}
+
+static int swt_scaled_paintable_get_intrinsic_height (GdkPaintable* paintable)
+{
+	return SWT_SCALED_PAINTABLE (paintable)->height;
+}
+
+static double swt_scaled_paintable_get_intrinsic_aspect_ratio (GdkPaintable* paintable)
+{
+	SwtScaledPaintable* self = SWT_SCALED_PAINTABLE (paintable);
+	if (self->height <= 0) return 0.0;
+	return (double) self->width / (double) self->height;
+}
+
+static GdkPaintableFlags swt_scaled_paintable_get_flags (GdkPaintable* paintable)
+{
+	return GDK_PAINTABLE_STATIC_SIZE | GDK_PAINTABLE_STATIC_CONTENTS;
+}
+
+static void swt_scaled_paintable_paintable_init (GdkPaintableInterface* iface)
+{
+	iface->snapshot = swt_scaled_paintable_snapshot;
+	iface->get_intrinsic_width = swt_scaled_paintable_get_intrinsic_width;
+	iface->get_intrinsic_height = swt_scaled_paintable_get_intrinsic_height;
+	iface->get_intrinsic_aspect_ratio = swt_scaled_paintable_get_intrinsic_aspect_ratio;
+	iface->get_flags = swt_scaled_paintable_get_flags;
+}
+
+static void swt_scaled_paintable_dispose (GObject* object)
+{
+	SwtScaledPaintable* self = SWT_SCALED_PAINTABLE (object);
+	g_clear_object (&self->texture);
+	G_OBJECT_CLASS (swt_scaled_paintable_parent_class)->dispose (object);
+}
+
+static void swt_scaled_paintable_class_init (SwtScaledPaintableClass* klass)
+{
+	G_OBJECT_CLASS (klass)->dispose = swt_scaled_paintable_dispose;
+}
+
+static void swt_scaled_paintable_init (SwtScaledPaintable* self)
+{
+	self->texture = NULL;
+	self->width = 0;
+	self->height = 0;
+}
+
+GdkPaintable* swt_scaled_paintable_new (GdkTexture* texture, int width, int height)
+{
+	SwtScaledPaintable* self = g_object_new (SWT_TYPE_SCALED_PAINTABLE, NULL);
+	self->texture = texture != NULL ? g_object_ref (texture) : NULL;
+	self->width = width;
+	self->height = height;
+	return GDK_PAINTABLE (self);
+}
+#endif /* GTK4 */

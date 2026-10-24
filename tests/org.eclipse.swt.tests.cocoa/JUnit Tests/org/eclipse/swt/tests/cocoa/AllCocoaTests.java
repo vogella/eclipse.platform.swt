@@ -14,19 +14,33 @@
  */
 package org.eclipse.swt.tests.cocoa;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
-		// Test.class be added here.
+@Suite
+@SelectClasses({
+	Test_cocoa_AccessibleTextRanges.class,
+	Test_cocoa_AccessibleRoles.class,
+	Test_cocoa_AccessibleAttributes.class,
+	Test_cocoa_TransferRegisterType.class,
+	Test_org_eclipse_swt_internal_cocoa_Smoke.class,
+	Test_cocoa_GC.class,
+	Test_cocoa_Canvas.class,
+	Test_cocoa_Composite.class,
+	Test_cocoa_Table.class,
+	Test_cocoa_ImageAlphaData.class,
+	Test_cocoa_SystemColorsAppearance.class,
+	Test_cocoa_ReleasedChildren.class,
+	Test_cocoa_DefaultFont.class,
+	Test_cocoa_GCCopyArea.class,
+	Test_cocoa_AccessibleChildValue.class,
+	Test_cocoa_AccessibleEnabled.class,
+	Test_cocoa_AccessibleNumericValue.class,
+	Test_cocoa_AccessibleHitTest.class,
+	Test_cocoa_AccessibleChildActionNames.class,
+	Test_cocoa_Button.class
 })
 
 public class AllCocoaTests {
-
-	public static void main(String[] args) {
-//		JUnitCore.main(AllCocoaTests.class.getName()); // Enable once a test is added.
-	}
 
 }
