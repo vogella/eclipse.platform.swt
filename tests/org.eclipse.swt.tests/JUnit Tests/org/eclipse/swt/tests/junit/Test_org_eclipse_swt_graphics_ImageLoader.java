@@ -312,6 +312,44 @@ public void test_saveDirectImagesWithAnyByteOrderAndPad() {
 }
 
 /**
+ * The GIF specification requires an LZW minimum code size of at least 2. With the size 1 that
+ * was written for bilevel images, decoders (also SWT's own) read most images wrongly or fail.
+ */
+@Test
+public void test_saveBilevelGif() throws IOException {
+	RGB[] colors = { new RGB(10, 20, 30), new RGB(200, 100, 50) };
+	for (int width = 1; width <= 9; width += 4) {
+		for (int height = 1; height <= 4; height++) {
+			ImageData source = new ImageData(width, height, 1, new PaletteData(colors));
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					source.setPixel(x, y, (x * 3 + y) % 5 == 0 ? 1 : 0);
+				}
+			}
+			ImageLoader saver = new ImageLoader();
+			saver.data = new ImageData[] { source };
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			saver.save(out, SWT.IMAGE_GIF);
+			byte[] bytes = out.toByteArray();
+			// header (6), logical screen descriptor (7), global color table (6), image descriptor (10)
+			assertEquals(2, bytes[29], "LZW minimum code size");
+			ImageData javaDecoded = FileFormat
+					.load(new ElementAtZoom<>(new ByteArrayInputStream(bytes), 100), new ImageLoader(), 100).get(0)
+					.element();
+			ImageData decoded = new ImageLoader().load(new ByteArrayInputStream(bytes))[0];
+			for (ImageData data : new ImageData[] { javaDecoded, decoded }) {
+				for (int y = 0; y < height; y++) {
+					for (int x = 0; x < width; x++) {
+						assertEquals(colors[source.getPixel(x, y)], data.palette.getRGB(data.getPixel(x, y)),
+								width + "x" + height + ", pixel " + x + "," + y);
+					}
+				}
+			}
+		}
+	}
+}
+
+/**
  * The Java decoders in FileFormat are the only path on win32 and cocoa but are bypassed by
  * GdkPixbuf on GTK, so they are called directly.
  */
