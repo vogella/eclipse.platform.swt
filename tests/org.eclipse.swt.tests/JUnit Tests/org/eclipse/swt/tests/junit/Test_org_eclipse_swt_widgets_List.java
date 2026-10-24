@@ -2178,6 +2178,19 @@ public void test_getItemHeight_returns_inconsistent_heights () {
 }
 
 @Test
+public void test_getItemHeightIsRowPitch() {
+	list.removeAll();
+	for (int i = 0; i < 5; i++) {
+		list.add("Item " + i);
+	}
+	int fiveRows = list.computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
+	list.add("Item 5");
+	int sixRows = list.computeSize(SWT.DEFAULT, SWT.DEFAULT).y;
+	// one more item takes exactly one item height, so n * getItemHeight() fits n items
+	assertEquals(list.getItemHeight(), sixRows - fiveRows);
+}
+
+@Test
 public void test_addManyItemsOneByOne_orderAndIndexOf() {
 	int count = 10_000;
 	for (int i = 0; i < count; i++) {
