@@ -937,7 +937,6 @@ public void test_fillRectangleLorg_eclipse_swt_graphics_Rectangle() {
 
 @Test
 public void test_roundRectangleNegativeSizeAndArcs() {
-	assumeFalse(SwtTestUtil.isWindows, "win32 passes negative sizes to GDI RoundRect without normalizing them");
 	assertArrayEquals(roundRectangleImageData(true, 10, 10, 40, 30, 12, 8),
 			roundRectangleImageData(true, 50, 40, -40, -30, -12, -8), "fillRoundRectangle");
 	assertArrayEquals(roundRectangleImageData(false, 10, 10, 40, 30, 12, 8),
