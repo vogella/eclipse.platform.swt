@@ -519,7 +519,7 @@ public final class GIFFileFormat extends StaticImageFileFormat {
 
 			/* Step 9: Write the actual data for each frame. */
 			try {
-				outputStream.write(depth); // Minimum LZW Code size
+				outputStream.write(LZWCodec.minimumCodeSize(depth)); // Minimum LZW Code size
 			} catch (IOException e) {
 				SWT.error(SWT.ERROR_IO, e);
 			}
