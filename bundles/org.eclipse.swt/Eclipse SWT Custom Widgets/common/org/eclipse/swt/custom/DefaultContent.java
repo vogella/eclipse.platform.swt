@@ -315,8 +315,8 @@ void insert(int position, String text) {
 	// make room for the new lines
 	expandLinesBy(numNewLines);
 	// shift down the lines after the replace line
-	for (int i = lineCount - 1; i > startLine; i--) {
-		lines[i + numNewLines]=lines[i];
+	if (numNewLines > 0) {
+		System.arraycopy(lines, startLine + 1, lines, startLine + 1 + numNewLines, lineCount - startLine - 1);
 	}
 	// insert the new lines
 	for (int i = 0; i < numNewLines; i++) {
@@ -350,46 +350,79 @@ void moveAndResizeGap(int position, int size, int newGapLine) {
 	} else {
 		newSize = lowWatermark - size;
 	}
-	// remove the old gap from the lines information
-	if (gapExists()) {
-		// adjust the line length
-		lines[gapLine][1] = lines[gapLine][1] - oldSize;
-		// adjust the offsets of the lines after the gapLine
-		for (int i = gapLine + 1; i < lineCount; i++) {
-			lines[i][0] = lines[i][0] - oldSize;
+	boolean oldGapExists = gapExists();
+	if (oldGapExists) {
+		/*
+		 * Only move the gap while it still has room for the change and does not
+		 * grow above the high watermark. Resizing it to the watermarks on every
+		 * move copies the whole text for each edit away from the gap, and an
+		 * edit that replaces text alternates between both watermarks.
+		 */
+		int remaining = oldSize - size;
+		if (0 < remaining && remaining <= highWatermark) {
+			newSize = oldSize;
 		}
 	}
-
-	char[] content = new char[textStore.length + (newSize - oldSize)];
 	int newGapStart = position;
 	int newGapEnd = newGapStart + newSize;
-	if (oldSize == 0) {
-		System.arraycopy(textStore, 0, content, 0, newGapStart);
-		System.arraycopy(textStore, newGapStart, content, newGapEnd, content.length - newGapEnd);
-	} else if (newGapStart < gapStart) {
-		int delta = gapStart - newGapStart;
-		System.arraycopy(textStore, 0, content, 0, newGapStart);
-		System.arraycopy(textStore, newGapStart, content, newGapEnd, delta);
-		System.arraycopy(textStore, gapEnd, content, newGapEnd + delta, textStore.length - gapEnd);
+	if (oldGapExists && newSize == oldSize) {
+		// move the text between the old and the new gap position across the gap,
+		// instead of copying the whole text into a new array
+		if (newGapStart < gapStart) {
+			System.arraycopy(textStore, newGapStart, textStore, newGapEnd, gapStart - newGapStart);
+		} else {
+			System.arraycopy(textStore, gapEnd, textStore, gapStart, newGapStart - gapStart);
+		}
 	} else {
-		int delta = newGapStart - gapStart;
-		System.arraycopy(textStore, 0, content, 0, gapStart);
-		System.arraycopy(textStore, gapEnd, content, gapStart, delta);
-		System.arraycopy(textStore, gapEnd + delta, content, newGapEnd, content.length - newGapEnd);
+		char[] content = new char[textStore.length + (newSize - oldSize)];
+		if (oldSize == 0) {
+			System.arraycopy(textStore, 0, content, 0, newGapStart);
+			System.arraycopy(textStore, newGapStart, content, newGapEnd, content.length - newGapEnd);
+		} else if (newGapStart < gapStart) {
+			int delta = gapStart - newGapStart;
+			System.arraycopy(textStore, 0, content, 0, newGapStart);
+			System.arraycopy(textStore, newGapStart, content, newGapEnd, delta);
+			System.arraycopy(textStore, gapEnd, content, newGapEnd + delta, textStore.length - gapEnd);
+		} else {
+			int delta = newGapStart - gapStart;
+			System.arraycopy(textStore, 0, content, 0, gapStart);
+			System.arraycopy(textStore, gapEnd, content, gapStart, delta);
+			System.arraycopy(textStore, gapEnd + delta, content, newGapEnd, content.length - newGapEnd);
+		}
+		textStore = content;
 	}
-	textStore = content;
 	gapStart = newGapStart;
 	gapEnd = newGapEnd;
 
-	// add the new gap to the lines information
+	/*
+	 * Move the gap in the lines information: the line holding the old gap
+	 * loses it and the lines after it move back by the old gap size, the
+	 * line holding the new gap gets it and the lines after it move forward
+	 * by the new gap size. Only the lines between both gap lines need both
+	 * steps done separately.
+	 */
+	int oldGapLine = oldGapExists ? gapLine : lineCount;
+	int removed = oldGapExists ? oldSize : 0;
+	if (oldGapExists) {
+		lines[oldGapLine][1] = lines[oldGapLine][1] - oldSize;
+	}
+	int added = 0;
 	if (gapExists()) {
 		gapLine = newGapLine;
-		// adjust the line length
-		int gapLength = gapEnd - gapStart;
-		lines[gapLine][1] = lines[gapLine][1] + (gapLength);
-		// adjust the offsets of the lines after the gapLine
-		for (int i = gapLine + 1; i < lineCount; i++) {
-			lines[i][0] = lines[i][0] + gapLength;
+		added = gapEnd - gapStart;
+		lines[gapLine][1] = lines[gapLine][1] + added;
+	} else {
+		newGapLine = lineCount;
+	}
+	int first = Math.min(oldGapLine, newGapLine) + 1;
+	int last = Math.max(oldGapLine, newGapLine);
+	for (int i = first; i <= last && i < lineCount; i++) {
+		if (i > oldGapLine) lines[i][0] = lines[i][0] - removed;
+		if (i > newGapLine) lines[i][0] = lines[i][0] + added;
+	}
+	if (added != removed) {
+		for (int i = last + 1; i < lineCount; i++) {
+			lines[i][0] = lines[i][0] + added - removed;
 		}
 	}
 }
@@ -599,7 +632,8 @@ void expandLinesBy(int numLines) {
 	if (size - lineCount >= numLines) {
 		return;
 	}
-	int[][] newLines = new int[size+Math.max(10, numLines)][2];
+	// grow geometrically, the rows are only created when lines are added
+	int[][] newLines = new int[Math.max(size + (size >> 1), lineCount + numLines)][];
 	System.arraycopy(lines, 0, newLines, 0, size);
 	lines = newLines;
 }
@@ -794,8 +828,8 @@ void delete(int position, int length) {
 	int numOldLines = endLine - startLine;
 	// shift up the lines after the last deleted line, no need to update
 	// the offset or length of the lines
-	for (int i = endLine + 1; i < lineCount; i++) {
-		lines[i - numOldLines] = lines[i];
+	if (numOldLines > 0) {
+		System.arraycopy(lines, endLine + 1, lines, endLine + 1 - numOldLines, lineCount - endLine - 1);
 	}
 	lineCount -= numOldLines;
 	gapLine = getLineAtPhysicalOffset(gapStart);
