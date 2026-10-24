@@ -269,6 +269,49 @@ public void test_loadOnePixelWideRgbPng_bug3545() throws IOException {
 }
 
 /**
+ * Saving must take the channels from the palette masks and honour the scanline pad, whatever
+ * byte order and row padding the direct palette image uses.
+ */
+@Test
+public void test_saveDirectImagesWithAnyByteOrderAndPad() {
+	PaletteData[] palettes = {
+			new PaletteData(0xFF0000, 0xFF00, 0xFF), new PaletteData(0xFF, 0xFF00, 0xFF0000),
+			new PaletteData(0xFF00, 0xFF0000, 0xFF000000), new PaletteData(0xFF0000, 0xFF00, 0xFF) };
+	int[] depths = { 24, 24, 32, 32 };
+	RGB[] colors = { new RGB(0x11, 0x22, 0x33), new RGB(0xC0, 0x80, 0x40), new RGB(0xFF, 0x00, 0x7F) };
+	for (int i = 0; i < palettes.length; i++) {
+		for (int pad : new int[] { 1, 4 }) {
+			for (int width : new int[] { 1, 3, 7 }) {
+				int height = 2;
+				int bytesPerLine = ((width * depths[i] + 7) / 8 + pad - 1) / pad * pad;
+				ImageData source = new ImageData(width, height, depths[i], palettes[i], pad, new byte[bytesPerLine * height]);
+				for (int y = 0; y < height; y++) {
+					for (int x = 0; x < width; x++) {
+						source.setPixel(x, y, palettes[i].getPixel(colors[(x + y) % colors.length]));
+					}
+				}
+				for (int format : new int[] { SWT.IMAGE_PNG, SWT.IMAGE_BMP }) {
+					ImageLoader saver = new ImageLoader();
+					saver.data = new ImageData[] { source };
+					ByteArrayOutputStream out = new ByteArrayOutputStream();
+					saver.save(out, format);
+					ImageData saved = new ImageLoader().load(new ByteArrayInputStream(out.toByteArray()))[0];
+					String what = "depth " + depths[i] + ", palette " + i + ", pad " + pad + ", width " + width + ", format " + format;
+					assertEquals(width, saved.width, what);
+					assertEquals(height, saved.height, what);
+					for (int y = 0; y < height; y++) {
+						for (int x = 0; x < width; x++) {
+							assertEquals(colors[(x + y) % colors.length], saved.palette.getRGB(saved.getPixel(x, y)),
+									what + ", pixel " + x + "," + y);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+/**
  * The Java decoders in FileFormat are the only path on win32 and cocoa but are bypassed by
  * GdkPixbuf on GTK, so they are called directly.
  */
