@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -640,6 +641,27 @@ public static void waitShellActivate(Runnable trigger, Shell shell) {
 	dumpShellState(System.out);
 	assertEquals(shell.getDisplay().getActiveShell(), shell, "Shell did not activate");
 	fail("SWT.Activate was not received but Shell is (incorrectly?) reported active");
+}
+
+/**
+ * Makes the given open shell the foreground window, so that events posted
+ * with {@link Display#post(org.eclipse.swt.widgets.Event)} reach it.
+ * <p>
+ * Windows refuses <code>SetForegroundWindow</code> to a process that is not
+ * in the foreground (foreground lock), so a shell opened by a test can stay
+ * behind another window and posted keys go to that window. On Windows the
+ * calling test is skipped if the shell still is not active.
+ * </p>
+ *
+ * @param shell the open shell to activate
+ */
+public static void forceActiveForPost(Shell shell) throws InterruptedException {
+	Display display = shell.getDisplay();
+	shell.forceActive();
+	processEvents(3000, () -> display.getActiveShell() == shell);
+	if (isWindows) {
+		assumeTrue(display.getActiveShell() == shell, "Windows did not bring the test shell to the foreground");
+	}
 }
 
 /**
