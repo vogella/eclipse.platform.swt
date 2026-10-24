@@ -59,80 +59,88 @@ public class NativeImageLoader {
 		long loader = GDK.gdk_pixbuf_loader_new();
 		// 2) Copy byte array to C memory, write to GdkPixbufLoader
 		long buffer_ptr = OS.g_malloc(data_buffer.length);
-		C.memmove(buffer_ptr, data_buffer, data_buffer.length);
-		long[] error = new long[1];
-		GDK.gdk_pixbuf_loader_write(loader, buffer_ptr, data_buffer.length, error);
-		if (error[0] != 0) {
-			// Bug 576484
-			// It is safe just to assume if this fails it is most likely an IO error
-			// since unsupported format is checked before, and invalid image right after.
-			// Still, check if it belongs to the G_FILE_ERROR domain and IO error code
-			if (OS.g_error_matches(error[0], OS.g_file_error_quark(), OS.G_FILE_ERROR_IO)) {
-				SWT.error(SWT.ERROR_IO, null, Display.extractFreeGError(error[0]));
-			} else {
-				OS.g_error_free(error[0]);
-			}
-		}
-		GDK.gdk_pixbuf_loader_close(loader, null);
-
-		// 3) Get GdkPixbufAnimation from loader
-		long pixbuf_animation = GDK.gdk_pixbuf_loader_get_animation(loader);
-		if (pixbuf_animation == 0) {
-			SWT.error(SWT.ERROR_INVALID_IMAGE);
-		}
-		boolean isStatic = GDK.gdk_pixbuf_animation_is_static_image(pixbuf_animation);
-		if (isStatic) {
-			// Static image, get as single pixbuf and convert it to ImageData
-			long pixbuf = GDK.gdk_pixbuf_animation_get_static_image(pixbuf_animation);
-			ImageData imgData = pixbufToImageData(pixbuf);
-			imgData.type = getImageFormat(loader);
-			imgDataList.add(imgData);
-		} else {
-			// Image with multiple frames, iterate through each frame and convert
-			// each frame to ImageData
-			long start_time = OS.g_malloc(8);
-			OS.g_get_current_time(start_time);
-			long animation_iter = GDK.gdk_pixbuf_animation_get_iter(pixbuf_animation, start_time);
-			int delay_time = 0;
-			int time_offset = 0;
-			// Fix the number of GIF frames as GdkPixbufAnimation does not provide an API to
-			// determine number of frames.
-			int num_frames = 32;
-			for (int i = 0; i < num_frames; i++) {
-				// Calculate time offset from start_time to next frame
-				delay_time = GDK.gdk_pixbuf_animation_iter_get_delay_time(animation_iter);
-				time_offset += delay_time;
-				OS.g_time_val_add(start_time, time_offset * 1000);
-				boolean update = GDK.gdk_pixbuf_animation_iter_advance(animation_iter, start_time);
-				if (update) {
-					long curr_pixbuf = GDK.gdk_pixbuf_animation_iter_get_pixbuf(animation_iter);
-					long pixbuf_copy = GDK.gdk_pixbuf_copy(curr_pixbuf); // copy because curr_pixbuf might get disposed
-																			// on next advance
-					ImageData imgData = pixbufToImageData(pixbuf_copy);
-					if (imageLoader.logicalScreenHeight == 0 && imageLoader.logicalScreenWidth == 0) {
-						imageLoader.logicalScreenHeight = imgData.height;
-						imageLoader.logicalScreenWidth = imgData.width;
-					}
-					OS.g_object_unref(pixbuf_copy);
-					imgData.type = getImageFormat(loader);
-					imgData.delayTime = delay_time;
-					imgDataList.add(imgData);
+		try {
+			C.memmove(buffer_ptr, data_buffer, data_buffer.length);
+			long[] error = new long[1];
+			GDK.gdk_pixbuf_loader_write(loader, buffer_ptr, data_buffer.length, error);
+			GDK.gdk_pixbuf_loader_close(loader, null);
+			if (error[0] != 0) {
+				// Bug 576484
+				// It is safe just to assume if this fails it is most likely an IO error
+				// since unsupported format is checked before, and invalid image right after.
+				// Still, check if it belongs to the G_FILE_ERROR domain and IO error code
+				if (OS.g_error_matches(error[0], OS.g_file_error_quark(), OS.G_FILE_ERROR_IO)) {
+					SWT.error(SWT.ERROR_IO, null, Display.extractFreeGError(error[0]));
 				} else {
-					break;
+					OS.g_error_free(error[0]);
 				}
 			}
-			if (imgDataList.isEmpty()) {
-				// Some single-frame images (e.g. GIFs carrying a graphic control extension)
-				// are reported by GdkPixbuf (when using glycin library internally) as
-				// non-static animations, but the first iter_advance() returns false so that the
-				// loop above adds no frame at all.
-				// Fall back to the static image in this case (see
-				// https://github.com/eclipse-platform/eclipse.platform.swt/issues/3404).
+
+			// 3) Get GdkPixbufAnimation from loader
+			long pixbuf_animation = GDK.gdk_pixbuf_loader_get_animation(loader);
+			if (pixbuf_animation == 0) {
+				SWT.error(SWT.ERROR_INVALID_IMAGE);
+			}
+			boolean isStatic = GDK.gdk_pixbuf_animation_is_static_image(pixbuf_animation);
+			if (isStatic) {
+				// Static image, get as single pixbuf and convert it to ImageData
 				long pixbuf = GDK.gdk_pixbuf_animation_get_static_image(pixbuf_animation);
 				ImageData imgData = pixbufToImageData(pixbuf);
 				imgData.type = getImageFormat(loader);
 				imgDataList.add(imgData);
+			} else {
+				// Image with multiple frames, iterate through each frame and convert
+				// each frame to ImageData
+				long start_time = OS.g_malloc(8);
+				OS.g_get_current_time(start_time);
+				long animation_iter = GDK.gdk_pixbuf_animation_get_iter(pixbuf_animation, start_time);
+				int delay_time = 0;
+				int time_offset = 0;
+				// Fix the number of GIF frames as GdkPixbufAnimation does not provide an API to
+				// determine number of frames.
+				int num_frames = 32;
+				for (int i = 0; i < num_frames; i++) {
+					// Calculate time offset from start_time to next frame
+					delay_time = GDK.gdk_pixbuf_animation_iter_get_delay_time(animation_iter);
+					time_offset += delay_time;
+					OS.g_time_val_add(start_time, time_offset * 1000);
+					boolean update = GDK.gdk_pixbuf_animation_iter_advance(animation_iter, start_time);
+					if (update) {
+						long curr_pixbuf = GDK.gdk_pixbuf_animation_iter_get_pixbuf(animation_iter);
+						long pixbuf_copy = GDK.gdk_pixbuf_copy(curr_pixbuf); // copy because curr_pixbuf might get disposed
+																				// on next advance
+						ImageData imgData = pixbufToImageData(pixbuf_copy);
+						if (imageLoader.logicalScreenHeight == 0 && imageLoader.logicalScreenWidth == 0) {
+							imageLoader.logicalScreenHeight = imgData.height;
+							imageLoader.logicalScreenWidth = imgData.width;
+						}
+						OS.g_object_unref(pixbuf_copy);
+						imgData.type = getImageFormat(loader);
+						imgData.delayTime = delay_time;
+						imgDataList.add(imgData);
+					} else {
+						break;
+					}
+				}
+				OS.g_object_unref(animation_iter);
+				OS.g_free(start_time);
+				if (imgDataList.isEmpty()) {
+					// Some single-frame images (e.g. GIFs carrying a graphic control extension)
+					// are reported by GdkPixbuf (when using glycin library internally) as
+					// non-static animations, but the first iter_advance() returns false so that the
+					// loop above adds no frame at all.
+					// Fall back to the static image in this case (see
+					// https://github.com/eclipse-platform/eclipse.platform.swt/issues/3404).
+					long pixbuf = GDK.gdk_pixbuf_animation_get_static_image(pixbuf_animation);
+					ImageData imgData = pixbufToImageData(pixbuf);
+					imgData.type = getImageFormat(loader);
+					imgDataList.add(imgData);
+				}
 			}
+		} finally {
+			// The loader keeps no reference to the written buffer, and owns the animation
+			OS.g_object_unref(loader);
+			OS.g_free(buffer_ptr);
 		}
 		for (int i = 0; i < imgDataList.size(); i++) {
 			// Loading completed, notify listeners
@@ -147,8 +155,6 @@ public class NativeImageLoader {
 				}
 			}
 		}
-		OS.g_free(buffer_ptr);
-		OS.g_object_unref(loader);
 		return imgDataList.stream().map(data -> new ElementAtZoom<>(data, streamAtZoom.zoom())).toList();
 	}
 
