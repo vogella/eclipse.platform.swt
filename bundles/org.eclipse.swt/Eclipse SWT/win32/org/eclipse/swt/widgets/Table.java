@@ -7101,13 +7101,30 @@ LRESULT wmNotifyToolTip (NMHDR hdr, long wParam, long lParam) {
 			LRESULT result = super.wmNotify (hdr, wParam, lParam);
 			if (result != null) return result;
 			if (toolTipText != null) break;
-			return positionTooltip(hdr, lParam) ? LRESULT.ONE : null;
+			if (hdr.code == OS.TTN_SHOW) {
+				return positionTooltip(hdr, lParam) ? LRESULT.ONE : null;
+			}
+			/*
+			* Let the list view fill in the text of its label tip first, so
+			* that LVN_GETDISPINFO knows that a tool tip is requested and
+			* removes the line delimiters, then let a custom tool tip clear it.
+			*/
+			tipRequested = true;
+			long code;
+			try {
+				code = callWindowProc (handle, OS.WM_NOTIFY, wParam, lParam);
+			} finally {
+				tipRequested = false;
+			}
+			if (isCustomToolTip ()) positionTooltip(hdr, lParam);
+			return new LRESULT (code);
 		}
 	}
 	return null;
 }
 
 private boolean positionTooltip(NMHDR hdr, long lParam) {
+	boolean positioned = false;
 	LVHITTESTINFO pinfo = new LVHITTESTINFO ();
 	int pos = OS.GetMessagePos ();
 	POINT pt = new POINT();
@@ -7139,7 +7156,7 @@ private boolean positionTooltip(NMHDR hdr, long lParam) {
 				if (adjustedTooltipBounds != null) {
 					OS.SetWindowPos(hwndToolTip, 0, adjustedTooltipBounds.x, adjustedTooltipBounds.y,
 							adjustedTooltipBounds.width, adjustedTooltipBounds.height, flags);
-					return true;
+					positioned = true;
 				}
 			} else if (isCustomToolTip()) {
 				RECT itemRect = getItemBounds(pinfo, item, hDC);
@@ -7160,7 +7177,7 @@ private boolean positionTooltip(NMHDR hdr, long lParam) {
 					string.getChars (0, string.length (), chars, 0);
 					shell.setToolTipText (lpnmtdi, chars);
 					OS.MoveMemory (lParam, lpnmtdi, NMTTDISPINFO.sizeof);
-					return true;
+					positioned = true;
 				}
 			}
 		}
@@ -7168,7 +7185,7 @@ private boolean positionTooltip(NMHDR hdr, long lParam) {
 		if (newFont != 0) OS.SelectObject (hDC, oldFont);
 		OS.ReleaseDC (handle, hDC);
 	}
-	return false;
+	return positioned;
 }
 
 private RECT getItemBounds(LVHITTESTINFO pinfo, TableItem item, long hDC) {
