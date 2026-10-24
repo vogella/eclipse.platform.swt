@@ -246,6 +246,19 @@ class CoordinateSystemMapperTests {
 		assertEquals(rectInPts, mapper.translateFromDisplayCoordinates(rectInPxs));
 	}
 
+	@Test
+	void translateRectangleFillingAn8KMonitorInMultiZoomUsesThatMonitor() {
+		MultiZoomCoordinateSystemMapper mapper = getMultiZoomCoordinateSystemMapper();
+		// 7680 x 4320 pixels: the intersection area times 100 does not fit into an int
+		monitors = new Monitor[] { createMonitor(mapper, new Rectangle(0, 0, 7680, 4320), 100),
+				createMonitor(mapper, new Rectangle(7680, 0, 7680, 4320), 200) };
+		Rectangle rightClientArea = monitors[1].getClientArea();
+		Rectangle rectInPts = new Rectangle(rightClientArea.x, rightClientArea.y, rightClientArea.width,
+				rightClientArea.height);
+		Rectangle rectInPxs = mapper.translateToDisplayCoordinates(rectInPts);
+		assertEquals(new Rectangle(7680, 0, 7680, 4320), rectInPxs);
+	}
+
 	@ParameterizedTest
 	@MethodSource("provideCoordinateSystemMappers")
 	void translateBoundsToSecondMonitor(CoordinateSystemMapper mapper) {
