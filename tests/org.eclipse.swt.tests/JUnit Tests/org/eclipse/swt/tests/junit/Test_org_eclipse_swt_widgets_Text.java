@@ -1325,6 +1325,37 @@ public void test_setTextLimitI() {
 }
 
 @Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeyDownIsSentOnce() throws InterruptedException {
+	shell.open();
+	text.setSize(100, 50);
+	// findFocusedWindow() needs a drawn and focused shell
+	SwtTestUtil.processEvents();
+
+	Display display = Display.getDefault();
+	List<Character> keyDowns = new ArrayList<>();
+	text.addListener(SWT.KeyDown, e -> keyDowns.add(e.character));
+
+	Event a = new Event();
+	a.type = SWT.KeyDown;
+	a.keyCode = 'a';
+	a.character = 'a';
+	Event aUp = new Event();
+	aUp.type = SWT.KeyUp;
+	aUp.keyCode = 'a';
+	aUp.character = 'a';
+	assumeTrue(display.post(a), "Display.post is not supported on GTK4");
+	assumeTrue(display.post(aUp), "Display.post is not supported on GTK4");
+
+	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 1);
+	// give a duplicate KeyDown the chance to arrive
+	SwtTestUtil.processEvents(500, () -> false);
+	assertEquals("a", text.getText());
+	assertEquals(List.of('a'), keyDowns);
+}
+
+@Test
 public void test_setTextLjava_lang_String() {
 	assertThrows(IllegalArgumentException.class, ()->text.setText(null));
 
@@ -1623,6 +1654,7 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	// the window so that org.eclipse.swt.widgets.Display.findFocusedWindow()
 	// returns non-zero
 	SwtTestUtil.processEvents();
+	SwtTestUtil.forceActiveForPost(shell);
 
 	Display display = Display.getDefault();
 
@@ -1642,37 +1674,6 @@ public void test_backspaceAndDelete() throws InterruptedException {
 
 	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 0);
 	assertEquals(0, text.getText().length());
-}
-
-@Test
-@Tag("gtk4-todo")
-@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
-public void test_postedKeyDownIsSentOnce() throws InterruptedException {
-	shell.open();
-	text.setSize(100, 50);
-	// findFocusedWindow() needs a drawn and focused shell
-	SwtTestUtil.processEvents();
-
-	Display display = Display.getDefault();
-	List<Character> keyDowns = new ArrayList<>();
-	text.addListener(SWT.KeyDown, e -> keyDowns.add(e.character));
-
-	Event a = new Event();
-	a.type = SWT.KeyDown;
-	a.keyCode = 'a';
-	a.character = 'a';
-	Event aUp = new Event();
-	aUp.type = SWT.KeyUp;
-	aUp.keyCode = 'a';
-	aUp.character = 'a';
-	assumeTrue(display.post(a), "Display.post is not supported on GTK4");
-	assumeTrue(display.post(aUp), "Display.post is not supported on GTK4");
-
-	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 1);
-	// give a duplicate KeyDown the chance to arrive
-	SwtTestUtil.processEvents(500, () -> false);
-	assertEquals("a", text.getText());
-	assertEquals(List.of('a'), keyDowns);
 }
 
 private Event keyEvent(int key, int type, Widget w) {
