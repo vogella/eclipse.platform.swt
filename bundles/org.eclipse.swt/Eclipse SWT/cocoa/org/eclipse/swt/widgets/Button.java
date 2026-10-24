@@ -688,6 +688,13 @@ void register() {
 }
 
 @Override
+void releaseHandle () {
+	super.releaseHandle ();
+	if (radioParent != null) radioParent.release ();
+	radioParent = null;
+}
+
+@Override
 void releaseWidget () {
 	super.releaseWidget ();
 	image = null;
