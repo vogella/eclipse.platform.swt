@@ -661,4 +661,70 @@ class GCWin32Tests {
 		if (maxX < 0) return null;
 		return new Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1);
 	}
+
+	@ParameterizedTest
+	@ValueSource(booleans = { false, true })
+	public void fillRoundRectangleWithNegativeSize(boolean advanced) {
+		assertSamePixels(advanced, gc -> gc.fillRoundRectangle(10, 10, 40, 30, 12, 8),
+				gc -> gc.fillRoundRectangle(50, 40, -40, -30, 12, 8));
+		assertSamePixels(advanced, gc -> gc.fillRoundRectangle(10, 10, 40, 30, 0, 0),
+				gc -> gc.fillRoundRectangle(50, 40, -40, -30, 0, 0));
+	}
+
+	@ParameterizedTest
+	@ValueSource(booleans = { false, true })
+	public void drawRoundRectangleWithNegativeSize(boolean advanced) {
+		assertSamePixels(advanced, gc -> gc.drawRoundRectangle(10, 10, 40, 30, 12, 8),
+				gc -> gc.drawRoundRectangle(50, 40, -40, -30, 12, 8));
+		assertSamePixels(advanced, gc -> gc.drawRoundRectangle(10, 10, 40, 30, 0, 0),
+				gc -> gc.drawRoundRectangle(50, 40, -40, -30, 0, 0));
+	}
+
+	@ParameterizedTest
+	@ValueSource(booleans = { false, true })
+	public void drawRectangleWithNegativeSize(boolean advanced) {
+		assertSamePixels(advanced, gc -> gc.drawRectangle(10, 10, 40, 30),
+				gc -> gc.drawRectangle(50, 40, -40, -30));
+	}
+
+	private void assertSamePixels(boolean advanced, Consumer<GC> expected, Consumer<GC> actual) {
+		ImageData expectedData = render(advanced, expected);
+		ImageData actualData = render(advanced, actual);
+		assertTrue(hasForegroundPixel(expectedData), "the reference shape draws nothing");
+		assertArrayEquals(expectedData.data, actualData.data);
+	}
+
+	private ImageData render(boolean advanced, Consumer<GC> operation) {
+		Display display = Display.getDefault();
+		Image image = new Image(display, 60, 50);
+		try {
+			GC gc = new GC(image);
+			try {
+				gc.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+				gc.fillRectangle(0, 0, 60, 50);
+				gc.setAdvanced(advanced);
+				gc.setAntialias(SWT.OFF);
+				gc.setForeground(display.getSystemColor(SWT.COLOR_BLACK));
+				gc.setBackground(display.getSystemColor(SWT.COLOR_BLACK));
+				operation.accept(gc);
+			} finally {
+				gc.dispose();
+			}
+			return image.getImageData();
+		} finally {
+			image.dispose();
+		}
+	}
+
+	private static boolean hasForegroundPixel(ImageData data) {
+		for (int y = 0; y < data.height; y++) {
+			for (int x = 0; x < data.width; x++) {
+				RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+				if (rgb.red < 128 && rgb.green < 128 && rgb.blue < 128) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }
