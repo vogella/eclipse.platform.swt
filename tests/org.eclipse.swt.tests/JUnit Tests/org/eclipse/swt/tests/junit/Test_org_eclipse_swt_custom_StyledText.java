@@ -6168,6 +6168,7 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	// the window so that org.eclipse.swt.widgets.Display.findFocusedWindow()
 	// returns non-zero
 	SwtTestUtil.processEvents();
+	SwtTestUtil.forceActiveForPost(shell);
 
 	Display display = Display.getDefault();
 
