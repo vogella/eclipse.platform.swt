@@ -14,7 +14,9 @@
  *******************************************************************************/
 package org.eclipse.swt.tests.junit;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.eclipse.swt.SWTException;
@@ -842,6 +844,28 @@ public void test_add_intArray() {
 	points = new int[] {1,2,3,4,5,6};
 	reg6.add(points);
 	reg6.dispose();
+}
+
+@Test
+public void test_largeCoordinates() {
+	Region region = new Region(display);
+	try {
+		region.add(0, 0, 40000, 40000);
+		assertTrue(region.contains(100, 100));
+		assertTrue(region.contains(30000, 30000));
+		assertFalse(region.contains(-100, 100));
+
+		region.subtract(-10, -10, 50000, 60);
+		assertFalse(region.contains(100, 40));
+		assertTrue(region.contains(100, 60));
+
+		region.intersect(-10, -10, 50000, 200);
+		assertTrue(region.contains(100, 100));
+		assertFalse(region.contains(100, 300));
+		assertTrue(region.intersects(-50000, 0, 100000, 100));
+	} finally {
+		region.dispose();
+	}
 }
 
 /* custom */
