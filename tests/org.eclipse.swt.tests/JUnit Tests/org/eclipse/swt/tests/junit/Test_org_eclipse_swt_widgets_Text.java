@@ -354,13 +354,6 @@ public void test_cut() throws InterruptedException {
 
 @Test
 public void test_getCaretLineNumber() {
-	if (SwtTestUtil.isCocoa) {
-		//TODO Fix Cocoa failure.
-		if (SwtTestUtil.verbose) {
-			System.out.println("Excluded test_getCaretLineNumber(org.eclipse.swt.tests.junit.Test_org_eclipse_swt_widgets_Text)");
-		}
-		return;
-	}
 	text.setBounds(0, 0, 500, 500);
 	assertEquals( 0, text.getCaretLineNumber());
 	text.setText("Line0\r\n");
@@ -379,6 +372,26 @@ public void test_getCaretLineNumber() {
 	assertEquals(0, text.getCaretLineNumber());
 	text.setSelection(8,8);
 	assertEquals(1, text.getCaretLineNumber());
+}
+
+@Test
+public void test_getCaretLineNumberScrolled() {
+	makeCleanEnvironment(false);
+	StringBuilder content = new StringBuilder();
+	for (int i = 0; i < 100; i++) {
+		if (i > 0) content.append(text.getLineDelimiter());
+		content.append("Line ").append(i);
+	}
+	text.setText(content.toString());
+	text.setSize(200, text.getLineHeight() * 5);
+	shell.open();
+	int offset = content.indexOf("Line 60");
+	text.setSelection(offset, offset);
+	text.showSelection();
+	assertEquals(60, text.getCaretLineNumber());
+	text.setSelection(0, 0);
+	text.showSelection();
+	assertEquals(0, text.getCaretLineNumber());
 }
 
 @Test
