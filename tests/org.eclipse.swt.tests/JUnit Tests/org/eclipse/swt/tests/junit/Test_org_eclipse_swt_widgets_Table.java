@@ -18,9 +18,9 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +28,8 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -1516,234 +1518,6 @@ public void test_setSelection$Lorg_eclipse_swt_widgets_TableItem() {
 }
 
 @Test
-public void test_setSelectionI() {
-	int number = 5;
-	TableItem[] items = new TableItem[number];
-	for (int i = 0; i < number; i++)
-		items[i] = new TableItem(table, 0);
-
-	table.setSelection(0);
-	assertArrayEquals(new int[]{0}, table.getSelectionIndices());
-	table.setSelection(3);
-	assertArrayEquals(new int[]{3}, table.getSelectionIndices());
-	table.setSelection(4);
-	assertArrayEquals(new int[]{4}, table.getSelectionIndices());
-
-	table.setSelection(2);
-	assertArrayEquals(new int[]{2}, table.getSelectionIndices());
-
-	table.setSelection(1);
-	assertArrayEquals(new int[]{1}, table.getSelectionIndices());
-
-	// test single-selection table
-	makeCleanEnvironment(true);
-
-	for (int i = 0; i < number; i++)
-		items[i] = new TableItem(table, 0);
-
-	table.setSelection(0);
-	assertArrayEquals(new int[]{0}, table.getSelectionIndices());
-
-	table.setSelection(3);
-	assertArrayEquals(new int[]{3}, table.getSelectionIndices());
-
-	table.setSelection(4);
-	assertArrayEquals(new int[]{4}, table.getSelectionIndices());
-
-	table.setSelection(2);
-	assertArrayEquals(new int[]{2}, table.getSelectionIndices());
-
-	table.setSelection(1);
-	assertArrayEquals(new int[]{1}, table.getSelectionIndices());
-
-}
-
-@Test
-public void test_setSelectionII() {
-	int number = 5;
-	TableItem[] items = new TableItem[number];
-	for (int i = 0; i < number; i++)
-		items[i] = new TableItem(table, 0);
-
-	table.setSelection(0, 1);
-	assertArrayEquals(new int[]{0, 1}, table.getSelectionIndices());
-
-	table.setSelection(2, 4);
-	assertArrayEquals(new int[]{2, 3, 4}, table.getSelectionIndices());
-
-	table.setSelection(3, 4);
-	assertArrayEquals(new int[]{3, 4}, table.getSelectionIndices());
-
-	table.setSelection(5, 4);
-	assertArrayEquals(new int[]{}, table.getSelectionIndices());
-
-	table.setSelection(2, 2);
-	assertArrayEquals(new int[]{2}, table.getSelectionIndices());
-
-	table.setSelection(1, 4);
-	assertArrayEquals(new int[]{1, 2, 3, 4}, table.getSelectionIndices());
-
-	table.setSelection(0, 4);
-	assertArrayEquals(new int[]{0, 1, 2, 3, 4}, table.getSelectionIndices());
-
-	// test single-selection table
-	makeCleanEnvironment(true);
-
-	for (int i = 0; i < number; i++)
-		items[i] = new TableItem(table, 0);
-	table.setSelection(0, 1);
-	if (SwtTestUtil.fCheckSWTPolicy)
-		assertArrayEquals(new int[] {1}, table.getSelectionIndices());
-	table.setSelection(2, 4);
-	if (SwtTestUtil.fCheckSWTPolicy)
-		assertArrayEquals(new int[] {4}, table.getSelectionIndices());
-	table.setSelection(5, 4);
-	if (SwtTestUtil.fCheckSWTPolicy)
-		assertArrayEquals(new int[] {}, table.getSelectionIndices());
-	table.setSelection(2, 2);
-	assertArrayEquals(new int[] {2}, table.getSelectionIndices());
-	table.setSelection(1, 4);
-	if (SwtTestUtil.fCheckSWTPolicy)
-		assertArrayEquals(new int[] {4}, table.getSelectionIndices());
-	table.setSelection(0, 4);
-	if (SwtTestUtil.fCheckSWTPolicy)
-		assertArrayEquals(new int[] {4}, table.getSelectionIndices());
-}
-
-@Test
-public void test_showSelection() {
-	table.showSelection();
-}
-
-/* custom */
-protected Table table;
-
-private void makeCleanEnvironment(boolean single) {
-// this method must be private or protected so the auto-gen tool keeps it
-	if (table != null) table.dispose();
-	table = new Table(shell, single?SWT.SINGLE:SWT.MULTI);
-	setWidget(table);
-}
-
-private void createTable(List<String> events) {
-	makeCleanEnvironment(false);
-	table.setHeaderVisible(true);
-	table.setLinesVisible(true);
-	for (int col = 0; col < 3; col++) {
-		TableColumn column = new TableColumn(table, SWT.NONE);
-		column.setText("Col " + col);
-		column.setWidth(50);
-		hookExpectedEvents(column, getTestName(), events);
-	}
-	for (int row = 0; row < 3; row++) {
-		TableItem item = new TableItem(table, SWT.NONE);
-		item.setText(new String [] {"C0R" + row, "C1R" + row, "C2R" + row});
-		hookExpectedEvents(item, getTestName(), events);
-	}
-}
-
-@Test
-public void test_consistency_KeySelection() {
-	List<String> events = new ArrayList<>();
-	createTable(events);
-	consistencyEvent(0, SWT.ARROW_DOWN, 0, 0, ConsistencyUtility.KEY_PRESS, events);
-}
-
-@Test
-public void test_consistency_MouseSelection() {
-	List<String> events = new ArrayList<>();
-	createTable(events);
-	consistencyPrePackShell();
-	consistencyEvent(20, table.getHeaderHeight() + table.getItemHeight()*2,
-					 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
-}
-
-@Test
-public void test_consistency_DoubleClick () {
-	List<String> events = new ArrayList<>();
-	createTable(events);
-	consistencyPrePackShell();
-	consistencyEvent(20, table.getHeaderHeight()+ table.getItemHeight() + 5, 1, 0,
-					 ConsistencyUtility.MOUSE_DOUBLECLICK, events);
-}
-
-@Test
-public void test_consistency_EnterSelection () {
-	List<String> events = new ArrayList<>();
-	createTable(events);
-	consistencyEvent(13, 10, 0, 0, ConsistencyUtility.KEY_PRESS, events);
-}
-
-@Test
-public void test_consistency_MenuDetect () {
-	List<String> events = new ArrayList<>();
-	createTable(events);
-	consistencyEvent(20, 25, 3, 0, ConsistencyUtility.MOUSE_CLICK, events);
-}
-
-@Test
-public void test_consistency_DragDetect () {
-	List<String> events = new ArrayList<>();
-	createTable(events);
-	consistencyEvent(30, 20, 50, 30, ConsistencyUtility.MOUSE_DRAG, events);
-}
-
-@Test
-public void test_Virtual() {
-	table.dispose();
-	table = new Table(shell, SWT.VIRTUAL | SWT.BORDER);
-	setWidget(table);
-
-	int count = 1_000_000;
-	int visibleCount = 10;
-
-	shell.setLayout(new FillLayout());
-	final int[] dataCounter = { 0 };
-	table.addListener(SWT.SetData, event -> {
-		TableItem item = (TableItem) event.item;
-		int index = table.indexOf(item);
-		item.setText("Item " + index);
-		dataCounter[0]++;
-	});
-
-	shell.setSize (200, table.getItemHeight() * visibleCount);
-	shell.open ();
-	table.setItemCount(count);
-
-	long end = System.currentTimeMillis() + 3000;
-	while (!shell.isDisposed() && System.currentTimeMillis() < end) {
-		if (!shell.getDisplay().readAndDispatch ()) {
-			try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				break;
-			}
-		}
-	}
-	// the "* 3" allows some surplus for platforms that pre-fetch items to improve scrolling performance:
-	assertTrue(dataCounter[0] > visibleCount / 2 && dataCounter[0] <= visibleCount * 3);
-}
-
-@Test
-public void test_setTopIndex() {
-	for (int i = 0; i < 10; i++) {
-		new TableItem(table, 0);
-	}
-	for (int i = 0; i < 10; i++) {
-		new TableItem(table, 0);
-	}
-	table.setSize(50,50);
-	shell.open();
-	table.setTopIndex(5);
-	for (int i = 0; i < 10; i++) {
-		new TableItem(table, 0);
-	}
-	shell.setVisible(false);
-	assertEquals(5, table.getTopIndex());
-}
-
-@Test
 public void test_addManyItemsOneByOne_orderAndIndexOf() {
 	int count = 10_000;
 	TableItem[] created = new TableItem[count];
@@ -1966,5 +1740,251 @@ private void createColumnOrderTable(int style) {
 			item.setText(col, row + "-" + col);
 		}
 	}
+}
+
+@Test
+public void test_setSelectionI() {
+	int number = 5;
+	TableItem[] items = new TableItem[number];
+	for (int i = 0; i < number; i++)
+		items[i] = new TableItem(table, 0);
+
+	table.setSelection(0);
+	assertArrayEquals(new int[]{0}, table.getSelectionIndices());
+	table.setSelection(3);
+	assertArrayEquals(new int[]{3}, table.getSelectionIndices());
+	table.setSelection(4);
+	assertArrayEquals(new int[]{4}, table.getSelectionIndices());
+
+	table.setSelection(2);
+	assertArrayEquals(new int[]{2}, table.getSelectionIndices());
+
+	table.setSelection(1);
+	assertArrayEquals(new int[]{1}, table.getSelectionIndices());
+
+	// test single-selection table
+	makeCleanEnvironment(true);
+
+	for (int i = 0; i < number; i++)
+		items[i] = new TableItem(table, 0);
+
+	table.setSelection(0);
+	assertArrayEquals(new int[]{0}, table.getSelectionIndices());
+
+	table.setSelection(3);
+	assertArrayEquals(new int[]{3}, table.getSelectionIndices());
+
+	table.setSelection(4);
+	assertArrayEquals(new int[]{4}, table.getSelectionIndices());
+
+	table.setSelection(2);
+	assertArrayEquals(new int[]{2}, table.getSelectionIndices());
+
+	table.setSelection(1);
+	assertArrayEquals(new int[]{1}, table.getSelectionIndices());
+
+}
+
+@Test
+public void test_setSelectionII() {
+	int number = 5;
+	TableItem[] items = new TableItem[number];
+	for (int i = 0; i < number; i++)
+		items[i] = new TableItem(table, 0);
+
+	table.setSelection(0, 1);
+	assertArrayEquals(new int[]{0, 1}, table.getSelectionIndices());
+
+	table.setSelection(2, 4);
+	assertArrayEquals(new int[]{2, 3, 4}, table.getSelectionIndices());
+
+	table.setSelection(3, 4);
+	assertArrayEquals(new int[]{3, 4}, table.getSelectionIndices());
+
+	table.setSelection(5, 4);
+	assertArrayEquals(new int[]{}, table.getSelectionIndices());
+
+	table.setSelection(2, 2);
+	assertArrayEquals(new int[]{2}, table.getSelectionIndices());
+
+	table.setSelection(1, 4);
+	assertArrayEquals(new int[]{1, 2, 3, 4}, table.getSelectionIndices());
+
+	table.setSelection(0, 4);
+	assertArrayEquals(new int[]{0, 1, 2, 3, 4}, table.getSelectionIndices());
+
+	// test single-selection table
+	makeCleanEnvironment(true);
+
+	for (int i = 0; i < number; i++)
+		items[i] = new TableItem(table, 0);
+	table.setSelection(0, 1);
+	if (SwtTestUtil.fCheckSWTPolicy)
+		assertArrayEquals(new int[] {1}, table.getSelectionIndices());
+	table.setSelection(2, 4);
+	if (SwtTestUtil.fCheckSWTPolicy)
+		assertArrayEquals(new int[] {4}, table.getSelectionIndices());
+	table.setSelection(5, 4);
+	if (SwtTestUtil.fCheckSWTPolicy)
+		assertArrayEquals(new int[] {}, table.getSelectionIndices());
+	table.setSelection(2, 2);
+	assertArrayEquals(new int[] {2}, table.getSelectionIndices());
+	table.setSelection(1, 4);
+	if (SwtTestUtil.fCheckSWTPolicy)
+		assertArrayEquals(new int[] {4}, table.getSelectionIndices());
+	table.setSelection(0, 4);
+	if (SwtTestUtil.fCheckSWTPolicy)
+		assertArrayEquals(new int[] {4}, table.getSelectionIndices());
+}
+
+@Test
+public void test_showSelection() {
+	table.showSelection();
+}
+
+/* custom */
+protected Table table;
+
+private void makeCleanEnvironment(boolean single) {
+// this method must be private or protected so the auto-gen tool keeps it
+	if (table != null) table.dispose();
+	table = new Table(shell, single?SWT.SINGLE:SWT.MULTI);
+	setWidget(table);
+}
+
+private void createTable(List<String> events) {
+	makeCleanEnvironment(false);
+	table.setHeaderVisible(true);
+	table.setLinesVisible(true);
+	for (int col = 0; col < 3; col++) {
+		TableColumn column = new TableColumn(table, SWT.NONE);
+		column.setText("Col " + col);
+		column.setWidth(50);
+		hookExpectedEvents(column, getTestName(), events);
+	}
+	for (int row = 0; row < 3; row++) {
+		TableItem item = new TableItem(table, SWT.NONE);
+		item.setText(new String [] {"C0R" + row, "C1R" + row, "C2R" + row});
+		hookExpectedEvents(item, getTestName(), events);
+	}
+}
+
+@Test
+public void test_consistency_KeySelection() {
+	List<String> events = new ArrayList<>();
+	createTable(events);
+	consistencyEvent(0, SWT.ARROW_DOWN, 0, 0, ConsistencyUtility.KEY_PRESS, events);
+}
+
+@Test
+public void test_consistency_MouseSelection() {
+	List<String> events = new ArrayList<>();
+	createTable(events);
+	consistencyPrePackShell();
+	consistencyEvent(20, table.getHeaderHeight() + table.getItemHeight()*2,
+					 1, 0, ConsistencyUtility.MOUSE_CLICK, events);
+}
+
+@Test
+public void test_consistency_DoubleClick () {
+	List<String> events = new ArrayList<>();
+	createTable(events);
+	consistencyPrePackShell();
+	consistencyEvent(20, table.getHeaderHeight()+ table.getItemHeight() + 5, 1, 0,
+					 ConsistencyUtility.MOUSE_DOUBLECLICK, events);
+}
+
+@Test
+public void test_consistency_EnterSelection () {
+	List<String> events = new ArrayList<>();
+	createTable(events);
+	consistencyEvent(13, 10, 0, 0, ConsistencyUtility.KEY_PRESS, events);
+}
+
+@Test
+public void test_consistency_MenuDetect () {
+	List<String> events = new ArrayList<>();
+	createTable(events);
+	consistencyEvent(20, 25, 3, 0, ConsistencyUtility.MOUSE_CLICK, events);
+}
+
+@Test
+public void test_consistency_DragDetect () {
+	List<String> events = new ArrayList<>();
+	createTable(events);
+	consistencyEvent(30, 20, 50, 30, ConsistencyUtility.MOUSE_DRAG, events);
+}
+
+@Test
+public void test_Virtual() {
+	table.dispose();
+	table = new Table(shell, SWT.VIRTUAL | SWT.BORDER);
+	setWidget(table);
+
+	int count = 1_000_000;
+	int visibleCount = 10;
+
+	shell.setLayout(new FillLayout());
+	final int[] dataCounter = { 0 };
+	table.addListener(SWT.SetData, event -> {
+		TableItem item = (TableItem) event.item;
+		int index = table.indexOf(item);
+		item.setText("Item " + index);
+		dataCounter[0]++;
+	});
+
+	shell.setSize (200, table.getItemHeight() * visibleCount);
+	shell.open ();
+	table.setItemCount(count);
+
+	long end = System.currentTimeMillis() + 3000;
+	while (!shell.isDisposed() && System.currentTimeMillis() < end) {
+		if (!shell.getDisplay().readAndDispatch ()) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				break;
+			}
+		}
+	}
+	// the "* 3" allows some surplus for platforms that pre-fetch items to improve scrolling performance:
+	assertTrue(dataCounter[0] > visibleCount / 2 && dataCounter[0] <= visibleCount * 3);
+}
+
+@Test
+public void test_getItemLorg_eclipse_swt_graphics_PointVirtual() {
+	table.dispose();
+	table = new Table(shell, SWT.VIRTUAL | SWT.BORDER);
+	setWidget(table);
+	table.setBounds(0, 0, 200, 200);
+	table.setItemCount(100);
+	shell.open();
+	assertThrows(IllegalArgumentException.class, () -> table.getItem((Point) null));
+
+	// items that were never shown do not exist yet, getItem(Point) has to create them
+	Rectangle bounds = table.getItem(0).getBounds();
+	Point point = new Point(bounds.x + 2, bounds.y + 3 * table.getItemHeight() + bounds.height / 2);
+	TableItem item = table.getItem(point);
+	assertNotNull(item);
+	assertSame(table.getItem(3), item);
+}
+
+@Test
+public void test_setTopIndex() {
+	for (int i = 0; i < 10; i++) {
+		new TableItem(table, 0);
+	}
+	for (int i = 0; i < 10; i++) {
+		new TableItem(table, 0);
+	}
+	table.setSize(50,50);
+	shell.open();
+	table.setTopIndex(5);
+	for (int i = 0; i < 10; i++) {
+		new TableItem(table, 0);
+	}
+	shell.setVisible(false);
+	assertEquals(5, table.getTopIndex());
 }
 }
