@@ -350,6 +350,48 @@ public void test_saveBilevelGif() throws IOException {
 }
 
 /**
+ * The Java TIFF encoder, used on win32 and cocoa, wrote the image bytes as they are: a 24 bit
+ * image whose palette is not RGB came out with swapped channels, and padded rows were refused.
+ */
+@Test
+public void test_saveTiffWithJavaCodec() {
+	RGB[] colors = { new RGB(0x11, 0x22, 0x33), new RGB(0xC0, 0x80, 0x40), new RGB(0xFF, 0x00, 0x7F) };
+	RGB[] indexed = new RGB[256];
+	for (int i = 0; i < indexed.length; i++) {
+		indexed[i] = i < colors.length ? colors[i] : new RGB(i, i, i);
+	}
+	PaletteData[] palettes = { new PaletteData(0xFF, 0xFF00, 0xFF0000), new PaletteData(0xFF0000, 0xFF00, 0xFF),
+			new PaletteData(Arrays.copyOf(indexed, 16)), new PaletteData(indexed) };
+	int[] depths = { 24, 24, 4, 8 };
+	for (int i = 0; i < palettes.length; i++) {
+		for (int pad : new int[] { 1, 4 }) {
+			int width = 3, height = 2;
+			int bytesPerLine = ((width * depths[i] + 7) / 8 + pad - 1) / pad * pad;
+			ImageData source = new ImageData(width, height, depths[i], palettes[i], pad, new byte[bytesPerLine * height]);
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					RGB color = colors[(x + y) % colors.length];
+					source.setPixel(x, y, palettes[i].isDirect ? palettes[i].getPixel(color) : (x + y) % colors.length);
+				}
+			}
+			ImageLoader saver = new ImageLoader();
+			saver.data = new ImageData[] { source };
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			FileFormat.save(out, SWT.IMAGE_TIFF, saver);
+			ImageData saved = FileFormat
+					.load(new ElementAtZoom<>(new ByteArrayInputStream(out.toByteArray()), 100), new ImageLoader(), 100)
+					.get(0).element();
+			for (int y = 0; y < height; y++) {
+				for (int x = 0; x < width; x++) {
+					assertEquals(colors[(x + y) % colors.length], saved.palette.getRGB(saved.getPixel(x, y)),
+							"depth " + depths[i] + ", palette " + i + ", pad " + pad + ", pixel " + x + "," + y);
+				}
+			}
+		}
+	}
+}
+
+/**
  * The Java decoders in FileFormat are the only path on win32 and cocoa but are bypassed by
  * GdkPixbuf on GTK, so they are called directly.
  */
