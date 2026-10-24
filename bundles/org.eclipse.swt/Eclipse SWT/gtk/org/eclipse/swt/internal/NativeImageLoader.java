@@ -55,6 +55,12 @@ public class NativeImageLoader {
 			}
 			return FileFormat.load(new ElementAtZoom<>(stream2, streamAtZoom.zoom()), imageLoader, targetZoom);
 		}
+		if (isIcoFile(data_buffer)) {
+			// GdkPixbuf returns only one of the icons of an ICO file, and none (or an empty
+			// one) when it holds PNG compressed icons, so use the Java decoder like win32 and
+			// cocoa do: it returns every icon, BMP or PNG.
+			return FileFormat.load(new ElementAtZoom<>(stream2, streamAtZoom.zoom()), imageLoader, targetZoom);
+		}
 		List<ImageData> imgDataList = new ArrayList<>();
 		long loader = GDK.gdk_pixbuf_loader_new();
 		// 2) Copy byte array to C memory, write to GdkPixbufLoader
@@ -143,6 +149,10 @@ public class NativeImageLoader {
 			}
 		}
 		return imgDataList.stream().map(data -> new ElementAtZoom<>(data, streamAtZoom.zoom())).toList();
+	}
+
+	private static boolean isIcoFile(byte[] data) {
+		return data.length >= 4 && data[0] == 0 && data[1] == 0 && data[2] == 1 && data[3] == 0;
 	}
 
 	/**

@@ -249,6 +249,65 @@ public void test_loadSingleFrameGifReportedAsAnimation_bug3404() throws IOExcept
 }
 
 /**
+ * An ICO file with a BMP and a PNG compressed icon, as Windows icons usually are, loads both
+ * icons, as on win32 and cocoa. GdkPixbuf returned a single, fully transparent icon.
+ */
+@Test
+public void test_loadIcoWithBmpAndPngIcons() throws IOException {
+	RGB red = new RGB(255, 0, 0), blue = new RGB(0, 0, 255);
+	ImageData small = new ImageData(16, 16, 4, new PaletteData(Arrays.copyOf(new RGB[] { red }, 16)));
+	for (int i = 1; i < 16; i++) {
+		small.palette.colors[i] = new RGB(i, i, i);
+	}
+	ImageData large = new ImageData(48, 48, 24, new PaletteData(0xFF0000, 0xFF00, 0xFF));
+	for (int y = 0; y < 48; y++) {
+		for (int x = 0; x < 48; x++) {
+			large.setPixel(x, y, 0x0000FF);
+		}
+	}
+	byte[] bmpIcon = save(small, SWT.IMAGE_ICO);
+	byte[] bmpEntry = Arrays.copyOfRange(bmpIcon, 22, bmpIcon.length);
+	byte[] pngEntry = save(large, SWT.IMAGE_PNG);
+	ByteArrayOutputStream ico = new ByteArrayOutputStream();
+	ico.write(new byte[] { 0, 0, 1, 0, 2, 0 });
+	writeIconDirEntry(ico, 16, 16, 16, 4, bmpEntry.length, 6 + 2 * 16);
+	writeIconDirEntry(ico, 48, 48, 0, 32, pngEntry.length, 6 + 2 * 16 + bmpEntry.length);
+	ico.write(bmpEntry);
+	ico.write(pngEntry);
+
+	ImageData[] icons = new ImageLoader().load(new ByteArrayInputStream(ico.toByteArray()));
+	assertEquals(2, icons.length);
+	assertEquals(16, icons[0].width);
+	assertEquals(red, icons[0].palette.getRGB(icons[0].getPixel(8, 8)));
+	assertEquals(48, icons[1].width);
+	assertEquals(blue, icons[1].palette.getRGB(icons[1].getPixel(24, 24)));
+}
+
+private static byte[] save(ImageData data, int format) {
+	ImageLoader saver = new ImageLoader();
+	saver.data = new ImageData[] { data };
+	ByteArrayOutputStream out = new ByteArrayOutputStream();
+	saver.save(out, format);
+	return out.toByteArray();
+}
+
+private static void writeIconDirEntry(ByteArrayOutputStream out, int width, int height, int colors, int bitCount, int size, int offset) {
+	out.write(width);
+	out.write(height);
+	out.write(colors);
+	out.write(0);
+	for (int value : new int[] { 1, bitCount }) {
+		out.write(value & 0xFF);
+		out.write(value >> 8);
+	}
+	for (int value : new int[] { size, offset }) {
+		for (int i = 0; i < 4; i++) {
+			out.write(value >> (8 * i) & 0xFF);
+		}
+	}
+}
+
+/**
  * Every frame of an animated GIF is loaded once, in order, with its delay in hundredths of a
  * second, also beyond 32 frames.
  */
