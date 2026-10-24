@@ -804,7 +804,28 @@ boolean forceFocus(NSView focusView) {
 public int getCaretLineNumber () {
 	checkWidget ();
 	if ((style & SWT.SINGLE) != 0) return 0;
-	return (getTopPixel () + getCaretLocation ().y) / getLineHeight ();
+	/*
+	* Count the line delimiters in front of the caret. Dividing the caret
+	* location by getLineHeight is wrong, because the layout manager lays
+	* out the lines with more space than defaultLineHeightForFont reports.
+	*/
+	NSTextView widget = (NSTextView) view;
+	NSRange range = new NSRange ();
+	range.length = widget.selectedRange ().location;
+	if (range.length == 0) return 0;
+	char [] buffer = new char [(int) range.length];
+	widget.textStorage ().string ().getCharacters (buffer, range);
+	int line = 0;
+	for (int i = 0; i < buffer.length; i++) {
+		char c = buffer [i];
+		if (c == '\r') {
+			if (i + 1 < buffer.length && buffer [i + 1] == '\n') continue;
+			line++;
+		} else if (c == '\n' || c == '\u2028' || c == '\u2029') {
+			line++;
+		}
+	}
+	return line;
 }
 
 @Override
@@ -1427,6 +1448,10 @@ public void insert (String string) {
 			str = NSString.stringWith (string);
 		}
 		widget.textStorage ().replaceCharactersInRange (range, str);
+		/* move the caret behind the inserted text, as the other platforms do */
+		NSRange caret = new NSRange ();
+		caret.location = range.location + str.length ();
+		widget.setSelectedRange (caret);
 	}
 	if (string.length () != 0) sendEvent (SWT.Modify);
 }
