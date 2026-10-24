@@ -262,4 +262,12 @@
             </message_arguments>
         </filter>
     </resource>
+    <resource path="Eclipse SWT/gtk/org/eclipse/swt/graphics/GCData.java" type="org.eclipse.swt.graphics.GCData">
+        <filter id="338755678">
+            <message_arguments>
+                <message_argument value="org.eclipse.swt.graphics.GCData"/>
+                <message_argument value="realDrawable"/>
+            </message_arguments>
+        </filter>
+    </resource>
 </component>
