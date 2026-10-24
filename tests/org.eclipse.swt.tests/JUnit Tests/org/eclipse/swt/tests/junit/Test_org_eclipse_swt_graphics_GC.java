@@ -936,6 +936,38 @@ public void test_fillRectangleLorg_eclipse_swt_graphics_Rectangle() {
 }
 
 @Test
+public void test_roundRectangleNegativeSizeAndArcs() {
+	assumeFalse(SwtTestUtil.isWindows, "win32 passes negative sizes to GDI RoundRect without normalizing them");
+	assertArrayEquals(roundRectangleImageData(true, 10, 10, 40, 30, 12, 8),
+			roundRectangleImageData(true, 50, 40, -40, -30, -12, -8), "fillRoundRectangle");
+	assertArrayEquals(roundRectangleImageData(false, 10, 10, 40, 30, 12, 8),
+			roundRectangleImageData(false, 50, 40, -40, -30, -12, -8), "drawRoundRectangle");
+}
+
+private byte[] roundRectangleImageData(boolean fill, int x, int y, int width, int height, int arcWidth, int arcHeight) {
+	Image image = new Image(display, 60, 60);
+	GC imageGC = new GC(image);
+	try {
+		imageGC.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
+		imageGC.fillRectangle(0, 0, 60, 60);
+		imageGC.setBackground(display.getSystemColor(SWT.COLOR_BLUE));
+		imageGC.setForeground(display.getSystemColor(SWT.COLOR_RED));
+		if (fill) {
+			imageGC.fillRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+		} else {
+			imageGC.drawRoundRectangle(x, y, width, height, arcWidth, arcHeight);
+		}
+	} finally {
+		imageGC.dispose();
+	}
+	try {
+		return image.getImageData().data;
+	} finally {
+		image.dispose();
+	}
+}
+
+@Test
 public void test_fillRoundRectangleIIIIII() {
 	gc.fillRoundRectangle(10, 0, 20, 30, 3, 3);
 	gc.fillRoundRectangle(0, 0, 0, 0, 0, 0);
