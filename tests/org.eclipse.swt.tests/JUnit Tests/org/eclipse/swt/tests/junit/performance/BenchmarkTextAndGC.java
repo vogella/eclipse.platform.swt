@@ -213,5 +213,21 @@ public class BenchmarkTextAndGC {
 			image[0].dispose();
 			layout[0].dispose();
 		});
+
+		StringBuilder longParagraph = new StringBuilder();
+		for (int i = 0; i < 4_000; i++) {
+			longParagraph.append("w\u00e9rd ").append(i).append(' ');
+		}
+		BenchmarkUtil.measure("TextLayout.getLineOffsets, " + longParagraph.length() + " chars wrapped at 600 px x" + LAYOUT_RUNS, () -> {
+			layout[0] = new TextLayout(display);
+			layout[0].setWidth(600);
+			layout[0].setText(longParagraph.toString());
+			layout[0].getLineOffsets();
+			return () -> {
+				for (int run = 0; run < LAYOUT_RUNS; run++) {
+					layout[0].getLineOffsets();
+				}
+			};
+		}, () -> layout[0].dispose());
 	}
 }

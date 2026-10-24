@@ -312,6 +312,32 @@ public void test_getLineOffsets() {
 }
 
 @Test
+public void test_getLineOffsetsOfLongWrappedText() {
+	TextLayout layout = new TextLayout(display);
+	try {
+		StringBuilder text = new StringBuilder();
+		for (int i = 0; i < 500; i++) {
+			text.append("w\u00e9rd \u20ac").append(i).append(' ');
+		}
+		layout.setText(text.toString());
+		layout.setWidth(200);
+		int[] offsets = layout.getLineOffsets();
+		int lineCount = layout.getLineCount();
+		assertTrue(lineCount > 10, "text should wrap into many lines");
+		assertEquals(lineCount + 1, offsets.length);
+		assertEquals(0, offsets[0]);
+		assertEquals(text.length(), offsets[lineCount]);
+		for (int line = 0; line < lineCount; line++) {
+			assertTrue(offsets[line] < offsets[line + 1], "line " + line + " is empty");
+			assertEquals(line, layout.getLineIndex(offsets[line]), "start of line " + line);
+			assertEquals(line, layout.getLineIndex(offsets[line + 1] - 1), "end of line " + line);
+		}
+	} finally {
+		layout.dispose();
+	}
+}
+
+@Test
 public void test_getLineIndex() {
 	if (SwtTestUtil.isCocoa) {
 		// TODO Fix Cocoa failure.
