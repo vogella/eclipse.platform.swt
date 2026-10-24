@@ -1481,6 +1481,8 @@ public String getText (int start, int end) {
 public int getTextLimit () {
 	checkWidget ();
 	int limit = (int)OS.SendMessage (handle, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
+	/* EM_LIMITTEXT with 0 sets the limit of a single-line edit to 0x7FFFFFFE */
+	if (limit >= LIMIT - 1) return LIMIT;
 	if (segments != null && limit < LIMIT) limit = Math.max (1, limit - segments.length);
 	return limit;
 }
