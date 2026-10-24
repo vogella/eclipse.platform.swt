@@ -2389,6 +2389,14 @@ private void drawRectangleInPixels (int x, int y, int width, int height) {
 		Gdip.Graphics_TranslateTransform(gdipGraphics, -data.gdipXOffset, -data.gdipYOffset, Gdip.MatrixOrderPrepend);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
 	if ((data.style & SWT.MIRRORED) != 0) {
 		/*
 		* Note that Rectangle() subtracts one pixel in MIRRORED mode when
@@ -2480,10 +2488,18 @@ private void drawRoundRectangleInPixels (int x, int y, int width, int height, in
 		drawRoundRectangleGdip(data.gdipGraphics, data.gdipPen, x, y, width, height, arcWidth, arcHeight);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
 	if ((data.style & SWT.MIRRORED) != 0) {
 		if (data.lineWidth != 0 && data.lineWidth % 2 == 0) x--;
 	}
-	OS.RoundRect(handle, x,y,x+width+1,y+height+1, arcWidth, arcHeight);
+	OS.RoundRect(handle, x,y,x+width+1,y+height+1, Math.abs(arcWidth), Math.abs(arcHeight));
 }
 
 private void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -2509,7 +2525,7 @@ private void drawRoundRectangleGdip (long gdipGraphics, long pen, int x, int y, 
 
 	Gdip.Graphics_TranslateTransform(gdipGraphics, data.gdipXOffset, data.gdipYOffset, Gdip.MatrixOrderPrepend);
 	if (naw == 0 || nah == 0) {
-		Gdip.Graphics_DrawRectangle(gdipGraphics, data.gdipPen, x, y, width, height);
+		Gdip.Graphics_DrawRectangle(gdipGraphics, data.gdipPen, nx, ny, nw, nh);
 	} else {
 		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
@@ -3713,8 +3729,16 @@ private void fillRoundRectangleInPixels (int x, int y, int width, int height, in
 		fillRoundRectangleGdip(data.gdipGraphics, data.gdipBrush, x, y, width, height, arcWidth, arcHeight);
 		return;
 	}
+	if (width < 0) {
+		x = x + width;
+		width = -width;
+	}
+	if (height < 0) {
+		y = y + height;
+		height = -height;
+	}
 	if ((data.style & SWT.MIRRORED) != 0) x--;
-	OS.RoundRect(handle, x,y,x+width+1,y+height+1,arcWidth, arcHeight);
+	OS.RoundRect(handle, x,y,x+width+1,y+height+1,Math.abs(arcWidth), Math.abs(arcHeight));
 }
 
 private void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y, int width, int height, int arcWidth, int arcHeight) {
@@ -3739,7 +3763,7 @@ private void fillRoundRectangleGdip (long gdipGraphics, long brush, int x, int y
 		nah = 0 - nah;
 
 	if (naw == 0 || nah == 0) {
-		Gdip.Graphics_FillRectangle(data.gdipGraphics, data.gdipBrush, x, y, width, height);
+		Gdip.Graphics_FillRectangle(data.gdipGraphics, data.gdipBrush, nx, ny, nw, nh);
 	} else {
 		long path = Gdip.GraphicsPath_new(Gdip.FillModeAlternate);
 		if (path == 0) SWT.error(SWT.ERROR_NO_HANDLES);
