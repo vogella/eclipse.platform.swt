@@ -370,6 +370,10 @@ public int getIncrement () {
 	return (int)buttonView.increment();
 }
 
+String getDecimalSeparator () {
+	return textFormatter.decimalSeparator ().getString ();
+}
+
 /**
  * Returns the maximum value which the receiver will allow.
  *
@@ -436,7 +440,7 @@ int getSelectionText (boolean[] parseFail) {
 	try {
 		int value;
 		if (digits > 0) {
-			String decimalSeparator = textFormatter.decimalSeparator().getString();
+			String decimalSeparator = getDecimalSeparator ();
 			int index = string.indexOf (decimalSeparator);
 			if (index != -1)  {
 				int startIndex = string.startsWith ("+") || string.startsWith ("-") ? 1 : 0;
@@ -869,11 +873,15 @@ void setSelection (int value, boolean setPos, boolean setText, boolean notify) {
 		((NSStepper)buttonView).setDoubleValue(value);
 	}
 	if (setText) {
-		String string = String.valueOf (value);
-		if (digits > 0) {
-			String decimalSeparator = textFormatter.decimalSeparator().getString();
+		String string;
+		if (digits == 0) {
+			string = String.valueOf (value);
+		} else {
+			string = String.valueOf (Math.abs (value));
+			String decimalSeparator = getDecimalSeparator ();
 			int index = string.length () - digits;
 			StringBuilder buffer = new StringBuilder ();
+			if (value < 0) buffer.append ("-");
 			if (index > 0) {
 				buffer.append (string.substring (0, index));
 				buffer.append (decimalSeparator);
@@ -1058,13 +1066,14 @@ String verifyText (String string, int start, int end, NSEvent keyEvent) {
 	event.end = end;
 	int index = 0;
 	if (digits > 0) {
-		String decimalSeparator = ".";//getDecimalSeparator ();
+		String decimalSeparator = getDecimalSeparator ();
 		index = string.indexOf (decimalSeparator);
 		if (index != -1) {
 			string = string.substring (0, index) + string.substring (index + 1);
 		}
 		index = 0;
 	}
+	if (string.length () > 0 && getMinimum () < 0 && string.charAt (0) == '-') index++;
 	while (index < string.length ()) {
 		if (!Character.isDigit (string.charAt (index))) break;
 		index++;
