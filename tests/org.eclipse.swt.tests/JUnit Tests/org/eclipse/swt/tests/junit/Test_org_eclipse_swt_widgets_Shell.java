@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2025 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -1065,6 +1066,28 @@ public void test_Issue450_NoShellActivateOnSetFocus() {
 }
 
 @Test
+public void test_onTopChildShellDisposedInFocusOut() throws InterruptedException {
+	shell.setLayout(new FillLayout());
+	Text text = new Text(shell, SWT.BORDER);
+	shell.open();
+	SwtTestUtil.processEvents();
+
+	Shell popup = new Shell(shell, SWT.ON_TOP | SWT.TOOL);
+	popup.setLayout(new FillLayout());
+	Text popupText = new Text(popup, SWT.BORDER);
+	popup.setSize(100, 100);
+	// Close when the focus leaves, as popups do
+	popupText.addListener(SWT.FocusOut, e -> popup.dispose());
+	popup.open();
+	popupText.forceFocus();
+	SwtTestUtil.processEvents();
+
+	text.forceFocus();
+	SwtTestUtil.processEvents(1000, popup::isDisposed);
+	assertTrue(popup.isDisposed());
+}
+
+@Test
 @Override
 public void test_setLocationLorg_eclipse_swt_graphics_Point() {
 	//Setting location for Windows is not supported in GTK4
@@ -1082,6 +1105,35 @@ public void test_setLocationII() {
 		return;
 	}
 	super.test_setLocationII();
+}
+
+@Test
+public void test_onTopChildShellDeactivatedByFocusInParent() throws InterruptedException {
+	assumeTrue(SwtTestUtil.isGTK4(), "an ON_TOP child shell is a GtkPopover only on GTK4");
+	Display display = shell.getDisplay();
+	shell.setLayout(new FillLayout());
+	Text text = new Text(shell, SWT.BORDER);
+	shell.open();
+	SwtTestUtil.processEvents();
+
+	Shell popup = new Shell(shell, SWT.ON_TOP | SWT.TOOL);
+	popup.setLayout(new FillLayout());
+	new Text(popup, SWT.BORDER);
+	popup.setSize(100, 100);
+	AtomicInteger deactivated = new AtomicInteger();
+	// Close on deactivation, as popups do
+	popup.addListener(SWT.Deactivate, e -> {
+		deactivated.incrementAndGet();
+		popup.dispose();
+	});
+	SwtTestUtil.waitShellActivate(popup::open, popup);
+	assertSame(popup, display.getActiveShell());
+
+	text.forceFocus();
+	SwtTestUtil.processEvents(1000, popup::isDisposed);
+	assertEquals(1, deactivated.get());
+	assertTrue(popup.isDisposed());
+	assertTrue(text.isFocusControl());
 }
 
 @Test
