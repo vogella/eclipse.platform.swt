@@ -133,7 +133,7 @@ public class Display extends Device implements Executor {
 	long eventProc, windowProc2, windowProc3, windowProc4, windowProc5, windowProc6;
 	long changeValueProc;
 	long snapshotDrawProc, keyPressReleaseProc, focusProc, windowActiveProc, enterMotionProc, leaveProc,
-		 scrollProc, resizeProc, layoutProc, activateProc, gesturePressReleaseProc;
+		 scrollProc, resizeProc, layoutProc, activateProc, gesturePressReleaseProc, gestureCancelProc, rejectSelectionProc;
 	long menuItemsChangedProc;
 	/** GTK4 only: System.nanoTime() of the last key event, see Menu#syncRowSelection. */
 	long lastKeyEventTime;
@@ -155,7 +155,8 @@ public class Display extends Device implements Executor {
 	Callback windowCallback2, windowCallback3, windowCallback4, windowCallback5, windowCallback6;
 	Callback changeValue;
 	Callback snapshotDraw, keyPressReleaseCallback, focusCallback, windowActiveCallback, enterMotionCallback, computeSizeCallback,
-			 scrollCallback, leaveCallback, resizeCallback, layoutCallback, activateCallback, gesturePressReleaseCallback;
+			 scrollCallback, leaveCallback, resizeCallback, layoutCallback, activateCallback, gesturePressReleaseCallback,
+			 gestureCancelCallback, rejectSelectionCallback;
 	Callback menuItemsChangedCallback;
 	Callback notifyCallback;
 	EventTable eventTable, filterTable;
@@ -204,6 +205,9 @@ public class Display extends Device implements Executor {
 	/* GTK4 drops a focus change made while another one is being delivered, so it is replayed afterwards */
 	boolean gtk4Focusing;
 	long gtk4PendingFocus;
+	/* GTK4: depth of focusProc() calls, and popovers disposed meanwhile, see Shell.releaseHandle() */
+	int focusProcDepth;
+	ArrayList<Long> disposedPopovers = new ArrayList<>();
 
 	Tracker tracker;
 
@@ -315,6 +319,8 @@ public class Display extends Device implements Executor {
 	Callback signalCallback;
 	long shellHandle;
 	boolean settingsChanged, runSettings;
+	/* Incremented when the system colours embedded in widget CSS change */
+	int systemColorsGeneration;
 	static final int STYLE_UPDATED = 1;
 
 	/* Entry focus behaviour */
@@ -531,9 +537,8 @@ public class Display extends Device implements Executor {
 	static final int GTK3_MINOR = 22;
 	static final int GTK3_MICRO = 0;
 
-	/* Latest GTK version support */
 	static final int GTK4_MAJOR = 4;
-	static final int GTK4_MINOR = 0;
+	static final int GTK4_MINOR = 8;
 	static final int GTK4_MICRO = 0;
 
 	/* Display Data */
@@ -1244,17 +1249,18 @@ void createDisplay (DeviceData data) {
 		System.setProperty("org.eclipse.swt.internal.gdk.backend", "unknown");
 	}
 	if (OS.SWT_DEBUG) Device.DEBUG = true;
-	if (!GTK.GTK4) {
-		long ptr = GTK.gtk_check_version (GTK3_MAJOR, GTK3_MINOR, GTK3_MICRO);
-		if (ptr != 0) {
-			int length = C.strlen (ptr);
-			byte [] buffer = new byte [length];
-			C.memmove (buffer, ptr, length);
-			System.out.println ("***WARNING: " + new String (Converter.mbcsToWcs (buffer))); //$NON-NLS-1$
-			System.out.println ("***WARNING: SWT requires GTK " + GTK3_MAJOR+ "." + GTK3_MINOR + "." + GTK3_MICRO); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			int major = GTK.gtk_get_major_version(), minor = GTK.gtk_get_minor_version (), micro = GTK.gtk_get_micro_version ();
-			System.out.println ("***WARNING: Detected: " + major + "." + minor + "." + micro); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-		}
+	int requiredMajor = GTK.GTK4 ? GTK4_MAJOR : GTK3_MAJOR;
+	int requiredMinor = GTK.GTK4 ? GTK4_MINOR : GTK3_MINOR;
+	int requiredMicro = GTK.GTK4 ? GTK4_MICRO : GTK3_MICRO;
+	long ptr = GTK.gtk_check_version (requiredMajor, requiredMinor, requiredMicro);
+	if (ptr != 0) {
+		int length = C.strlen (ptr);
+		byte [] buffer = new byte [length];
+		C.memmove (buffer, ptr, length);
+		System.out.println ("***WARNING: " + new String (Converter.mbcsToWcs (buffer))); //$NON-NLS-1$
+		System.out.println ("***WARNING: SWT requires GTK " + requiredMajor + "." + requiredMinor + "." + requiredMicro); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		int major = GTK.gtk_get_major_version(), minor = GTK.gtk_get_minor_version (), micro = GTK.gtk_get_micro_version ();
+		System.out.println ("***WARNING: Detected: " + major + "." + minor + "." + micro); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 	}
 	fixed_type = OS.swt_fixed_get_type();
 	if (rendererClassInitProc == 0) {
@@ -3322,6 +3328,7 @@ GdkRGBA copyRGBA (GdkRGBA source) {
 }
 
 void initializeSystemColors () {
+	systemColorsGeneration++;
 	COLOR_WIDGET_DARK_SHADOW_RGBA = new GdkRGBA ();
 	COLOR_WIDGET_DARK_SHADOW_RGBA.alpha = 1.0;
 
@@ -3681,7 +3688,7 @@ void initializeCallbacks () {
 	signalIds [Widget.STYLE_UPDATED] = OS.g_signal_lookup (OS.style_updated, GTK.GTK_TYPE_WIDGET ());
 	signalIds [Widget.UNMAP] = OS.g_signal_lookup (OS.unmap, GTK.GTK_TYPE_WIDGET ());
 	signalIds [Widget.UNMAP_EVENT] = OS.g_signal_lookup (OS.unmap_event, GTK.GTK_TYPE_WIDGET ());
-	signalIds [Widget.UNREALIZE] = OS.g_signal_lookup (OS.realize, GTK.GTK_TYPE_WIDGET ());
+	signalIds [Widget.UNREALIZE] = OS.g_signal_lookup (OS.unrealize, GTK.GTK_TYPE_WIDGET ());
 	signalIds [Widget.WINDOW_STATE_EVENT] = OS.g_signal_lookup (OS.window_state_event, GTK.GTK_TYPE_WIDGET ());
 
 	windowCallback2 = new Callback (this, "windowProc", 2); //$NON-NLS-1$
@@ -3713,6 +3720,13 @@ void initializeCallbacks () {
 				long.class, int.class, double.class, double.class, long.class}); //$NON-NLS-1$
 		gesturePressReleaseProc = gesturePressReleaseCallback.getAddress();
 
+		gestureCancelCallback = new Callback(this, "gestureCancelProc", void.class, new Type[] {long.class, long.class, long.class}); //$NON-NLS-1$
+		gestureCancelProc = gestureCancelCallback.getAddress();
+
+		// GTK4 has no gtk_false to use as GtkTreeSelectionFunc
+		rejectSelectionCallback = new Callback(this, "rejectSelectionProc", 5); //$NON-NLS-1$
+		rejectSelectionProc = rejectSelectionCallback.getAddress();
+
 		leaveCallback = new Callback(this, "leaveProc", void.class, new Type[] {long.class, long.class}); //$NON-NLS-1$
 		leaveProc = leaveCallback.getAddress();
 
@@ -3743,6 +3757,7 @@ void initializeCallbacks () {
 	closuresProc [Widget.ACTIVATE_INVERSE] = windowProc2;
 	closuresProc [Widget.CHANGED] = windowProc2;
 	closuresProc [Widget.CLICKED] = windowProc2;
+	closuresProc [Widget.CURSOR_CHANGED] = windowProc2;
 	closuresProc [Widget.CLOSE_REQUEST] = windowProc2;
 	closuresProc [Widget.CREATE_MENU_PROXY] = windowProc2;
 	closuresProc [Widget.DAY_SELECTED] = windowProc2;
@@ -3756,6 +3771,7 @@ void initializeCallbacks () {
 	closuresProc [Widget.PREEDIT_CHANGED] = windowProc2;
 	closuresProc [Widget.REALIZE] = windowProc2;
 	closuresProc [Widget.SELECT] = windowProc2;
+	closuresProc [Widget.SELECTION_CHANGED] = windowProc2;
 	closuresProc [Widget.SELECTION_DONE] = windowProc2;
 	closuresProc [Widget.SHOW] = windowProc2;
 	closuresProc [Widget.START_INTERACTIVE_SEARCH] = windowProc2;
@@ -4812,6 +4828,14 @@ void releaseDisplay () {
 		gesturePressReleaseCallback = null;
 		gesturePressReleaseProc = 0;
 
+		gestureCancelCallback.dispose();
+		gestureCancelCallback = null;
+		gestureCancelProc = 0;
+
+		rejectSelectionCallback.dispose();
+		rejectSelectionCallback = null;
+		rejectSelectionProc = 0;
+
 		snapshotDraw.dispose();
 		snapshotDraw = null;
 		snapshotDrawProc = 0;
@@ -5663,18 +5687,15 @@ public final Consumer<Error> getErrorHandler () {
 
 void showIMWindow (Control control) {
 	imControl = control;
+	/* The preedit window is a GTK3 popup window, GTK4 shows no preedit outside the control */
+	if (GTK.GTK4) return;
 	if (preeditWindow == 0) {
 		preeditWindow = GTK3.gtk_window_new (GTK.GTK_WINDOW_POPUP);
 		if (preeditWindow == 0) error (SWT.ERROR_NO_HANDLES);
 		preeditLabel = GTK.gtk_label_new (null);
 		if (preeditLabel == 0) error (SWT.ERROR_NO_HANDLES);
-
-		if (GTK.GTK4) {
-			GTK4.gtk_window_set_child(preeditWindow, preeditLabel);
-		} else {
-			GTK3.gtk_container_add (preeditWindow, preeditLabel);
-			GTK3.gtk_widget_show (preeditLabel);
-		}
+		GTK3.gtk_container_add (preeditWindow, preeditLabel);
+		GTK3.gtk_widget_show (preeditLabel);
 	}
 	long [] preeditString = new long [1];
 	long [] pangoAttrs = new long [1];
@@ -6205,7 +6226,32 @@ void focusProc(long controller, long user_data) {;
 	long handle = GTK.gtk_event_controller_get_widget(controller);
 	Widget widget = getWidget(handle);
 
-	if (widget != null) widget.focusProc(controller, user_data);
+	if (widget == null) return;
+	focusProcDepth++;
+	try {
+		widget.focusProc(controller, user_data);
+	} finally {
+		// GTK goes on with the focus change after this, so destroy the popovers later
+		if (--focusProcDepth == 0 && !disposedPopovers.isEmpty() && !isDisposed()) asyncExec(this::destroyDisposedPopovers);
+	}
+}
+
+/**
+ * GTK4: destroys the popovers of shells disposed while a focus change was dispatched.
+ */
+void destroyDisposedPopovers () {
+	// Still in a focus change, e.g. in a nested event loop of a listener, see focusProc()
+	if (focusProcDepth > 0) return;
+	ArrayList<Long> popovers = disposedPopovers;
+	disposedPopovers = new ArrayList<>();
+	for (long popover : popovers) {
+		// The parent window may have destroyed the popover meanwhile
+		if (GTK.gtk_widget_get_parent (popover) != 0) {
+			GTK.gtk_popover_popdown (popover);
+			GTK.gtk_widget_unparent (popover);
+		}
+		OS.g_object_unref (popover);
+	}
 }
 
 void windowActiveProc(long handle, long user_data) {;
@@ -6248,6 +6294,17 @@ void gesturePressReleaseProc(long gesture, int n_press, double x, double y, long
 	Widget widget = getWidget(handle);
 
 	if (widget != null) widget.gesturePressReleaseProc(gesture, n_press, x, y, user_data);
+}
+
+void gestureCancelProc(long gesture, long sequence, long user_data) {
+	long handle = GTK.gtk_event_controller_get_widget(gesture);
+	Widget widget = getWidget(handle);
+
+	if (widget != null) widget.gtk_gesture_cancel_event(gesture);
+}
+
+long rejectSelectionProc(long selection, long model, long path, long selected, long data) {
+	return 0;
 }
 
 void leaveProc(long controller, long user_data) {

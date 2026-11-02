@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2016 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -28,6 +28,8 @@ import java.util.List;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
@@ -47,6 +49,19 @@ public class Test_org_eclipse_swt_widgets_Table extends Test_org_eclipse_swt_wid
 public void setUp() {
 	super.setUp();
 	makeCleanEnvironment(false); // by default, use multi-select table.
+}
+
+@Test
+public void test_setOrientationWithColumns() {
+	new TableColumn(table, SWT.NONE);
+	table.setOrientation(SWT.RIGHT_TO_LEFT);
+	// setOrientation does nothing on macOS
+	if (!SwtTestUtil.isCocoa) {
+		assertEquals(SWT.RIGHT_TO_LEFT, table.getOrientation());
+	}
+	Table rightToLeft = new Table(shell, SWT.RIGHT_TO_LEFT);
+	new TableColumn(rightToLeft, SWT.NONE);
+	assertEquals(1, rightToLeft.getColumnCount());
 }
 
 @Override
@@ -1710,6 +1725,24 @@ public void test_Virtual() {
 	}
 	// the "* 3" allows some surplus for platforms that pre-fetch items to improve scrolling performance:
 	assertTrue(dataCounter[0] > visibleCount / 2 && dataCounter[0] <= visibleCount * 3);
+}
+
+@Test
+public void test_getItemLorg_eclipse_swt_graphics_PointVirtual() {
+	table.dispose();
+	table = new Table(shell, SWT.VIRTUAL | SWT.BORDER);
+	setWidget(table);
+	table.setBounds(0, 0, 200, 200);
+	table.setItemCount(100);
+	shell.open();
+	assertThrows(IllegalArgumentException.class, () -> table.getItem((Point) null));
+
+	// items that were never shown do not exist yet, getItem(Point) has to create them
+	Rectangle bounds = table.getItem(0).getBounds();
+	Point point = new Point(bounds.x + 2, bounds.y + 3 * table.getItemHeight() + bounds.height / 2);
+	TableItem item = table.getItem(point);
+	assertNotNull(item);
+	assertSame(table.getItem(3), item);
 }
 
 @Test

@@ -14,14 +14,21 @@
  *******************************************************************************/
 package org.eclipse.swt.tests.junit;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Region;
+import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Shell;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -842,6 +849,75 @@ public void test_add_intArray() {
 	points = new int[] {1,2,3,4,5,6};
 	reg6.add(points);
 	reg6.dispose();
+}
+
+@Test
+public void test_largeCoordinates() {
+	Region region = new Region(display);
+	try {
+		region.add(0, 0, 40000, 40000);
+		assertTrue(region.contains(100, 100));
+		assertTrue(region.contains(30000, 30000));
+		assertFalse(region.contains(-100, 100));
+
+		region.subtract(-10, -10, 50000, 60);
+		assertFalse(region.contains(100, 40));
+		assertTrue(region.contains(100, 60));
+
+		region.intersect(-10, -10, 50000, 200);
+		assertTrue(region.contains(100, 100));
+		assertFalse(region.contains(100, 300));
+		assertTrue(region.intersects(-50000, 0, 100000, 100));
+	} finally {
+		region.dispose();
+	}
+}
+
+@Test
+public void test_intersect_withClippingRegionDisposedBeforeUse() {
+	Image image = new Image(display, 100, 100);
+	GC gc = new GC(image);
+	Region region = new Region(display);
+	Region clipping = new Region(display);
+	try {
+		gc.getClipping(clipping);
+		region.add(new Rectangle(10, 10, 20, 20));
+		region.intersect(clipping);
+		clipping.dispose();
+
+		assertTrue(region.contains(15, 15), "point inside the intersected region not contained");
+		assertFalse(region.contains(50, 50), "point outside the intersected region contained");
+	} finally {
+		clipping.dispose();
+		region.dispose();
+		gc.dispose();
+		image.dispose();
+	}
+}
+
+@Test
+public void test_getClipping_intoRegionWithExistingHandle() {
+	Image image = new Image(display, 100, 100);
+	GC gc = new GC(image);
+	Shell shell = new Shell(display);
+	Canvas canvas = new Canvas(shell, SWT.NONE);
+	Region region = new Region(display);
+	try {
+		region.add(new Rectangle(0, 0, 50, 50));
+		// let the region materialize a native handle
+		canvas.setRegion(region);
+
+		gc.getClipping(region);
+
+		// a point inside the clipping but outside the previously described area
+		assertTrue(region.contains(75, 75), "region does not describe the clipping");
+	} finally {
+		canvas.setRegion(null);
+		region.dispose();
+		shell.dispose();
+		gc.dispose();
+		image.dispose();
+	}
 }
 
 /* custom */

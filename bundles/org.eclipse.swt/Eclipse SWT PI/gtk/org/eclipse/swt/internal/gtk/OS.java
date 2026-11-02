@@ -273,7 +273,9 @@ public class OS extends C {
 	public static final byte[] begin = ascii("begin");
 	public static final byte[] button_press_event = ascii("button-press-event");
 	public static final byte[] button_release_event = ascii("button-release-event");
+	public static final byte[] cancel = ascii("cancel");
 	public static final byte[] changed = ascii("changed");
+	public static final byte[] cursor_changed = ascii("cursor-changed");
 	public static final byte[] change_value = ascii("change-value");
 	public static final byte[] clicked = ascii("clicked");
 	public static final byte[] close_request = ascii("close-request");
@@ -292,6 +294,7 @@ public class OS extends C {
 	public static final byte[] dpi_changed = ascii("notify::scale-factor");
 	public static final byte[] accept = ascii("accept");
 	public static final byte[] drag_begin = ascii("drag-begin");
+	public static final byte[] drag_cancel = ascii("drag-cancel");
 	public static final byte[] drag_data_delete = ascii("drag-data-delete");
 	public static final byte[] drag_data_get = ascii("drag-data-get");
 	public static final byte[] drag_data_received = ascii("drag-data-received");
@@ -367,12 +370,14 @@ public class OS extends C {
 	public static final byte[] toggled = ascii("toggled");
 	public static final byte[] unmap = ascii("unmap");
 	public static final byte[] unmap_event = ascii("unmap-event");
+	public static final byte[] unrealize = ascii("unrealize");
 	public static final byte[] value_changed = ascii("value-changed");
 	public static final byte[] window_state_event = ascii("window-state-event");
 	public static final byte[] notify_state = ascii("notify::state");
 	public static final byte[] notify_default_height = ascii("notify::default-height");
 	public static final byte[] notify_default_width = ascii("notify::default-width");
 	public static final byte[] notify_maximized = ascii("notify::maximized");
+	public static final byte[] notify_focus_widget = ascii("notify::focus-widget");
 	public static final byte[] notify_is_active = ascii("notify::is-active");
 	public static final byte[] notify_theme_change = ascii("notify::gtk-application-prefer-dark-theme");
 	public static final byte[] response = ascii("response");
@@ -383,6 +388,7 @@ public class OS extends C {
 	public static final byte[] active = ascii("active");
 	public static final byte[] cell_background_rgba = ascii("cell-background-rgba");
 	public static final byte[] default_border = ascii("default-border");
+	public static final byte[] enable_search = ascii("enable-search");
 	public static final byte[] expander_size = ascii("expander-size");
 	public static final byte[] fixed_height_mode = ascii("fixed-height-mode");
 	public static final byte[] focus_line_width = ascii("focus-line-width");

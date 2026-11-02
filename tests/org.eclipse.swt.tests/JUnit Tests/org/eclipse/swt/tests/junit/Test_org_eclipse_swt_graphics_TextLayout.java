@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageGcDrawer;
 import org.eclipse.swt.graphics.Point;
@@ -307,6 +308,57 @@ public void test_getLineOffsets() {
 		expected = new int [] {0, 2, 4};
 		assertArrayEquals(expected, offsets);
 	} finally {
+		layout.dispose();
+	}
+}
+
+@Test
+public void test_getLineOffsetsOfLongWrappedText() {
+	TextLayout layout = new TextLayout(display);
+	try {
+		StringBuilder text = new StringBuilder();
+		for (int i = 0; i < 500; i++) {
+			text.append("w\u00e9rd \u20ac").append(i).append(' ');
+		}
+		layout.setText(text.toString());
+		layout.setWidth(200);
+		int[] offsets = layout.getLineOffsets();
+		int lineCount = layout.getLineCount();
+		assertTrue(lineCount > 10, "text should wrap into many lines");
+		assertEquals(lineCount + 1, offsets.length);
+		assertEquals(0, offsets[0]);
+		assertEquals(text.length(), offsets[lineCount]);
+		for (int line = 0; line < lineCount; line++) {
+			assertTrue(offsets[line] < offsets[line + 1], "line " + line + " is empty");
+			assertEquals(line, layout.getLineIndex(offsets[line]), "start of line " + line);
+			assertEquals(line, layout.getLineIndex(offsets[line + 1] - 1), "end of line " + line);
+		}
+	} finally {
+		layout.dispose();
+	}
+}
+
+@Test
+public void test_drawFullSelectionOfWrappedSupplementaryCharacters() {
+	TextLayout layout = new TextLayout(display);
+	Image image = new Image(display, 300, 300);
+	GC gc = new GC(image);
+	try {
+		StringBuilder text = new StringBuilder();
+		for (int i = 0; i < 2000; i++) {
+			text.append("ab \ud83d\ude00 ");
+		}
+		layout.setText(text.toString());
+		layout.setWidth(150);
+		assertTrue(layout.getLineCount() > 100, "text should wrap into many lines");
+		Color foreground = display.getSystemColor(SWT.COLOR_WHITE);
+		Color background = display.getSystemColor(SWT.COLOR_BLUE);
+		// Each wrapped line looks up the line break attribute of its end, which must not run past the attributes
+		layout.draw(gc, 0, 0, 0, text.length() - 1, foreground, background, SWT.FULL_SELECTION);
+		layout.draw(gc, 0, 0, 0, text.length() - 1, foreground, background, SWT.DELIMITER_SELECTION);
+	} finally {
+		gc.dispose();
+		image.dispose();
 		layout.dispose();
 	}
 }

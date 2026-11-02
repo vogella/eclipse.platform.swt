@@ -20,11 +20,14 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @SelectClasses({
 	Test_GtkButton.class,
+	Test_GtkCombo.class,
 	Test_GtkConverter.class,
 	Test_GtkMenu.class,
 	Test_GtkScaleFactor.class,
 	Test_GtkShellTrims.class,
-	Test_GtkSortIndicator.class
+	Test_GtkSortIndicator.class,
+	Test_GtkSpinner.class,
+	Test_GtkText.class
 })
 
 public class AllGTKTests {

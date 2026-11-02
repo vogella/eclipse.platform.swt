@@ -37,7 +37,8 @@ import org.junit.platform.suite.api.Suite;
 	Test_cocoa_AccessibleEnabled.class,
 	Test_cocoa_AccessibleNumericValue.class,
 	Test_cocoa_AccessibleHitTest.class,
-	Test_cocoa_AccessibleChildActionNames.class
+	Test_cocoa_AccessibleChildActionNames.class,
+	Test_cocoa_Button.class
 })
 
 public class AllCocoaTests {

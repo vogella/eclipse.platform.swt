@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2000, 2025 IBM Corporation and others.
+ * Copyright (c) 2000, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -354,13 +354,6 @@ public void test_cut() throws InterruptedException {
 
 @Test
 public void test_getCaretLineNumber() {
-	if (SwtTestUtil.isCocoa) {
-		//TODO Fix Cocoa failure.
-		if (SwtTestUtil.verbose) {
-			System.out.println("Excluded test_getCaretLineNumber(org.eclipse.swt.tests.junit.Test_org_eclipse_swt_widgets_Text)");
-		}
-		return;
-	}
 	text.setBounds(0, 0, 500, 500);
 	assertEquals( 0, text.getCaretLineNumber());
 	text.setText("Line0\r\n");
@@ -379,6 +372,26 @@ public void test_getCaretLineNumber() {
 	assertEquals(0, text.getCaretLineNumber());
 	text.setSelection(8,8);
 	assertEquals(1, text.getCaretLineNumber());
+}
+
+@Test
+public void test_getCaretLineNumberScrolled() {
+	makeCleanEnvironment(false);
+	StringBuilder content = new StringBuilder();
+	for (int i = 0; i < 100; i++) {
+		if (i > 0) content.append(text.getLineDelimiter());
+		content.append("Line ").append(i);
+	}
+	text.setText(content.toString());
+	text.setSize(200, text.getLineHeight() * 5);
+	shell.open();
+	int offset = content.indexOf("Line 60");
+	text.setSelection(offset, offset);
+	text.showSelection();
+	assertEquals(60, text.getCaretLineNumber());
+	text.setSelection(0, 0);
+	text.showSelection();
+	assertEquals(0, text.getCaretLineNumber());
 }
 
 @Test
@@ -407,6 +420,38 @@ public void test_getCaretPosition() {
 	text.setSelection(1,3);
 	text.insert("123");
 	assertEquals(4, text.getCaretPosition());
+}
+
+@Test
+public void test_verifyListenerSingleAndSearch() {
+	for (int style : new int[] { SWT.SINGLE, SWT.SEARCH }) {
+		Text text = new Text(shell, style);
+		int[] verifyCount = new int[1];
+		text.addListener(SWT.Verify, e -> {
+			verifyCount[0]++;
+			if (e.text.contains("x")) {
+				e.doit = false;
+			} else {
+				e.text = e.text.toUpperCase();
+			}
+		});
+		text.append("ab");
+		text.insert("x");
+		assertEquals("AB", text.getText());
+		assertEquals(2, verifyCount[0]);
+		text.dispose();
+	}
+}
+
+@Test
+public void test_getCharCountSingleAndSearch() {
+	String string = "ab😀c"; // the emoji is a surrogate pair, two chars
+	for (int style : new int[] { SWT.SINGLE, SWT.SEARCH }) {
+		Text text = new Text(shell, style);
+		text.setText(string);
+		assertEquals(string.length(), text.getCharCount());
+		text.dispose();
+	}
 }
 
 @Test
@@ -1578,6 +1623,7 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	// the window so that org.eclipse.swt.widgets.Display.findFocusedWindow()
 	// returns non-zero
 	SwtTestUtil.processEvents();
+	SwtTestUtil.forceActiveForPost(shell);
 
 	Display display = Display.getDefault();
 
