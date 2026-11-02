@@ -1148,6 +1148,18 @@ JNIEXPORT jlong JNICALL GDK_NATIVE(gdk_1get_1default_1root_1window)
 }
 #endif
 
+#ifndef NO_gdk_1gl_1context_1get_1current
+JNIEXPORT jlong JNICALL GDK_NATIVE(gdk_1gl_1context_1get_1current)
+	(JNIEnv *env, jclass that)
+{
+	jlong rc = 0;
+	GDK_NATIVE_ENTER(env, that, gdk_1gl_1context_1get_1current_FUNC);
+	rc = (jlong)gdk_gl_context_get_current();
+	GDK_NATIVE_EXIT(env, that, gdk_1gl_1context_1get_1current_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_gdk_1key_1event_1get_1keyval
 JNIEXPORT jint JNICALL GDK_NATIVE(gdk_1key_1event_1get_1keyval)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -4845,6 +4857,92 @@ JNIEXPORT jint JNICALL GTK_NATIVE(gtk_1get_1minor_1version)
 }
 #endif
 
+#ifndef NO_gtk_1gl_1area_1attach_1buffers
+JNIEXPORT void JNICALL GTK_NATIVE(gtk_1gl_1area_1attach_1buffers)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1attach_1buffers_FUNC);
+	gtk_gl_area_attach_buffers((GtkGLArea *)arg0);
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1attach_1buffers_FUNC);
+}
+#endif
+
+#ifndef NO_gtk_1gl_1area_1get_1context
+JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1gl_1area_1get_1context)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jlong rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1get_1context_FUNC);
+	rc = (jlong)gtk_gl_area_get_context((GtkGLArea *)arg0);
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1get_1context_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_gtk_1gl_1area_1get_1error
+JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1gl_1area_1get_1error)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jlong rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1get_1error_FUNC);
+	rc = (jlong)gtk_gl_area_get_error((GtkGLArea *)arg0);
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1get_1error_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_gtk_1gl_1area_1make_1current
+JNIEXPORT void JNICALL GTK_NATIVE(gtk_1gl_1area_1make_1current)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1make_1current_FUNC);
+	gtk_gl_area_make_current((GtkGLArea *)arg0);
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1make_1current_FUNC);
+}
+#endif
+
+#ifndef NO_gtk_1gl_1area_1new
+JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1gl_1area_1new)
+	(JNIEnv *env, jclass that)
+{
+	jlong rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1new_FUNC);
+	rc = (jlong)gtk_gl_area_new();
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1new_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_gtk_1gl_1area_1queue_1render
+JNIEXPORT void JNICALL GTK_NATIVE(gtk_1gl_1area_1queue_1render)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1queue_1render_FUNC);
+	gtk_gl_area_queue_render((GtkGLArea *)arg0);
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1queue_1render_FUNC);
+}
+#endif
+
+#ifndef NO_gtk_1gl_1area_1set_1has_1depth_1buffer
+JNIEXPORT void JNICALL GTK_NATIVE(gtk_1gl_1area_1set_1has_1depth_1buffer)
+	(JNIEnv *env, jclass that, jlong arg0, jboolean arg1)
+{
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1set_1has_1depth_1buffer_FUNC);
+	gtk_gl_area_set_has_depth_buffer((GtkGLArea *)arg0, (gboolean)arg1);
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1set_1has_1depth_1buffer_FUNC);
+}
+#endif
+
+#ifndef NO_gtk_1gl_1area_1set_1has_1stencil_1buffer
+JNIEXPORT void JNICALL GTK_NATIVE(gtk_1gl_1area_1set_1has_1stencil_1buffer)
+	(JNIEnv *env, jclass that, jlong arg0, jboolean arg1)
+{
+	GTK_NATIVE_ENTER(env, that, gtk_1gl_1area_1set_1has_1stencil_1buffer_FUNC);
+	gtk_gl_area_set_has_stencil_buffer((GtkGLArea *)arg0, (gboolean)arg1);
+	GTK_NATIVE_EXIT(env, that, gtk_1gl_1area_1set_1has_1stencil_1buffer_FUNC);
+}
+#endif
+
 #ifndef NO_gtk_1im_1context_1focus_1in
 JNIEXPORT void JNICALL GTK_NATIVE(gtk_1im_1context_1focus_1in)
 	(JNIEnv *env, jclass that, jlong arg0)
@@ -7723,6 +7821,40 @@ JNIEXPORT jboolean JNICALL GTK_NATIVE(gtk_1tree_1path_1up)
 	GTK_NATIVE_ENTER(env, that, gtk_1tree_1path_1up_FUNC);
 	rc = (jboolean)gtk_tree_path_up((GtkTreePath *)arg0);
 	GTK_NATIVE_EXIT(env, that, gtk_1tree_1path_1up_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_gtk_1tree_1row_1reference_1free
+JNIEXPORT void JNICALL GTK_NATIVE(gtk_1tree_1row_1reference_1free)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	GTK_NATIVE_ENTER(env, that, gtk_1tree_1row_1reference_1free_FUNC);
+	gtk_tree_row_reference_free((GtkTreeRowReference *)arg0);
+	GTK_NATIVE_EXIT(env, that, gtk_1tree_1row_1reference_1free_FUNC);
+}
+#endif
+
+#ifndef NO_gtk_1tree_1row_1reference_1get_1path
+JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1tree_1row_1reference_1get_1path)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jlong rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1tree_1row_1reference_1get_1path_FUNC);
+	rc = (jlong)gtk_tree_row_reference_get_path((GtkTreeRowReference *)arg0);
+	GTK_NATIVE_EXIT(env, that, gtk_1tree_1row_1reference_1get_1path_FUNC);
+	return rc;
+}
+#endif
+
+#ifndef NO_gtk_1tree_1row_1reference_1new
+JNIEXPORT jlong JNICALL GTK_NATIVE(gtk_1tree_1row_1reference_1new)
+	(JNIEnv *env, jclass that, jlong arg0, jlong arg1)
+{
+	jlong rc = 0;
+	GTK_NATIVE_ENTER(env, that, gtk_1tree_1row_1reference_1new_FUNC);
+	rc = (jlong)gtk_tree_row_reference_new((GtkTreeModel *)arg0, (GtkTreePath *)arg1);
+	GTK_NATIVE_EXIT(env, that, gtk_1tree_1row_1reference_1new_FUNC);
 	return rc;
 }
 #endif

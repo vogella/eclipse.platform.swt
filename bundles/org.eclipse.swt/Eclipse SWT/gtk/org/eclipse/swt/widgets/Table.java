@@ -718,6 +718,11 @@ void createHandle (int index) {
 	}
 	if (!searchEnabled ()) {
 		GTK.gtk_tree_view_set_search_column (handle, -1);
+		/*
+		 * GTK4 creates the search popup on the first key press even without a search column,
+		 * and attaching it fails a gtk_css_node_insert_after assertion (GTK issue 5373).
+		 */
+		OS.g_object_set (handle, OS.enable_search, false, 0);
 	}
 	if (GTK.GTK4) {
 		// Required before TableDropTargetEffect may use
@@ -2160,10 +2165,32 @@ int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long
 	 * after this one: send the DefaultSelection from gtk_row_activated.
 	 */
 	defaultSelectionPending = n_press == 2;
+	int result = super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+	if (!isDisposed()) TreeViewPressSelection.press(display, handle, modelHandle, style, n_press, GDK.gdk_button_event_get_button(event), GDK.gdk_event_get_modifier_state(event), x, y);
+	return result;
+}
 
-	// TODO: GTK4 replicate gtk_button_press_event functions
+@Override
+int gtk_gesture_release_event (long gesture, int n_press, double x, double y, long event) {
+	TreeViewPressSelection.release(handle);
+	return super.gtk_gesture_release_event(gesture, n_press, x, y, event);
+}
 
-	return super.gtk_gesture_press_event(gesture, n_press, x, y, event);
+@Override
+void gtk_gesture_cancel_event (long gesture) {
+	TreeViewPressSelection.cancel(handle);
+}
+
+@Override
+long gtk_cursor_changed (long widget) {
+	TreeViewPressSelection.cursorChanged(handle);
+	return 0;
+}
+
+@Override
+long gtk_selection_changed (long selection) {
+	TreeViewPressSelection.selectionChanged(handle);
+	return 0;
 }
 
 @Override
@@ -2466,6 +2493,11 @@ void hookEvents () {
 	super.hookEvents ();
 	long selection = GTK.gtk_tree_view_get_selection(handle);
 	OS.g_signal_connect_closure (selection, OS.changed, display.getClosure (CHANGED), false);
+	if (GTK.GTK4) {
+		// For TreeViewPressSelection
+		OS.g_signal_connect_closure (handle, OS.cursor_changed, display.getClosure (CURSOR_CHANGED), false);
+		OS.g_signal_connect_closure (selection, OS.changed, display.getClosure (SELECTION_CHANGED), false);
+	}
 	OS.g_signal_connect_closure (handle, OS.row_activated, display.getClosure (ROW_ACTIVATED), false);
 	if (checkRenderer != 0) {
 		OS.g_signal_connect_closure (checkRenderer, OS.toggled, display.getClosure (TOGGLED), false);
@@ -2675,6 +2707,7 @@ void releaseWidget () {
 	if (headerImageList != null) headerImageList.dispose ();
 	imageList = headerImageList = null;
 	currentItem = null;
+	TreeViewPressSelection.dispose (handle);
 }
 
 /**

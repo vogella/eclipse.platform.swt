@@ -1454,6 +1454,7 @@ public class OS extends C {
 	public static final int VK_RBUTTON = 0x2;
 	public static final int VK_RETURN = 0xd;
 	public static final int VK_RIGHT = 0x27;
+	public static final int VK_RMENU = 0xA5;
 	public static final int VK_RSHIFT = 0xA1;
 	public static final int VK_SCROLL = 0x91;
 	public static final int VK_SEPARATOR = 0x6C;

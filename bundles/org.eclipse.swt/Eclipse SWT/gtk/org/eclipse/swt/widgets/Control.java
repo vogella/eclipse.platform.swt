@@ -71,6 +71,8 @@ public abstract class Control extends Widget implements Drawable {
 	Cursor cursor;
 	Menu menu;
 	Image backgroundImage;
+	Color backgroundColor;
+	int backgroundColorGeneration;
 	Font font;
 	Region region;
 	long eventRegion;
@@ -99,6 +101,8 @@ public abstract class Control extends Widget implements Drawable {
 	Point lastInput = new Point(0, 0);
 
 	LinkedList <Event> dragDetectionQueue;
+	/* The first, delayed MouseDown of dragDetectionQueue was sent before a MouseDoubleClick */
+	private boolean dragDetectionMouseDownSent;
 
 	/** GTK4 only: position and state of the pending button 1 press, null once DragDetect was sent or the button was released. */
 	Point gtk4DragStart;
@@ -442,6 +446,7 @@ private void hookMouseSignals(long eventHandle) {
 		GTK4.gtk_widget_add_controller(eventHandle, clickGesture);
 		OS.g_signal_connect(clickGesture, OS.pressed, display.gesturePressReleaseProc, GESTURE_PRESSED);
 		OS.g_signal_connect(clickGesture, OS.released, display.gesturePressReleaseProc, GESTURE_RELEASED);
+		OS.g_signal_connect(clickGesture, OS.cancel, display.gestureCancelProc, 0);
 
 		long motionController = GTK4.gtk_event_controller_motion_new();
 		GTK.gtk_event_controller_set_propagation_phase(motionController, GTK.GTK_PHASE_TARGET);
@@ -3986,19 +3991,7 @@ long gtk_focus (long widget, long directionType) {
 @Override
 long gtk_focus_in_event (long widget, long event) {
 	// widget could be disposed at this point
-	if (handle != 0) {
-		Control oldControl = display.imControl;
-		if (oldControl != this)  {
-			if (oldControl != null && !oldControl.isDisposed ()) {
-				long oldIMHandle = oldControl.imHandle ();
-				if (oldIMHandle != 0) GTK.gtk_im_context_reset (oldIMHandle);
-			}
-		}
-		if (hooks (SWT.KeyDown) || hooks (SWT.KeyUp)) {
-			long imHandle = imHandle ();
-			if (imHandle != 0) GTK.gtk_im_context_focus_in (imHandle);
-		}
-	}
+	if (handle != 0) imFocusIn ();
 	return 0;
 }
 
@@ -4006,6 +3999,7 @@ long gtk_focus_in_event (long widget, long event) {
 void gtk4_focus_enter_event(long controller, long event) {
 	super.gtk4_focus_enter_event(controller, event);
 
+	imFocusIn ();
 	sendFocusEvent(SWT.FocusIn);
 }
 
@@ -4029,14 +4023,7 @@ void gtk4_focus_window_event(long handle, long event) {
 @Override
 long gtk_focus_out_event (long widget, long event) {
 	// widget could be disposed at this point
-	if (handle != 0) {
-		if (hooks (SWT.KeyDown) || hooks (SWT.KeyUp)) {
-			long imHandle = imHandle ();
-			if (imHandle != 0) {
-				GTK.gtk_im_context_focus_out (imHandle);
-			}
-		}
-	}
+	if (handle != 0) imFocusOut ();
 	return 0;
 }
 
@@ -4044,6 +4031,7 @@ long gtk_focus_out_event (long widget, long event) {
 void gtk4_focus_leave_event(long controller, long event) {
 	super.gtk4_focus_leave_event(controller, event);
 
+	imFocusOut ();
 	sendFocusEvent(SWT.FocusOut);
 }
 
@@ -4510,6 +4498,27 @@ long imHandle () {
 	return 0;
 }
 
+void imFocusIn () {
+	Control oldControl = display.imControl;
+	if (oldControl != this)  {
+		if (oldControl != null && !oldControl.isDisposed ()) {
+			long oldIMHandle = oldControl.imHandle ();
+			if (oldIMHandle != 0) GTK.gtk_im_context_reset (oldIMHandle);
+		}
+	}
+	if (hooks (SWT.KeyDown) || hooks (SWT.KeyUp)) {
+		long imHandle = imHandle ();
+		if (imHandle != 0) GTK.gtk_im_context_focus_in (imHandle);
+	}
+}
+
+void imFocusOut () {
+	if (hooks (SWT.KeyDown) || hooks (SWT.KeyUp)) {
+		long imHandle = imHandle ();
+		if (imHandle != 0) GTK.gtk_im_context_focus_out (imHandle);
+	}
+}
+
 /**
  * Invokes platform specific functionality to dispose a GC handle.
  * <p>
@@ -4847,12 +4856,16 @@ void releaseWidget () {
 	if (hadFocus) fixFocus (this);
 	if (display.currentControl == this) display.currentControl = null;
 	display.removeMouseHoverTimeout (handle);
-	if (!GTK.GTK4) {
-		long imHandle = imHandle ();
-		if (imHandle != 0 && GTK.GTK_IS_IM_CONTEXT(imHandle)) {
-			GTK.gtk_im_context_reset (imHandle);
+	long imHandle = imHandle ();
+	if (imHandle != 0 && GTK.GTK_IS_IM_CONTEXT(imHandle)) {
+		GTK.gtk_im_context_reset (imHandle);
+		if (GTK.GTK4) {
+			GTK4.gtk_im_context_set_client_widget (imHandle, 0);
+		} else {
 			GTK.gtk_im_context_set_client_window (imHandle, 0);
 		}
+	}
+	if (!GTK.GTK4) {
 		if (enableWindow != 0) {
 			GDK.gdk_window_set_user_data (enableWindow, 0);
 			GDK.gdk_window_destroy (enableWindow);
@@ -4925,8 +4938,9 @@ void flushQueueOnDnd() {
 	// to determine DnD threshold.
 	// This is to preserve backwards Cocoa/Win32 compatibility.
 	Event mouseDownEvent = dragDetectionQueue.getFirst();
-	mouseDownEvent.data = null;
 	dragDetectionQueue = null;
+	if (dragDetectionMouseDownSent) return;
+	mouseDownEvent.data = null;
 	sendEvent(SWT.MouseDown, mouseDownEvent);
 }
 
@@ -5090,7 +5104,7 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 			if (type == SWT.MouseUp && dragDetectionQueue.size() == 1) {
 				Event mouseDownEvent = dragDetectionQueue.getFirst();
 				dragDetectionQueue = null;
-				sendOrPost(SWT.MouseDown, mouseDownEvent);
+				if (!dragDetectionMouseDownSent) sendOrPost(SWT.MouseDown, mouseDownEvent);
 			}
 		}
 		/*
@@ -5156,6 +5170,7 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 				// Delay MouseDown
 				dragDetectionQueue = new LinkedList<>();
 				dragDetectionQueue.add(event);
+				dragDetectionMouseDownSent = false;
 				return true; // event never canceled as not yet sent.
 			}
 		} else {
@@ -5173,17 +5188,29 @@ boolean sendMouseEvent (int type, int button, int count, int detail, boolean sen
 						return true;
 					}
 					break;
+				case SWT.MouseDoubleClick:
+					// Send the delayed MouseDown of the same press before the MouseDoubleClick.
+					// The queue stays for the drag detection of this press.
+					if (!dragDetectionMouseDownSent) {
+						dragDetectionMouseDownSent = true;
+						sendOrPost(SWT.MouseDown, dragDetectionQueue.getFirst());
+					}
+					break;
 				case SWT.MouseUp:
 					// Case where mouse up was released before DnD threshold was hit.
 					mouseDown = false;
+					Event queuedMouseDown = dragDetectionQueue.removeFirst();
 					// Decide if we should send or post the queued up MouseDown and MouseMovement events.
 					// If mouseUp is send, then send all. If mouseUp is post, then decide based on previous
 					// send flag.
-					boolean sendOrPostAll = send ? true : (Boolean) dragDetectionQueue.getFirst().data;
+					boolean sendOrPostAll = send || (!dragDetectionMouseDownSent && (Boolean) queuedMouseDown.data);
 					dragDetectionQueue.forEach(queuedEvent -> queuedEvent.data = Boolean.valueOf(sendOrPostAll));
 
 					// Flush queued up MouseDown/MouseMotion events, so they are triggered before MouseUp
-					sendOrPost(SWT.MouseDown, dragDetectionQueue.removeFirst());
+					if (!dragDetectionMouseDownSent) {
+						queuedMouseDown.data = Boolean.valueOf(sendOrPostAll);
+						sendOrPost(SWT.MouseDown, queuedMouseDown);
+					}
 					dragDetectionQueue.forEach(queuedEvent -> sendOrPost(SWT.MouseMove, queuedEvent));
 					dragDetectionQueue = null;
 				}
@@ -5287,6 +5314,8 @@ private void _setBackground (Color color) {
 	if (color != null && color.isDisposed ()) {
 		error(SWT.ERROR_INVALID_ARGUMENT);
 	}
+	if (color != null && color.equals (backgroundColor) && backgroundAlpha == color.getAlpha ()
+			&& backgroundColorGeneration == display.systemColorsGeneration) return;
 	GdkRGBA rgba = null;
 	if (color != null) {
 		rgba = color.handle;
@@ -5297,6 +5326,8 @@ private void _setBackground (Color color) {
 	} else {
 		state |= BACKGROUND;
 	}
+	backgroundColor = color;
+	backgroundColorGeneration = display.systemColorsGeneration;
 	setBackgroundGdkRGBA (rgba);
 	redrawChildren ();
 }
