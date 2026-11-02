@@ -123,7 +123,7 @@ Write-Host '==> Starting unattended Windows install (takes 20-40 minutes)'
 $startType = if ($Headless) { 'headless' } else { 'gui' }
 VBox unattended install $VmName `
 	--iso=$IsoPath `
-	--user=$GuestUser --password=$GuestPassword --full-user-name="SWT Tests" `
+	--user=$GuestUser --user-password=$GuestPassword --full-user-name="SWT Tests" `
 	--image-index=$ImageIndex `
 	--locale=$Locale --country=$Country --time-zone=$TimeZone `
 	--hostname="$VmName.local" `
