@@ -135,15 +135,6 @@
 		</method>
 	</class>
 	<class name="WebScriptObject" swt_gen="mixed" swt_gen_const="false">
-		<method selector="callWebScriptMethod:withArguments:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
-		<method selector="evaluateWebScript:" swt_gen="true">
-			<arg swt_gen="true"></arg>
-			<retval swt_gen="true"></retval>
-		</method>
 		<method selector="webScriptValueAtIndex:" swt_gen="true">
 			<arg swt_gen="true"></arg>
 			<retval swt_gen="true"></retval>
