@@ -3326,7 +3326,7 @@ public void setBounds (Rectangle rect) {
 	if (rect == null) error (SWT.ERROR_NULL_ARGUMENT);
 	int zoom = computeBoundsZoom();
 	Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(rect, zoom);
-	fitInParentBounds(boundsInPixels, zoom);
+	fitInParentBounds(boundsInPixels, Win32DPIUtils.pointToPixel(1.0f, zoom));
 	setBoundsInPixels(boundsInPixels);
 }
 
@@ -3352,7 +3352,7 @@ public void setBounds (Rectangle rect) {
  * </ul>
  * Thus, reduce the control size in case it would not fit anyway
  */
-private void fitInParentBounds(Rectangle boundsInPixels, int zoom) {
+private void fitInParentBounds(Rectangle boundsInPixels, float maxErrorInPixels) {
 	if (parent == null || this instanceof Shell) {
 		// A Shell is a geometric top-level element and must not be fit into any
 		// logical parent's bounds — even if it has another Shell set as parent
@@ -3366,13 +3366,13 @@ private void fitInParentBounds(Rectangle boundsInPixels, int zoom) {
 	// layouts)
 	boolean childNotFittingHorizontally = parentBoundsInPixels.width < boundsInPixels.x + boundsInPixels.width;
 	boolean childFittingHorizontallyWithOffByOne = parentBoundsInPixels.width >= boundsInPixels.x + boundsInPixels.width
-			- Win32DPIUtils.pointToPixel(1.0f, zoom);
+			- maxErrorInPixels;
 	if (childNotFittingHorizontally && childFittingHorizontallyWithOffByOne) {
 		boundsInPixels.width = parentBoundsInPixels.width - boundsInPixels.x;
 	}
 	boolean childNotFittingVertically = parentBoundsInPixels.height < boundsInPixels.y + boundsInPixels.height;
 	boolean childFittingVerticallyWithOffByOne = parentBoundsInPixels.height >= boundsInPixels.y + boundsInPixels.height
-			- Win32DPIUtils.pointToPixel(1.0f, zoom);
+			- maxErrorInPixels;
 	if (childNotFittingVertically && childFittingVerticallyWithOffByOne) {
 		boundsInPixels.height = parentBoundsInPixels.height - boundsInPixels.y;
 	}
@@ -3960,11 +3960,13 @@ public void setSize (Point size) {
 
 private void setSize(Point size, int zoom) {
 	// Use the exact (non-rounded) bounds to apply proper rounding when converting the size from point to pixel
-	Rectangle bounds = Win32DPIUtils.pixelToPoint(Rectangle.OfFloat.from(getBoundsInPixels()), zoom);
-	bounds.width = size.x;
-	bounds.height = size.y;
+	Rectangle.OfFloat bounds = Rectangle.OfFloat.from(Win32DPIUtils.pixelToPoint(Rectangle.OfFloat.from(getBoundsInPixels()), zoom));
+	// The setters also drop the residual of the previous size, which would otherwise be added to the new one
+	bounds.setWidth(size.x);
+	bounds.setHeight(size.y);
 	Rectangle boundsInPixels = Win32DPIUtils.pointToPixel(bounds, zoom);
-	fitInParentBounds(boundsInPixels, zoom);
+	// Location and size are rounded independently here, adding up to one more pixel of error
+	fitInParentBounds(boundsInPixels, (float) Math.ceil(Win32DPIUtils.pointToPixel(1.0f, zoom)));
 	setSizeInPixels(boundsInPixels.width, boundsInPixels.height);
 }
 

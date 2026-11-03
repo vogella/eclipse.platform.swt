@@ -150,6 +150,27 @@ class ControlWin32Tests {
 	}
 
 	/**
+	 * At 125% and 175%, the previous width of 30 points is 38 and 53 pixels, i.e.
+	 * not a whole number of points.
+	 */
+	@ParameterizedTest
+	@CsvSource({ "125, 40, 54", "175, 56, 75" })
+	void testSetSizeIndependentOfPreviousSize(int zoom, int widthInPixels, int heightInPixels) {
+		setMonitorSpecificScaling(true);
+		Display display = Display.getDefault();
+		Shell shell = new Shell(display);
+		Button button = new Button(shell, SWT.PUSH);
+		DPITestUtil.changeDPIZoom(shell, zoom);
+		shell.setSize(300, 200);
+
+		button.setBounds(32, 43, 30, 40);
+		button.setSize(32, 43);
+
+		assertEquals(new Point(widthInPixels, heightInPixels), button.getSizeInPixels());
+		assertEquals(new Point(32, 43), button.getSize());
+	}
+
+	/**
 	 * Scenario:
 	 * <ul>
 	 * <li>parent has bounds with an offset (x != 0) to its parent
@@ -263,6 +284,23 @@ class ControlWin32Tests {
 		assertChildFitsIntoParent(parent, child);
 
 		child.setSize(childBounds.width, childBounds.height);
+		assertChildFitsIntoParent(parent, child);
+	}
+
+	@Test
+	void testFitChildIntoParent_sizeRoundedIndependentlyOfLocation() {
+		setMonitorSpecificScaling(true);
+		Display display = Display.getDefault();
+		Shell shell = new Shell(display);
+		Composite parent = new Composite(shell, SWT.NONE);
+		DPITestUtil.changeDPIZoom(shell, 125);
+		// pixel values at 125%: (0, 0, 5, 5)
+		parent.setBounds(0, 0, 4, 4);
+		Button child = new Button(parent, SWT.PUSH);
+		// pixel values at 125%: (2.5, 2.5, 3.75, 3.75) --> rounded independently to (3, 3, 4, 4), overflowing by 2 pixels
+		child.setLocation(2, 2);
+		child.setSize(3, 3);
+
 		assertChildFitsIntoParent(parent, child);
 	}
 
