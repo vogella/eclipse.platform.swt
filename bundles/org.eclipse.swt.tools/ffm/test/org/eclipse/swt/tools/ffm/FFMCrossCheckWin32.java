@@ -33,6 +33,8 @@ import org.eclipse.swt.widgets.Text;
  * The optional argument is <code>report-win32/symbols.txt</code>, whose symbols are resolved from their DLLs.
  */
 public class FFMCrossCheckWin32 {
+	private static final int LR_SHARED = 0x8000;
+
 
 	static final String[] NATIVES = {
 		"org.eclipse.swt.internal.C", "org.eclipse.swt.internal.win32.OS", "org.eclipse.swt.internal.ole.win32.COM",
@@ -471,8 +473,8 @@ public class FFMCrossCheckWin32 {
 				ffmImage.dispose();
 			}
 		}
-		check("LoadImage OEM icon passes through", OS.LoadImage(0, 32512, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED) != 0,
-			FFMResources.LoadImage(0, 32512, OS.IMAGE_ICON, 0, 0, OS.LR_SHARED) != 0);
+		check("LoadImage OEM icon passes through", OS.LoadImage(0, 32512, OS.IMAGE_ICON, 0, 0, LR_SHARED) != 0,
+			FFMResources.LoadImage(0, 32512, OS.IMAGE_ICON, 0, 0, LR_SHARED) != 0);
 
 		// the manifest, from a temporary file when there is no module
 		ACTCTX context = new ACTCTX();
