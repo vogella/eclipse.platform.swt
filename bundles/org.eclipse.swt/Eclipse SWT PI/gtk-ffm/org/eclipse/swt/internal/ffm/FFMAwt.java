@@ -102,7 +102,7 @@ public final class FFMAwt {
 		drawingSurface(canvas, debug ? 1 : 0);
 	}
 
-	public static Object initFrame(long handle, String className) {
+	public static Object initFrame(long handle) {
 		try (FFMJni jni = new FFMJni(null)) {
 			long clazz = jni.findClass(EMBEDDED_FRAME);
 			long constructor = jni.method(clazz, CONSTRUCTOR, CONSTRUCTOR_SIGNATURE);
