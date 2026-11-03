@@ -30,9 +30,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.opentest4j.IncompleteExecutionException;
 
 
 /**
@@ -56,27 +54,13 @@ public class Test_org_eclipse_swt_custom_StyledText_multiCaretsSelections {
 
 
 	@RegisterExtension
-	AfterTestExecutionCallback afterTestExecutionCallback = context -> {
-		context.getExecutionException().ifPresent((e) -> {
-			// If this is an assumption failed or otherwise
-			// skipped test, don't take a screenshot
-			if (!(e instanceof IncompleteExecutionException)) {
-				String screenshot = Screenshots.takeScreenshot(context.getTestClass().get(), context.getDisplayName());
-				e.addSuppressed((new Throwable("Screenshot written to " + screenshot)));
-			}
-		});
-	};
+	Screenshots.ScreenshotOnFailureExtension screenshotOnFailure = Screenshots.onFailureExtension(() -> shell);
 
 	@AfterEach
 	public void tearDown() {
 		gc.dispose();
-		if (shell == null) {
-			return;
-		}
-		if (shell != null && !shell.isDisposed()) {
-			shell.dispose();
-		}
 	}
+
 	@Test
 	public void test_MultiSelectionEdit() {
 		text.setText("0123456789abcdef");
