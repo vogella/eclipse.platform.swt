@@ -62,6 +62,8 @@ public final class TextLayout extends Resource {
 
 	int[] lineOffsets;
 	NSRect[] lineBounds;
+	// lets freeRuns, which setStyle calls for every style, skip walking all styles
+	private boolean hasAttachmentCells;
 
 	// the following Callbacks are never freed
 	static Callback textLayoutCallback2;
@@ -345,6 +347,7 @@ void computeRuns() {
 			attrStr.replaceCharactersInRange(range, string);
 			string.release();
 
+			hasAttachmentCells = true;
 			run.jniRef =  OS.NewGlobalRef(run);
 			if (run.jniRef == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 			run.cell = (SWTTextAttachmentCell) new SWTTextAttachmentCell().alloc().init();
@@ -766,6 +769,8 @@ void fixRect(NSRect rect) {
 void freeRuns() {
 	lineBounds = null;
 	lineOffsets = null;
+	if (!hasAttachmentCells) return;
+	hasAttachmentCells = false;
 	for (int i = 0; i < stylesCount - 1; i++) {
 		StyleItem run = styles[i];
 		if (run.cell != null) {
