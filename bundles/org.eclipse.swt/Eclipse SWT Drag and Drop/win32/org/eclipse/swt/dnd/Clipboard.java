@@ -895,7 +895,15 @@ private FORMATETC[] _getAvailableTypes() {
 	/* OleGetClipboard([out] ppDataObject).
 	 * AddRef has already been called on ppDataObject by the callee and must be released by the caller.
 	 */
-	if (COM.OleGetClipboard(ppv) != COM.S_OK) return types;
+	int result = COM.OleGetClipboard(ppv);
+	int retryCount = 0;
+	while (result != COM.S_OK && retryCount++ < RETRY_LIMIT) {
+		try {Thread.sleep(50);} catch (Throwable t) {}
+		MSG msg = new MSG();
+		OS.PeekMessage(msg, 0, 0, 0, OS.PM_NOREMOVE | OS.PM_NOYIELD);
+		result = COM.OleGetClipboard(ppv);
+	}
+	if (result != COM.S_OK) return types;
 	IDataObject dataObject = new IDataObject(ppv[0]);
 	long[] ppFormatetc = new long[1];
 	/* EnumFormatEtc([in] dwDirection, [out] ppenumFormatetc)
