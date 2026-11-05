@@ -1010,6 +1010,8 @@ LRESULT CDDS_ITEMPREPAINT (NMTVCUSTOMDRAW nmcd, long wParam, long lParam) {
 	*/
 	if (item == null) return null;
 	long hDC = nmcd.hdc;
+	// Windows selects the disabled color, which would paint the rows and reach the GC of the listeners
+	if (!OS.IsWindowEnabled (handle) && hasCustomBackground()) OS.SetBkColor (hDC, getBackgroundPixel ());
 	int index = hwndHeader != 0 ? getFirstColumnIndex() : 0;
 	long hFont = item.fontHandle (index);
 	if (hFont != -1) OS.SelectObject (hDC, hFont);

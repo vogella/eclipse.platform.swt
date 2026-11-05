@@ -328,6 +328,38 @@ class TreeWin32Tests {
 		return data.palette.getRGB(data.getPixel(x, paintedItem.getBounds(0).y + 1));
 	}
 
+	@Test
+	public void test_disabledKeepsCustomBackgroundWithEraseItemListener() {
+		openDisabledTree(new Color(DARK_BACKGROUND));
+		assertEquals(DARK_BACKGROUND, disabledRowRgb());
+	}
+
+	@Test
+	public void test_disabledDefaultBackgroundStaysWidgetColorWithEraseItemListener() {
+		openDisabledTree(null);
+		assertEquals(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND).getRGB(), disabledRowRgb());
+	}
+
+	private void openDisabledTree(Color background) {
+		paintedTree = new Tree(shell, SWT.NONE);
+		paintedTree.setBounds(0, 30, 3 * COLUMN_WIDTH, 150);
+		paintedTree.setBackground(background);
+		paintedItem = new TreeItem(paintedTree, SWT.NONE);
+		paintedItem.setText("item");
+		paintedTree.addListener(SWT.EraseItem, event -> {});
+		shell.setSize(4 * COLUMN_WIDTH, 250);
+		shell.open();
+		while (display.readAndDispatch()) {
+			// process all pending events
+		}
+		paintedTree.setEnabled(false);
+	}
+
+	private RGB disabledRowRgb() {
+		ImageData data = captureTree();
+		return data.palette.getRGB(data.getPixel(COLUMN_WIDTH, paintedItem.getBounds().y + 1));
+	}
+
 	/** Returns the pixels across the whole row, just above the text. */
 	private int[] captureRowTop() {
 		ImageData data = captureTree();

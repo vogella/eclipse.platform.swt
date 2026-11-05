@@ -3470,7 +3470,7 @@ void sendEraseItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd, long lParam, Event
 		}
 	} else {
 		data.foreground = OS.GetSysColor (OS.COLOR_GRAYTEXT);
-		data.background = OS.GetSysColor (OS.COLOR_3DFACE);
+		data.background = hasCustomBackground() ? getBackgroundPixel () : OS.GetSysColor (OS.COLOR_3DFACE);
 		if (selected) clrSelectionBk = data.background;
 	}
 	data.font = item.getFont (nmcd.iSubItem);
@@ -3921,7 +3921,7 @@ void sendPaintItemEvent (TableItem item, NMLVCUSTOMDRAW nmcd) {
 		}
 	} else {
 		data.foreground = OS.GetSysColor (OS.COLOR_GRAYTEXT);
-		data.background = OS.GetSysColor (OS.COLOR_3DFACE);
+		data.background = hasCustomBackground() ? getBackgroundPixel () : OS.GetSysColor (OS.COLOR_3DFACE);
 	}
 	data.uiState = (int)OS.SendMessage (handle, OS.WM_QUERYUISTATE, 0, 0);
 	int nSavedDC = OS.SaveDC (hDC);

@@ -109,6 +109,31 @@ class TableWin32Tests {
 		assertEquals(DARK_UNFOCUSED_SELECTION, rgbAt(table.getItem(1).getBounds().x + 1));
 	}
 
+	@Test
+	public void test_disabledKeepsCustomBackgroundInEraseItem() {
+		openTable(SWT.NONE, 1);
+		table.addListener(SWT.EraseItem, event -> {
+			Rectangle clientArea = table.getClientArea();
+			event.gc.fillRectangle(clientArea.x, event.y, clientArea.width, event.height);
+			event.detail &= ~(SWT.FOREGROUND | SWT.BACKGROUND | SWT.HOT | SWT.SELECTED);
+		});
+		table.setEnabled(false);
+		assertEquals(DARK_BACKGROUND, rgbAt(COLUMN_WIDTH - 10));
+	}
+
+	@Test
+	public void test_disabledDefaultBackgroundStaysWidgetColorInEraseItem() {
+		openTable(SWT.NONE, 1);
+		table.setBackground(null);
+		table.addListener(SWT.EraseItem, event -> {
+			Rectangle clientArea = table.getClientArea();
+			event.gc.fillRectangle(clientArea.x, event.y, clientArea.width, event.height);
+			event.detail &= ~(SWT.FOREGROUND | SWT.BACKGROUND | SWT.HOT | SWT.SELECTED);
+		});
+		table.setEnabled(false);
+		assertEquals(display.getSystemColor(SWT.COLOR_WIDGET_BACKGROUND).getRGB(), rgbAt(COLUMN_WIDTH - 10));
+	}
+
 	private void openTable(int style) {
 		openTable(style, 2);
 	}
