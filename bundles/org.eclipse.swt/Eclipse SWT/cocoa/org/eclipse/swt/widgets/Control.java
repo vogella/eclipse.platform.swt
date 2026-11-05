@@ -2087,13 +2087,22 @@ boolean insertText (long id, long sel, long string) {
 					int length = (int)str.length ();
 					char[] buffer = new char [length];
 					str.getCharacters(buffer);
+					boolean sendKeyAfterText = false;
 					for (int i = 0; i < buffer.length; i++) {
 						s.keyInputHappened = true;
 						Event event = new Event ();
-						if (i == 0 && type == OS.NSKeyDown) setKeyState (event, SWT.KeyDown, nsEvent);
+						if (i == 0 && type == OS.NSKeyDown) {
+							setKeyState (event, SWT.KeyDown, nsEvent);
+							// an input method commits its text with the key that ended the composition, keep a key without text of its own
+							if ((event.keyCode & SWT.KEYCODE_BIT) != 0 && event.character == 0) {
+								event = new Event ();
+								sendKeyAfterText = true;
+							}
+						}
 						event.character = buffer [i];
 						if (!sendKeyEvent (SWT.KeyDown, event)) return false;
 					}
+					if (sendKeyAfterText) s.keyInputHappened = false;
 				}
 			}
 			if ((state & CANVAS) != 0) return true;
