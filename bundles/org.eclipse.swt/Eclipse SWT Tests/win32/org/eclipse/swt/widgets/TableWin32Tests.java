@@ -14,6 +14,7 @@
 package org.eclipse.swt.widgets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -24,12 +25,17 @@ import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
+import org.eclipse.swt.internal.DPIUtil;
 import org.eclipse.swt.internal.PlatformSpecificExecutionExtension;
 import org.eclipse.swt.internal.win32.OS;
+import org.eclipse.swt.internal.win32.RECT;
+import org.eclipse.swt.layout.FillLayout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Pins how a Table paints an unfocused selection in the dark theme. */
 @ExtendWith(PlatformSpecificExecutionExtension.class)
@@ -107,6 +113,47 @@ class TableWin32Tests {
 		openTable(SWT.FULL_SELECTION, 0);
 		table.getItem(1).setText("text");
 		assertEquals(DARK_UNFOCUSED_SELECTION, rgbAt(table.getItem(1).getBounds().x + 1));
+	}
+
+	@ParameterizedTest
+	@ValueSource(ints = { 125, 175 })
+	public void test_columnWithClientAreaWidthShowsNoHorizontalBar(int zoom) {
+		int deviceZoom = DPIUtil.getDeviceZoom();
+		boolean monitorSpecificScaling = DPIUtil.isMonitorSpecificScalingActive();
+		try {
+			// The forced zoom only applies to a display created with monitor-specific scaling.
+			shell.dispose();
+			display.dispose();
+			DPIUtil.setMonitorSpecificScaling(true);
+			display = Display.getDefault();
+			shell = new Shell(display);
+			shell.setLayout(new FillLayout());
+			table = new Table(shell, SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL);
+			TableColumn column = new TableColumn(table, SWT.NONE);
+			table.addListener(SWT.Resize, event -> column.setWidth(table.getClientArea().width));
+			new TableItem(table, SWT.NONE).setText("item");
+			shell.setSize(400, 300);
+			shell.open();
+			DPITestUtil.changeDPIZoom(shell, zoom);
+			assertEquals(zoom, table.getAutoscalingZoom());
+			RECT rect = new RECT();
+			OS.GetWindowRect(shell.handle, rect);
+			int width = rect.right - rect.left, height = rect.bottom - rect.top;
+			for (int i = 0; i < 40; i++) {
+				OS.SetWindowPos(shell.handle, 0, 0, 0, width + i, height, OS.SWP_NOMOVE | OS.SWP_NOZORDER | OS.SWP_NOACTIVATE);
+				while (display.readAndDispatch()) {
+					// process all pending events
+				}
+				assertFalse(table.getHorizontalBar().isVisible(), "Horizontal bar at a shell width of " + (width + i) + " pixels");
+			}
+		} finally {
+			shell.dispose();
+			display.dispose();
+			DPIUtil.setMonitorSpecificScaling(monitorSpecificScaling);
+			DPIUtil.setDeviceZoom(deviceZoom);
+			display = Display.getDefault();
+			shell = new Shell(display);
+		}
 	}
 
 	private void openTable(int style) {

@@ -845,7 +845,13 @@ public void setToolTipText (String string) {
  */
 public void setWidth (int width) {
 	checkWidget ();
-	setWidthInPixels(DPIUtil.pointToPixel(width, getAutoscalingZoom()));
+	int zoom = getAutoscalingZoom();
+	int widthInPixels = DPIUtil.pointToPixel(width, zoom);
+	RECT rect = new RECT ();
+	OS.GetClientRect (parent.handle, rect);
+	// The client width in points can convert back to one pixel more, which would show a scrollbar
+	if (widthInPixels > rect.right && DPIUtil.pixelToPoint(rect.right, zoom) == width) widthInPixels = rect.right;
+	setWidthInPixels(widthInPixels);
 }
 
 void setWidthInPixels (int width) {
