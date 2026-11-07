@@ -1953,7 +1953,7 @@ public void test_Virtual() {
 }
 
 @Test
-public void test_getItemLorg_eclipse_swt_graphics_PointVirtual() {
+public void test_getItemLorg_eclipse_swt_graphics_PointVirtual() throws InterruptedException {
 	table.dispose();
 	table = new Table(shell, SWT.VIRTUAL | SWT.BORDER);
 	setWidget(table);
@@ -1964,6 +1964,9 @@ public void test_getItemLorg_eclipse_swt_graphics_PointVirtual() {
 
 	// items that were never shown do not exist yet, getItem(Point) has to create them
 	Rectangle bounds = table.getItem(0).getBounds();
+	// GTK4 lays the rows out only after the shell is shown
+	Point first = new Point(bounds.x + 2, bounds.y + bounds.height / 2);
+	SwtTestUtil.processEvents(2000, () -> table.getItem(first) != null);
 	Point point = new Point(bounds.x + 2, bounds.y + 3 * table.getItemHeight() + bounds.height / 2);
 	TableItem item = table.getItem(point);
 	assertNotNull(item);
