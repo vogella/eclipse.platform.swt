@@ -194,8 +194,9 @@ Rectangle computeTrimInPixels (int x, int y, int width, int height) {
 	long clientHandle = clientHandle ();
 	GtkAllocation allocation = new GtkAllocation ();
 	GTK.gtk_widget_get_allocation (clientHandle, allocation);
-	int clientX = allocation.x;
-	int clientY = allocation.y;
+	Rectangle client = getClientAreaInPixels ();
+	int clientX = client.x;
+	int clientY = client.y;
 	x -= clientX;
 	y -= clientY;
 	width +=  clientX + clientX;
@@ -212,28 +213,45 @@ Rectangle computeTrimInPixels (int x, int y, int width, int height) {
 
 @Override
 Rectangle getClientAreaInPixels () {
-	Rectangle clientRectangle = super.getClientAreaInPixels ();
-
-	/*
-	* Bug 454936 (see also other 454936 references)
-	* SWT's calls to gtk_widget_size_allocate and gtk_widget_set_allocation
-	* causes GTK+ to move the clientHandle's SwtFixed down by the size of the labels.
-	* These calls can come up from 'shell' and TabFolder has no control over these calls.
-	*
-	* This is an undesired side-effect. Client handle's x & y positions should never
-	* be incremented as this is an internal sub-container.
-	*
-	* Note: 0 by 0 was chosen as 1 by 1 shifts controls beyond their original pos.
-	* The long term fix would be to not use widget_*_allocation from higher containers,
-	* but this would require removal of swtFixed.
-	*
-	* This is Gtk3-specific for Tabfolder as the architecture is changed in gtk3 only.
-	*/
-	clientRectangle.x = 0;
-	clientRectangle.y = 0;
-	return clientRectangle;
+	Rectangle client = super.getClientAreaInPixels ();
+	if (GTK.GTK4) {
+		// GTK4 allocations are relative to the parent widget, so the page origin is translated
+		double[] x = new double[1], y = new double[1];
+		if (GTK4.gtk_widget_translate_coordinates (clientHandle (), topHandle (), 0, 0, x, y)) {
+			client.x = (int) x[0];
+			client.y = (int) y[0];
+		}
+		// A page that was never shown stays unallocated, but every page has the size of the allocated ones
+		if (client.width == 0 || client.height == 0) {
+			GtkAllocation allocation = new GtkAllocation ();
+			for (TabItem item : items) {
+				if (item == null || item.pageHandle == 0) continue;
+				GTK.gtk_widget_get_allocation (item.pageHandle, allocation);
+				if (allocation.width > 0 && allocation.height > 0) {
+					client.width = allocation.width;
+					client.height = allocation.height;
+					break;
+				}
+			}
+		}
+	}
+	return client;
 }
 
+/**
+ * Returns the offset of the page of the given item control from the origin of
+ * the receiver, or null if the control is not an item control. The control's
+ * GTK container is the page, but its public bounds are relative to the receiver.
+ */
+Point getPageOffsetInPixels (Control child) {
+	for (TabItem item : items) {
+		if (item != null && item.control == child) {
+			Rectangle client = getClientAreaInPixels ();
+			return new Point (client.x, client.y);
+		}
+	}
+	return null;
+}
 
 @Override
 void createHandle (int index) {
@@ -873,8 +891,9 @@ void setSelection (int index, boolean notify) {
 		TabItem item = items [newIndex];
 		Control control = item.control;
 		if (control != null && !control.isDisposed ()) {
-			control.setBoundsInPixels (getClientAreaInPixels ());
+			// GTK4 drops the allocation of a hidden widget, so it is shown before it is sized
 			control.setVisible (true);
+			control.setBoundsInPixels (getClientAreaInPixels ());
 		}
 		if (notify) {
 			Event event = new Event ();
