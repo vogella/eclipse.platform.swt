@@ -989,8 +989,9 @@ Rectangle getBoundsInPixels () {
 	long topHandle = topHandle ();
 	GtkAllocation allocation = new GtkAllocation ();
 	GTK.gtk_widget_get_allocation (topHandle, allocation);
-	int x = allocation.x;
-	int y = allocation.y;
+	Point origin = getParentOriginInPixels ();
+	int x = allocation.x + origin.x;
+	int y = allocation.y + origin.y;
 	int width = (state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
 	int height = (state & ZERO_HEIGHT) != 0 ? 0 :allocation.height;
 	if ((parent.style & SWT.MIRRORED) != 0) x = parent.getClientWidth () - width - x;
@@ -1071,6 +1072,15 @@ void setBoundsInPixels (int x, int y, int width, int height) {
 	setBounds (x, y, Math.max (0, width), Math.max (0, height), true, true);
 }
 
+/** Offset of the GTK container of this control from the origin of the parent's bounds, non-zero for tab pages. */
+Point getParentOriginInPixels () {
+	if (parent instanceof TabFolder folder) {
+		Point offset = folder.getPageOffsetInPixels (this);
+		if (offset != null) return offset;
+	}
+	return new Point (0, 0);
+}
+
 void markLayout (boolean changed, boolean all) {
 	/* Do nothing */
 }
@@ -1127,18 +1137,23 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 	boolean sendMove = move;
 	GtkAllocation allocation = new GtkAllocation ();
 	GTK.gtk_widget_get_allocation (topHandle, allocation);
+	Point origin = getParentOriginInPixels ();
 	if ((parent.style & SWT.MIRRORED) != 0) {
 		int clientWidth = parent.getClientWidth ();
 		int oldWidth = (state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
-		int oldX = clientWidth - oldWidth - allocation.x;
+		int oldX = clientWidth - oldWidth - (allocation.x + origin.x);
 		if (move) {
 			sendMove &= x != oldX;
 			x = clientWidth - (resize ? width : oldWidth) - x;
 		} else {
 			move = true;
 			x = clientWidth - (resize ? width : oldWidth) - oldX;
-			y = allocation.y;
+			y = allocation.y + origin.y;
 		}
+	}
+	if (move) {
+		x -= origin.x;
+		y -= origin.y;
 	}
 	boolean sameOrigin = true, sameExtent = true;
 	if (move) {
@@ -1303,8 +1318,9 @@ public Point getLocation () {
 	long topHandle = topHandle ();
 	GtkAllocation allocation = new GtkAllocation ();
 	GTK.gtk_widget_get_allocation (topHandle, allocation);
-	int x = allocation.x;
-	int y = allocation.y;
+	Point origin = getParentOriginInPixels ();
+	int x = allocation.x + origin.x;
+	int y = allocation.y + origin.y;
 	if ((parent.style & SWT.MIRRORED) != 0) {
 		int width = (state & ZERO_WIDTH) != 0 ? 0 : allocation.width;
 		x = parent.getClientWidth () - width - x;
