@@ -13,7 +13,7 @@ You need to install the following on your system:
 * make
 * gcc
 * GTK3/GTK4 development files (see https://www.gtk.org/docs/installations/linux/)
-* Java 21 JDK (https://adoptium.net/marketplace/?version=21)
+* Java 25 JDK (https://adoptium.net/marketplace/?version=25)
 * (optional) Webkit for GTK development files (webkit2gtk3-devel)
 
 Additional information on GTK SWT development can be found in Eclipse Wiki:
