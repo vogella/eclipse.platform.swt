@@ -57,10 +57,14 @@ public abstract class Control extends Widget implements Drawable {
 	static final boolean DISABLE_EMOJI = Boolean.getBoolean("SWT_GTK_INPUT_HINT_NO_EMOJI");
 
 	long fixedHandle;
-	long keyController;
+	long keyController, focusController;
 	/* GTK4: where the pointer last moved over this control, relative to it */
 	double pointerX, pointerY;
 	long redrawWindow, enableWindow, provider;
+	/* Parsed content of provider, reset whenever provider is reloaded */
+	GdkRGBA providerBackground, providerForeground;
+	/* Cached when the provider sets no color, so the current theme default is used */
+	static final GdkRGBA NO_PROVIDER_COLOR = new GdkRGBA ();
 	int drawCount, backgroundAlpha = 255;
 	long dragGesture, zoomGesture, rotateGesture;
 	Composite parent;
@@ -102,6 +106,10 @@ public abstract class Control extends Widget implements Drawable {
 	/* The first, delayed MouseDown of dragDetectionQueue was sent before a MouseDoubleClick */
 	private boolean dragDetectionMouseDownSent;
 
+	/** GTK4 only: position and state of the pending button 1 press, null once DragDetect was sent or the button was released. */
+	Point gtk4DragStart;
+	int gtk4DragStateMask;
+
 	static Callback gestureZoom, gestureRotation, gestureSwipe, gestureBegin, gestureEnd;
 	static {
 		gestureZoom = new Callback (Control.class, "magnifyProc", void.class, new Type[] {
@@ -120,6 +128,8 @@ public abstract class Control extends Widget implements Drawable {
 	 * is currently pressed or released for DND.
 	 */
 	static boolean mouseDown;
+
+	static final byte [] GTK4_DND_DRAG_THRESHOLD = Converter.javaStringToCString ("gtk-dnd-drag-threshold");
 
 	/**
 	 * Flag to check the scale factor upon the first drawing of this Control.
@@ -418,7 +428,7 @@ private void hookKeyboardAndFocusSignals(long focusHandle) {
 		OS.g_signal_connect(keyController, OS.key_pressed, display.keyPressReleaseProc, KEY_PRESSED);
 		OS.g_signal_connect(keyController, OS.key_released, display.keyPressReleaseProc, KEY_RELEASED);
 
-		long focusController = GTK4.gtk_event_controller_focus_new();
+		focusController = GTK4.gtk_event_controller_focus_new();
 		GTK4.gtk_widget_add_controller(focusHandle, focusController);
 		OS.g_signal_connect(focusController, OS.enter, display.focusProc, FOCUS_IN);
 		OS.g_signal_connect(focusController, OS.leave, display.focusProc, FOCUS_OUT);
@@ -1137,7 +1147,8 @@ int setBounds (int x, int y, int width, int height, boolean move, boolean resize
 		int oldX = allocation.x;
 		int oldY = allocation.y;
 		sameOrigin = x == oldX && y == oldY;
-		if (!sameOrigin) {
+		// moveChildren leaves a stale allocation behind, so a mirrored move always reaches the fixed
+		if (!sameOrigin || (parent.style & SWT.MIRRORED) != 0) {
 			if (!GTK.GTK4) {
 				if (enableWindow != 0) {
 					GDK.gdk_window_move (enableWindow, x, y);
@@ -2960,9 +2971,30 @@ boolean forceFocus (long focusHandle) {
 	if (GTK.gtk_widget_has_focus (focusHandle)) return true;
 	/* When the control is zero sized it must be realized */
 	GTK.gtk_widget_realize (focusHandle);
-	GTK.gtk_widget_grab_focus (focusHandle);
+	boolean replayed = false;
+	if (GTK.GTK4) {
+		if (display.gtk4Focusing) {
+			display.gtk4PendingFocus = focusHandle;
+			return true;
+		}
+		display.gtk4Focusing = true;
+		try {
+			GTK.gtk_widget_grab_focus (focusHandle);
+		} finally {
+			display.gtk4Focusing = false;
+		}
+		long pending = display.gtk4PendingFocus;
+		display.gtk4PendingFocus = 0;
+		if (pending != 0 && !isDisposed ()) {
+			GTK.gtk_widget_grab_focus (pending);
+			replayed = true;
+		}
+	} else {
+		GTK.gtk_widget_grab_focus (focusHandle);
+	}
 	// widget could be disposed at this point
 	if (isDisposed ()) return false;
+	if (replayed) return true;
 	Shell shell = getShell ();
 	long handle = GTK.gtk_window_get_focus (shell.focusWindowHandle ());
 	while (handle != 0) {
@@ -3031,18 +3063,32 @@ public Image getBackgroundImage () {
 }
 
 GdkRGBA getContextBackgroundGdkRGBA () {
-	if ((state & BACKGROUND) == 0) {
+	if ((state & BACKGROUND) == 0 || provider == 0) {
 		return defaultBackground();
 	}
-	if (provider != 0) {
-		return display.gtk_css_parse_background (display.gtk_css_provider_to_string(provider), null);
-	} else {
-		return defaultBackground();
+	if (providerBackground == null) {
+		GdkRGBA rgba = display.gtk_css_parse_background (display.gtk_css_provider_to_string (provider), null);
+		providerBackground = rgba == display.COLOR_WIDGET_BACKGROUND_RGBA ? NO_PROVIDER_COLOR : rgba;
 	}
+	return copy (providerBackground == NO_PROVIDER_COLOR ? display.COLOR_WIDGET_BACKGROUND_RGBA : providerBackground);
 }
 
 GdkRGBA getContextColorGdkRGBA () {
-	return display.gtk_css_parse_foreground(display.gtk_css_provider_to_string(provider), null);
+	if (providerForeground == null) {
+		GdkRGBA rgba = display.gtk_css_parse_foreground (display.gtk_css_provider_to_string (provider), null);
+		providerForeground = rgba == display.COLOR_WIDGET_FOREGROUND_RGBA ? NO_PROVIDER_COLOR : rgba;
+	}
+	return copy (providerForeground == NO_PROVIDER_COLOR ? display.COLOR_WIDGET_FOREGROUND_RGBA : providerForeground);
+}
+
+/* Callers modify the returned color (e.g. alpha), so the cached instances are never handed out */
+static GdkRGBA copy (GdkRGBA rgba) {
+	GdkRGBA result = new GdkRGBA ();
+	result.red = rgba.red;
+	result.green = rgba.green;
+	result.blue = rgba.blue;
+	result.alpha = rgba.alpha;
+	return result;
 }
 
 GdkRGBA getBgGdkRGBA () {
@@ -3469,6 +3515,11 @@ int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long
 
 	display.clickCount = n_press;
 	if (n_press == 1) {
+		gtk4DragStart = null;
+		if (eventButton == 1 && (state & DRAG_DETECT) != 0 && wantDragDropDetection ()) {
+			gtk4DragStart = new Point ((int) x, (int) y);
+			gtk4DragStateMask = eventState;
+		}
 		boolean cancelled = sendMouseEvent(SWT.MouseDown, eventButton, n_press, 0, false, eventTime, x, y, false, eventState);
 		if (!cancelled) {
 			result = GTK4.GTK_EVENT_SEQUENCE_CLAIMED;
@@ -3498,6 +3549,7 @@ int gtk_gesture_press_event (long gesture, int n_press, double x, double y, long
 @Override
 int gtk_gesture_release_event (long gesture, int n_press, double x, double y, long event) {
 	mouseDown = false;
+	gtk4DragStart = null;
 
 	double [] eventX = new double [1];
 	double [] eventY = new double [1];
@@ -4173,7 +4225,22 @@ void gtk4_motion_event(long controller, double x, double y, long event) {
 		}
 	}
 
+	gtk4DragDetectMotion ((int) x, (int) y);
+	if (isDisposed ()) return;
+
 	sendMouseEvent(SWT.MouseMove, 0, time, x, y, isHint, state);
+}
+
+/** GTK4 has no polling drag detection, so DragDetect is sent once the pressed pointer leaves the drag threshold. */
+boolean gtk4DragDetectMotion (int x, int y) {
+	Point start = gtk4DragStart;
+	if (start == null) return false;
+	int [] threshold = new int [1];
+	OS.g_object_get (GTK.gtk_settings_get_default (), GTK4_DND_DRAG_THRESHOLD, threshold, 0);
+	if (Math.abs (x - start.x) <= threshold [0] && Math.abs (y - start.y) <= threshold [0]) return false;
+	gtk4DragStart = null;
+	sendDragEvent (1, gtk4DragStateMask, start.x, start.y, true);
+	return true;
 }
 
 @Override
@@ -4450,6 +4517,7 @@ public long internal_new_GC (GCData data) {
 			}
 		}
 		data.drawable = gdkResource;
+		if (GTK.GTK4) data.widget = paintHandle ();
 		data.device = display;
 
 		Control control = findBackgroundControl ();
@@ -4745,6 +4813,11 @@ public void redraw (int x, int y, int width, int height, boolean all) {
 	if (!GTK.gtk_widget_get_visible (topHandle ())) return;
 	if ((style & SWT.MIRRORED) != 0) x = getClientWidth () - width - x;
 	redrawWidget (x, y, width, height, false, all, false);
+	// GTK4 reuses the render nodes of children that were not queued, so they would get no Paint
+	if (GTK.GTK4 && all) redrawVisibleChildren (x, y, width, height);
+}
+
+void redrawVisibleChildren (int x, int y, int width, int height) {
 }
 
 void redrawChildren () {
@@ -5323,6 +5396,7 @@ void gtk_css_provider_load_from_css (long context, String css) {
 	} else {
 		GTK3.gtk_css_provider_load_from_data (provider, Converter.wcsToMbcs (css, true), -1, null);
 	}
+	providerBackground = providerForeground = null;
 }
 
 void setBackgroundGdkRGBA(GdkRGBA rgba) {

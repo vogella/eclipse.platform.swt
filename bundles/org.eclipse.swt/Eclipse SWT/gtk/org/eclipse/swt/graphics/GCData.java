@@ -63,6 +63,8 @@ public final class GCData {
 	public long clipRgn, context, layout, damageRgn, cairo, regionSet;
 	/** Usually a GdkWindow on GTK3, or a GdkSurface on GTK4 */
 	public long drawable;
+	/** The widget a GTK4 GC paints on, or 0 */
+	public long widget;
 	public double cairoXoffset, cairoYoffset;
 	public boolean disposeCairo;
 	public double[] identity, clippingTransform;
@@ -70,6 +72,5 @@ public final class GCData {
 	public int stringWidth = -1;
 	public int stringHeight = -1;
 	public int drawFlags;
-	public boolean realDrawable;
 	public int width = -1, height = -1;
 }

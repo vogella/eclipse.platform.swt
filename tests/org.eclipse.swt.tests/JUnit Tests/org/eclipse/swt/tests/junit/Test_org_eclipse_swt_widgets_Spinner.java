@@ -120,6 +120,14 @@ public class Test_org_eclipse_swt_widgets_Spinner extends Test_org_eclipse_swt_w
 	}
 
 	@Test
+	public void test_getTextLimitDefault() {
+		assertEquals(0x7FFFFFFF, spinner.getTextLimit());
+		spinner.setTextLimit(5);
+		spinner.setTextLimit(Spinner.LIMIT);
+		assertEquals(0x7FFFFFFF, spinner.getTextLimit());
+	}
+
+	@Test
 	public void test_setValues() {
 		int cases = 4;
 		int [] selection = {5,10,15,20};
@@ -157,5 +165,43 @@ public class Test_org_eclipse_swt_widgets_Spinner extends Test_org_eclipse_swt_w
 		assertEquals("0",spinner.getText());
 		spinner.setSelection(spinner.getMaximum()+1);
 		assertEquals(String.valueOf(spinner.getMaximum()), spinner.getText());
+	}
+
+	@Test
+	public void test_getTextNegativeWithDigits() {
+		spinner.setValues(0, -1000, 1000, 2, 1, 10);
+		String separator = decimalSeparator();
+		spinner.setSelection(-5);
+		assertEquals("-0" + separator + "05", spinner.getText());
+		spinner.setSelection(-50);
+		assertEquals("-0" + separator + "50", spinner.getText());
+		spinner.setSelection(-150);
+		assertEquals("-1" + separator + "50", spinner.getText());
+		assertEquals(-150, spinner.getSelection());
+	}
+
+	@Test
+	public void test_setSelectionWithVerifyListener() {
+		spinner.setValues(0, -1000, 1000, 2, 1, 10);
+		String separator = decimalSeparator();
+		// a Verify listener that accepts everything must not change what setSelection shows
+		spinner.addListener(SWT.Verify, e -> {});
+		spinner.setSelection(137);
+		assertEquals("1" + separator + "37", spinner.getText());
+		spinner.setSelection(-5);
+		assertEquals("-0" + separator + "05", spinner.getText());
+		assertEquals(-5, spinner.getSelection());
+	}
+
+	/** The decimal separator the spinner uses, read from a positive value. */
+	private String decimalSeparator() {
+		int digits = spinner.getDigits();
+		int selection = spinner.getSelection();
+		spinner.setDigits(1);
+		spinner.setSelection(15);
+		String separator = spinner.getText().substring(1, spinner.getText().length() - 1);
+		spinner.setDigits(digits);
+		spinner.setSelection(selection);
+		return separator;
 	}
 }

@@ -178,6 +178,17 @@ public void test_setSelectionI(){
 }
 
 @Test
+public void test_setSelectionLargeRange() {
+	int[] selections = {1_234_567, 12_345_677, 33_333_333, 99_999_989};
+	for (int selection : selections) {
+		scrollBar.setValues(selection, 0, 100_000_000, 10, 1, 10);
+		assertEquals(selection, scrollBar.getSelection());
+		scrollBar.setSelection(selection - 1);
+		assertEquals(selection - 1, scrollBar.getSelection());
+	}
+}
+
+@Test
 public void test_setThumbI(){
 	int [][] testValues = getSetThumbValues();
 	for (int[] intArray : testValues) {

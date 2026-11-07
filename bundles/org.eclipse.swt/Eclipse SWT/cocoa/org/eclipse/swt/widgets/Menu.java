@@ -792,8 +792,6 @@ void menu_willHighlightItem(long id, long sel, long menu, long itemID) {
 
 @Override
 void menuNeedsUpdate(long id, long sel, long menu) {
-	//This code is intentionally commented
-	//sendEvent (SWT.Show);
 }
 
 @Override
@@ -803,11 +801,13 @@ void menuWillOpen(long id, long sel, long menu) {
 	if (isDisposed()) return;
 	double width = 0;
 	NSAttributedString[] strs = new NSAttributedString[itemCount];
+	NSImage[] images = new NSImage[itemCount];
 	for (int i=0; i<itemCount; i++) {
 		MenuItem item = items [i];
 		NSMenuItem nsItem = item.nsItem;
 		strs[i] = nsItem.attributedTitle();
 		NSImage nsImage = nsItem.image();
+		images[i] = nsImage;
 		double w = GAP;
 		if (strs[i] != null) {
 			w += strs[i].size().width;
@@ -827,7 +827,7 @@ void menuWillOpen(long id, long sel, long menu) {
 			int length = accelText.length ();
 			if (length > 1) {
 				NSMenuItem nsItem = item.nsItem;
-				NSImage nsImage = nsItem.image();
+				NSImage nsImage = images[i];
 				double tab = width;
 				if (nsImage != null) {
 					tab -= (nsImage.size().width + GAP);

@@ -160,6 +160,8 @@ void createHandle () {
 		null);
 	if (hwndText == 0) error (SWT.ERROR_NO_HANDLES);
 	OS.SetWindowLongPtr (hwndText, OS.GWLP_ID, hwndText);
+	/* An edit control is limited to 30000 characters by default */
+	OS.SendMessage (hwndText, OS.EM_LIMITTEXT, 0, 0);
 	int upDownStyle = OS.WS_CHILD | OS.WS_VISIBLE | OS.UDS_AUTOBUDDY;
 	if ((style & SWT.WRAP) != 0) upDownStyle |= OS.UDS_WRAP;
 	hwndUpDown = OS.CreateWindowEx (
@@ -574,7 +576,9 @@ public String getText () {
  */
 public int getTextLimit () {
 	checkWidget ();
-	return (int)OS.SendMessage (hwndText, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
+	int limit = (int)OS.SendMessage (hwndText, OS.EM_GETLIMITTEXT, 0, 0) & 0x7FFFFFFF;
+	/* EM_LIMITTEXT with 0 sets the limit of a single-line edit to 0x7FFFFFFE */
+	return limit >= LIMIT - 1 ? LIMIT : limit;
 }
 
 @Override
