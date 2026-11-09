@@ -1,0 +1,163 @@
+/*******************************************************************************
+ * Copyright (c) 2026 vogella GmbH and others.
+ *
+ * This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License 2.0
+ * which accompanies this distribution, and is available at
+ * https://www.eclipse.org/legal/epl-2.0/
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ *******************************************************************************/
+package org.eclipse.swt.tools.internal;
+
+/**
+ * Generates a C program that prints size, offset, type class and signedness of every struct field
+ * the JNI glue accesses, compiled with the same headers and flags as the <code>_structs.c</code> file.
+ */
+public class FFMProbeGenerator extends JNIGenerator {
+
+	final CTypes ctypes;
+	/** macOS: the natives classes, whose constants without an exported variable the probe evaluates. */
+	JNIClass[] nativesClasses = new JNIClass[0];
+
+	public FFMProbeGenerator(CTypes ctypes) {
+		this.ctypes = ctypes;
+	}
+
+	public void setNativesClasses(JNIClass[] nativesClasses) {
+		this.nativesClasses = nativesClasses;
+	}
+
+	@Override
+	public void generateIncludes() {
+		String outputName = getOutputName();
+		outputln("#include \"swt.h\"");
+		outputln("#include \"" + outputName + "_structs.h\"");
+		if (outputName.equals("gtk3") || outputName.equals("gtk4")) outputln("#include \"os_structs.h\"");
+		outputln("#include <stdio.h>");
+		outputln("#include <string.h>");
+		outputln();
+		outputln("#define SWT_SIGNED(e) ((__typeof__(e))-1 < (__typeof__(e))0)");
+		outputln();
+		outputln("int main(void) {");
+	}
+
+	static final String GTK_OS = "org.eclipse.swt.internal.gtk.OS";
+	static final String WIN32_OS = "org.eclipse.swt.internal.win32.OS";
+	static final String WIN32_COM = "org.eclipse.swt.internal.ole.win32.COM";
+
+	/**
+	 * The GTK3 only types and fields among the extras: GtkContainer is gone from GTK4, and so are the
+	 * pixbuf and toggle cell renderers natives of the JNI library.
+	 */
+	static boolean gtk3Only(String type, String field) {
+		return type.startsWith("GtkContainer") || type.startsWith("GtkCellRendererPixbuf") || type.startsWith("GtkCellRendererToggle")
+			|| (type.equals("GtkWidgetClass") && (field.startsWith("get_preferred_") || field.equals("get_accessible")));
+	}
+
+	/** The GTK4 only types and fields among the extras. */
+	static boolean gtk4Only(String type, String field) {
+		return type.equals("GdkPaintableInterface") || (type.equals("GtkWidgetClass") && field.equals("measure"));
+	}
+
+	/** C types whose size the FFM code needs although no Java struct class describes them, per main class. */
+	static final String[][] EXTRA_SIZES = {
+		// the <type>_sizeof() macros of os_custom.h and com_custom.h
+		{WIN32_OS, "SCRIPT_STRING_ANALYSIS"}, {WIN32_OS, "PROPVARIANT"}, {WIN32_OS, "LOGPEN"},
+		{WIN32_COM, "ELEMDESC"}, {WIN32_COM, "TYPEDESC"},
+		{GTK_OS, "GtkContainer"}, {GTK_OS, "GtkContainerClass"},
+		{GTK_OS, "GtkTextIter"}, {GTK_OS, "GtkTreeIter"}, {GTK_OS, "GPollFD"}, {GTK_OS, "GValue"},
+		{GTK_OS, "GtkCellRendererText"}, {GTK_OS, "GtkCellRendererTextClass"},
+		{GTK_OS, "GtkCellRendererPixbuf"}, {GTK_OS, "GtkCellRendererPixbufClass"},
+		{GTK_OS, "GtkCellRendererToggle"}, {GTK_OS, "GtkCellRendererToggleClass"},
+		{GTK_OS, "GtkContainerAccessible"}, {GTK_OS, "GtkContainerAccessibleClass"},
+		{GTK_OS, "GObject"}, {GTK_OS, "GInterfaceInfo"}, {GTK_OS, "GtkWidget"}, {GTK_OS, "GdkPaintableInterface"},
+	};
+
+	/** Struct fields the FFM code needs the offset of, per main class. */
+	static final String[][] EXTRA_OFFSETS = {
+		{GTK_OS, "GtkWidgetClass", "realize"}, {GTK_OS, "GtkWidgetClass", "map"},
+		{GTK_OS, "GtkWidgetClass", "get_preferred_width"}, {GTK_OS, "GtkWidgetClass", "get_preferred_height"},
+		{GTK_OS, "GtkWidgetClass", "size_allocate"}, {GTK_OS, "GtkWidgetClass", "get_accessible"},
+		{GTK_OS, "GtkContainerClass", "add"}, {GTK_OS, "GtkContainerClass", "remove"}, {GTK_OS, "GtkContainerClass", "forall"},
+		{GTK_OS, "GtkWidgetClass", "measure"}, {GTK_OS, "GInterfaceInfo", "interface_init"},
+		{GTK_OS, "GParamSpec", "value_type"},
+		{GTK_OS, "GdkPaintableInterface", "snapshot"}, {GTK_OS, "GdkPaintableInterface", "get_flags"},
+		{GTK_OS, "GdkPaintableInterface", "get_intrinsic_width"}, {GTK_OS, "GdkPaintableInterface", "get_intrinsic_height"},
+		{GTK_OS, "GdkPaintableInterface", "get_intrinsic_aspect_ratio"},
+	};
+
+	@Override
+	public void generate() {
+		super.generate();
+		String unit = getMainClass().getName();
+		for (String[] extra : EXTRA_SIZES) {
+			if (!extra[0].equals(unit)) continue;
+			boolean only3 = gtk3Only(extra[1], ""), only4 = gtk4Only(extra[1], "");
+			if (only3) outputln("#ifndef GTK4");
+			if (only4) outputln("#ifdef GTK4");
+			outputln("\tprintf(\"EXTRA." + extra[1] + "=%zu\\n\", sizeof(" + extra[1] + "));");
+			if (only3 || only4) outputln("#endif");
+		}
+		for (String[] extra : EXTRA_OFFSETS) {
+			if (!extra[0].equals(unit)) continue;
+			boolean only3 = gtk3Only(extra[1], extra[2]), only4 = gtk4Only(extra[1], extra[2]);
+			if (only3) outputln("#ifndef GTK4");
+			if (only4) outputln("#ifdef GTK4");
+			outputln("\tprintf(\"EXTRA." + extra[1] + "." + extra[2] + "=%zu\\n\", (size_t)__builtin_offsetof(" + extra[1] + ", " + extra[2] + "));");
+			if (only3 || only4) outputln("#endif");
+		}
+		for (JNIClass clazz : nativesClasses) {
+			for (JNIMethod method : clazz.getDeclaredMethods()) {
+				if (!method.getFlag(FLAG_CONST) || method.getFlag(FLAG_NO_GEN)) continue;
+				String name = method.getAccessor().length() != 0 ? method.getAccessor() : method.getName();
+				if (ctypes.hasSymbolVariable(name)) continue;
+				boolean real = method.getReturnType().isType("double") || method.getReturnType().isType("float");
+				outputln("\tprintf(\"CONST." + name + "=%" + (real ? ".17g" : "lld") + "\\n\", " + (real ? "(double)" : "(long long)") + name + ");");
+			}
+		}
+		outputln("\treturn 0;");
+		outputln("}");
+	}
+
+	@Override
+	public void generate(JNIClass clazz) {
+		String name = clazz.getSimpleName();
+		String type = (clazz.getFlag(FLAG_STRUCT) ? "struct " : "") + name;
+		String exclude = clazz.getExclude();
+		if (exclude.length() != 0) outputln(exclude);
+		outputln("\tprintf(\"" + name + "=%zu\\n\", sizeof(" + type + "));");
+		for (JNIField field : clazz.getDeclaredFields()) {
+			if (FFMGenerator.ignoreField(field)) continue;
+			String accessor = field.getAccessor();
+			if (accessor == null || accessor.length() == 0) accessor = field.getName();
+			String key = name + "." + field.getName();
+			String expr = "((" + type + " *)0)->" + accessor;
+			String offset = "(size_t)__builtin_offsetof(" + type + ", " + accessor + ")";
+			String fieldExclude = field.getExclude();
+			if (fieldExclude.length() != 0) outputln(fieldExclude);
+			JNIType fieldType = field.getType();
+			if (accessor.matches("\\w+") && ctypes.isBitfield(type, accessor)) {
+				outputln("\t{");
+				outputln("\t\t" + type + " s; unsigned char *p = (unsigned char *)&s; int lo = -1, width = 0; size_t i;");
+				outputln("\t\tmemset(&s, 0, sizeof(s)); s." + accessor + " = 1;");
+				outputln("\t\tfor (i = 0; i < sizeof(s) * 8; i++) if (p[i / 8] & (1 << (i % 8))) { lo = (int)i; break; }");
+				outputln("\t\tmemset(&s, 0, sizeof(s)); s." + accessor + " = ~0;");
+				outputln("\t\tfor (i = 0; i < sizeof(s) * 8; i++) if (p[i / 8] & (1 << (i % 8))) width++;");
+				outputln("\t\tprintf(\"" + key + "=bit,%d,%d\\n\", lo, width);");
+				outputln("\t}");
+			} else if (fieldType.isPrimitive()) {
+				outputln("\tprintf(\"" + key + "=%zu,%zu,%d,%d,0\\n\", " + offset + ", sizeof(" + expr + "), __builtin_classify_type(" + expr + "), (int)SWT_SIGNED(" + expr + "));");
+			} else if (fieldType.isArray() && field.getFlag(FLAG_STRUCT)) {
+				// a struct copied as the bytes of a Java array
+				outputln("\tprintf(\"" + key + "=%zu,%zu,0,0,1\\n\", " + offset + ", sizeof(" + expr + "));");
+			} else if (fieldType.isArray()) {
+				outputln("\tprintf(\"" + key + "=%zu,%zu,0,0,%zu\\n\", " + offset + ", sizeof(" + expr + "), sizeof(" + expr + "[0]));");
+			} else {
+				outputln("\tprintf(\"" + key + "=%zu,%zu,0,0,0\\n\", " + offset + ", sizeof(" + expr + "));");
+			}
+			if (fieldExclude.length() != 0) outputln("#endif");
+		}
+		if (exclude.length() != 0) outputln("#endif");
+	}
+}
