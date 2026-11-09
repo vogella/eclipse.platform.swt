@@ -18,6 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -1523,6 +1524,231 @@ public void test_setSelection$Lorg_eclipse_swt_widgets_TableItem() {
 }
 
 @Test
+public void test_addManyItemsOneByOne_orderAndIndexOf() {
+	int count = 10_000;
+	TableItem[] created = new TableItem[count];
+	for (int i = 0; i < count; i++) {
+		created[i] = new TableItem(table, SWT.NONE);
+		created[i].setText("Item " + i);
+	}
+	assertEquals(count, table.getItemCount());
+	TableItem[] items = table.getItems();
+	assertEquals(count, items.length);
+	for (int i = 0; i < count; i++) {
+		assertSame(created[i], items[i]);
+		assertSame(created[i], table.getItem(i));
+	}
+	assertEquals("Item 0", table.getItem(0).getText());
+	assertEquals("Item 5000", table.getItem(5000).getText());
+	assertEquals("Item 9999", table.getItem(count - 1).getText());
+	assertEquals(0, table.indexOf(created[0]));
+	assertEquals(count / 2, table.indexOf(created[count / 2]));
+	assertEquals(count - 1, table.indexOf(created[count - 1]));
+}
+
+@Test
+public void test_setItemCount_orderAndIndexOf() {
+	int count = 10_000;
+	table.setItemCount(count);
+	assertEquals(count, table.getItemCount());
+	TableItem[] items = table.getItems();
+	assertEquals(count, items.length);
+	for (int i = 0; i < count; i++) {
+		items[i].setText("Item " + i);
+	}
+	for (int i = 0; i < count; i++) {
+		assertEquals("Item " + i, table.getItem(i).getText());
+	}
+	assertEquals(0, table.indexOf(items[0]));
+	assertEquals(count / 2, table.indexOf(items[count / 2]));
+	assertEquals(count - 1, table.indexOf(items[count - 1]));
+
+	table.setItemCount(count / 2);
+	assertEquals(count / 2, table.getItemCount());
+	assertTrue(items[count - 1].isDisposed());
+	assertEquals(count / 2 - 1, table.indexOf(table.getItem(count / 2 - 1)));
+}
+
+@Test
+public void test_virtual_setDataReportsCorrectIndex() {
+	table.dispose();
+	table = new Table(shell, SWT.VIRTUAL | SWT.BORDER);
+	setWidget(table);
+
+	int count = 1000;
+	List<String> errors = new ArrayList<>();
+	int[] calls = { 0 };
+	table.addListener(SWT.SetData, event -> {
+		TableItem item = (TableItem) event.item;
+		calls[0]++;
+		int index = table.indexOf(item);
+		if (index != event.index) {
+			errors.add("event.index=" + event.index + " indexOf=" + index);
+		}
+		item.setText("Item " + event.index);
+	});
+	table.setItemCount(count);
+	for (int i : new int[] { count - 1, 0, count / 2, 1, count - 2, 123 }) {
+		assertEquals("Item " + i, table.getItem(i).getText());
+	}
+	assertTrue(calls[0] >= 6);
+	assertEquals(List.of(), errors);
+}
+
+@Test
+public void test_indexOf_afterInsertAtStart() {
+	TableItem[] items = new TableItem[20];
+	for (int i = 0; i < items.length; i++) {
+		items[i] = new TableItem(table, SWT.NONE);
+		assertEquals(i, table.indexOf(items[i]));
+	}
+	TableItem first = new TableItem(table, SWT.NONE, 0);
+	assertEquals(0, table.indexOf(first));
+	for (int i = 0; i < items.length; i++) {
+		assertEquals(i + 1, table.indexOf(items[i]));
+	}
+	TableItem middle = new TableItem(table, SWT.NONE, 10);
+	assertEquals(10, table.indexOf(middle));
+	assertEquals(0, table.indexOf(first));
+	assertEquals(9, table.indexOf(items[8]));
+	assertEquals(11, table.indexOf(items[9]));
+	assertEquals(21, table.indexOf(items[19]));
+}
+
+@Test
+public void test_indexOf_afterRemoveAndDispose() {
+	TableItem[] items = new TableItem[20];
+	for (int i = 0; i < items.length; i++) {
+		items[i] = new TableItem(table, SWT.NONE);
+	}
+	// warm any index cache
+	assertEquals(15, table.indexOf(items[15]));
+	table.remove(10);
+	assertTrue(items[10].isDisposed());
+	for (int i = 0; i < 10; i++) {
+		assertEquals(i, table.indexOf(items[i]));
+	}
+	for (int i = 11; i < items.length; i++) {
+		assertEquals(i - 1, table.indexOf(items[i]));
+	}
+	items[3].dispose();
+	assertEquals(2, table.indexOf(items[2]));
+	assertEquals(3, table.indexOf(items[4]));
+	assertEquals(8, table.indexOf(items[9]));
+	assertEquals(17, table.indexOf(items[19]));
+	assertEquals(18, table.getItemCount());
+}
+
+@Test
+public void test_disposeManyItemsInARow_getItemsConsistent() {
+	int count = 1000;
+	TableItem[] items = new TableItem[count];
+	for (int i = 0; i < count; i++) {
+		items[i] = new TableItem(table, SWT.NONE);
+		items[i].setText("Item " + i);
+	}
+	// dispose every odd item, then a block from the start, then from the end
+	for (int i = 1; i < count; i += 2) {
+		items[i].dispose();
+	}
+	assertEquals(count / 2, table.getItemCount());
+	TableItem[] remaining = table.getItems();
+	for (int i = 0; i < remaining.length; i++) {
+		assertSame(items[2 * i], remaining[i]);
+		assertEquals(i, table.indexOf(remaining[i]));
+		assertEquals("Item " + (2 * i), remaining[i].getText());
+	}
+	for (int i = 0; i < 100; i++) {
+		remaining[i].dispose();
+	}
+	for (int i = remaining.length - 1; i >= remaining.length - 100; i--) {
+		remaining[i].dispose();
+	}
+	assertEquals(count / 2 - 200, table.getItemCount());
+	TableItem[] left = table.getItems();
+	for (int i = 0; i < left.length; i++) {
+		assertSame(remaining[i + 100], left[i]);
+		assertEquals(i, table.indexOf(left[i]));
+	}
+}
+
+@Test
+public void test_setColumnOrder_getColumnOrder() {
+	createColumnOrderTable(SWT.NONE);
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, table.getColumnOrder());
+	int[] order = { 2, 0, 3, 1 };
+	table.setColumnOrder(order);
+	assertArrayEquals(order, table.getColumnOrder());
+	order = new int[] { 3, 2, 1, 0 };
+	table.setColumnOrder(order);
+	assertArrayEquals(order, table.getColumnOrder());
+	// columns keep their identity and index
+	for (int i = 0; i < 4; i++) {
+		assertEquals("Col " + i, table.getColumn(i).getText());
+		assertEquals(i, table.indexOf(table.getColumn(i)));
+	}
+	table.setColumnOrder(new int[] { 0, 1, 2, 3 });
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, table.getColumnOrder());
+}
+
+@Test
+public void test_setColumnOrder_checkTable() {
+	createColumnOrderTable(SWT.CHECK);
+	int[] order = { 1, 3, 0, 2 };
+	table.setColumnOrder(order);
+	assertArrayEquals(order, table.getColumnOrder());
+	table.setColumnOrder(new int[] { 3, 2, 1, 0 });
+	assertArrayEquals(new int[] { 3, 2, 1, 0 }, table.getColumnOrder());
+	for (int i = 0; i < 4; i++) {
+		assertEquals(i, table.indexOf(table.getColumn(i)));
+	}
+	TableItem item = table.getItem(0);
+	item.setChecked(true);
+	assertTrue(item.getChecked());
+	assertEquals("0-2", item.getText(2));
+}
+
+@Test
+public void test_setColumnOrder_invalidArguments() {
+	createColumnOrderTable(SWT.NONE);
+	assertThrows(IllegalArgumentException.class, () -> table.setColumnOrder(null));
+	assertThrows(IllegalArgumentException.class, () -> table.setColumnOrder(new int[] { 0, 1, 2 }));
+	assertThrows(IllegalArgumentException.class, () -> table.setColumnOrder(new int[] { 0, 1, 1, 3 }));
+	assertThrows(IllegalArgumentException.class, () -> table.setColumnOrder(new int[] { 0, 1, 2, 4 }));
+	assertThrows(IllegalArgumentException.class, () -> table.setColumnOrder(new int[] { -1, 1, 2, 3 }));
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, table.getColumnOrder());
+}
+
+@Test
+public void test_columnMoveable_nonMovableColumnsKeepFlag() {
+	createColumnOrderTable(SWT.NONE);
+	for (int i = 0; i < 4; i++) {
+		assertFalse(table.getColumn(i).getMoveable());
+	}
+	table.getColumn(1).setMoveable(true);
+	assertTrue(table.getColumn(1).getMoveable());
+	assertFalse(table.getColumn(0).getMoveable());
+	assertArrayEquals(new int[] { 0, 1, 2, 3 }, table.getColumnOrder());
+}
+
+private void createColumnOrderTable(int style) {
+	table.dispose();
+	table = new Table(shell, SWT.MULTI | style);
+	setWidget(table);
+	for (int i = 0; i < 4; i++) {
+		TableColumn column = new TableColumn(table, SWT.NONE);
+		column.setText("Col " + i);
+		column.setWidth(50);
+	}
+	for (int row = 0; row < 3; row++) {
+		TableItem item = new TableItem(table, SWT.NONE);
+		for (int col = 0; col < 4; col++) {
+			item.setText(col, row + "-" + col);
+		}
+	}
+}
+
+@Test
 public void test_setSelectionI() {
 	int number = 5;
 	TableItem[] items = new TableItem[number];
@@ -1723,12 +1949,67 @@ public void test_Virtual() {
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				e.printStackTrace();
+				Thread.currentThread().interrupt();
+				break;
 			}
 		}
 	}
 	// the "* 3" allows some surplus for platforms that pre-fetch items to improve scrolling performance:
 	assertTrue(dataCounter[0] > visibleCount / 2 && dataCounter[0] <= visibleCount * 3);
+}
+
+@Test
+public void test_getItemLorg_eclipse_swt_graphics_PointVirtual() throws InterruptedException {
+	table.dispose();
+	table = new Table(shell, SWT.VIRTUAL | SWT.BORDER);
+	setWidget(table);
+	table.setBounds(0, 0, 200, 200);
+	table.setItemCount(100);
+	shell.open();
+	assertThrows(IllegalArgumentException.class, () -> table.getItem((Point) null));
+
+	// items that were never shown do not exist yet, getItem(Point) has to create them
+	Rectangle bounds = table.getItem(0).getBounds();
+	// GTK4 lays the rows out only after the shell is shown
+	Point first = new Point(bounds.x + 2, bounds.y + bounds.height / 2);
+	SwtTestUtil.processEvents(2000, () -> table.getItem(first) != null);
+	Point point = new Point(bounds.x + 2, bounds.y + 3 * table.getItemHeight() + bounds.height / 2);
+	TableItem item = table.getItem(point);
+	assertNotNull(item);
+	assertSame(table.getItem(3), item);
+}
+
+@Test
+public void test_setItemCountI_virtualKeepsSelectionAndTopIndex() {
+	Table table = new Table(shell, SWT.VIRTUAL | SWT.MULTI);
+	table.addListener(SWT.SetData, e -> ((TableItem) e.item).setText("item"));
+	table.setSize(200, 200);
+	shell.open();
+	table.setItemCount(1000);
+	table.setSelection(new int[] { 10, 20, 700, 900 });
+	table.setTopIndex(30);
+	int top = table.getTopIndex();
+	int[] events = new int[1];
+	table.addListener(SWT.Selection, e -> events[0]++);
+
+	// shrinking by 10% or more takes the detached-model path
+	table.setItemCount(800);
+	assertEquals(800, table.getItemCount());
+	assertArrayEquals(new int[] { 10, 20, 700 }, table.getSelectionIndices());
+	assertEquals(top, table.getTopIndex());
+
+	table.setItemCount(2000);
+	assertArrayEquals(new int[] { 10, 20, 700 }, table.getSelectionIndices());
+	assertEquals(top, table.getTopIndex());
+	assertEquals(0, events[0]);
+
+	table.deselectAll();
+	table.setSelection(5);
+	table.setItemCount(100);
+	assertArrayEquals(new int[] { 5 }, table.getSelectionIndices());
+	// no selection count check here: a focused table selects its cursor row when the selected row is removed
+	table.setItemCount(1);
+	assertEquals(0, events[0]);
 }
 
 @Test

@@ -211,9 +211,9 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 			Rectangle boundsInPixel = new Rectangle(topLeftOfRectangle.x, topLeftOfRectangle.y, widthInPixels, heightInPixels);
 			Rectangle clientArea = getMonitorClientAreaInPixels(currentMonitor);
 			Rectangle intersection = clientArea.intersection(boundsInPixel);
-			int intersectionArea = intersection.width * intersection.height;
-			int boundsArea = boundsInPixel.width * boundsInPixel.height;
-			int intersectionRatio = (intersectionArea * 100) / boundsArea;
+			long intersectionArea = (long) intersection.width * intersection.height;
+			long boundsArea = (long) boundsInPixel.width * boundsInPixel.height;
+			int intersectionRatio = (int) ((intersectionArea * 100) / boundsArea);
 			if (intersectionRatio > highestIntersectionRatio) {
 				selectedMonitor = currentMonitor;
 				highestIntersectionRatio = intersectionRatio;
@@ -238,11 +238,11 @@ class MultiZoomCoordinateSystemMapper implements CoordinateSystemMapper {
 		Rectangle rectangle = new Rectangle(xInPixels, yInPixels, widthInPixels, heightInPixels);
 		Monitor[] monitors = monitorSupplier.get();
 		Monitor selectedMonitor = monitors[0];
-		int highestArea = 0;
+		long highestArea = 0;
 		for (Monitor currentMonitor : monitors) {
 			Rectangle clientArea = getMonitorClientAreaInPixels(currentMonitor);
 			Rectangle intersection = clientArea.intersection(rectangle);
-			int area = intersection.width * intersection.height;
+			long area = (long) intersection.width * intersection.height;
 			if (area > highestArea) {
 				selectedMonitor = currentMonitor;
 				highestArea = area;

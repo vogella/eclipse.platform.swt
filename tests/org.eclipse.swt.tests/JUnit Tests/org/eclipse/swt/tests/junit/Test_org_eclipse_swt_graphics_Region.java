@@ -898,6 +898,28 @@ public void test_getClipping_intoRegionWithExistingHandle() {
 	}
 }
 
+@Test
+public void test_largeCoordinates() {
+	Region region = new Region(display);
+	try {
+		region.add(0, 0, 40000, 40000);
+		assertTrue(region.contains(100, 100));
+		assertTrue(region.contains(30000, 30000));
+		assertFalse(region.contains(-100, 100));
+
+		region.subtract(-10, -10, 50000, 60);
+		assertFalse(region.contains(100, 40));
+		assertTrue(region.contains(100, 60));
+
+		region.intersect(-10, -10, 50000, 200);
+		assertTrue(region.contains(100, 100));
+		assertFalse(region.contains(100, 300));
+		assertTrue(region.intersects(-50000, 0, 100000, 100));
+	} finally {
+		region.dispose();
+	}
+}
+
 /* custom */
 	Display display;
 }

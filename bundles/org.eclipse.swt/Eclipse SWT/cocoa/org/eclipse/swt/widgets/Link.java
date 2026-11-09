@@ -315,36 +315,30 @@ NSRect[] getRectangles(int linkIndex) {
 	long rangePtr = C.malloc(NSRange.sizeof);
 	NSRange lineRange = new NSRange();
 
-	/* compute number of lines in the link */
-	int numberOfLines = 0;
-	long index = glyphRange.location;
-	long glyphEndIndex = glyphRange.location + glyphRange.length;
-	while (index < glyphEndIndex) {
-		numberOfLines++;
-		layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
-		OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-		index = lineRange.location + lineRange.length;
-	}
+	try {
+		/* compute the enclosing rectangle(s) for the link in a single pass */
+		java.util.List<NSRect> rects = new java.util.ArrayList<>();
+		long index = glyphRange.location;
+		long glyphEndIndex = glyphRange.location + glyphRange.length;
+		while (index < glyphEndIndex) {
+			NSRect usedRect = layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
+			OS.memmove(lineRange, rangePtr, NSRange.sizeof);
+			index = lineRange.location + lineRange.length;
 
-	/* compute the enclosing rectangle(s) for the link*/
-	NSRect [] result = new NSRect[numberOfLines];
-	index = glyphRange.location;
-	for (int i = 0; index < glyphEndIndex && i < numberOfLines; i++) {
-		NSRect usedRect = layoutManager.lineFragmentUsedRectForGlyphAtIndex(index, rangePtr, true);
-		OS.memmove(lineRange, rangePtr, NSRange.sizeof);
-		index = lineRange.location + lineRange.length;
-
-		if (lineRange.location < glyphRange.location) {
-			lineRange.length = index - glyphRange.location;
-			lineRange.location = glyphRange.location;
+			if (lineRange.location < glyphRange.location) {
+				lineRange.length = index - glyphRange.location;
+				lineRange.location = glyphRange.location;
+			}
+			if (index > glyphEndIndex) lineRange.length = glyphEndIndex - lineRange.location;
+			NSRect boundsRect = layoutManager.boundingRectForGlyphRange(lineRange, widget.textContainer());
+			NSRect lineRect = new NSRect();
+			OS.NSIntersectionRect(lineRect, usedRect, boundsRect);
+			rects.add(lineRect);
 		}
-		if (index > glyphEndIndex) lineRange.length = glyphEndIndex - lineRange.location;
-		NSRect boundsRect = layoutManager.boundingRectForGlyphRange(lineRange, widget.textContainer());
-		result[i] = new NSRect();
-		OS.NSIntersectionRect(result[i], usedRect, boundsRect);
+		return rects.toArray(new NSRect[0]);
+	} finally {
+		C.free(rangePtr);
 	}
-	C.free(rangePtr);
-	return result;
 }
 
 /**

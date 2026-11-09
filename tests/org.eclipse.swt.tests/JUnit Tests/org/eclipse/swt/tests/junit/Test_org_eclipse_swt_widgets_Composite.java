@@ -14,19 +14,27 @@
 package org.eclipse.swt.tests.junit;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.List;
+import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
@@ -60,6 +68,27 @@ public void test_ConstructorLorg_eclipse_swt_widgets_CompositeI() {
 	int[] cases = {SWT.H_SCROLL, SWT.V_SCROLL, SWT.H_SCROLL | SWT.V_SCROLL};
 	for (int style : cases)
 		composite = new Composite(shell, style);
+}
+
+@Test
+public void test_redrawIIIIZ_allRepaintsChildren() throws InterruptedException {
+	Shell host = new Shell(shell.getDisplay());
+	try {
+		host.setLayout(new FillLayout());
+		Canvas canvas = new Canvas(host, SWT.NONE);
+		int[] paints = new int[1];
+		canvas.addListener(SWT.Paint, e -> paints[0]++);
+		host.setSize(200, 150);
+		host.open();
+		SwtTestUtil.processEvents(1000, () -> false);
+		int before = paints[0];
+		assertTrue(before > 0, "no initial paint");
+		host.redraw(0, 0, 200, 150, true);
+		SwtTestUtil.processEvents(3000, () -> paints[0] > before);
+		assertTrue(paints[0] > before, "child not repainted by redraw(..., true)");
+	} finally {
+		host.dispose();
+	}
 }
 
 @Test
@@ -183,6 +212,93 @@ public void test_setFocus_withVisibleAndInvisibleChild() {
 	composite.setFocus();
 	assertFalse(wasSetFocusCalledOnInvisibleChildWidget.get());
 	assertTrue(getElementExpectedToHaveFocusAfterSetFocusOnParent(visibleChildWidget).isFocusControl());
+}
+
+@Test
+public void test_focusEventsReportedToFocusedControlOnly() {
+	Composite outer = new Composite(composite, SWT.NONE);
+	outer.setLayout(new FillLayout());
+	Text text = new Text(outer, SWT.SINGLE);
+	ArrayList<Integer> outerEvents = new ArrayList<>();
+	outer.addListener(SWT.FocusIn, e -> outerEvents.add(e.type));
+	outer.addListener(SWT.FocusOut, e -> outerEvents.add(e.type));
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+
+	text.setFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(text.isFocusControl(), "focus not granted in this environment");
+	new Button(composite, SWT.PUSH).setFocus();
+	SwtTestUtil.processEvents();
+
+	assertTrue(outerEvents.isEmpty(), "composite got focus events of its child: " + outerEvents);
+}
+
+@Test
+public void test_forceFocus_requestedFromFocusInListener() {
+	Text first = new Text(composite, SWT.SINGLE);
+	Text second = new Text(composite, SWT.SINGLE);
+	Text third = new Text(composite, SWT.SINGLE);
+	first.addListener(SWT.FocusIn, e -> second.forceFocus());
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+
+	third.setFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(third.isFocusControl(), "focus not granted in this environment");
+	first.forceFocus();
+	SwtTestUtil.processEvents();
+
+	assertTrue(second.isFocusControl(), "focus handed over from the FocusIn listener was lost");
+}
+
+@Test
+public void test_setBounds_hiddenChildInMirroredParentAfterResize() throws InterruptedException {
+	assumeFalse(SwtTestUtil.isGTK4(), "a hidden widget reports empty bounds on GTK4");
+	Composite mirrored = new Composite(shell, SWT.RIGHT_TO_LEFT);
+	assumeTrue((mirrored.getStyle() & SWT.MIRRORED) != 0, "parent is not mirrored on this platform");
+	mirrored.setBounds(0, 0, 200, 100);
+	Button child = new Button(mirrored, SWT.PUSH);
+	shell.open();
+	SwtTestUtil.processEvents();
+	child.setVisible(false);
+	child.setBounds(10, 10, 50, 20);
+	mirrored.setSize(300, 100);
+
+	child.setBounds(110, 10, 50, 20);
+	child.setVisible(true);
+	SwtTestUtil.processEvents(300, () -> false);
+
+	assertEquals(new Rectangle(110, 10, 50, 20), child.getBounds());
+}
+
+@Test
+public void test_focusMovesBetweenCompositeAndChild() {
+	Composite outer = new Composite(composite, SWT.NONE);
+	outer.setLayout(new FillLayout());
+	Text text = new Text(outer, SWT.SINGLE);
+	ArrayList<String> events = new ArrayList<>();
+	Listener log = e -> events.add((e.widget == outer ? "outer " : "text ") + (e.type == SWT.FocusIn ? "in" : "out"));
+	outer.addListener(SWT.FocusIn, log);
+	outer.addListener(SWT.FocusOut, log);
+	text.addListener(SWT.FocusIn, log);
+	text.addListener(SWT.FocusOut, log);
+	SwtTestUtil.waitShellActivate(shell::open, shell);
+
+	text.forceFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(text.isFocusControl(), "focus not granted in this environment");
+	events.clear();
+
+	outer.forceFocus();
+	SwtTestUtil.processEvents();
+	assumeTrue(outer.isFocusControl(), "composite cannot take the focus on this platform");
+	assertEquals(1, Collections.frequency(events, "text out"), "text FocusOut: " + events);
+	assertEquals(1, Collections.frequency(events, "outer in"), "composite FocusIn: " + events);
+
+	events.clear();
+	text.forceFocus();
+	SwtTestUtil.processEvents();
+	assertEquals(1, Collections.frequency(events, "outer out"), "composite FocusOut: " + events);
+	assertEquals(1, Collections.frequency(events, "text in"), "text FocusIn: " + events);
 }
 
 @Test

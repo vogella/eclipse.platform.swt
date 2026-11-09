@@ -709,7 +709,6 @@ int osOpToOp(long osOperation){
 void pasteboard_provideDataForType(long id, long sel, long arg0, long arg1) {
 	NSPasteboard pasteboard = new NSPasteboard(arg0);
 	NSString dataType = new NSString(arg1);
-	if (pasteboard == null || dataType == null) return;
 	TransferData transferData = new TransferData();
 	transferData.type = Transfer.registerType(dataType.getString());
 	DNDEvent event = new DNDEvent();

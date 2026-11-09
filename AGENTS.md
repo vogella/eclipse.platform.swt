@@ -111,6 +111,12 @@ mvn clean verify
 mvn verify -pl :THE_BUNDLE_WITH_THE_ACTUAL_TEST -am -DskipNativeTests=false -Dsurefire.failIfNoSpecifiedTests=false -Dtest=ClassName
 ```
 
+On macOS (aarch64), `-am` pulls in the win32 fragments and fails. Name the modules explicitly instead:
+```bash
+mvn verify -o -pl ':org.eclipse.swt,:org.eclipse.swt.cocoa.macosx.aarch64,:org.eclipse.swt.tests' -DskipNativeTests=false -Dsurefire.failIfNoSpecifiedTests=false -Dtest=ClassName
+```
+`Test_org_eclipse_swt_widgets_Display` creates its own Display, so run it alone or as the first class in the `-Dtest` list (otherwise: "multiple displays").
+
 ### Test Location
 - Main tests: `tests/org.eclipse.swt.tests/`
 - Tests automatically run with assertions enabled

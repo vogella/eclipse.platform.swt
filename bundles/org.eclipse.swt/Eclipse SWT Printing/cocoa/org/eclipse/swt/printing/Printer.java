@@ -379,16 +379,6 @@ public boolean isAutoScalable() {
 	return false;
 }
 
-/**
- * Releases any internal state prior to destroying this printer.
- * This method is called internally by the dispose
- * mechanism of the <code>Device</code> class.
- */
-@Override
-protected void release () {
-	super.release();
-}
-
 float scalingFactor() {
 	NSNumber scale = new NSNumber(printInfo.dictionary().objectForKey(OS.NSPrintScalingFactor));
 	return scale.floatValue();
@@ -605,7 +595,10 @@ public Point getDPI() {
 								// PMPrinterGetIndexedPrinterResolution indexes are 1-based.
 								if (OS.PMPrinterGetIndexedPrinterResolution(printer[0], i, tempResolution) == OS.noErr) {
 									if (tempResolution.vRes > resolution.vRes && tempResolution.hRes > resolution.hRes) {
-										resolution = tempResolution;
+										// Copy the values: assigning the reference would make 'resolution'
+										// follow every later overwrite of tempResolution.
+										resolution.hRes = tempResolution.hRes;
+										resolution.vRes = tempResolution.vRes;
 									}
 								}
 							}

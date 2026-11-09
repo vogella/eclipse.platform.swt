@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
@@ -912,6 +913,89 @@ public void test_getCaretOffset() {
 	assertEquals(1, text.getCaretOffset());
 	text.replaceTextRange(0, 0, newText);
 	assertEquals(newText.length() + 1, text.getCaretOffset());
+}
+
+@Test
+public void test_linkCursorFollowsLinkStyles() {
+	assumeFalse(SwtTestUtil.isGTK4(), "GTK4 cannot move the pointer");
+	Display display = text.getDisplay();
+	shell.setLayout(new FillLayout());
+	text.setText("link and plain text");
+	shell.setSize(300, 100);
+	shell.open();
+	SwtTestUtil.processEvents();
+	StyleRange link = new StyleRange(0, 4, null, null);
+	link.underline = true;
+	link.underlineStyle = SWT.UNDERLINE_LINK;
+	text.setStyleRanges(new StyleRange[] { link });
+	SwtTestUtil.processEvents();
+	Point location = text.getLocationAtOffset(1);
+	display.setCursorLocation(text.toDisplay(location.x + 1, location.y + text.getLineHeight() / 2));
+	SwtTestUtil.processEvents();
+	assumeTrue(display.getCursorControl() == text, "pointer could not be moved over the text");
+	text.redraw();
+	assertEquals(display.getSystemCursor(SWT.CURSOR_HAND), text.getCursor());
+	// without links the cursor no longer depends on the pointer location
+	text.setStyleRanges(new StyleRange[0]);
+	assertEquals(display.getSystemCursor(SWT.CURSOR_IBEAM), text.getCursor());
+	text.setStyleRanges(new StyleRange[] { link });
+	text.redraw();
+	assertEquals(display.getSystemCursor(SWT.CURSOR_HAND), text.getCursor());
+	text.setBlockSelection(true);
+	text.setStyleRange(null);
+	assertEquals(display.getSystemCursor(SWT.CURSOR_CROSS), text.getCursor());
+}
+
+@Test
+public void test_contentRandomEditsMatchModel() {
+	StyledTextContent content = text.getContent();
+	// no lone \r: the content does not merge a \r and a \n that an edit puts next to each other
+	String[] pieces = { "a", "bc", "\n", "\r\n", "xyz\nuvw", "\n\n", "", "long piece of text without delimiter" };
+	Random random = new Random(42);
+	StringBuilder model = new StringBuilder();
+	for (int i = 0; i < 200; i++) {
+		model.append("line ").append(i).append(i % 7 == 0 ? "\r\n" : "\n");
+	}
+	content.setText(model.toString());
+	for (int edit = 0; edit < 3000; edit++) {
+		int start = random.nextInt(model.length() + 1);
+		// mostly small edits, sometimes far from the previous one, sometimes large deletes
+		int length = random.nextInt(10) == 0 ? random.nextInt(Math.min(400, model.length() - start) + 1)
+				: random.nextInt(Math.min(4, model.length() - start) + 1);
+		// do not split a \r\n delimiter, the content treats that as an invalid edit
+		if (start > 0 && start < model.length() && model.charAt(start - 1) == '\r' && model.charAt(start) == '\n') start--;
+		int end = start + length;
+		if (end > 0 && end < model.length() && model.charAt(end - 1) == '\r' && model.charAt(end) == '\n') end++;
+		length = end - start;
+		String piece = pieces[random.nextInt(pieces.length)];
+		if (random.nextInt(20) == 0) piece = piece.repeat(100);
+		content.replaceTextRange(start, length, piece);
+		model.replace(start, start + length, piece);
+		if (edit % 50 == 0 || edit > 2950) {
+			assertContentEquals(model.toString(), content, "after edit " + edit);
+		}
+	}
+}
+
+private static void assertContentEquals(String expected, StyledTextContent content, String message) {
+	assertEquals(expected.length(), content.getCharCount(), message);
+	assertEquals(expected, content.getTextRange(0, expected.length()), message);
+	int lineStart = 0;
+	int line = 0;
+	for (int i = 0; i <= expected.length(); i++) {
+		boolean atEnd = i == expected.length();
+		char ch = atEnd ? 0 : expected.charAt(i);
+		if (atEnd || ch == '\n' || ch == '\r') {
+			assertEquals(lineStart, content.getOffsetAtLine(line), message + ", offset of line " + line);
+			assertEquals(expected.substring(lineStart, i), content.getLine(line), message + ", line " + line);
+			assertEquals(line, content.getLineAtOffset(lineStart), message + ", line at " + lineStart);
+			if (atEnd) break;
+			if (ch == '\r' && i + 1 < expected.length() && expected.charAt(i + 1) == '\n') i++;
+			lineStart = i + 1;
+			line++;
+		}
+	}
+	assertEquals(line + 1, content.getLineCount(), message);
 }
 
 @Test
@@ -6181,6 +6265,7 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	// the window so that org.eclipse.swt.widgets.Display.findFocusedWindow()
 	// returns non-zero
 	SwtTestUtil.processEvents();
+	SwtTestUtil.forceActiveForPost(shell);
 
 	Display display = Display.getDefault();
 
@@ -6200,6 +6285,37 @@ public void test_backspaceAndDelete() throws InterruptedException {
 
 	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 0);
 	assertEquals(0, text.getText().length());
+}
+
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeyDownIsSentOnce() throws InterruptedException {
+	shell.open();
+	text.setSize(100, 50);
+	// findFocusedWindow() needs a drawn and focused shell
+	SwtTestUtil.processEvents();
+
+	Display display = Display.getDefault();
+	List<Character> keyDowns = new ArrayList<>();
+	text.addListener(SWT.KeyDown, e -> keyDowns.add(e.character));
+
+	Event a = new Event();
+	a.type = SWT.KeyDown;
+	a.keyCode = 'a';
+	a.character = 'a';
+	Event aUp = new Event();
+	aUp.type = SWT.KeyUp;
+	aUp.keyCode = 'a';
+	aUp.character = 'a';
+	assumeTrue(display.post(a), "Display.post is not supported on GTK4");
+	assumeTrue(display.post(aUp), "Display.post is not supported on GTK4");
+
+	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 1);
+	// give a duplicate KeyDown the chance to arrive
+	SwtTestUtil.processEvents(500, () -> false);
+	assertEquals("a", text.getText());
+	assertEquals(List.of('a'), keyDowns);
 }
 
 /**
@@ -6530,5 +6646,27 @@ public void test_keyWithoutCharacterDoesNotFallBackToCharacter() {
 		keyDown(keyCode, (char) 0, SWT.SHIFT);
 		assertEquals(new Point(0, 0), text.getSelection(), "keyCode " + keyCode);
 	}
+}
+
+@Tag("clipboard")
+@Test
+public void test_copyPasteKeepsControlCharacters() {
+	assumeFalse(SwtTestUtil.isCocoa, "Disabled on Mac because similar clipboard tests are also disabled.");
+
+	String content = "abcdef";
+	text.setText(content);
+	text.selectAll();
+	text.copy();
+
+	Clipboard clipboard = new Clipboard(text.getDisplay());
+	try {
+		assertEquals(content, clipboard.getContents(TextTransfer.getInstance()));
+	} finally {
+		clipboard.dispose();
+	}
+
+	text.setText("");
+	text.paste();
+	assertEquals(content, text.getText());
 }
 }

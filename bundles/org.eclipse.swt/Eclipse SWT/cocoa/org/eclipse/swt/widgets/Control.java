@@ -1004,7 +1004,7 @@ Color defaultBackground () {
 
 Font defaultFont () {
 	if (display.smallFonts) return display.getSystemFont ();
-	return Font.cocoa_new (display, defaultNSFont ());
+	return display.getDefaultFont (defaultNSFont ());
 }
 
 Color defaultForeground () {
@@ -1270,6 +1270,10 @@ void fillBackground (NSView view, NSGraphicsContext context, NSRect rect, int im
 	if (control == null) control = this;
 	Image image = control.backgroundImage;
 	if (image != null && !image.isDisposed()) {
+		if (imgHeight == -1 && view.isFlipped()) {
+			fillBackgroundTiles(view, context, rect, image, control.view, gcView, tx, ty);
+			return;
+		}
 		context.saveGraphicsState();
 		NSColor.colorWithPatternImage(image.handle).setFill();
 		NSPoint phase = new NSPoint();
@@ -1311,6 +1315,40 @@ void fillBackground (NSView view, NSGraphicsContext context, NSRect rect, int im
 	NSColor.colorWithDeviceRed (background [0], background [1], background [2], alpha).setFill ();
 	NSBezierPath.fillRect (rect);
 	context.restoreGraphicsState ();
+}
+
+// A pattern fill paints the tile upside down in a flipped view, so tile the image from the top left of the control instead.
+private void fillBackgroundTiles (NSView view, NSGraphicsContext context, NSRect rect, Image image, NSView controlView, NSView gcView, int tx, int ty) {
+	NSSize size = image.handle.size();
+	if (size.width <= 0 || size.height <= 0) return;
+	NSPoint origin = controlView.convertPoint_toView_(new NSPoint(), view);
+	if (gcView != null) {
+		NSPoint pt = gcView.convertPoint_toView_(new NSPoint(), view);
+		origin.x += pt.x;
+		origin.y += pt.y;
+	}
+	origin.x -= tx;
+	origin.y -= ty;
+	context.saveGraphicsState();
+	NSBezierPath.bezierPathWithRect(rect).addClip();
+	NSRect dest = new NSRect();
+	dest.width = size.width;
+	dest.height = size.height;
+	NSRect whole = new NSRect();
+	double startX = origin.x + Math.floor((rect.x - origin.x) / size.width) * size.width;
+	double startY = origin.y + Math.floor((rect.y - origin.y) / size.height) * size.height;
+	for (double y = startY; y < rect.y + rect.height; y += size.height) {
+		for (double x = startX; x < rect.x + rect.width; x += size.width) {
+			context.saveGraphicsState();
+			NSAffineTransform transform = NSAffineTransform.transform();
+			transform.translateXBy(x, y + size.height);
+			transform.scaleXBy(1, -1);
+			transform.concat();
+			image.handle.drawInRect(dest, whole, OS.NSCompositingOperationSourceOver, 1);
+			context.restoreGraphicsState();
+		}
+	}
+	context.restoreGraphicsState();
 }
 
 Cursor findCursor () {
@@ -2279,10 +2317,6 @@ public boolean isEnabled () {
 	return getEnabled () && parent.isEnabled ();
 }
 
-boolean isEnabledCursor () {
-	return isEnabled ();
-}
-
 boolean isFocusAncestor (Control control) {
 	while (control != null && control != this && !(control instanceof Shell)) {
 		control = control.parent;
@@ -2838,7 +2872,6 @@ public void redraw () {
 }
 
 void redraw (boolean children) {
-//	checkWidget();
 	view.setNeedsDisplay(true);
 }
 
@@ -4682,7 +4715,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 	// Process removed/cancelled touches first.
 	NSArray endedTouches = nsEvent.touchesMatchingPhase(OS.NSTouchPhaseEnded | OS.NSTouchPhaseCancelled, null).allObjects();
 
-	for (int i = 0; i < endedTouches.count(); i++) {
+	for (int i = 0, endedCount = (int)endedTouches.count(); i < endedCount; i++) {
 		NSTouch touch = new NSTouch(endedTouches.objectAtIndex(i).id);
 		NSObject identity = new NSObject(OS.objc_msgSend(touch.id, OS.sel_identity));
 		NSTouch endedTouch = findTouchWithId(currentTouches, identity);
@@ -4695,7 +4728,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 	// Process touches in progress or starting.
 	NSArray activeTouches = nsEvent.touchesMatchingPhase(OS.NSTouchPhaseBegan | OS.NSTouchPhaseMoved | OS.NSTouchPhaseStationary, null).allObjects();
 
-	for (int i = 0; i < activeTouches.count(); i++) {
+	for (int i = 0, activeCount = (int)activeTouches.count(); i < activeCount; i++) {
 		NSTouch touch = new NSTouch(activeTouches.objectAtIndex(i).id);
 		NSObject identity = new NSObject(OS.objc_msgSend(touch.id, OS.sel_identity));
 		NSTouch activeTouch = findTouchWithId(currentTouches, identity);
@@ -4724,7 +4757,7 @@ boolean touchEvent(long id, long sel, long eventPtr) {
 				}
 
 				touches[currTouchIndex++] = fakeTouchUp;
-				currentTouches.removeObject(activeTouch);
+				currentTouches.removeObject(touch);
 			}
 		}
 	}
@@ -5165,7 +5198,6 @@ boolean update (boolean all) {
 			return false;
 		}
  	}
-//	checkWidget();
 	NSArray isPainting = display.isPainting;
 	if (isPainting.containsObject(view)) return false;
 	for (int i = 0, length = (int)isPainting.count(); i < length; i++) {
@@ -5234,7 +5266,7 @@ void updateCursorRects (boolean enabled, NSView widget) {
 	} else {
 		widget.discardCursorRects ();
 		NSArray areas = widget.trackingAreas ();
-		for (int i = 0; i < areas.count(); i++) {
+		for (int i = 0, length = (int)areas.count(); i < length; i++) {
 			widget.removeTrackingArea (new NSTrackingArea (areas.objectAtIndex (i)));
 		}
 	}
