@@ -22,6 +22,7 @@ import org.junit.platform.suite.api.Suite;
 	Test_GtkButton.class,
 	Test_GtkCombo.class,
 	Test_GtkConverter.class,
+	Test_GtkDisplay.class,
 	Test_GtkMenu.class,
 	Test_GtkScaleFactor.class,
 	Test_GtkSpinner.class,
