@@ -1952,6 +1952,14 @@ void updateBackgroundMode () {
 }
 
 @Override
+void updateDefaultForeground () {
+	super.updateDefaultForeground ();
+	for (Control child : _getChildren ()) {
+		child.updateDefaultForeground ();
+	}
+}
+
+@Override
 void updateLayout (boolean all) {
 	Composite parent = findDeferredControl ();
 	if (parent != null) {

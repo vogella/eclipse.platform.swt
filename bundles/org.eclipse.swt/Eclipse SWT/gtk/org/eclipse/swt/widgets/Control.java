@@ -82,6 +82,8 @@ public abstract class Control extends Widget implements Drawable {
 	Accessible accessible;
 	Control labelRelation;
 	String cssBackground, cssForeground = " ";
+	/** The CSS holds the default foreground of the time it was reset. */
+	boolean defaultForegroundApplied;
 	boolean drawRegion;
 	/**
 	 * Cache the NO_BACKGROUND flag as it gets removed automatically in
@@ -5613,9 +5615,14 @@ public void setForeground (Color color) {
 		} else {
 			state |= FOREGROUND;
 		}
+		defaultForegroundApplied = color == null;
 		GdkRGBA rgba = color == null ? null : color.handle;
 		setForegroundGdkRGBA (rgba);
 	}
+}
+
+void updateDefaultForeground () {
+	if (defaultForegroundApplied) setForegroundGdkRGBA (null);
 }
 
 void setForegroundGdkRGBA (GdkRGBA rgba) {

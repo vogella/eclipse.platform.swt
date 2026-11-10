@@ -5223,6 +5223,7 @@ boolean runSettings () {
 		Shell shell = shells [i];
 		if (!shell.isDisposed ()) {
 			shell.fixStyle ();
+			shell.updateDefaultForeground ();
 			shell.redraw (true);
 			shell.layout (true, true);
 		}
