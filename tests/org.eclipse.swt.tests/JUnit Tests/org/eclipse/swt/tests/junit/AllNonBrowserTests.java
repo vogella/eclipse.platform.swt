@@ -47,6 +47,7 @@ public class AllNonBrowserTests {
 			AllGraphicsTests.class, //
 			AllWidgetTests.class, //
 			// Rest of tests alphabetically
+			CocoaApplicationObserversTest.class, //
 			DPIUtilTests.class, //
 			Test_org_eclipse_swt_accessibility_Accessible.class, //
 			Test_org_eclipse_swt_accessibility_AccessibleControlEvent.class, //
