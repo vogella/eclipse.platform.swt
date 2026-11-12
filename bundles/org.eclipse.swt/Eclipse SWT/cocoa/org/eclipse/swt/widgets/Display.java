@@ -417,6 +417,49 @@ static int untranslateKey (int key) {
 	return 0;
 }
 
+/** A key-value observance of NSApp, as its observer added it. */
+record ApplicationObservance (long observer, String keyPath, long options, long context) {}
+
+private static final java.util.regex.Pattern OBSERVANCE = java.util.regex.Pattern.compile ("<NSKeyValueObservance 0x[0-9a-f]+: Observer: 0x([0-9a-f]+), Key path: ([^,]+), Options: <New: (YES|NO), Old: (YES|NO), Prior: (YES|NO)> Context: 0x([0-9a-f]+), Property: 0x[0-9a-f]+>"); //$NON-NLS-1$
+
+/**
+ * Removes the key-value observers of NSApp before its class changes and returns them, or null if they cannot all be
+ * read. KVO finds an observance by the class it was added under, so after the change the observer's removal throws.
+ */
+java.util.List<ApplicationObservance> removeApplicationObservers () {
+	long info = OS.objc_msgSend (application.id, OS.sel_registerName ("observationInfo")); //$NON-NLS-1$
+	if (info == 0) return Collections.emptyList ();
+	// the observances are only exposed by the description of the opaque observation info
+	String description = new NSObject (info).description ().getString ();
+	java.util.List<ApplicationObservance> observances = new ArrayList<> ();
+	java.util.regex.Matcher matcher = OBSERVANCE.matcher (description);
+	while (matcher.find ()) {
+		long observer = Long.parseUnsignedLong (matcher.group (1), 16);
+		// an observance KVO adds for a key path through another object is removed with that observance
+		if (observer == 0 || new NSObject (OS.object_getClass (observer)).className ().getString ().startsWith ("NSKeyValue")) return null; //$NON-NLS-1$
+		// NSKeyValueObservingOptionNew, Old and Prior; without Initial, so re-adding notifies nobody
+		long options = ("YES".equals (matcher.group (3)) ? 1 : 0) //$NON-NLS-1$
+			| ("YES".equals (matcher.group (4)) ? 2 : 0) //$NON-NLS-1$
+			| ("YES".equals (matcher.group (5)) ? 8 : 0); //$NON-NLS-1$
+		observances.add (new ApplicationObservance (observer, matcher.group (2), options, Long.parseUnsignedLong (matcher.group (6), 16)));
+	}
+	if (observances.size () != description.split ("<NSKeyValueObservance ", -1).length - 1) return null; //$NON-NLS-1$
+	long sel = OS.sel_registerName ("removeObserver:forKeyPath:context:"); //$NON-NLS-1$
+	for (ApplicationObservance observance : observances) {
+		OS.objc_msgSend (application.id, sel, observance.observer, NSString.stringWith (observance.keyPath).id, observance.context);
+	}
+	return observances;
+}
+
+/** Adds the observers back that {@link #removeApplicationObservers()} removed. */
+void addApplicationObservers (java.util.List<ApplicationObservance> observances) {
+	if (observances == null || observances.isEmpty ()) return;
+	long sel = OS.sel_registerName ("addObserver:forKeyPath:options:context:"); //$NON-NLS-1$
+	for (ApplicationObservance observance : observances) {
+		OS.objc_msgSend (application.id, sel, observance.observer, NSString.stringWith (observance.keyPath).id, observance.options, observance.context);
+	}
+}
+
 void addContext (GCData context) {
 	if (contexts == null) contexts = new GCData [12];
 	for (int i=0; i<contexts.length; i++) {
@@ -991,6 +1034,7 @@ void createDisplay (DeviceData data) {
 		}
 	}
 
+	java.util.List<ApplicationObservance> observances = removeApplicationObservers ();
 	String className = "SWTApplication";
 	long cls;
 	if ((cls = OS.objc_lookUpClass (className)) == 0) {
@@ -1024,6 +1068,7 @@ void createDisplay (DeviceData data) {
 		OS.objc_registerClassPair(cls);
 	}
 	applicationClass = OS.object_setClass(application.id, cls);
+	addApplicationObservers (observances);
 
 	className = "SWTApplicationDelegate";
 	if (OS.objc_lookUpClass (className) == 0) {
@@ -4229,7 +4274,9 @@ void releaseDisplay () {
 	// The autorelease pool is cleaned up when we call NSApplication.terminate().
 
 	if (application != null && applicationClass != 0) {
+		java.util.List<ApplicationObservance> observances = removeApplicationObservers ();
 		OS.object_setClass (application.id, applicationClass);
+		addApplicationObservers (observances);
 	}
 	application = null;
 	applicationClass = 0;
