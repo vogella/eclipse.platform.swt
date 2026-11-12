@@ -1675,6 +1675,38 @@ public void test_postedKeyDownIsSentOnce() throws InterruptedException {
 	assertEquals(List.of('a'), keyDowns);
 }
 
+/** A posted arrow key must not turn later posted letters into fn shortcuts (fn+M, fn+C on Cocoa) that swallow keys. */
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeyBurstAfterArrowKey() throws InterruptedException {
+	shell.open();
+	text.setSize(300, 50);
+	SwtTestUtil.processEvents();
+	shell.forceActive();
+	SwtTestUtil.processEvents(3000, () -> shell.getDisplay().getActiveShell() == shell);
+	Display display = Display.getDefault();
+	text.addModifyListener(e -> {
+		long end = System.nanoTime() + 20_000_000L;
+		while (System.nanoTime() < end) {
+			// a Modify listener doing work, like a wizard deriving a location from the name
+		}
+	});
+	String expected = "com.example.e4.rcp";
+	assumeTrue(display.post(keyEvent(SWT.ARROW_LEFT, SWT.KeyDown, text)), "Display.post is not supported on GTK4");
+	display.post(keyEvent(SWT.ARROW_LEFT, SWT.KeyUp, text));
+	display.post(keyEvent('c', SWT.KeyDown, text));
+	display.post(keyEvent('c', SWT.KeyUp, text));
+	SwtTestUtil.processEvents(3000, () -> text.getText().length() == 1);
+	assumeTrue(text.getText().length() == 1, "the test JVM has no key focus: posted keys do not arrive");
+	for (char c : expected.substring(1).toCharArray()) {
+		display.post(keyEvent(c, SWT.KeyDown, text));
+		display.post(keyEvent(c, SWT.KeyUp, text));
+	}
+	SwtTestUtil.processEvents(10000, () -> expected.equals(text.getText()));
+	assertEquals(expected, text.getText());
+}
+
 private Event keyEvent(int key, int type, Widget w) {
 	Event e = new Event();
 	e.keyCode= key;
