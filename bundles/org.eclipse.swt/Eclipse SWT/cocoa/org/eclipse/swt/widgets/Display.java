@@ -3522,6 +3522,7 @@ public boolean post(Event event) {
 
 				if (vKey != -1) {
 					eventRef = OS.CGEventCreateKeyboardEvent(eventSource, vKey, type == SWT.KeyDown);
+					if (!isFnKey(vKey)) eventRef = withoutFn(eventSource, eventRef, vKey, type == SWT.KeyDown);
 				}
 				break;
 			}
@@ -3585,6 +3586,48 @@ public boolean post(Event event) {
 		if (eventSource != 0) OS.CFRelease(eventSource);
 		return returnValue;
 	}
+}
+
+/*
+ * A posted arrow, function or navigation key leaves fn set in the HID system state, so later posted letters
+ * arrive as fn+letter, which macOS takes as system shortcuts (fn+M, fn+C) that swallow the following keys.
+ * Posting an fn key-up clears it; the state updates asynchronously, so the event is recreated until fn is gone.
+ */
+static long withoutFn (long eventSource, long eventRef, short vKey, boolean down) {
+	for (int i = 0; i < 50 && eventRef != 0 && hasFn (eventRef); i++) {
+		if (i == 0) {
+			long fnUp = OS.CGEventCreateKeyboardEvent (eventSource, (short) 63 /* kVK_Function */, false);
+			if (fnUp == 0) break;
+			OS.CGEventPost (OS.kCGHIDEventTap, fnUp);
+			OS.CFRelease (fnUp);
+		}
+		OS.CFRelease (eventRef);
+		try {
+			Thread.sleep (1);
+		} catch (InterruptedException e) {
+			Thread.currentThread ().interrupt ();
+		}
+		eventRef = OS.CGEventCreateKeyboardEvent (eventSource, vKey, down);
+	}
+	return eventRef;
+}
+
+static boolean hasFn (long eventRef) {
+	NSAutoreleasePool pool = (NSAutoreleasePool) new NSAutoreleasePool ().alloc ().init ();
+	try {
+		long nsEvent = OS.objc_msgSend (OS.class_NSEvent, OS.sel_registerName ("eventWithCGEvent:"), eventRef); //$NON-NLS-1$
+		return nsEvent != 0 && (new NSEvent (nsEvent).modifierFlags () & 0x800000 /* NSEventModifierFlagFunction */) != 0;
+	} finally {
+		pool.release ();
+	}
+}
+
+/** Whether the key carries the fn flag itself: arrow, function and navigation keys. */
+static boolean isFnKey (short vKey) {
+	return switch (vKey) {
+		case 64, 79, 80, 96, 97, 98, 99, 100, 101, 103, 105, 106, 107, 109, 111, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126 -> true;
+		default -> false;
+	};
 }
 
 void postEvent (Event event) {
