@@ -416,6 +416,9 @@ void drawRectangles (Rectangle [] rects) {
 		long overlaySurface = GTK4.gtk_native_get_surface(GTK4.gtk_widget_get_native (overlay));
 		GDK.gdk_surface_hide (overlaySurface);
 		/* TODO: GTK does not provide a gdk_surface_show, probably will require use of the present api */
+	} else if (OS.isWayland()) {
+		// Remapping the overlay surface takes the pointer from the tracked window, so the button release never arrives
+		GTK.gtk_widget_queue_draw (overlay);
 	} else {
 		long overlayWindow = GTK3.gtk_widget_get_window (overlay);
 		GDK.gdk_window_hide (overlayWindow);
