@@ -576,6 +576,15 @@ void createBalloonTipHandle () {
 	OS.SetWindowLongPtr (balloonTipHandle, OS.GWLP_WNDPROC, display.windowProc);
 }
 
+@Override
+void updateDarkSystemTheme() {
+	if ((state & FOREIGN_HANDLE) == 0) {
+		super.updateDarkSystemTheme();
+	}
+	applyDarkSystemTheme(toolTipHandle, display.useDarkModeExplorerTheme);
+	applyDarkSystemTheme(menuItemToolTipHandle, display.useDarkModeExplorerTheme);
+}
+
 void setTitleColoring(boolean preferred) {
 	int attributeID = 0;
 	if (OsVersion.IS_WIN10_2004) {

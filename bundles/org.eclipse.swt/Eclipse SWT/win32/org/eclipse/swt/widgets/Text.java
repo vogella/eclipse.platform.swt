@@ -904,6 +904,11 @@ void maybeEnableDarkSystemTheme() {
 	}
 }
 
+@Override
+void updateDarkSystemTheme() {
+	applyDarkSystemTheme(handle, display.useDarkModeExplorerTheme && (hasCustomBackground() || hasCustomForeground()));
+}
+
 void fixAlignment () {
 	/*
 	* Feature in Windows.  When the edit control is not

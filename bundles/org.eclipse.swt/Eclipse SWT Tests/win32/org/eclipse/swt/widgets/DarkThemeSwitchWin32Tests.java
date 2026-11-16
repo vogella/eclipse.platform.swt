@@ -21,7 +21,6 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
-import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.PlatformSpecificExecutionExtension;
 import org.eclipse.swt.internal.win32.OS;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +31,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith(PlatformSpecificExecutionExtension.class)
 class DarkThemeSwitchWin32Tests {
 
+	private static final String SIZE = "size";
 	private static final String DARK_KEY = "org.eclipse.swt.internal.win32.useDarkModeExplorerTheme";
 
 	private Display display;
@@ -42,7 +42,8 @@ class DarkThemeSwitchWin32Tests {
 		display = Display.getDefault();
 		assumeTrue(OS.IsDarkModeAvailable());
 		shell = new Shell(display);
-		awayFromCursor(shell);
+		// out of reach of the mouse, whose hot state differs between the themes
+		shell.setLocation(-10000, -10000);
 	}
 
 	@AfterEach
@@ -63,6 +64,46 @@ class DarkThemeSwitchWin32Tests {
 		}
 	}
 
+	@Test
+	void scrollablesMatchFreshScrollablesAfterSwitch() {
+		Consumer<Boolean> theme = dark -> display.setData(DARK_KEY, dark);
+		assertSwitchedMatchesFresh(theme, parent -> {
+			Table table = new Table(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+			table.setHeaderVisible(true);
+			TableColumn column = new TableColumn(table, SWT.NONE);
+			column.setText("Column");
+			column.setWidth(200);
+			for (int i = 0; i < 20; i++) new TableItem(table, SWT.NONE).setText("Item " + i);
+			return sized(table);
+		});
+		assertSwitchedMatchesFresh(theme, parent -> {
+			Tree tree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+			tree.setHeaderVisible(true);
+			TreeColumn column = new TreeColumn(tree, SWT.NONE);
+			column.setText("Column");
+			column.setWidth(200);
+			for (int i = 0; i < 20; i++) new TreeItem(tree, SWT.NONE).setText("Item " + i);
+			return sized(tree);
+		});
+		assertSwitchedMatchesFresh(theme, parent -> {
+			List list = new List(parent, SWT.BORDER | SWT.V_SCROLL);
+			for (int i = 0; i < 20; i++) list.add("Item " + i);
+			return sized(list);
+		});
+		assertSwitchedMatchesFresh(theme, parent -> {
+			Text text = new Text(parent, SWT.MULTI | SWT.V_SCROLL | SWT.H_SCROLL);
+			text.setText("Line\n".repeat(20));
+			return sized(text);
+		});
+		assertSwitchedMatchesFresh(theme, parent -> sized(new Composite(parent, SWT.V_SCROLL | SWT.H_SCROLL)));
+	}
+
+	/** Gives a scrollable a fixed size, so that its scroll bars show. */
+	private static Control sized(Control control) {
+		control.setData(SIZE, new Point(120, 80));
+		return control;
+	}
+
 	/**
 	 * Creates a control in one theme, switches to the other and compares it with a
 	 * control created in that theme, in both directions.
@@ -80,7 +121,7 @@ class DarkThemeSwitchWin32Tests {
 			dispatchEvents();
 			theme.accept(dark);
 			Control fresh = factory.apply(shell);
-			Point size = fresh.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+			Point size = fresh.getData(SIZE) instanceof Point fixed ? fixed : fresh.computeSize(SWT.DEFAULT, SWT.DEFAULT);
 			switched.setBounds(10, 10, size.x, size.y);
 			fresh.setBounds(10, size.y + 20, size.x, size.y);
 			focusSink.forceFocus();
@@ -89,15 +130,6 @@ class DarkThemeSwitchWin32Tests {
 			switched.dispose();
 			fresh.dispose();
 		}
-	}
-
-	/** Keeps controls out of their hot state, which differs between themes. */
-	private void awayFromCursor(Shell target) {
-		Rectangle area = display.getPrimaryMonitor().getClientArea();
-		Point cursor = display.getCursorLocation();
-		int x = cursor.x < area.x + area.width / 2 ? area.x + area.width / 2 : area.x;
-		int y = cursor.y < area.y + area.height / 2 ? area.y + area.height / 2 : area.y;
-		target.setLocation(x, y);
 	}
 
 	private void dispatchEvents() {
@@ -123,7 +155,7 @@ class DarkThemeSwitchWin32Tests {
 			GC gc = new GC(image);
 			try {
 				// PrintWindow, which Control.print uses, can return stale content of the shell
-				OS.SendMessage(control.handle, OS.WM_PRINT, gc.handle, OS.PRF_NONCLIENT | OS.PRF_CLIENT | OS.PRF_ERASEBKGND);
+				OS.SendMessage(control.handle, OS.WM_PRINT, gc.handle, OS.PRF_NONCLIENT | OS.PRF_CLIENT | OS.PRF_ERASEBKGND | OS.PRF_CHILDREN);
 			} finally {
 				gc.dispose();
 			}

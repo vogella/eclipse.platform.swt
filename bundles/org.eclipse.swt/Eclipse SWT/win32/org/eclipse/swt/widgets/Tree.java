@@ -4749,6 +4749,18 @@ public void setColumnOrder (int [] order) {
 	}
 }
 
+@Override
+void updateDarkSystemTheme() {
+	boolean dark = display.useDarkModeExplorerTheme;
+	/* The tree itself uses the Explorer theme in light mode as well */
+	OS.AllowDarkModeForWindow(handle, dark);
+	OS.SetWindowTheme(handle, Display.EXPLORER, null);
+	applyDarkSystemTheme(hwndParent, dark);
+	applyDarkSystemTheme(hwndHeader, dark);
+	applyDarkSystemTheme(headerToolTipHandle, dark);
+	applyDarkSystemTheme(itemToolTipHandle, dark);
+}
+
 void setCheckboxImageList () {
 	if ((style & SWT.CHECK) == 0) return;
 	int count = 5, flags = OS.ILC_COLOR32;

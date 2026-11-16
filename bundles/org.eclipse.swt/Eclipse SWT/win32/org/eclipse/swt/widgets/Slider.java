@@ -202,6 +202,11 @@ void createHandle () {
 }
 
 @Override
+void updateDarkSystemTheme() {
+	applyDarkSystemTheme(handle, display.useDarkModeExplorerTheme);
+}
+
+@Override
 void createWidget () {
 	super.createWidget ();
 	increment = 1;

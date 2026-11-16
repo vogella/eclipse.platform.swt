@@ -173,7 +173,6 @@ public class Display extends Device implements Executor {
 	 * Limitations:<br>
 	 * <ul>
 	 *   <li>Only available since Win10 version 1903.</li>
-	 *   <li>Does not affect already created controls.</li>
 	 * </ul>
 	 * All Scrollable-based Controls are affected.
 	 */

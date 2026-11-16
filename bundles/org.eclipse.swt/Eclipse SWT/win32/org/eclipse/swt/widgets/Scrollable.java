@@ -144,6 +144,11 @@ void createHandle () {
 	maybeEnableDarkSystemTheme();
 }
 
+@Override
+void updateDarkSystemTheme() {
+	applyDarkSystemTheme(handle, display.useDarkModeExplorerTheme);
+}
+
 ScrollBar createScrollBar (int type) {
 	ScrollBar bar = new ScrollBar (this, type);
 	if ((state & CANVAS) != 0) {

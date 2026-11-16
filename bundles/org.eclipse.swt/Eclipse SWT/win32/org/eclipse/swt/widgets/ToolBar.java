@@ -401,6 +401,12 @@ void createHandle () {
 	OS.SendMessage (handle, OS.TB_SETEXTENDEDSTYLE, 0, bits);
 }
 
+@Override
+void updateDarkSystemTheme() {
+	super.updateDarkSystemTheme();
+	applyDarkSystemTheme(currentToolItemToolTip, display.useDarkModeExplorerTheme);
+}
+
 private ToolBarImageLists createImageLists(int width, int height) {
 	return ToolBarImageLists.create(display, style & SWT.RIGHT_TO_LEFT, width, height, getAutoscalingZoom());
 }

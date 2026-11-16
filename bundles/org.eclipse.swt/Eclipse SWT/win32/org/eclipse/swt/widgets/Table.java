@@ -4243,6 +4243,17 @@ void setDeferResize (boolean defer) {
 	}
 }
 
+@Override
+void updateDarkSystemTheme() {
+	boolean dark = display.useDarkModeExplorerTheme;
+	/* The table itself uses the Explorer theme in light mode as well */
+	OS.AllowDarkModeForWindow(handle, dark);
+	OS.SetWindowTheme(handle, Display.EXPLORER, null);
+	applyDarkSystemTheme(hwndHeader, dark);
+	applyDarkSystemTheme(headerToolTipHandle, dark);
+	applyDarkSystemTheme(itemToolTipHandle, dark);
+}
+
 void setCheckboxImageList (int width, int height, boolean fixScroll) {
 	if ((style & SWT.CHECK) == 0) return;
 	int count = 8, flags = OS.ILC_COLOR32;
