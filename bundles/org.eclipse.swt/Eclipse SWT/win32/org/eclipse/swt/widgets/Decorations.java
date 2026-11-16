@@ -1424,6 +1424,11 @@ CREATESTRUCT widgetCreateStruct () {
 }
 
 @Override
+void updateBorderStyle () {
+	// SWT.BORDER means window trim here
+}
+
+@Override
 int widgetExtStyle () {
 	int bits = super.widgetExtStyle () | OS.WS_EX_MDICHILD;
 	bits &= ~OS.WS_EX_CLIENTEDGE;

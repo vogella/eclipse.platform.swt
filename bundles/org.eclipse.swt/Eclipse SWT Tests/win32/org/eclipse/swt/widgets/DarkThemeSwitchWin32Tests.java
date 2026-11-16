@@ -11,6 +11,7 @@
 package org.eclipse.swt.widgets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.function.Consumer;
@@ -36,6 +37,8 @@ class DarkThemeSwitchWin32Tests {
 	private static final String SIZE = "size";
 	private static final String DARK_KEY = "org.eclipse.swt.internal.win32.useDarkModeExplorerTheme";
 	private static final String TITLE_KEY = "org.eclipse.swt.internal.win32.useShellTitleColoring";
+	private static final String TEXT_BORDER_KEY = "org.eclipse.swt.internal.win32.Text.use_WS_BORDER";
+	private static final String TABLE_BORDER_KEY = "org.eclipse.swt.internal.win32.Table.use_WS_BORDER";
 	private static final int PW_RENDERFULLCONTENT = 2;
 
 	private Display display;
@@ -55,6 +58,44 @@ class DarkThemeSwitchWin32Tests {
 		if (shell != null) shell.dispose();
 		display.setData(DARK_KEY, false);
 		display.setData(TITLE_KEY, false);
+		display.setData(TEXT_BORDER_KEY, false);
+		display.setData(TABLE_BORDER_KEY, false);
+		display.setDarkThemePreferred(false);
+	}
+
+	@Test
+	void bordersMatchFreshControlsAfterSwitch() {
+		Text text = new Text(shell, SWT.BORDER);
+		Table table = new Table(shell, SWT.BORDER);
+		Text plain = new Text(shell, SWT.NONE);
+
+		for (boolean wsBorder : new boolean[] { true, false }) {
+			display.setData(TEXT_BORDER_KEY, wsBorder);
+			display.setData(TABLE_BORDER_KEY, wsBorder);
+			Text freshText = new Text(shell, SWT.BORDER);
+			Table freshTable = new Table(shell, SWT.BORDER);
+			assertEquals(borderBits(freshText.handle), borderBits(text.handle), "Text wsBorder=" + wsBorder);
+			assertEquals(borderBits(freshTable.handle), borderBits(table.handle), "Table wsBorder=" + wsBorder);
+			assertEquals(0, borderBits(plain.handle));
+			freshText.dispose();
+			freshTable.dispose();
+		}
+	}
+
+	@Test
+	void setDarkThemePreferredRoundTripRestoresBorders() {
+		Text text = new Text(shell, SWT.BORDER);
+		int lightBits = borderBits(text.handle);
+		display.setDarkThemePreferred(true);
+		assertNotEquals(lightBits, borderBits(text.handle));
+		display.setDarkThemePreferred(false);
+		assertEquals(lightBits, borderBits(text.handle));
+	}
+
+	private static int borderBits(long hwnd) {
+		int style = OS.GetWindowLong(hwnd, OS.GWL_STYLE) & OS.WS_BORDER;
+		int exStyle = OS.GetWindowLong(hwnd, OS.GWL_EXSTYLE) & OS.WS_EX_CLIENTEDGE;
+		return style | exStyle;
 	}
 
 	@Test

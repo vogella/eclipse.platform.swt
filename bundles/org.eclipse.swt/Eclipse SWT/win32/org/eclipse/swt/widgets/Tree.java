@@ -3920,6 +3920,11 @@ boolean isItemSelected (NMTVCUSTOMDRAW nmcd) {
 }
 
 @Override
+void updateBorderStyle () {
+	// always WS_BORDER, on hwndParent when there are columns
+}
+
+@Override
 boolean isUseWsBorder () {
 	return true;
 }

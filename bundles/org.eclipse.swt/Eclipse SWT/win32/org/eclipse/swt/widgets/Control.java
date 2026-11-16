@@ -966,6 +966,23 @@ void maybeEnableDarkSystemTheme() {
 void updateDarkSystemTheme() {
 }
 
+/**
+ * Switches an existing border between WS_BORDER and WS_EX_CLIENTEDGE as the
+ * use_WS_BORDER settings of the display ask for.
+ */
+void updateBorderStyle() {
+	if ((style & SWT.BORDER) == 0) return;
+	int bits = OS.GetWindowLong (handle, OS.GWL_STYLE);
+	int newBits = (bits & ~OS.WS_BORDER) | (widgetStyle () & OS.WS_BORDER);
+	int exBits = OS.GetWindowLong (handle, OS.GWL_EXSTYLE);
+	int newExBits = (exBits & ~OS.WS_EX_CLIENTEDGE) | (widgetExtStyle () & OS.WS_EX_CLIENTEDGE);
+	if (bits == newBits && exBits == newExBits) return;
+	OS.SetWindowLong (handle, OS.GWL_STYLE, newBits);
+	OS.SetWindowLong (handle, OS.GWL_EXSTYLE, newExBits);
+	int flags = OS.SWP_NOMOVE | OS.SWP_NOSIZE | OS.SWP_NOZORDER | OS.SWP_NOACTIVATE | OS.SWP_FRAMECHANGED;
+	OS.SetWindowPos (handle, 0, 0, 0, 0, 0, flags);
+}
+
 void forEachInControlTree(Consumer<Control> action) {
 	action.accept(this);
 }

@@ -601,6 +601,14 @@ public int getTextLimit () {
 }
 
 @Override
+void updateBorderStyle () {
+	// the border stays, only the text offset follows the Text setting
+	RECT rect = new RECT ();
+	OS.GetClientRect (handle, rect);
+	OS.SendMessage (handle, OS.WM_SIZE, 0, OS.MAKELPARAM (rect.right, rect.bottom));
+}
+
+@Override
 boolean isUseWsBorder () {
 	return true;
 }

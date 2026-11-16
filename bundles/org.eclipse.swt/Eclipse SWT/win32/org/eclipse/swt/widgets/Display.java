@@ -2766,6 +2766,10 @@ private void updateControls(Consumer<Control> update) {
 	redrawShells();
 }
 
+private void updateBorders(boolean oldValue, boolean newValue) {
+	if (oldValue != newValue) updateControls(Control::updateBorderStyle);
+}
+
 private void redrawShells() {
 	int flags = OS.RDW_INVALIDATE | OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_ALLCHILDREN;
 	for (Shell shell : getShells()) {
@@ -4566,22 +4570,34 @@ public void setData (String key, Object value) {
 				menuBarBorderPen = OS.CreatePen (OS.PS_SOLID, 1, pixel);
 			return;
 		case USE_WS_BORDER_ALL_KEY:
-			useWsBorderAll     = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean oldUseWsBorderAll = useWsBorderAll;
+			useWsBorderAll = !disableCustomThemeTweaks && _toBoolean(value);
+			updateBorders(oldUseWsBorderAll, useWsBorderAll);
 			return;
 		case USE_WS_BORDER_CANVAS_KEY:
-			useWsBorderCanvas  = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean oldUseWsBorderCanvas = useWsBorderCanvas;
+			useWsBorderCanvas = !disableCustomThemeTweaks && _toBoolean(value);
+			updateBorders(oldUseWsBorderCanvas, useWsBorderCanvas);
 			return;
 		case USE_WS_BORDER_LABEL_KEY:
-			useWsBorderLabel   = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean oldUseWsBorderLabel = useWsBorderLabel;
+			useWsBorderLabel = !disableCustomThemeTweaks && _toBoolean(value);
+			updateBorders(oldUseWsBorderLabel, useWsBorderLabel);
 			return;
 		case USE_WS_BORDER_LIST_KEY:
-			useWsBorderList    = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean oldUseWsBorderList = useWsBorderList;
+			useWsBorderList = !disableCustomThemeTweaks && _toBoolean(value);
+			updateBorders(oldUseWsBorderList, useWsBorderList);
 			return;
 		case USE_WS_BORDER_TABLE_KEY:
-			useWsBorderTable   = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean oldUseWsBorderTable = useWsBorderTable;
+			useWsBorderTable = !disableCustomThemeTweaks && _toBoolean(value);
+			updateBorders(oldUseWsBorderTable, useWsBorderTable);
 			return;
 		case USE_WS_BORDER_TEXT_KEY:
-			useWsBorderText    = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean oldUseWsBorderText = useWsBorderText;
+			useWsBorderText = !disableCustomThemeTweaks && _toBoolean(value);
+			updateBorders(oldUseWsBorderText, useWsBorderText);
 			return;
 		case TABLE_HEADER_LINE_COLOR_KEY:
 			tableHeaderLinePixel = disableCustomThemeTweaks ? -1 : _toColorPixel(value);
