@@ -18,6 +18,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
@@ -26,6 +27,7 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.PlatformSpecificExecutionExtension;
 import org.eclipse.swt.internal.win32.OS;
+import org.eclipse.swt.layout.RowLayout;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +41,9 @@ class DarkThemeSwitchWin32Tests {
 	private static final String TITLE_KEY = "org.eclipse.swt.internal.win32.useShellTitleColoring";
 	private static final String TEXT_BORDER_KEY = "org.eclipse.swt.internal.win32.Text.use_WS_BORDER";
 	private static final String TABLE_BORDER_KEY = "org.eclipse.swt.internal.win32.Table.use_WS_BORDER";
+	private static final String COMBO_KEY = "org.eclipse.swt.internal.win32.Combo.useDarkTheme";
+	private static final String LABEL_KEY = "org.eclipse.swt.internal.win32.Label.disabledForegroundColor";
+	private static final String ICONS_KEY = "org.eclipse.swt.internal.win32.Text.useDarkThemeIcons";
 	private static final int PW_RENDERFULLCONTENT = 2;
 
 	private Display display;
@@ -60,7 +65,43 @@ class DarkThemeSwitchWin32Tests {
 		display.setData(TITLE_KEY, false);
 		display.setData(TEXT_BORDER_KEY, false);
 		display.setData(TABLE_BORDER_KEY, false);
+		display.setData(COMBO_KEY, false);
+		display.setData(LABEL_KEY, null);
+		display.setData(ICONS_KEY, false);
 		display.setDarkThemePreferred(false);
+	}
+
+	@Test
+	void themedControlsMatchFreshControlsAfterSwitch() {
+		assertSwitchedMatchesFresh(dark -> {
+			display.setData(DARK_KEY, dark);
+			display.setData(COMBO_KEY, dark);
+		}, parent -> {
+			Combo combo = new Combo(parent, SWT.DROP_DOWN);
+			combo.setText("Combo");
+			return combo;
+		});
+		assertSwitchedMatchesFresh(dark -> display.setData(LABEL_KEY, dark ? new Color(0x80, 0x80, 0x80) : null), parent -> {
+			Label label = new Label(parent, SWT.NONE);
+			label.setText("Disabled");
+			label.setEnabled(false);
+			return label;
+		});
+	}
+
+	@Test
+	void dateTimeIsLaidOutToItsNewPreferredSize() {
+		shell.setLayout(new RowLayout());
+		DateTime dateTime = new DateTime(shell, SWT.DATE | SWT.DROP_DOWN);
+		shell.pack();
+		shell.open();
+
+		for (boolean dark : new boolean[] { true, false }) {
+			display.setDarkThemePreferred(dark);
+			dispatchEvents();
+			Point preferred = dateTime.computeSize(SWT.DEFAULT, SWT.DEFAULT);
+			assertEquals(preferred.x, dateTime.getSize().x, "dark=" + dark);
+		}
 	}
 
 	@Test

@@ -715,8 +715,7 @@ void createHandle () {
 	state &= ~(CANVAS | THEME_BACKGROUND);
 
 	if (display.comboUseDarkTheme) {
-		OS.AllowDarkModeForWindow(handle, true);
-		OS.SetWindowTheme(handle, "CFD\0".toCharArray(), null);
+		enableComboDarkTheme();
 	}
 
 	stateFlagsUsable = stateFlagsTest();
@@ -2466,6 +2465,11 @@ void updateDropDownHeight () {
 	}
 }
 
+private void enableComboDarkTheme() {
+	OS.AllowDarkModeForWindow(handle, true);
+	OS.SetWindowTheme(handle, "CFD\0".toCharArray(), null);
+}
+
 void updateDropDownTheme () {
 	boolean dark = display.useDarkModeExplorerTheme;
 	if (dark == dropDownDarkTheme)
@@ -2482,6 +2486,15 @@ void updateDropDownTheme () {
 	// AllowDarkModeForWindow must stay off for the list: with it, Windows can paint the highlighted row and its text white.
 	OS.SetWindowTheme(pcbi.hwndList, dark ? DARK_DROP_DOWN_THEME : null, null);
 	dropDownDarkTheme = dark;
+}
+
+@Override
+void updateDarkSystemTheme() {
+	super.updateDarkSystemTheme();
+	if (display.comboUseDarkTheme) {
+		enableComboDarkTheme();
+	}
+	updateDropDownTheme();
 }
 
 @Override

@@ -240,7 +240,6 @@ public class Display extends Device implements Executor {
 	 * Limitations:<br>
 	 * <ul>
 	 *   <li>Only available since Win10 version 1903.</li>
-	 *   <li>Does not affect already created controls.</li>
 	 * </ul>
 	 * Expects a <code>boolean</code> value.
 	 */
@@ -248,10 +247,6 @@ public class Display extends Device implements Executor {
 	boolean comboUseDarkTheme = false;
 	/**
 	 * Use .setForeground() .setBackground() theme for ProgressBar.
-	 * Limitations:<br>
-	 * <ul>
-	 *   <li>Does not affect already created controls.</li>
-	 * </ul>
 	 * Side effects:
 	 * <ul>
 	 *   <li>ProgressBar's shine animation is lost.</li>
@@ -1207,6 +1202,13 @@ static Image createIcon (Image image, int zoom) {
 		OS.DeleteObject(hMask);
 		return Image.win32_new(device, SWT.ICON, hIcon, zoom);
 	}
+}
+
+private void destroyTextIcons() {
+	sizeToSearchIconHandle.values().forEach(handle -> OS.DestroyIcon(handle));
+	sizeToCancelIconHandle.values().forEach(handle -> OS.DestroyIcon(handle));
+	sizeToSearchIconHandle.clear();
+	sizeToCancelIconHandle.clear();
 }
 
 long getTextSearchIcon(int size) {
@@ -3871,10 +3873,7 @@ void releaseDisplay () {
 	}
 
 	/* Free custom icons */
-	sizeToSearchIconHandle.values().forEach(handle -> OS.DestroyIcon(handle));
-	sizeToCancelIconHandle.values().forEach(handle -> OS.DestroyIcon(handle));
-	sizeToSearchIconHandle.clear();
-	sizeToCancelIconHandle.clear();
+	destroyTextIcons();
 
 	/* Release XP Themes */
 	resetThemes();
@@ -4601,20 +4600,44 @@ public void setData (String key, Object value) {
 			return;
 		case TABLE_HEADER_LINE_COLOR_KEY:
 			tableHeaderLinePixel = disableCustomThemeTweaks ? -1 : _toColorPixel(value);
+			redrawShells();
 			return;
 		case LABEL_DISABLED_FOREGROUND_COLOR_KEY:
+			int oldDisabledLabelForeground = disabledLabelForegroundPixel;
 			disabledLabelForegroundPixel = disableCustomThemeTweaks ? -1 : _toColorPixel(value);
+			if (disabledLabelForegroundPixel != oldDisabledLabelForeground) {
+				updateControls(control -> {
+					if (control instanceof Label label) label.updateDisabledForeground();
+				});
+			}
 			break;
 		case COMBO_USE_DARK_THEME:
-			comboUseDarkTheme = _toBoolean(value) &&
+			boolean useComboDarkTheme = _toBoolean(value) &&
 				!disableCustomThemeTweaks &&
 				OS.IsDarkModeAvailable();
+			if (useComboDarkTheme != comboUseDarkTheme) {
+				comboUseDarkTheme = useComboDarkTheme;
+				updateControls(control -> {
+					if (control instanceof Combo) control.updateDarkSystemTheme();
+				});
+			}
 			break;
 		case PROGRESSBAR_USE_COLORS:
-			progressbarUseColors = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean useProgressColors = !disableCustomThemeTweaks && _toBoolean(value);
+			if (useProgressColors != progressbarUseColors) {
+				progressbarUseColors = useProgressColors;
+				updateControls(control -> {
+					if (control instanceof ProgressBar progressBar) progressBar.updateUseColors();
+				});
+			}
 			break;
 		case USE_DARKTHEME_TEXT_ICONS:
-			textUseDarkthemeIcons = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean useDarkIcons = !disableCustomThemeTweaks && _toBoolean(value);
+			if (useDarkIcons != textUseDarkthemeIcons) {
+				textUseDarkthemeIcons = useDarkIcons;
+				destroyTextIcons();
+				redrawShells();
+			}
 			break;
 		case EDGE_USE_DARK_PREFERED_COLOR_SCHEME:
 			value = !disableCustomThemeTweaks && _toBoolean(value);

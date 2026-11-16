@@ -374,6 +374,15 @@ void updateColors () {
 	OS.RedrawWindow (handle, null, 0, OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE);
 }
 
+@Override
+void updateDarkSystemTheme () {
+	super.updateDarkSystemTheme ();
+	updateColors ();
+	if ((style & SWT.CALENDAR) == 0) {
+		applyDarkSystemTheme (OS.GetWindow (handle, OS.GW_CHILD), display.useDarkModeExplorerTheme);
+	}
+}
+
 /**
  * Paints the date time picker with the custom colors: comctl32 ignores colors for this
  * control, so its light rendering is captured in a bitmap and recolored.

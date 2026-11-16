@@ -409,6 +409,10 @@ public void setText (String string) {
 	}
 }
 
+void updateDisabledForeground() {
+	if ((style & SWT.SEPARATOR) == 0) updateStyleBits(getEnabled());
+}
+
 void updateStyleBits(boolean isEnabled) {
 	boolean useOwnerDraw = isImageMode;
 

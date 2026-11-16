@@ -148,6 +148,14 @@ void createHandle () {
 	startTimer ();
 }
 
+void updateUseColors () {
+	char[] noTheme = display.progressbarUseColors ? new char[]{0} : null;
+	OS.SetWindowTheme(handle, noTheme, noTheme);
+	/* The theme change toggles WS_EX_STATICEDGE, which only takes effect with a new frame */
+	int flags = OS.SWP_NOMOVE | OS.SWP_NOSIZE | OS.SWP_NOZORDER | OS.SWP_NOACTIVATE | OS.SWP_DRAWFRAME;
+	OS.SetWindowPos(handle, 0, 0, 0, 0, 0, flags);
+}
+
 @Override
 int defaultForeground () {
 	return OS.GetSysColor (OS.COLOR_HIGHLIGHT);
