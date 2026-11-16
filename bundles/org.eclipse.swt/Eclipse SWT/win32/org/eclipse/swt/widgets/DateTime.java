@@ -118,6 +118,7 @@ public class DateTime extends Composite {
 	static final char[] NO_THEME = new char[] {0};
 	static final int MIN_SELECTION_RUN = 4;
 	static final int MIN_CHANNEL_CONTRAST = 64;
+	boolean unthemed;
 
 
 /**
@@ -357,14 +358,19 @@ void applyColors () {
 		// the accent colors of the visual styles would not survive the recoloring
 		OS.SetWindowTheme (handle, NO_THEME, NO_THEME);
 	}
+	unthemed = true;
 }
 
 void updateColors () {
+	boolean wasUnthemed = unthemed;
 	if (useCustomColors ()) {
 		applyColors ();
 	} else {
 		OS.SetWindowTheme (handle, null, null);
+		unthemed = false;
 	}
+	// the preferred size depends on the visual styles, and a narrow drop down drops its calendar button
+	if (unthemed != wasUnthemed) requestLayout ();
 	OS.RedrawWindow (handle, null, 0, OS.RDW_ERASE | OS.RDW_FRAME | OS.RDW_INVALIDATE);
 }
 
