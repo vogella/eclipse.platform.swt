@@ -183,7 +183,6 @@ public class Display extends Device implements Executor {
 	 * Limitations:<br>
 	 * <ul>
 	 *   <li>Only available since Win10.</li>
-	 *   <li>Does not affect already created Shells.</li>
 	 * </ul>
 	 */
 	static final String USE_SHELL_TITLE_COLORING = "org.eclipse.swt.internal.win32.useShellTitleColoring";
@@ -4543,7 +4542,12 @@ public void setData (String key, Object value) {
 			updateControls(Control::updateDarkSystemTheme);
 			return;
 		case USE_SHELL_TITLE_COLORING:
-			useShellTitleColoring = !disableCustomThemeTweaks && _toBoolean(value);
+			boolean useTitleColoring = !disableCustomThemeTweaks && _toBoolean(value);
+			if (useTitleColoring == useShellTitleColoring) return;
+			useShellTitleColoring = useTitleColoring;
+			for (Shell shell : getShells()) {
+				shell.updateTitleColoring();
+			}
 			return;
 		case MENUBAR_FOREGROUND_COLOR_KEY:
 			menuBarForegroundPixel = disableCustomThemeTweaks ? -1 : _toColorPixel(value);

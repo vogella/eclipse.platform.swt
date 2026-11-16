@@ -21,6 +21,8 @@ import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.RGB;
+import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.PlatformSpecificExecutionExtension;
 import org.eclipse.swt.internal.win32.OS;
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +35,8 @@ class DarkThemeSwitchWin32Tests {
 
 	private static final String SIZE = "size";
 	private static final String DARK_KEY = "org.eclipse.swt.internal.win32.useDarkModeExplorerTheme";
+	private static final String TITLE_KEY = "org.eclipse.swt.internal.win32.useShellTitleColoring";
+	private static final int PW_RENDERFULLCONTENT = 2;
 
 	private Display display;
 	private Shell shell;
@@ -50,6 +54,72 @@ class DarkThemeSwitchWin32Tests {
 	void tearDown() {
 		if (shell != null) shell.dispose();
 		display.setData(DARK_KEY, false);
+		display.setData(TITLE_KEY, false);
+	}
+
+	@Test
+	void titleBarsMatchFreshTitleBarsAfterSwitch() {
+		for (boolean dark : new boolean[] { true, false }) {
+			display.setData(TITLE_KEY, !dark);
+			Shell switched = titledShell(100);
+			display.setData(TITLE_KEY, dark);
+			Shell fresh = titledShell(300);
+			// both inactive, as the caption of the active shell looks different
+			shell.setBounds(500, 100, 100, 100);
+			shell.open();
+			shell.forceActive();
+			dispatchEvents();
+			Point size = switched.getSize();
+			// the caption is tinted by the wallpaper behind it, so compare its brightness
+			int captionHeight = switched.toDisplay(0, 0).y - switched.getLocation().y;
+			Rectangle caption = new Rectangle(10, 2, size.x - 20, captionHeight - 4);
+			double freshBrightness = brightness(printWindow(fresh, size), caption);
+			// DWM repaints a caption that turns light with a delay
+			double switchedBrightness = brightness(printWindow(switched, size), caption);
+			long end = System.currentTimeMillis() + 2000;
+			while (Math.abs(switchedBrightness - freshBrightness) > 10 && System.currentTimeMillis() < end) {
+				dispatchEvents();
+				switchedBrightness = brightness(printWindow(switched, size), caption);
+			}
+			assertEquals(freshBrightness, switchedBrightness, 10, "dark=" + dark);
+			switched.dispose();
+			fresh.dispose();
+		}
+	}
+
+	private Shell titledShell(int y) {
+		Shell titled = new Shell(display);
+		titled.setText("Title");
+		titled.setBounds(100, y, 300, 150);
+		titled.open();
+		return titled;
+	}
+
+	private static double brightness(ImageData data, Rectangle area) {
+		long sum = 0;
+		for (int y = area.y; y < area.y + area.height; y++) {
+			for (int x = area.x; x < area.x + area.width; x++) {
+				RGB rgb = data.palette.getRGB(data.getPixel(x, y));
+				sum += rgb.red + rgb.green + rgb.blue;
+			}
+		}
+		return sum / (3.0 * area.width * area.height);
+	}
+
+	/** Renders a shell with its DWM caption. */
+	private static ImageData printWindow(Shell target, Point size) {
+		Image image = new Image(target.getDisplay(), size.x, size.y);
+		try {
+			GC gc = new GC(image);
+			try {
+				OS.PrintWindow(target.handle, gc.handle, PW_RENDERFULLCONTENT);
+			} finally {
+				gc.dispose();
+			}
+			return image.getImageData();
+		} finally {
+			image.dispose();
+		}
 	}
 
 	@Test
@@ -126,7 +196,8 @@ class DarkThemeSwitchWin32Tests {
 			fresh.setBounds(10, size.y + 20, size.x, size.y);
 			focusSink.forceFocus();
 			dispatchEvents();
-			assertEquals(0, differentPixels(switched, fresh, size), "dark=" + dark + " " + switched);
+			Rectangle area = new Rectangle(0, 0, size.x, size.y);
+			assertEquals(0, differentPixels(print(switched, size), print(fresh, size), area), "dark=" + dark + " " + switched);
 			switched.dispose();
 			fresh.dispose();
 		}
@@ -138,12 +209,15 @@ class DarkThemeSwitchWin32Tests {
 		}
 	}
 
-	private static int differentPixels(Control a, Control b, Point size) {
-		ImageData dataA = print(a, size), dataB = print(b, size);
+	/** Counts pixels whose colors differ by more than a rounding step. */
+	private static int differentPixels(ImageData dataA, ImageData dataB, Rectangle area) {
 		int count = 0;
-		for (int y = 0; y < size.y; y++) {
-			for (int x = 0; x < size.x; x++) {
-				if (dataA.getPixel(x, y) != dataB.getPixel(x, y)) count++;
+		for (int y = area.y; y < area.y + area.height; y++) {
+			for (int x = area.x; x < area.x + area.width; x++) {
+				RGB a = dataA.palette.getRGB(dataA.getPixel(x, y));
+				RGB b = dataB.palette.getRGB(dataB.getPixel(x, y));
+				int distance = Math.max(Math.abs(a.red - b.red), Math.max(Math.abs(a.green - b.green), Math.abs(a.blue - b.blue)));
+				if (distance > 2) count++;
 			}
 		}
 		return count;

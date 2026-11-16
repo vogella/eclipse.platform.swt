@@ -576,6 +576,13 @@ void createBalloonTipHandle () {
 	OS.SetWindowLongPtr (balloonTipHandle, OS.GWLP_WNDPROC, display.windowProc);
 }
 
+void updateTitleColoring() {
+	setTitleColoring(display.useShellTitleColoring);
+	/* DWM does not repaint the caption by itself on all Windows versions */
+	int flags = OS.SWP_NOMOVE | OS.SWP_NOSIZE | OS.SWP_NOZORDER | OS.SWP_NOACTIVATE | OS.SWP_DRAWFRAME;
+	OS.SetWindowPos(handle, 0, 0, 0, 0, 0, flags);
+}
+
 @Override
 void updateDarkSystemTheme() {
 	if ((state & FOREIGN_HANDLE) == 0) {
