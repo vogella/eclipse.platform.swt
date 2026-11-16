@@ -3586,6 +3586,18 @@ JNIEXPORT jint JNICALL OS_NATIVE(GetWindowTextLength)
 }
 #endif
 
+#ifndef NO_GetWindowTheme
+JNIEXPORT jlong JNICALL OS_NATIVE(GetWindowTheme)
+	(JNIEnv *env, jclass that, jlong arg0)
+{
+	jlong rc = 0;
+	OS_NATIVE_ENTER(env, that, GetWindowTheme_FUNC);
+	rc = (jlong)GetWindowTheme((HWND)arg0);
+	OS_NATIVE_EXIT(env, that, GetWindowTheme_FUNC);
+	return rc;
+}
+#endif
+
 #ifndef NO_GetWindowThreadProcessId
 JNIEXPORT jint JNICALL OS_NATIVE(GetWindowThreadProcessId)
 	(JNIEnv *env, jclass that, jlong arg0, jintArray arg1)

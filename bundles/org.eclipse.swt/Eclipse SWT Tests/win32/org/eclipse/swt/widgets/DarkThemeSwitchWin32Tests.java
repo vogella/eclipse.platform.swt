@@ -26,6 +26,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.internal.PlatformSpecificExecutionExtension;
+import org.eclipse.swt.internal.win32.MENUITEMINFO;
 import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.layout.RowLayout;
 import org.junit.jupiter.api.AfterEach;
@@ -44,6 +45,8 @@ class DarkThemeSwitchWin32Tests {
 	private static final String COMBO_KEY = "org.eclipse.swt.internal.win32.Combo.useDarkTheme";
 	private static final String LABEL_KEY = "org.eclipse.swt.internal.win32.Label.disabledForegroundColor";
 	private static final String ICONS_KEY = "org.eclipse.swt.internal.win32.Text.useDarkThemeIcons";
+	private static final String MENU_FOREGROUND_KEY = "org.eclipse.swt.internal.win32.menuBarForegroundColor";
+	private static final String MENU_BACKGROUND_KEY = "org.eclipse.swt.internal.win32.menuBarBackgroundColor";
 	private static final int PW_RENDERFULLCONTENT = 2;
 
 	private Display display;
@@ -68,6 +71,8 @@ class DarkThemeSwitchWin32Tests {
 		display.setData(COMBO_KEY, false);
 		display.setData(LABEL_KEY, null);
 		display.setData(ICONS_KEY, false);
+		display.setData(MENU_FOREGROUND_KEY, null);
+		display.setData(MENU_BACKGROUND_KEY, null);
 		display.setDarkThemePreferred(false);
 	}
 
@@ -254,6 +259,93 @@ class DarkThemeSwitchWin32Tests {
 	private static Control sized(Control control) {
 		control.setData(SIZE, new Point(120, 80));
 		return control;
+	}
+
+	@Test
+	void headerKeepsThemeDataInBothModes() {
+		Table table = new Table(shell, SWT.CHECK);
+		new TableColumn(table, SWT.NONE).setText("column");
+		table.setHeaderVisible(true);
+		long hwndHeader = OS.SendMessage(table.handle, OS.LVM_GETHEADER, 0, 0);
+
+		for (boolean dark : new boolean[] { true, false, true, false }) {
+			display.setData(DARK_KEY, dark);
+			assertNotEquals(0, OS.GetWindowTheme(hwndHeader), "dark=" + dark);
+		}
+	}
+
+	@Test
+	void allWidgetsSurviveRepeatedSwitching() {
+		new Button(shell, SWT.PUSH).setText("push");
+		new Button(shell, SWT.ARROW);
+		new Combo(shell, SWT.DROP_DOWN).add("item");
+		new Text(shell, SWT.SEARCH | SWT.ICON_SEARCH | SWT.ICON_CANCEL).setText("text");
+		new ToolItem(new ToolBar(shell, SWT.FLAT), SWT.PUSH).setText("tool");
+		new DateTime(shell, SWT.DATE | SWT.DROP_DOWN);
+		new DateTime(shell, SWT.CALENDAR);
+		new Spinner(shell, SWT.BORDER);
+		Tree tree = new Tree(shell, SWT.CHECK);
+		new TreeColumn(tree, SWT.NONE).setText("column");
+		tree.setHeaderVisible(true);
+		shell.setToolTipText("tooltip");
+		shell.open();
+
+		for (boolean dark : new boolean[] { true, false, true, false }) {
+			display.setData(DARK_KEY, dark);
+			display.setData(TITLE_KEY, dark);
+			display.setData(COMBO_KEY, dark);
+			display.setData(ICONS_KEY, dark);
+			while (display.readAndDispatch()) {
+				// paint with the new theme
+			}
+		}
+	}
+
+	@Test
+	void menuBarItemsFollowColorsAndKeepText() {
+		Menu bar = new Menu(shell, SWT.BAR);
+		shell.setMenuBar(bar);
+		new MenuItem(bar, SWT.CASCADE).setText("File");
+		Color foreground = new Color(0xD0, 0xD0, 0xD0);
+		Color background = new Color(0x30, 0x30, 0x30);
+
+		display.setData(MENU_FOREGROUND_KEY, foreground);
+		display.setData(MENU_BACKGROUND_KEY, background);
+		assertEquals(OS.MFT_OWNERDRAW, menuItemType(bar) & OS.MFT_OWNERDRAW);
+
+		display.setData(MENU_FOREGROUND_KEY, null);
+		display.setData(MENU_BACKGROUND_KEY, null);
+		assertEquals(0, menuItemType(bar) & OS.MFT_OWNERDRAW);
+		assertEquals("File".length(), menuItemTextLength(bar));
+	}
+
+	@Test
+	void menuBarCreatedOwnerDrawnGetsNativeTextBack() {
+		display.setData(MENU_FOREGROUND_KEY, new Color(0xD0, 0xD0, 0xD0));
+		Menu bar = new Menu(shell, SWT.BAR);
+		shell.setMenuBar(bar);
+		new MenuItem(bar, SWT.CASCADE).setText("File");
+		assertEquals(OS.MFT_OWNERDRAW, menuItemType(bar) & OS.MFT_OWNERDRAW);
+
+		display.setData(MENU_FOREGROUND_KEY, null);
+		assertEquals(0, menuItemType(bar) & OS.MFT_OWNERDRAW);
+		assertEquals("File".length(), menuItemTextLength(bar));
+	}
+
+	private static int menuItemType(Menu menu) {
+		MENUITEMINFO info = new MENUITEMINFO();
+		info.cbSize = MENUITEMINFO.sizeof;
+		info.fMask = OS.MIIM_FTYPE;
+		OS.GetMenuItemInfo(menu.handle, 0, true, info);
+		return info.fType;
+	}
+
+	private static int menuItemTextLength(Menu menu) {
+		MENUITEMINFO info = new MENUITEMINFO();
+		info.cbSize = MENUITEMINFO.sizeof;
+		info.fMask = OS.MIIM_STRING;
+		OS.GetMenuItemInfo(menu.handle, 0, true, info);
+		return info.cch;
 	}
 
 	/**

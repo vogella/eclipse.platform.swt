@@ -323,6 +323,72 @@ jboolean isDarkThemeAvailable() {
     return JNI_TRUE;
 }
 
+/*
+ * Exported by ordinal only. These functions are too short and too build-specific for
+ * a code signature, so trust an ordinal only if its validated neighbours match.
+ */
+typedef void(WINAPI* TYPE_UxthemeVoidFunction)(void);
+static TYPE_UxthemeVoidFunction Locate_UxthemeVoidFunction(WORD ordinal)
+{
+	const HMODULE hUxtheme = GetModuleHandle(L"uxtheme.dll");
+	if (!hUxtheme || !isDarkThemeAvailable())
+		return 0;
+
+	return (TYPE_UxthemeVoidFunction)GetProcAddress(hUxtheme, MAKEINTRESOURCEA(ordinal));
+}
+
+#ifndef NO_FlushMenuThemes
+JNIEXPORT void JNICALL OS_NATIVE(FlushMenuThemes)
+(JNIEnv* env, jclass that)
+{
+	/* Suppress warnings about unreferenced parameters */
+	(void)env;
+	(void)that;
+
+	/* Cache the search result for performance reasons */
+	static TYPE_UxthemeVoidFunction fn_FlushMenuThemes = 0;
+	static int isInitialized = 0;
+	if (!isInitialized)
+	{
+		fn_FlushMenuThemes = Locate_UxthemeVoidFunction(136);
+		isInitialized = 1;
+	}
+
+	if (fn_FlushMenuThemes)
+	{
+		OS_NATIVE_ENTER(env, that, FlushMenuThemes_FUNC);
+		fn_FlushMenuThemes();
+		OS_NATIVE_EXIT(env, that, FlushMenuThemes_FUNC);
+	}
+}
+#endif
+
+#ifndef NO_RefreshImmersiveColorPolicyState
+JNIEXPORT void JNICALL OS_NATIVE(RefreshImmersiveColorPolicyState)
+(JNIEnv* env, jclass that)
+{
+	/* Suppress warnings about unreferenced parameters */
+	(void)env;
+	(void)that;
+
+	/* Cache the search result for performance reasons */
+	static TYPE_UxthemeVoidFunction fn_RefreshImmersiveColorPolicyState = 0;
+	static int isInitialized = 0;
+	if (!isInitialized)
+	{
+		fn_RefreshImmersiveColorPolicyState = Locate_UxthemeVoidFunction(104);
+		isInitialized = 1;
+	}
+
+	if (fn_RefreshImmersiveColorPolicyState)
+	{
+		OS_NATIVE_ENTER(env, that, RefreshImmersiveColorPolicyState_FUNC);
+		fn_RefreshImmersiveColorPolicyState();
+		OS_NATIVE_EXIT(env, that, RefreshImmersiveColorPolicyState_FUNC);
+	}
+}
+#endif
+
 #ifndef NO_IsDarkModeAvailable
 JNIEXPORT jboolean JNICALL OS_NATIVE(IsDarkModeAvailable)
 (JNIEnv* env, jclass that)

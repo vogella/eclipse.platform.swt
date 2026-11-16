@@ -375,6 +375,15 @@ Menu findMenu (long hMenu) {
 	return null;
 }
 
+void updateMenuThemeColors(int oldForeground, int oldBackground) {
+	if (menus == null) return;
+	for (Menu menu : menus) {
+		if (menu != null && !menu.isDisposed()) {
+			menu.updateThemeColors(oldForeground, oldBackground);
+		}
+	}
+}
+
 void fixDecorations (Decorations newDecorations, Control control, Menu [] menus) {
 	if (this == newDecorations) return;
 	if (control == savedFocus) savedFocus = null;

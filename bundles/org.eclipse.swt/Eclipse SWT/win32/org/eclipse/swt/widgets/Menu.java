@@ -821,6 +821,26 @@ public int indexOf (MenuItem item) {
 	return -1;
 }
 
+/**
+ * Follows a change of the display's menu bar colors, keeping colors the
+ * application set on this menu.
+ */
+void updateThemeColors(int oldForeground, int oldBackground) {
+	boolean hadCallback = needsMenuCallback();
+	if ((style & SWT.BAR) != 0) {
+		if (foreground == oldForeground) foreground = display.menuBarForegroundPixel;
+		if (background == oldBackground) background = display.menuBarBackgroundPixel;
+		updateBackground();
+	}
+	boolean typeChanged = needsMenuCallback() != hadCallback;
+	MenuItem[] items = getItems();
+	for (int i = 0; i < items.length; i++) {
+		if (typeChanged) items[i].updateMenuBarItemType(i);
+		items[i].updateSelectionImage();
+	}
+	redraw();
+}
+
 void initThemeColors () {
 	if ((style & SWT.BAR) != 0) {
 		foreground = display.menuBarForegroundPixel;

@@ -818,6 +818,25 @@ private void updateImage () {
 	parent.redraw ();
 }
 
+/** Switches a menu bar item between owner-drawn and native painting. */
+void updateMenuBarItemType(int index) {
+	MENUITEMINFO info = new MENUITEMINFO();
+	info.cbSize = MENUITEMINFO.sizeof;
+	info.fMask = OS.MIIM_FTYPE;
+	info.fType = parent.needsMenuCallback() ? OS.MFT_OWNERDRAW : widgetStyle();
+	OS.SetMenuItemInfo(parent.handle, index, true, info);
+	updateImage();
+}
+
+/** The custom selection image contains the menu colors from its creation. */
+void updateSelectionImage() {
+	if (imageSelected == null) return;
+	imageSelected.dispose();
+	imageSelected = null;
+	initCustomSelectedImage();
+	updateImage();
+}
+
 private void initCustomSelectedImage() {
 	Image image = this.image;
 	if (image == null) {

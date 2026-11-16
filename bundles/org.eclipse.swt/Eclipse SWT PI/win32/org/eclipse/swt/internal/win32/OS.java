@@ -2821,6 +2821,8 @@ public static final native boolean GetWindowOrgEx (long hdc, POINT lpPoint);
 public static final native boolean GetWindowPlacement (long hWnd, WINDOWPLACEMENT lpwndpl);
 /** @param hWnd cast=(HWND) */
 public static final native boolean GetWindowRect (long hWnd, RECT lpRect);
+/** @param hWnd cast=(HWND) */
+public static final native long GetWindowTheme (long hWnd);
 /**
  * @param hWnd cast=(HWND)
  * @param hRgn cast=(HRGN)
@@ -3026,6 +3028,10 @@ public static final native boolean InvalidateRect (long hWnd, RECT lpRect, boole
 public static final native boolean InvalidateRgn (long hWnd, long hRgn, boolean bErase);
 /** @method flags=no_gen */
 public static final native boolean IsDarkModeAvailable();
+/** @method flags=no_gen */
+public static final native void FlushMenuThemes();
+/** @method flags=no_gen */
+public static final native void RefreshImmersiveColorPolicyState();
 /** @param hWnd cast=(HWND) */
 public static final native boolean IsHungAppWindow (long hWnd);
 /** @param hWnd cast=(HWND) */

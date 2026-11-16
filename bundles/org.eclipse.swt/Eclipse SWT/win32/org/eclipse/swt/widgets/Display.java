@@ -2779,6 +2779,12 @@ private void redrawShells() {
 	}
 }
 
+private void updateMenuThemeColors(int oldForeground, int oldBackground) {
+	for (Shell shell : getShells()) {
+		shell.updateMenuThemeColors(oldForeground, oldBackground);
+	}
+}
+
 void resetThemes() {
 	for (ThemeData themeData : themeDataMap.values()) {
 		themeData.reset();
@@ -4541,6 +4547,8 @@ public void setData (String key, Object value) {
 			} else {
 				OS.SetPreferredAppMode(PreferredAppMode_Default);
 			}
+			OS.RefreshImmersiveColorPolicyState();
+			OS.FlushMenuThemes();
 			resetThemes();
 			updateControls(Control::updateDarkSystemTheme);
 			return;
@@ -4553,10 +4561,18 @@ public void setData (String key, Object value) {
 			}
 			return;
 		case MENUBAR_FOREGROUND_COLOR_KEY:
+			int oldMenuForeground = menuBarForegroundPixel;
 			menuBarForegroundPixel = disableCustomThemeTweaks ? -1 : _toColorPixel(value);
+			if (menuBarForegroundPixel != oldMenuForeground) {
+				updateMenuThemeColors(oldMenuForeground, menuBarBackgroundPixel);
+			}
 			return;
 		case MENUBAR_BACKGROUND_COLOR_KEY:
+			int oldMenuBackground = menuBarBackgroundPixel;
 			menuBarBackgroundPixel = disableCustomThemeTweaks ? -1 : _toColorPixel(value);
+			if (menuBarBackgroundPixel != oldMenuBackground) {
+				updateMenuThemeColors(menuBarForegroundPixel, oldMenuBackground);
+			}
 			return;
 		case MENUBAR_BORDER_COLOR_KEY:
 			if (menuBarBorderPen != 0)
@@ -4567,6 +4583,7 @@ public void setData (String key, Object value) {
 				menuBarBorderPen = 0;
 			else
 				menuBarBorderPen = OS.CreatePen (OS.PS_SOLID, 1, pixel);
+			redrawShells();
 			return;
 		case USE_WS_BORDER_ALL_KEY:
 			boolean oldUseWsBorderAll = useWsBorderAll;
