@@ -3470,6 +3470,17 @@ static long getCurrentKeyLayout () {
  * @since 3.0
  */
 public boolean post(Event event) {
+	long keyLayout = 0;
+	if (event != null && !isDisposed () && (event.type == SWT.KeyDown || event.type == SWT.KeyUp) && Display.untranslateKey (event.keyCode) == 0) {
+		// the Text Input Sources API asserts that it runs on the main queue and stops the process otherwise
+		if (thread == Thread.currentThread ()) {
+			keyLayout = getCurrentKeyLayout ();
+		} else {
+			long [] layout = new long [1];
+			syncExec (() -> layout [0] = getCurrentKeyLayout ());
+			keyLayout = layout [0];
+		}
+	}
 	synchronized (Device.class) {
 		if (isDisposed ()) error (SWT.ERROR_DEVICE_DISPOSED);
 		if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -3484,7 +3495,6 @@ public boolean post(Event event) {
 			case SWT.KeyUp: {
 				short vKey = (short)Display.untranslateKey (event.keyCode);
 				if (vKey == 0) {
-					long keyLayout = getCurrentKeyLayout ();
 					if (keyLayout == 0) return false;
 					int maxStringLength = 256;
 					vKey = -1;

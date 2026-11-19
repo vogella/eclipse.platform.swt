@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyListener;
@@ -1642,6 +1643,45 @@ public void test_backspaceAndDelete() throws InterruptedException {
 
 	SwtTestUtil.processEvents(10000, () -> text.getText().length() == 0);
 	assertEquals(0, text.getText().length());
+}
+
+/** Keys posted from a non-UI thread arrive in full, also after an arrow key. */
+@Test
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeysFromNonUiThread() throws InterruptedException {
+	assumeTrue(SwtTestUtil.isCocoa || SwtTestUtil.isWindows, "posting from a non-UI thread is checked on Cocoa and Windows");
+	shell.open();
+	text.setSize(300, 50);
+	SwtTestUtil.processEvents();
+	shell.forceActive();
+	SwtTestUtil.processEvents(3000, () -> shell.getDisplay().getActiveShell() == shell);
+	text.setFocus();
+	Display display = Display.getDefault();
+	String expected = "com.example.e4.rcp";
+	AtomicReference<Throwable> failure = new AtomicReference<>();
+	Thread poster = new Thread(() -> {
+		try {
+			display.post(keyEvent(SWT.ARROW_LEFT, SWT.KeyDown, text));
+			display.post(keyEvent(SWT.ARROW_LEFT, SWT.KeyUp, text));
+			for (char c : expected.toCharArray()) {
+				display.post(keyEvent(c, SWT.KeyDown, text));
+				display.post(keyEvent(c, SWT.KeyUp, text));
+			}
+		} catch (Throwable t) {
+			failure.set(t);
+		} finally {
+			display.wake();
+		}
+	}, "display-post-test");
+	poster.start();
+	SwtTestUtil.processEvents(15000, () -> !poster.isAlive());
+	poster.join(5000);
+	if (failure.get() != null) {
+		throw new AssertionError("Display.post from a non-UI thread failed", failure.get());
+	}
+	SwtTestUtil.processEvents(5000, () -> expected.equals(text.getText()));
+	assumeTrue(!text.getText().isEmpty(), "the test JVM has no key focus: posted keys do not arrive");
+	assertEquals(expected, text.getText());
 }
 
 /** A posted key reports no mouse button as pressed. */
