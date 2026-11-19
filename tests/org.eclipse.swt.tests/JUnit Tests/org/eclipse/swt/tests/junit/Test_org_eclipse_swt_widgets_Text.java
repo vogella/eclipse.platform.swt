@@ -1644,6 +1644,26 @@ public void test_backspaceAndDelete() throws InterruptedException {
 	assertEquals(0, text.getText().length());
 }
 
+/** A posted key reports no mouse button as pressed. */
+@Test
+@Tag("gtk4-todo")
+@DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")
+public void test_postedKeyHasNoButtonState() throws InterruptedException {
+	shell.open();
+	text.setSize(100, 50);
+	SwtTestUtil.processEvents();
+	shell.forceActive();
+	SwtTestUtil.processEvents(3000, () -> shell.getDisplay().getActiveShell() == shell);
+	Display display = Display.getDefault();
+	List<Integer> stateMasks = new ArrayList<>();
+	text.addListener(SWT.KeyDown, e -> stateMasks.add(e.stateMask));
+	assumeTrue(display.post(keyEvent('a', SWT.KeyDown, text)), "Display.post is not supported on GTK4");
+	display.post(keyEvent('a', SWT.KeyUp, text));
+	SwtTestUtil.processEvents(3000, () -> !stateMasks.isEmpty());
+	assumeTrue(!stateMasks.isEmpty(), "the test JVM has no key focus: posted keys do not arrive");
+	assertEquals(0, stateMasks.get(0) & SWT.BUTTON_MASK);
+}
+
 @Test
 @Tag("gtk4-todo")
 @DisabledIfEnvironmentVariable(named = JENKINS_DETECT_ENV_VAR, matches = JENKINS_DETECT_REGEX, disabledReason = "Display.post tests don't run reliably on Jenkins - see https://github.com/eclipse-platform/eclipse.platform.swt/issues/2571")

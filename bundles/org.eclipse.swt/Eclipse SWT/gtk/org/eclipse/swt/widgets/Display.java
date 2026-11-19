@@ -4400,7 +4400,8 @@ public boolean post (Event event) {
 				 * 2) event.stateMask -> GdkModifierType(state)
 				 * 3) event.keyCode -> hardware_keycode, GdkModifierType(state) (i.e. SWT.SHIFT)
 				 */
-				int state = type == SWT.KeyDown ? GDK.GDK_KEY_PRESS_MASK : GDK.GDK_KEY_RELEASE_MASK;
+				// GDK_KEY_PRESS_MASK is an event mask with the bit of GDK_BUTTON3_MASK, not a modifier state
+				int state = 0;
 				if (cachedModifierState != 0) {
 					state |= cachedModifierState;
 				}
@@ -4417,7 +4418,7 @@ public boolean post (Event event) {
 
 				// Save the modifier state pressed until it is released
 				if (is_modifier == 1 && type == SWT.KeyDown) {
-					cachedModifierState = state & (~GDK.GDK_KEY_PRESS_MASK | ~GDK.GDK_KEY_RELEASE_MASK);
+					cachedModifierState = state;
 				} else {
 					cachedModifierState = 0;
 				}
