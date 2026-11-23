@@ -1361,17 +1361,31 @@ LRESULT wmNotifyChild (NMHDR hdr, long wParam, long lParam) {
 									OS.SetRect (focusRect, nmcd.left+1+radioOrCheckTextPadding, nmcd.top, nmcd.right-2, nmcd.bottom-1);
 								}
 							} else {
-								OS.SetRect (focusRect, nmcd.left+4, nmcd.top+4, nmcd.right-4, nmcd.bottom-4);
+								int inset = useDarkModeExplorerTheme && OsVersion.IS_WIN11_21H2 ? 3 : 4;
+								OS.SetRect (focusRect, nmcd.left+inset, nmcd.top+inset, nmcd.right-inset, nmcd.bottom-inset);
 							}
-							// DrawFocusRect() inverts the pixels, which is an arbitrary color on a custom background.
-							long pen = OS.CreatePen(OS.PS_DOT, 1, foreground);
+							long pen = 0;
 							OS.SaveDC(nmcd.hdc);
-							OS.SelectObject(nmcd.hdc, pen);
-							OS.SelectObject(nmcd.hdc, OS.GetStockObject(OS.NULL_BRUSH));
-							OS.SetBkMode(nmcd.hdc, OS.TRANSPARENT);
-							OS.Rectangle(nmcd.hdc, focusRect.left, focusRect.top, focusRect.right, focusRect.bottom);
+							if (useDarkModeExplorerTheme && !isRadioOrCheck()) {
+								// Native dark buttons draw the focus dots 0x20 darker than the face; DrawFocusRect() XORs its pattern with the DC colors
+								int face = background != -1 ? background : 0x333333;
+								int dots = 0;
+								for (int shift = 0; shift < 24; shift += 8) {
+									dots |= Math.max(0, ((face >> shift) & 0xFF) - 0x20) << shift;
+								}
+								OS.SetTextColor(nmcd.hdc, 0);
+								OS.SetBkColor(nmcd.hdc, face ^ dots);
+								OS.DrawFocusRect(nmcd.hdc, focusRect);
+							} else {
+								// DrawFocusRect() inverts the pixels, which is an arbitrary color on a custom background.
+								pen = OS.CreatePen(OS.PS_DOT, 1, foreground);
+								OS.SelectObject(nmcd.hdc, pen);
+								OS.SelectObject(nmcd.hdc, OS.GetStockObject(OS.NULL_BRUSH));
+								OS.SetBkMode(nmcd.hdc, OS.TRANSPARENT);
+								OS.Rectangle(nmcd.hdc, focusRect.left, focusRect.top, focusRect.right, focusRect.bottom);
+							}
 							OS.RestoreDC(nmcd.hdc, -1);
-							OS.DeleteObject(pen);
+							if (pen != 0) OS.DeleteObject(pen);
 						}
 						return new LRESULT (OS.CDRF_SKIPDEFAULT);
 					}
