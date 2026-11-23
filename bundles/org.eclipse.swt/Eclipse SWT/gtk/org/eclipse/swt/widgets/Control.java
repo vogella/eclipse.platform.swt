@@ -4427,6 +4427,12 @@ public long internal_new_GC (GCData data) {
 		if (GTK.GTK4) {
 			long surface = GDK.gdk_surface_create_similar_surface(gdkResource, Cairo.CAIRO_CONTENT_COLOR_ALPHA, data.width, data.height);
 			gc = Cairo.cairo_create(surface);
+		} else if (OS.isWayland() && !GTK.gtk_widget_get_mapped(getShell().shellHandle)) {
+			// gdk_cairo_create on an unmapped Wayland window allocates a buffer that GTK attaches
+			// on show and destroys on the first configure, so the window never maps
+			long surface = Cairo.cairo_image_surface_create(Cairo.CAIRO_FORMAT_ARGB32, 1, 1);
+			gc = Cairo.cairo_create(surface);
+			Cairo.cairo_surface_destroy(surface);
 		} else {
 			gc = GDK.gdk_cairo_create (gdkResource);
 		}
