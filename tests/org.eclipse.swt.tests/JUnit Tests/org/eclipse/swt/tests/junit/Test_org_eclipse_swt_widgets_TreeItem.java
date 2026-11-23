@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Color;
@@ -517,6 +518,22 @@ void getBoundsID() {
 	new TreeColumn(tree2, SWT.RIGHT);
 	bounds = treeItem2.getBounds(0);
 	assertTrue(bounds.x > 0 && bounds.height > stringExtent1.y && bounds.width  == 0);
+}
+
+@Test
+public void test_getBoundsI_checkStyleRightToLeft() {
+	assumeFalse(SwtTestUtil.isGTK4(), "The GTK4 cell rectangle of a right-to-left tree view is not mirrored like GTK3");
+	Tree rtlTree = new Tree(shell, SWT.CHECK | SWT.RIGHT_TO_LEFT);
+	rtlTree.setBounds(0, 0, 200, 150);
+	TreeItem item = new TreeItem(rtlTree, SWT.NONE);
+	item.setText("Item");
+	shell.open();
+	SwtTestUtil.processEvents();
+
+	Rectangle bounds = item.getBounds(0);
+	assertTrue(bounds.width > 0, "Cell bounds must have a positive width but are " + bounds);
+	assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= rtlTree.getSize().x,
+			"Cell bounds " + bounds + " must lie inside the tree of width " + rtlTree.getSize().x);
 }
 
 @Test

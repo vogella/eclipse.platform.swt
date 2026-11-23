@@ -35,8 +35,6 @@ public static long convertSurface(Image image) {
 	if (type != Cairo.CAIRO_SURFACE_TYPE_IMAGE) {
 		Rectangle bounds = image.getBounds();
 		int format = Cairo.cairo_surface_get_content(newSurface) == Cairo.CAIRO_CONTENT_COLOR ? Cairo.CAIRO_FORMAT_RGB24 : Cairo.CAIRO_FORMAT_ARGB32;
-		newSurface = Cairo.cairo_image_surface_create(format, bounds.width, bounds.height);
-		if (newSurface == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 		//retain device scale set in the original surface
 		double sx[] = new double[1];
 		double sy[] = new double[1];
@@ -44,6 +42,11 @@ public static long convertSurface(Image image) {
 		if (sx[0] == 0 || sy[0] == 0){
 			sx[0] = sy[0] = DPIUtil.getDeviceZoom() / 100f;
 		}
+		// Bounds are in points, the surface is in pixels
+		int pixelWidth = (int) Math.round(bounds.width * sx[0]);
+		int pixelHeight = (int) Math.round(bounds.height * sy[0]);
+		newSurface = Cairo.cairo_image_surface_create(format, pixelWidth, pixelHeight);
+		if (newSurface == 0) SWT.error(SWT.ERROR_NO_HANDLES);
 		Cairo.cairo_surface_set_device_scale(newSurface, sx[0], sy[0]);
 		long cairo = Cairo.cairo_create(newSurface);
 		if (cairo == 0) SWT.error(SWT.ERROR_NO_HANDLES);

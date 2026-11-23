@@ -34,6 +34,8 @@ public class RTFTransfer extends ByteArrayTransfer {
 	static RTFTransfer _instance = new RTFTransfer();
 	static final String RTF = OS.NSPasteboardTypeRTF.getString();
 	static final int RTFID = registerType(RTF);
+	static final int[] TYPE_IDS = new int[] {RTFID};
+	static final String[] TYPE_NAMES = new String[] {RTF};
 
 RTFTransfer() {}
 
@@ -83,12 +85,12 @@ public Object nativeToJava(TransferData transferData){
 
 @Override
 protected int[] getTypeIds() {
-	return new int[] {RTFID};
+	return TYPE_IDS;
 }
 
 @Override
 protected String[] getTypeNames() {
-	return new String[] {RTF};
+	return TYPE_NAMES;
 }
 
 boolean checkRTF(Object object) {

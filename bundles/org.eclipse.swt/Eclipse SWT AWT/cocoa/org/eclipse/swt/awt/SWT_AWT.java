@@ -87,7 +87,7 @@ public class SWT_AWT {
 			/* Initialize the default focus traversal policy */
 			Class<?> clazz = Class.forName("javax.swing.UIManager");
 			Method method = clazz.getMethod("getDefaults");
-			if (method != null) method.invoke(clazz);
+			method.invoke(clazz);
 		} catch (Throwable e) {}
 	}
 
@@ -162,7 +162,7 @@ public static Frame new_Frame(final Composite parent) {
 			if (run) return;
 			run = true;
 				Object obj = initFrame(handle);
-				if (obj == null || !(obj instanceof Frame)) {
+				if (!(obj instanceof Frame)) {
 					exception [0] = new Throwable("[Error while creating AWT embedded frame]");
 					SWT.error (SWT.ERROR_UNSPECIFIED, exception[0]);
 					return;
@@ -326,7 +326,7 @@ public static Frame new_Frame(final Composite parent) {
 		if (parent.isDisposed()) return;
 		final Rectangle clientArea = parent.getClientArea();
 		try {
-			validateWithBounds(frame, Integer.valueOf(clientArea.x), Integer.valueOf(clientArea.y), Integer.valueOf(clientArea.width), Integer.valueOf(clientArea.height));
+			validateWithBounds(frame, clientArea.x, clientArea.y, clientArea.width, clientArea.height);
 		} catch (Throwable e) {e.printStackTrace();}
 	});
 

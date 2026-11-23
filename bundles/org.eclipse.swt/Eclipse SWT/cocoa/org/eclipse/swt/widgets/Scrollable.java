@@ -124,6 +124,16 @@ public Rectangle computeTrim (int x, int y, int width, int height) {
 	return new Rectangle (x, y, width, height);
 }
 
+@Override
+public int getBorderWidth () {
+	checkWidget();
+	if (scrollView == null || !hasBorder()) return 0;
+	// Same bezel computeTrim adds around the content
+	NSSize size = new NSSize();
+	size = NSScrollView.frameSizeForContentSize(size, 0, 0, OS.NSBezelBorder, OS.NSControlSizeRegular, OS.NSScrollerStyleLegacy);
+	return (int)(size.width / 2);
+}
+
 ScrollBar createScrollBar (int style) {
 	if (scrollView == null) return null;
 	ScrollBar bar = new ScrollBar ();
@@ -368,7 +378,7 @@ void reskinChildren (int flags) {
 void scrollClipViewToPoint (long id, long sel, long clipView, NSPoint point) {
 	if ((state & CANVAS) == 0 && scrollView != null) {
 		NSClipView clip = new NSClipView (clipView);
-		boolean oldCopies = clip.copiesOnScroll (), copies = oldCopies;
+		boolean copies = clip.copiesOnScroll ();
 		if (visibleRgn == 0) copies = !isObscured ();
 		if (copies) copies = !hasRegion ();
 		clip.setCopiesOnScroll (copies);

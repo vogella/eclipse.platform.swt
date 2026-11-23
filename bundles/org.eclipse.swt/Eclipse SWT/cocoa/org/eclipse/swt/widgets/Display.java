@@ -14,7 +14,6 @@
  *******************************************************************************/
 package org.eclipse.swt.widgets;
 
-import java.lang.Runtime.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
@@ -139,6 +138,8 @@ public class Display extends Device implements Executor {
 	Consumer<RuntimeException> runtimeExceptionHandler = DefaultExceptionHandler.RUNTIME_EXCEPTION_HANDLER;
 	Consumer<Error> errorHandler = DefaultExceptionHandler.RUNTIME_ERROR_HANDLER;
 	Thread thread;
+	/* buttons pressed by post, which NSEvent.pressedMouseButtons may report late */
+	int postedButtons;
 	boolean allowTimers = true, runAsyncMessages = true;
 
 	/* AWT Invoke Later */
@@ -329,7 +330,6 @@ public class Display extends Device implements Executor {
 	static String APP_VERSION = ""; //$NON-NLS-1$
 	static final String ADD_WIDGET_KEY = "org.eclipse.swt.internal.addWidget"; //$NON-NLS-1$
 	static final byte[] SWT_OBJECT = {'S', 'W', 'T', '_', 'O', 'B', 'J', 'E', 'C', 'T', '\0'};
-	static final byte[] SWT_EMBED_FRAMES = {'S', 'W', 'T', '_', 'E', 'M', 'B', 'E', 'D', '_', 'F', 'R', 'A', 'M', 'E', 'S', '\0'};
 	static final byte[] SWT_IMAGE = {'S', 'W', 'T', '_', 'I', 'M', 'A', 'G', 'E', '\0'};
 	static final byte[] SWT_ROW = {'S', 'W', 'T', '_', 'R', 'O', 'W', '\0'};
 	static final byte[] SWT_COLUMN = {'S', 'W', 'T', '_', 'C', 'O', 'L', 'U', 'M', 'N', '\0'};
@@ -853,34 +853,6 @@ static void checkDisplay (Thread thread, boolean multiple) {
 			}
 		}
 	}
-}
-
-static String convertToLf(String text) {
-	char Cr = '\r';
-	char Lf = '\n';
-	int length = text.length ();
-	if (length == 0) return text;
-
-	/* Check for an LF or CR/LF.  Assume the rest of the string
-	 * is formated that way.  This will not work if the string
-	 * contains mixed delimiters. */
-	int i = text.indexOf (Lf, 0);
-	if (i == -1 || i == 0) return text;
-	if (text.charAt (i - 1) != Cr) return text;
-
-	/* The string is formatted with CR/LF.
-	 * Create a new string with the LF line delimiter. */
-	i = 0;
-	StringBuilder result = new StringBuilder ();
-	while (i < length) {
-		int j = text.indexOf (Cr, i);
-		if (j == -1) j = length;
-		String s = text.substring (i, j);
-		result.append (s);
-		i = j + 2;
-		result.append (Lf);
-	}
-	return result.toString ();
 }
 
 void clearModal (Shell shell) {
@@ -1489,7 +1461,6 @@ public static Display getCurrent () {
 }
 
 int getCaretBlinkTime () {
-//	checkDevice ();
 	return blinkTime;
 }
 
@@ -2550,50 +2521,33 @@ private boolean initUseNativeItemHeight() {
 	return Boolean.parseBoolean(System.getProperty("org.eclipse.swt.internal.cocoa.useNativeItemHeight", "true"));
 }
 
-private static NSString getAwtRunLoopMode() {
+private static NSString awtRunLoopMode;
+
+private static synchronized NSString getAwtRunLoopMode() {
+	if (awtRunLoopMode != null) return awtRunLoopMode;
 	// Special run loop mode mode used by AWT enters when it only wants related messages processed.
 	// The name of this mode is a defacto contract established by the JavaNativeFoundation (JNF) library.
 	// It could be accessed via OS.objc_lookUpClass("JNFRunLoop").
 	//
-	// However, in JDK 11.0.12 / 13.0.8 / 15.0.4 / 17 this broke:
-	// 1) JNF was dropped from JDK:
-	//    https://bugs.openjdk.java.net/browse/JDK-8260616
-	//    https://bugs.openjdk.java.net/browse/JDK-8261693
-	// 2) The contract was broken, since the name was changed from "AWTRunLoopMode" to "jnfRunLoopMode":
-	//    https://www.mail-archive.com/awt-dev@openjdk.java.net/msg17946.html
+	// JNF was dropped from JDK (https://bugs.openjdk.java.net/browse/JDK-8260616) and is not available
+	// in arm64, in newer JDKs the name is "AWTRunLoopMode" (https://bugs.openjdk.java.net/browse/JDK-8270216).
 	//
-	// JNF is also not available in arm64.
-	//
-	// In JDK 11.0.14 / 13.0.9 / 15.0.5 / 17.0.0.1 the name was changed back to "AWTRunLoopMode":
-	// https://bugs.openjdk.java.net/browse/JDK-8270216
-	// There is no concept yet to update this:
-	// https://bugs.openjdk.java.net/browse/JDK-8270211
-	//
-	// Therefore, for now, we follow this approach:
-
-	// 1) If JNFRunLoop is available, we keep using it
+	// Therefore, if JNFRunLoop is available, we keep using it, otherwise we use the fixed name.
+	NSString mode = null;
 	long cls = OS.objc_lookUpClass("JNFRunLoop");
 	if (cls != 0) {
-		long mode = OS.objc_msgSend(cls, OS.sel_javaRunLoopMode);
-		if (mode != 0) {
-			return new NSString(mode);
+		long modeId = OS.objc_msgSend(cls, OS.sel_javaRunLoopMode);
+		if (modeId != 0) {
+			mode = new NSString(modeId);
 		}
 	}
-
-	// 2) If the version is new enough to contain the fix https://bugs.openjdk.java.net/browse/JDK-8270216
-	//    we are optimistic
-	Version version = Runtime.version();
-	if (version.feature() > 17 //
-			|| version.feature() == 17 && Version.parse("17.0.1").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 11 && Version.parse("11.0.14").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 15 && Version.parse("15.0.5").compareToIgnoreOptional(version) <= 0 //
-			|| version.feature() == 13 && Version.parse("13.0.9").compareToIgnoreOptional(version) <= 0) {
-		return NSString.stringWith("AWTRunLoopMode");
+	if (mode == null) {
+		mode = NSString.stringWith("AWTRunLoopMode");
 	}
-
-	// 3) Otherwise, for the few broken Java versions inbetween, we are pessimistic to avoid any immediate
-	//    deadlocks in calling code (although deadlocks will probably still occurr later down the road).
-	return null;
+	// The cached string must outlive the autorelease pool of the calling thread
+	mode.retain();
+	awtRunLoopMode = mode;
+	return awtRunLoopMode;
 }
 
 void addEventMethods (long cls, long proc2, long proc3, long drawRectProc, long hitTestProc, long needsDisplayInRectProc) {
@@ -3434,11 +3388,6 @@ public long internal_new_GC (GCData data) {
 		context = NSGraphicsContext.graphicsContextWithBitmapImageRep(rep);
 		rep.release();
 	}
-//	NSAffineTransform transform = NSAffineTransform.transform();
-//	NSSize size = handle.size();
-//	transform.translateXBy(0, size.height);
-//	transform.scaleXBy(1, -1);
-//	transform.set();
 	if (data != null) {
 		int mask = SWT.LEFT_TO_RIGHT | SWT.RIGHT_TO_LEFT;
 		if ((data.style & mask) == 0) {
@@ -3578,6 +3527,17 @@ static long getCurrentKeyLayout () {
  * @since 3.0
  */
 public boolean post(Event event) {
+	long keyLayout = 0;
+	if (event != null && !isDisposed () && (event.type == SWT.KeyDown || event.type == SWT.KeyUp) && Display.untranslateKey (event.keyCode) == 0) {
+		// the Text Input Sources API asserts that it runs on the main queue and stops the process otherwise
+		if (thread == Thread.currentThread ()) {
+			keyLayout = getCurrentKeyLayout ();
+		} else {
+			long [] layout = new long [1];
+			syncExec (() -> layout [0] = getCurrentKeyLayout ());
+			keyLayout = layout [0];
+		}
+	}
 	synchronized (Device.class) {
 		if (isDisposed ()) error (SWT.ERROR_DEVICE_DISPOSED);
 		if (event == null) error (SWT.ERROR_NULL_ARGUMENT);
@@ -3592,7 +3552,6 @@ public boolean post(Event event) {
 			case SWT.KeyUp: {
 				short vKey = (short)Display.untranslateKey (event.keyCode);
 				if (vKey == 0) {
-					long keyLayout = getCurrentKeyLayout ();
 					if (keyLayout == 0) return false;
 					int maxStringLength = 256;
 					vKey = -1;
@@ -3628,6 +3587,7 @@ public boolean post(Event event) {
 				}
 
 				if (vKey != -1) {
+					if (!isFnKey(vKey)) clearLatchedFn(eventSource);
 					eventRef = OS.CGEventCreateKeyboardEvent(eventSource, vKey, type == SWT.KeyDown);
 				}
 				break;
@@ -3640,7 +3600,19 @@ public boolean post(Event event) {
 				if (type == SWT.MouseMove) {
 					mouseCursorPosition.x = event.x;
 					mouseCursorPosition.y = event.y;
-					eventRef = OS.CGEventCreateMouseEvent(eventSource, OS.kCGEventMouseMoved, mouseCursorPosition, 0);
+					// a move with a pressed button is a drag, otherwise the application sees no drag at all
+					long pressed = NSEvent.pressedMouseButtons() | postedButtons;
+					int moveType = OS.kCGEventMouseMoved, moveButton = 0;
+					if ((pressed & 1) != 0) {
+						moveType = OS.kCGEventLeftMouseDragged;
+					} else if ((pressed & 2) != 0) {
+						moveType = OS.kCGEventRightMouseDragged;
+						moveButton = 1;
+					} else if (pressed != 0) {
+						moveType = OS.kCGEventOtherMouseDragged;
+						moveButton = Long.numberOfTrailingZeros(pressed);
+					}
+					eventRef = OS.CGEventCreateMouseEvent(eventSource, moveType, mouseCursorPosition, moveButton);
 				} else {
 					NSPoint nsCursorPosition = NSEvent.mouseLocation();
 					NSRect primaryFrame = getPrimaryFrame();
@@ -3668,6 +3640,7 @@ public boolean post(Event event) {
 					};
 					if (cgButton >= 0) {
 						eventRef = OS.CGEventCreateMouseEvent(eventSource, eventType, mouseCursorPosition, cgButton);
+						if (event.type == SWT.MouseDown) postedButtons |= 1 << cgButton; else postedButtons &= ~(1 << cgButton);
 					}
 				}
 				break;
@@ -3692,6 +3665,36 @@ public boolean post(Event event) {
 		if (eventSource != 0) OS.CFRelease(eventSource);
 		return returnValue;
 	}
+}
+
+/*
+ * A posted arrow, function or navigation key leaves fn set in the HID system state, so later posted letters
+ * arrive as fn+letter, which macOS takes as system shortcuts (fn+M, fn+C) that swallow the following keys.
+ * Posting an fn key-up clears it; the state updates asynchronously, so wait until fn is gone before creating
+ * the event. +[NSEvent modifierFlags] reads the flags without Text Input Sources, so this works on any thread.
+ */
+static void clearLatchedFn (long eventSource) {
+	for (int i = 0; i < 50 && (OS.objc_msgSend (OS.class_NSEvent, OS.sel_modifierFlags) & 0x800000 /* NSEventModifierFlagFunction */) != 0; i++) {
+		if (i == 0) {
+			long fnUp = OS.CGEventCreateKeyboardEvent (eventSource, (short) 63 /* kVK_Function */, false);
+			if (fnUp == 0) break;
+			OS.CGEventPost (OS.kCGHIDEventTap, fnUp);
+			OS.CFRelease (fnUp);
+		}
+		try {
+			Thread.sleep (1);
+		} catch (InterruptedException e) {
+			Thread.currentThread ().interrupt ();
+		}
+	}
+}
+
+/** Whether the key carries the fn flag itself: arrow, function and navigation keys. */
+static boolean isFnKey (short vKey) {
+	return switch (vKey) {
+		case 64, 79, 80, 96, 97, 98, 99, 100, 101, 103, 105, 106, 107, 109, 111, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126 -> true;
+		default -> false;
+	};
 }
 
 void postEvent (Event event) {
@@ -4045,7 +4048,7 @@ public boolean readAndDispatch () {
 	try {
 		events |= runSettings ();
 		events |= runTimers ();
-		events |= runContexts ();
+		runContexts ();
 		events |= runPopups ();
 		NSEvent event = application.nextEventMatchingMask(OS.NSAnyEventMask, null, OS.NSDefaultRunLoopMode, true);
 		if ((event != null) && (application != null)) {
@@ -4448,7 +4451,7 @@ boolean runAWTInvokeLater() {
 	return true;
 }
 
-boolean runContexts () {
+void runContexts () {
 	if (contexts != null) {
 		for (int i = 0; i < contexts.length; i++) {
 			if (contexts[i] != null && contexts[i].flippedContext != null) {
@@ -4456,7 +4459,6 @@ boolean runContexts () {
 			}
 		}
 	}
-	return false;
 }
 
 boolean runDeferredEvents () {
@@ -4565,10 +4567,7 @@ boolean runPopups () {
 	return result;
 }
 
-boolean runSettings () {
-	if (!runSettings) return false;
-	runSettings = false;
-
+boolean ignoreColorChange () {
 	boolean ignoreColorChange = false;
 	/*
 	 * Feature in Cocoa: When dark mode is enabled on OSX version >= 10.10 and a SWT TrayItem (NSStatusItem) is present in the menubar,
@@ -4585,7 +4584,29 @@ boolean runSettings () {
 			ignoreColorChange = true;
 		}
 	}
-	initColors (ignoreColorChange);
+	return ignoreColorChange;
+}
+
+/** Re-reads the cached system colors as the app appearance shows them, since NSColor resolves against the current appearance. */
+void appAppearanceColorsChanged () {
+	APPEARANCE mode = appAppearance != null ? appAppearance : OS.isSystemDarkAppearance () ? APPEARANCE.Dark : APPEARANCE.Light;
+	NSAppearance appearance = getAppearance (mode);
+	if (appearance == null) return;
+	long setCurrent = OS.sel_registerName ("setCurrentAppearance:");
+	long previous = OS.objc_msgSend (OS.class_NSAppearance, OS.sel_currentAppearance);
+	try {
+		OS.objc_msgSend (OS.class_NSAppearance, setCurrent, appearance.id);
+		initColors (ignoreColorChange ());
+	} finally {
+		OS.objc_msgSend (OS.class_NSAppearance, setCurrent, previous);
+	}
+}
+
+boolean runSettings () {
+	if (!runSettings) return false;
+	runSettings = false;
+
+	appAppearanceColorsChanged ();
 
 	sendEvent (SWT.Settings, null);
 	Shell [] shells = getShells ();
@@ -4611,26 +4632,6 @@ void setAppAppearance (APPEARANCE newMode) {
 		appAppearance = newMode;
 		resetSelectedControlColors();
 	 }
-}
-
-void setWindowAppearance (NSWindow window, NSAppearance appearance) {
-	if (window != null && appearance != null) {
-		OS.objc_msgSend(window.id, OS.sel_setAppearance_, appearance.id);
-	}
-}
-
-void setWindowsAppearance (APPEARANCE newMode) {
-	NSAppearance appearance = getAppearance(newMode);
-	if (appearance != null) {
-		Shell [] shells = getShells ();
-		for (int i=0; i<shells.length; i++) {
-			Shell shell = shells [i];
-			if (!shell.isDisposed ()) {
-				setWindowAppearance (shell.window, appearance);
-			}
-		}
-		appAppearance = newMode;
-	}
 }
 
 boolean runSkin () {
@@ -5070,7 +5071,6 @@ void setMenuBar (Menu menu) {
 	* the menu right away when the menu bar is set in a stacked
 	* event loop. The fix is to use CancelMenuTracking() instead.
 	*/
-//	menubar.cancelTracking();
 	cancelRootMenuTracking ();
 	long count = menubar.numberOfItems();
 	while (count > 1) {
@@ -5280,10 +5280,6 @@ public boolean sleep () {
 	}
 	sendPostExternalEventDispatchEvent ();
 	return true;
-}
-
-int sourceProc (int info) {
-	return 0;
 }
 
 /**
@@ -5779,7 +5775,7 @@ void applicationWillFinishLaunching (long id, long sel, long notification) {
 	NSLocale englishLocale = (NSLocale) new NSLocale().alloc();
 	englishLocale = new NSLocale(englishLocale.initWithLocaleIdentifier(NSString.stringWith("en_US")));
 	NSString languageDisplayName = englishLocale.displayNameForKey(OS.NSLocaleLanguageCode, NSString.stringWith(languageISOValue));
-	if (englishLocale != null) englishLocale.release();
+	englishLocale.release();
 
 	/* To find the nib look for each of these paths, in order, until one is found:
 	 * 		/System/Library/..../Resources/<display name>.lproj/DefaultApp.nib
@@ -5816,7 +5812,7 @@ void applicationWillFinishLaunching (long id, long sel, long notification) {
 		NSMenu sm = appitem.submenu();
 		sm.setTitle(name);
 		NSArray ia = sm.itemArray();
-		for(int i = 0; i < ia.count(); i++) {
+		for (int i = 0, length = (int)ia.count(); i < length; i++) {
 			NSMenuItem ni = new NSMenuItem(ia.objectAtIndex(i));
 			NSString title = ni.title().stringByReplacingOccurrencesOfString(match, name);
 			ni.setTitle(title);
@@ -5890,6 +5886,7 @@ static long applicationProc(long id, long sel, long arg0) {
 
 	if (sel == OS.sel_appAppearanceChanged) {
 		display.setAppAppearance(arg0 == 1 ? APPEARANCE.Dark : APPEARANCE.Light);
+		display.appAppearanceColorsChanged();
 		return 0;
 	}
 
@@ -5919,7 +5916,6 @@ static long applicationProc(long id, long sel, long arg0) {
 			return returnVal;
 		}
 		case sel_orderFrontStandardAboutPanel_: {
-	//		application.orderFrontStandardAboutPanel(application);
 			return 0;
 		}
 		case sel_hideOtherApplications_: {
@@ -6122,11 +6118,17 @@ static Widget LookupWidget (long id, long sel) {
 	return widget;
 }
 
+private static final Map<Long, Long> accessibleCellClasses = new ConcurrentHashMap<>();
+
 static long windowProc(long id, long sel) {
 	if (sel == OS.sel_cellClass) {
 		long superCls = OS.objc_msgSend(OS.class_getSuperclass(id), sel);
+		Long cached = accessibleCellClasses.get(superCls);
+		if (cached != null) return cached;
 		long cls = OS.objc_lookUpClass("SWTAccessible" + OS.class_getName(superCls));
-		return cls != 0 ? cls : superCls;
+		if (cls == 0) return superCls;
+		accessibleCellClasses.put(superCls, cls);
+		return cls;
 	}
 	/*
 	* Feature in Cocoa.  In Cocoa, the default button animation is done

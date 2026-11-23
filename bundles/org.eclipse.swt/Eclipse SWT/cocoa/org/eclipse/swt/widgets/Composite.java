@@ -287,7 +287,6 @@ void createHandle () {
 	}
 	NSView widget = (NSView)new SWTCanvasView().alloc();
 	widget.initWithFrame (rect);
-//	widget.setFocusRingType(OS.NSFocusRingTypeExterior);
 	view = widget;
 	if (scrollView != null) {
 		NSClipView contentView = scrollView.contentView();

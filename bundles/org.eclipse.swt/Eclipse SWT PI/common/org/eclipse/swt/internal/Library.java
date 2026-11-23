@@ -46,7 +46,6 @@ public class Library {
 	static final String SEPARATOR;
 	static final String DELIMITER;
 
-	static final String JAVA_LIB_PATH = "java.library.path";
 	static final String SWT_LIB_PATH = "swt.library.path";
 
 	static final String SUFFIX_64 = "-64";	//$NON-NLS-1$

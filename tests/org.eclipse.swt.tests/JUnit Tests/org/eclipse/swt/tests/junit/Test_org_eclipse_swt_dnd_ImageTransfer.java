@@ -168,4 +168,13 @@ public class Test_org_eclipse_swt_dnd_ImageTransfer extends ClipboardBase {
 		ImageData result = new ImageData(new ByteArrayInputStream(fileContents));
 		assertEquals(0, imageDataComparator().compare(expected, result));
 	}
+
+	/**
+	 * The type ids behind getSupportedTypes must be stable across calls and
+	 * independent of arrays handed out earlier.
+	 */
+	@Test
+	public void test_supportedTypesStable() {
+		assertSupportedTypesStable(imageTransfer);
+	}
 }
