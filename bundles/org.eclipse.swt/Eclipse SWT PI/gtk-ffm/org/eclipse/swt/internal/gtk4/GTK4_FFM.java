@@ -654,6 +654,19 @@ public static void gdk_content_serializer_set_task_data(long arg0, long arg1, lo
 	}
 }
 
+private static final class MH_gdk_1drag_1get_1selected_1action {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gdk_drag_get_selected_action", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gdk_drag_get_selected_action");
+}
+public static int gdk_drag_get_selected_action(long arg0) {
+	try {
+		int rc = (int) MH_gdk_1drag_1get_1selected_1action.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gdk_1drop_1finish {
 	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gdk_drop_finish", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gdk_drop_finish");
 }
@@ -712,6 +725,32 @@ public static long gdk_drop_read_value_finish(long arg0, long arg1, long[] arg2)
 		MemorySegment lparg2 = FFM.copyIn(arena, arg2);
 		long rc = (long) MH_gdk_1drop_1read_1value_1finish.MH.invokeExact(arg0, arg1, lparg2);
 		FFM.copyOut(lparg2, arg2);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gdk_1paintable_1get_1intrinsic_1height {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gdk_paintable_get_intrinsic_height", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gdk_paintable_get_intrinsic_height");
+}
+public static int gdk_paintable_get_intrinsic_height(long arg0) {
+	try {
+		int rc = (int) MH_gdk_1paintable_1get_1intrinsic_1height.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gdk_1paintable_1get_1intrinsic_1width {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gdk_paintable_get_intrinsic_width", FunctionDescriptor.of(JAVA_INT, JAVA_LONG)), "gdk_paintable_get_intrinsic_width");
+}
+public static int gdk_paintable_get_intrinsic_width(long arg0) {
+	try {
+		int rc = (int) MH_gdk_1paintable_1get_1intrinsic_1width.MH.invokeExact(arg0);
 		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
@@ -1456,6 +1495,19 @@ public static int gtk_event_controller_get_current_event_state(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1event_1controller_1get_1name {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_event_controller_get_name", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_event_controller_get_name");
+}
+public static long gtk_event_controller_get_name(long arg0) {
+	try {
+		long rc = (long) MH_gtk_1event_1controller_1get_1name.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1event_1controller_1key_1new {
 	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_event_controller_key_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_event_controller_key_new");
 }
@@ -1979,6 +2031,20 @@ public static long gtk_gesture_zoom_new() {
 	}
 }
 
+private static final class MH_gtk_1gl_1area_1set_1allowed_1apis {
+	static final MethodHandle MH = FFM.downcallOptional("gtk_gl_area_set_allowed_apis", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT));
+}
+public static void gtk_gl_area_set_allowed_apis(long arg0, int arg1) {
+	try {
+		if (MH_gtk_1gl_1area_1set_1allowed_1apis.MH != null) {
+			MH_gtk_1gl_1area_1set_1allowed_1apis.MH.invokeExact(arg0, arg1);
+		}
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1header_1bar_1new {
 	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_header_bar_new", FunctionDescriptor.of(JAVA_LONG)), "gtk_header_bar_new");
 }
@@ -2072,6 +2138,18 @@ public static boolean gtk_im_context_filter_keypress(long arg0, long arg1) {
 		int rc = (int) MH_gtk_1im_1context_1filter_1keypress.MH.invokeExact(arg0, arg1);
 		FFM.checkCallbackException();
 		return ((byte) rc != 0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1im_1context_1set_1client_1widget {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_im_context_set_client_widget", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_LONG)), "gtk_im_context_set_client_widget");
+}
+public static void gtk_im_context_set_client_widget(long arg0, long arg1) {
+	try {
+		MH_gtk_1im_1context_1set_1client_1widget.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);
 	}
@@ -3075,6 +3153,19 @@ public static void gtk_widget_measure(long arg0, int arg1, int arg2, int[] arg3,
 	}
 }
 
+private static final class MH_gtk_1widget_1observe_1controllers {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_widget_observe_controllers", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_widget_observe_controllers");
+}
+public static long gtk_widget_observe_controllers(long arg0) {
+	try {
+		long rc = (long) MH_gtk_1widget_1observe_1controllers.MH.invokeExact(arg0);
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1widget_1paintable_1new {
 	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_widget_paintable_new", FunctionDescriptor.of(JAVA_LONG, JAVA_LONG)), "gtk_widget_paintable_new");
 }
@@ -3107,6 +3198,18 @@ private static final class MH_gtk_1widget_1remove_1controller {
 public static void gtk_widget_remove_controller(long arg0, long arg1) {
 	try {
 		MH_gtk_1widget_1remove_1controller.MH.invokeExact(arg0, arg1);
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gtk_1widget_1set_1can_1target {
+	static final MethodHandle MH = FFM.gtk4Only(FFM.downcall("gtk_widget_set_can_target", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_widget_set_can_target");
+}
+public static void gtk_widget_set_can_target(long arg0, boolean arg1) {
+	try {
+		MH_gtk_1widget_1set_1can_1target.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
 		FFM.checkCallbackException();
 	} catch (Throwable e) {
 		throw FFM.rethrow(e);

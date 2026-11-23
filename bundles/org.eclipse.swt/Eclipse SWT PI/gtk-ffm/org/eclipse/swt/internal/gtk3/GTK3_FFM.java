@@ -1021,6 +1021,18 @@ public static long gtk_get_event_widget(long arg0) {
 	}
 }
 
+private static final class MH_gtk_1gl_1area_1set_1has_1alpha {
+	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_gl_area_set_has_alpha", FunctionDescriptor.ofVoid(JAVA_LONG, JAVA_INT)), "gtk_gl_area_set_has_alpha");
+}
+public static void gtk_gl_area_set_has_alpha(long arg0, boolean arg1) {
+	try {
+		MH_gtk_1gl_1area_1set_1has_1alpha.MH.invokeExact(arg0, (int) (arg1 ? 1 : 0));
+		FFM.checkCallbackException();
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gtk_1grab_1add {
 	static final MethodHandle MH = FFM.gtk3Only(FFM.downcall("gtk_grab_add", FunctionDescriptor.ofVoid(JAVA_LONG)), "gtk_grab_add");
 }

@@ -599,6 +599,30 @@ public static boolean gdk_display_supports_cursor_color(long arg0) {
 	}
 }
 
+private static final class MH_gdk_1display_1translate_1key {
+	static final MethodHandle MH = FFM.downcallOptional("gdk_display_translate_key", FunctionDescriptor.of(JAVA_BYTE, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, ADDRESS, ADDRESS, ADDRESS, ADDRESS));
+}
+public static boolean gdk_display_translate_key(long arg0, int arg1, int arg2, int arg3, int[] arg4, int[] arg5, int[] arg6, int[] arg7) {
+	try (Arena arena = Arena.ofConfined()) {
+		MemorySegment lparg4 = FFM.copyIn(arena, arg4);
+		MemorySegment lparg5 = FFM.copyIn(arena, arg5);
+		MemorySegment lparg6 = FFM.copyIn(arena, arg6);
+		MemorySegment lparg7 = FFM.copyIn(arena, arg7);
+		byte rc = 0;
+		if (MH_gdk_1display_1translate_1key.MH != null) {
+			rc = (byte) MH_gdk_1display_1translate_1key.MH.invokeExact(arg0, arg1, arg2, arg3, lparg4, lparg5, lparg6, lparg7);
+		}
+		FFM.copyOut(lparg7, arg7);
+		FFM.copyOut(lparg6, arg6);
+		FFM.copyOut(lparg5, arg5);
+		FFM.copyOut(lparg4, arg4);
+		FFM.checkCallbackException();
+		return (rc != 0);
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
 private static final class MH_gdk_1drag_1context_1get_1actions {
 	static final MethodHandle MH = FFM.downcallOptional("gdk_drag_context_get_actions", FunctionDescriptor.of(JAVA_INT, JAVA_LONG));
 }
@@ -1042,6 +1066,19 @@ private static final class MH_gdk_1get_1default_1root_1window {
 public static long gdk_get_default_root_window() {
 	try {
 		long rc = (long) MH_gdk_1get_1default_1root_1window.MH.invokeExact();
+		FFM.checkCallbackException();
+		return rc;
+	} catch (Throwable e) {
+		throw FFM.rethrow(e);
+	}
+}
+
+private static final class MH_gdk_1gl_1context_1get_1current {
+	static final MethodHandle MH = FFM.downcall("gdk_gl_context_get_current", FunctionDescriptor.of(JAVA_LONG));
+}
+public static long gdk_gl_context_get_current() {
+	try {
+		long rc = (long) MH_gdk_1gl_1context_1get_1current.MH.invokeExact();
 		FFM.checkCallbackException();
 		return rc;
 	} catch (Throwable e) {
