@@ -1383,30 +1383,6 @@ NSWindow parentWindow () {
 }
 
 @Override
-public boolean print (GC gc) {
-	checkWidget ();
-	if (gc == null) error (SWT.ERROR_NULL_ARGUMENT);
-	if (gc.isDisposed ()) error (SWT.ERROR_INVALID_ARGUMENT);
-	// Print only the client area (children) without shell decorations
-	Control [] children = _getChildren ();
-	for (Control child : children) {
-		Rectangle bounds = child.getBounds();
-		// Save the graphics state before transforming
-		NSGraphicsContext.static_saveGraphicsState();
-		NSGraphicsContext.setCurrentContext(gc.handle);
-		// Create and apply translation transform for child's position
-		NSAffineTransform transform = NSAffineTransform.transform();
-		transform.translateXBy(bounds.x, bounds.y);
-		transform.concat();
-		// Print the child control
-		child.print(gc);
-		// Restore the graphics state
-		NSGraphicsContext.static_restoreGraphicsState();
-	}
-	return true;
-}
-
-@Override
 void register () {
 	/*
 	 * Note that if there are multiple SWT_AWT shells only the last one created

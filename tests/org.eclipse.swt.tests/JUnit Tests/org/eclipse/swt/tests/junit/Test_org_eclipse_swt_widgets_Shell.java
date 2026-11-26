@@ -37,12 +37,18 @@ import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellEvent;
 import org.eclipse.swt.events.ShellListener;
+import org.eclipse.swt.graphics.Color;
+import org.eclipse.swt.graphics.GC;
+import org.eclipse.swt.graphics.Image;
+import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.graphics.Region;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Label;
@@ -1422,6 +1428,33 @@ public void test_setMinimumSizeII_setMaximumSizeII_bothHold() throws Interrupted
 		assertEventuallySize(sized, 400, 300);
 	} finally {
 		sized.dispose();
+	}
+}
+
+@Test
+public void test_print_drawsShellBackground() {
+	assumeTrue(SwtTestUtil.isCocoa, "the shell background is checked on Cocoa");
+	Shell printed = new Shell(shell.getDisplay(), SWT.NO_TRIM);
+	Image image = new Image(printed.getDisplay(), 300, 200);
+	try {
+		printed.setBackground(printed.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+		printed.setBounds(0, 0, 300, 200);
+		Composite child = new Composite(printed, SWT.NONE);
+		child.setBackground(printed.getDisplay().getSystemColor(SWT.COLOR_RED));
+		child.setBounds(10, 10, 30, 30);
+		printed.open();
+		SwtTestUtil.processEvents();
+		GC gc = new GC(image);
+		gc.setBackground(new Color(255, 0, 255));
+		gc.fillRectangle(0, 0, 300, 200);
+		assertTrue(printed.print(gc));
+		gc.dispose();
+		ImageData data = image.getImageData();
+		assertEquals(new RGB(255, 255, 255), data.palette.getRGB(data.getPixel(150, 100)), "shell background");
+		assertEquals(new RGB(255, 0, 0), data.palette.getRGB(data.getPixel(20, 20)), "child");
+	} finally {
+		image.dispose();
+		printed.dispose();
 	}
 }
 }
